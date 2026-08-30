@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Certificate01Icon, CrownIcon } from "@hugeicons/core-free-icons";
+import { ArrowLeft02Icon, Certificate01Icon, CrownIcon } from "@hugeicons/core-free-icons";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
 import type { LicenseInfo } from "@/lib/license/types";
@@ -38,6 +39,7 @@ function useEnterpriseAllowed(): GateState {
 }
 
 export function EnterpriseGate({ children }: { readonly children: React.ReactNode }) {
+  const router = useRouter();
   const gate = useEnterpriseAllowed();
 
   if (gate.loading) {
@@ -78,6 +80,22 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
                   Comprar Enterprise
                 </Link>
               </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    if (window.history.length > 1) router.back();
+                    else router.push("/dashboard");
+                  }}
+                >
+                  <HugeiconsIcon icon={ArrowLeft02Icon} size={16} strokeWidth={1.75} />
+                  Atrás
+                </Button>
+                <Button variant="ghost" asChild className="w-full">
+                  <Link href="/dashboard">Salir</Link>
+                </Button>
+              </div>
               <p className="text-center text-[11px] text-muted-foreground/70" style={{ fontFamily: "var(--font-sans)" }}>
                 Desbloquea claves, base de datos y soporte completo.
               </p>
