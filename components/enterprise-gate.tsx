@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { LockKeyIcon, SparklesIcon } from "@hugeicons/core-free-icons";
+import { Certificate01Icon, CrownIcon } from "@hugeicons/core-free-icons";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
 import type { LicenseInfo } from "@/lib/license/types";
@@ -49,18 +49,18 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
   }
 
   return (
-    <div className="relative">
+    <div className="relative min-h-[60vh]">
       {/* Content underneath, blurred and inert */}
-      <div aria-hidden="true" className="pointer-events-none select-none blur-[6px] opacity-50">
+      <div aria-hidden="true" className="pointer-events-none select-none blur-[6px] opacity-40">
         {children}
       </div>
 
-      {/* Backdrop */}
-      <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-xl p-4">
+      {/* Backdrop - fixed to viewport so it always centers, even when page scrolls */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xl p-4">
         <Beam size="pulse-outside" strength={0.7} borderRadius={20} className="w-full max-w-[420px]">
           <div className="w-full rounded-[20px] border border-border bg-card p-6 shadow-[var(--shadow-soft),var(--shadow-soft)] sm:p-7">
             <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--shadow-inset)]">
-              <HugeiconsIcon icon={LockKeyIcon} size={18} strokeWidth={1.75} />
+              <HugeiconsIcon icon={Certificate01Icon} size={18} strokeWidth={1.75} />
             </div>
 
             <h2 className="mt-4 text-center font-cooper text-[1.7rem] leading-[1.05] tracking-[-0.02em]">
@@ -74,7 +74,7 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
             <div className="mt-6 flex flex-col gap-2">
               <Button asChild className="w-full" size="lg">
                 <Link href="/pricing">
-                  <HugeiconsIcon icon={SparklesIcon} size={16} strokeWidth={1.75} />
+                  <HugeiconsIcon icon={CrownIcon} size={16} strokeWidth={1.75} />
                   Comprar Enterprise
                 </Link>
               </Button>
