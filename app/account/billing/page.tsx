@@ -44,15 +44,17 @@ export default function BillingPage() {
           <header className="mb-8">
             <Link
               href="/account"
-              className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              className="group mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
-              <HugeiconsIcon icon={ArrowLeft02Icon} size={14} strokeWidth={1.75} />
+              <HugeiconsIcon
+                icon={ArrowLeft02Icon}
+                size={14}
+                strokeWidth={1.75}
+                className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-x-0.5"
+              />
               Volver a cuenta
             </Link>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold">
-              <HugeiconsIcon icon={Invoice01Icon} size={20} strokeWidth={1.75} className="text-muted-foreground" />
-              Facturación
-            </h1>
+            <h1 className="text-2xl font-semibold">Facturación</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Gestiona tu plan, método de pago y facturas.
             </p>
