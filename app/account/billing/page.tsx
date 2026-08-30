@@ -132,7 +132,7 @@ export default function BillingPage() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="mt-3 border border-violet-200 bg-card text-violet-600 shadow-[var(--shadow-inset)] hover:bg-violet-50 hover:text-violet-700 dark:border-violet-900 dark:text-violet-400 dark:hover:bg-violet-950/30 dark:hover:text-violet-300"
+                className="mt-3 border border-border bg-card text-violet-600 shadow-[var(--shadow-inset)] hover:bg-violet-50 hover:text-violet-700 hover:border-violet-200 dark:text-violet-400 dark:hover:bg-violet-950/30 dark:hover:text-violet-300 dark:hover:border-violet-900"
               >
                 <Link href="/pricing">Agregar método de pago</Link>
               </Button>
