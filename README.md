@@ -1,8 +1,21 @@
-# Steve: self-hosted Eve runtime reference
+<p align="center">
+  <img src="public/logos/steve.svg" alt="steve" width="120" />
+</p>
 
-Steve is a movie-data agent built with [Eve](https://eve.dev) and deployed on a
-regular Node.js host. It demonstrates how to run Eve without Vercel-managed
-runtime infrastructure:
+<h1 align="center">steve</h1>
+
+<p align="center">
+  <strong>el sistema de atención para tu negocio y tus agentes</strong><br/>
+  WhatsApp, Instagram, Messenger y Meta Ads en una sola bandeja. Autoalojado, con tus claves y tu base de datos.
+</p>
+
+<p align="center">
+  <a href="#local-setup">Instalación local</a> · <a href="#architecture">Arquitectura</a> · <a href="https://eve.dev">Eve</a>
+</p>
+
+---
+
+Steve es un agente de atención y ventas construido con [Eve](https://eve.dev) y desplegado en un host Node.js propio. Demuestra cómo correr Eve sin infraestructura gestionada por Vercel:
 
 - PostgreSQL stores durable Workflow state.
 - Docker isolates model-authored Python and blocks sandbox network egress.
