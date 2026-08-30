@@ -30,7 +30,7 @@ export function SignOutButton({
   const signOut = async () => {
     setBusy(true);
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-    router.replace("/login");
+    router.replace("/");
     router.refresh();
   };
 

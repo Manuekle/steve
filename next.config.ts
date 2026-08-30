@@ -16,12 +16,14 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      { source: "/history", destination: "/chats" },
-      { source: "/history/:path*", destination: "/chats/:path*" },
-      { source: "/chat", destination: "/" },
-      { source: "/", destination: "/landing" },
-    ];
+    return {
+      beforeFiles: [
+        { source: "/", destination: "/landing" },
+        { source: "/chat", destination: "/" },
+        { source: "/history", destination: "/chats" },
+        { source: "/history/:path*", destination: "/chats/:path*" },
+      ],
+    };
   },
 };
 
