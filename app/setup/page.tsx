@@ -29,6 +29,7 @@ import type { CheckStatus, SetupCheck } from "../api/setup/route";
 import { AppShell } from "../_components/app-shell";
 import { PageContainer } from "../_components/page-container";
 import { KpiBars, KpiCard } from "../_components/kpi-card";
+import { EnterpriseGate } from "@/components/enterprise-gate";
 import {
   Card,
   CardDescription,
@@ -211,7 +212,8 @@ export default function SetupPage() {
 
   return (
     <AppShell activePath="/setup">
-      <PageContainer maxWidth="max-w-6xl" pattern="grid">
+      <EnterpriseGate>
+        <PageContainer maxWidth="max-w-6xl" pattern="grid">
         <Skeleton className="min-h-[500px]" isLoading={isLoading} skeleton={<SetupSkeleton />}>
           <div className="content-enter">
             <header className="mb-8 flex items-center justify-between gap-4">
@@ -462,7 +464,8 @@ export default function SetupPage() {
             </div>
           </div>
         </Skeleton>
-      </PageContainer>
+        </PageContainer>
+      </EnterpriseGate>
     </AppShell>
   );
 }

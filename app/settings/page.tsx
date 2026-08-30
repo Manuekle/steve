@@ -46,6 +46,7 @@ import { DEFAULT_MODELS, recommendedIds, type AiProvider } from "@/lib/model-cat
 import { AppShell } from "../_components/app-shell";
 import { PageContainer } from "../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../_components/dashboard-card";
+import { EnterpriseGate } from "@/components/enterprise-gate";
 
 type CredentialStatus = Record<string, boolean>;
 
@@ -460,7 +461,8 @@ export default function SettingsPage() {
 
   return (
     <AppShell activePath="/settings">
-      <PageContainer maxWidth="max-w-6xl" pattern="grid">
+      <EnterpriseGate>
+        <PageContainer maxWidth="max-w-6xl" pattern="grid">
           <Skeleton
             className="min-h-[600px]"
             isLoading={loading}
@@ -762,7 +764,8 @@ export default function SettingsPage() {
           ) : null}
           </div>
           </Skeleton>
-      </PageContainer>
+        </PageContainer>
+      </EnterpriseGate>
     </AppShell>
   );
 }
