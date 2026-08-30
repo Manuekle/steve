@@ -130,7 +130,7 @@ export default function BillingPage() {
               </p>
               <Link
                 href="/pricing"
-                className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 shadow-[var(--shadow-inset)] hover:bg-violet-100 hover:text-violet-800 hover:border-violet-300 dark:border-violet-900 dark:bg-violet-950/30 dark:text-violet-300 dark:hover:bg-violet-900/40 dark:hover:text-violet-200 dark:hover:border-violet-800"
+                className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-violet-600 shadow-[var(--shadow-inset)] hover:border-violet-300 hover:bg-violet-100 hover:text-violet-700 dark:border-violet-900 dark:text-violet-400 dark:hover:border-violet-800 dark:hover:bg-violet-950/40 dark:hover:text-violet-300"
               >
                 Agregar método de pago
               </Link>
