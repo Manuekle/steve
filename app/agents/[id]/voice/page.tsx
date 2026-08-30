@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useT } from "@/lib/i18n/provider";
-import { fetchJson, type UiError } from "@/lib/api-error-message";
+import { fetchJson, isApiError, type UiError } from "@/lib/api-error-message";
 import { cn } from "@/lib/utils";
 import type { Agent, AgentVoice } from "@/lib/types";
 import { AppShell } from "../../../_components/app-shell";
@@ -443,10 +443,10 @@ function VoiceSettings({
       );
       if (cancelled) return;
       if (!result.ok) {
-        const detail = (result.error as { detail?: string })?.detail ?? "";
+        const detail = (isApiError(result.error) ? result.error.detail : undefined) ?? "";
         const perm = detail.match(/permission (\w+)/)?.[1];
         const isPermission =
-          !!perm || detail.includes("missing_permissions") || result.error.code === "forbidden";
+          !!perm || detail.includes("missing_permissions") || (isApiError(result.error) && result.error.code === "forbidden");
         if (isPermission) {
           const label = perm ? ` ${perm}` : "";
           setVoicesPermissionError(
