@@ -86,10 +86,15 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
                   if (window.history.length > 1) router.back();
                   else router.push("/dashboard");
                 }}
-                className="mx-auto inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                className="group mx-auto inline-flex items-center gap-1.5 py-1 text-[13px] text-muted-foreground hover:text-foreground"
                 style={{ fontFamily: "var(--font-sans)" }}
               >
-                <HugeiconsIcon icon={ArrowLeft02Icon} size={14} strokeWidth={1.75} />
+                <HugeiconsIcon
+                  icon={ArrowLeft02Icon}
+                  size={14}
+                  strokeWidth={1.75}
+                  className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-x-0.5"
+                />
                 Atrás
               </button>
               <p className="text-center text-[11px] text-muted-foreground/70" style={{ fontFamily: "var(--font-sans)" }}>
