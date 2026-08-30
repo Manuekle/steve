@@ -59,7 +59,7 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
 
       {/* Backdrop - fixed to viewport so it always centers, even when page scrolls */}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xl p-4">
-        <Beam size="pulse-outside" strength={0.7} borderRadius={20} className="w-full max-w-[420px]">
+        <Beam size="pulse-outside" colorVariant="mono" strength={0.7} borderRadius={20} className="w-full max-w-[420px]">
           <div className="w-full rounded-[20px] border border-border bg-card p-6 shadow-[var(--shadow-soft),var(--shadow-soft)] sm:p-7">
             <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--shadow-inset)]">
               <HugeiconsIcon icon={Certificate01Icon} size={18} strokeWidth={1.75} />
