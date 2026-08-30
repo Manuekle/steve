@@ -1,0 +1,89 @@
+# Enterprise self-hosted stack, packaged as containers instead of the
+# Ansible + systemd path in deploy/. Same three processes either way —
+# PostgreSQL, the eve agent host, the Next.js UI — see README.md's
+# architecture diagram and deploy/README.md for the systemd equivalent.
+#
+# Quick start:
+#   cp .env.example .env   # fill in model keys, channel credentials, passwords
+#   docker compose -f docker-compose.enterprise.yml up -d --build postgres eve
+#   docker compose -f docker-compose.enterprise.yml run --rm eve node_modules/.bin/bootstrap
+#   docker compose -f docker-compose.enterprise.yml up -d
+#
+# That middle step creates the Workflow schema in Postgres — `eve` boot-loops
+# without it (verified: it fails with "relation workflow.workflow_runs does
+# not exist" until the schema exists). Same one-time step README.md already
+# documents as `pnpm db:migrate` for the Ansible path; here it runs inside
+# the `eve` image instead of on the host, since the image ships no pnpm.
+#
+# This file is deliberately independent of docker-compose.yml (which only
+# runs Postgres, for local `pnpm dev`) — run one or the other, not both, to
+# avoid two Postgres containers fighting over the same host port.
+#
+# Docker socket trust boundary: `eve` mounts /var/run/docker.sock so
+# agent/sandbox/sandbox.ts's Docker backend can create sibling sandbox
+# containers on the host daemon. That is the standard pattern for
+# container-based CI/agent runners, but it is not a sandboxed permission —
+# a process with the host socket can control anything else the host's
+# Docker daemon can. Only run the `eve` image on a host where that's an
+# acceptable trust boundary, and never expose port 3000 beyond loopback (the
+# reverse proxy is the one thing that should reach it).
+
+name: steve-enterprise
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: steve-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-world}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-world}"
+      POSTGRES_DB: "${POSTGRES_DB:-world}"
+    volumes:
+      - steve-enterprise-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  eve:
+    build:
+      context: .
+      target: eve
+    container_name: steve-eve
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Overrides whatever WORKFLOW_POSTGRES_URL says in .env — inside this
+      # network Postgres is reachable by service name, not by the host-port
+      # binding (127.0.0.1:5544) that .env is written for local dev.
+      WORKFLOW_POSTGRES_URL: "postgres://${POSTGRES_USER:-world}:${POSTGRES_PASSWORD:-world}@postgres:5432/${POSTGRES_DB:-world}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  web:
+    build:
+      context: .
+      target: web
+    container_name: steve-web
+    restart: unless-stopped
+    depends_on:
+      - eve
+    ports:
+      - "127.0.0.1:3001:3001"
+
+  # Not included: a reverse proxy with TLS. deploy/roles/caddy/templates/Caddyfile.j2
+  # is the reference config (routes /eve/* and /.well-known/workflow/* to
+  # :3000, everything else to :3001) — it's Jinja-templated for Ansible, so
+  # turning it into a static Caddyfile for this compose file means filling
+  # in the real domain and ACME email by hand, which only the deploying
+  # operator can do.
+
+volumes:
+  steve-enterprise-pgdata:

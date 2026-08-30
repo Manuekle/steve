@@ -1,0 +1,2826 @@
+@import "tailwindcss";
+@source "../node_modules/streamdown/dist/*.js";
+
+/* ── Self-hosted fonts ────────────────────────────────────────────── */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/InterVariable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/InterVariable-Italic.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Saans";
+  src: url("/fonts/saans/SaansVF.ttf") format("truetype-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-heading: "Saans", "Saans Fallback", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+
+  /* ── Surfaces ─────────────────────────────────────────────── */
+  --background: oklch(0.971 0 0);          /* #F7F7F8 */
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0);                     /* #FFFFFF */
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0 0);
+  --primary: oklch(0.2 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.965 0 0);            /* #FAFAFA */
+  --secondary-foreground: oklch(0.2 0 0);
+  --muted: oklch(0.955 0 0);               /* #F2F2F3 */
+  --muted-foreground: oklch(0.52 0 0);
+  --accent: oklch(0.955 0 0);
+  --accent-foreground: oklch(0.2 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0 0 0 / 0.1);
+  --input: oklch(0 0 0 / 0.08);
+  --ring: oklch(0.5 0 0);
+  --radius: 0.75rem;                        /* 12px base */
+
+  /* ── Shadows ──────────────────────────────────────────────── */
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.04), 0 1px 1px oklch(0 0 0 / 0.02);
+  --shadow-elevated: 0 4px 14px oklch(0 0 0 / 0.06), 0 1px 3px oklch(0 0 0 / 0.04);
+  --shadow-float: 0 10px 30px oklch(0 0 0 / 0.08), 0 3px 8px oklch(0 0 0 / 0.04);
+  --shadow-inset: inset 0 1px 0 oklch(1 0 0 / 0.7), inset 0 -1px 0 oklch(0 0 0 / 0.03);
+  --shadow-button: 0 1px 2px oklch(0 0 0 / 0.05), 0 1px 1px oklch(0 0 0 / 0.03),
+    inset 0 1px 0 oklch(1 0 0 / 0.8), inset 0 -1px 0 oklch(0 0 0 / 0.03);
+  --shadow-button-pressed: inset 0 1px 2px oklch(0 0 0 / 0.06), inset 0 -1px 0 oklch(1 0 0 / 0.5);
+
+  /* ── Button system ─────────────────────────────────────────── */
+  /* Primary: dark surface in light mode for contrast against #F7F7F8.
+     Inner highlight top + faint inner shadow bottom + soft outer shadow. */
+  --btn-primary-bg: oklch(0.2 0 0);
+  --btn-primary-bg-hover: oklch(0.18 0 0);
+  --btn-primary-fg: oklch(0.985 0 0);
+  --btn-primary-border: oklch(0 0 0 / 0.2);
+  --btn-primary-ring: oklch(0.5 0 0);
+  --btn-primary-shadow: 0 1px 2px oklch(0 0 0 / 0.12), 0 1px 1px oklch(0 0 0 / 0.06),
+    inset 0 1px 0 oklch(1 0 0 / 0.12), inset 0 -1px 2px oklch(0 0 0 / 0.2);
+  --btn-primary-shadow-hover: 0 2px 4px oklch(0 0 0 / 0.15), 0 1px 2px oklch(0 0 0 / 0.08),
+    inset 0 1px 0 oklch(1 0 0 / 0.15), inset 0 -1px 2px oklch(0 0 0 / 0.25);
+  --btn-primary-shadow-pressed: inset 0 1px 2px oklch(0 0 0 / 0.3), inset 0 -1px 0 oklch(1 0 0 / 0.05);
+
+  /* Secondary: muted neutral surface, same depth language, lower contrast. */
+  --btn-secondary-bg: oklch(0.965 0 0);
+  --btn-secondary-bg-hover: oklch(0.955 0 0);
+  --btn-secondary-fg: oklch(0.2 0 0);
+  --btn-secondary-border: oklch(0 0 0 / 0.05);
+  --btn-secondary-shadow: inset 0 1px 0 oklch(1 0 0 / 0.6), inset 0 -1px 2px oklch(0 0 0 / 0.025);
+  --btn-secondary-shadow-pressed: inset 0 1px 2px oklch(0 0 0 / 0.06), inset 0 -1px 0 oklch(1 0 0 / 0.4);
+
+  /* Outline: hairline border, no shadow. */
+  --btn-outline-bg: oklch(1 0 0 / 0.4);
+  --btn-outline-bg-hover: oklch(1 0 0 / 0.6);
+  --btn-outline-fg: oklch(0.2 0 0);
+  --btn-outline-border: oklch(0 0 0 / 0.08);
+  --btn-outline-border-hover: oklch(0 0 0 / 0.12);
+  --btn-outline-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5);
+
+  /* Ghost: transparent by default. */
+  --btn-ghost-fg: oklch(0.4 0 0);
+  --btn-ghost-hover-bg: oklch(0 0 0 / 0.04);
+  --btn-ghost-hover-fg: oklch(0.2 0 0);
+
+  /* Destructive: controlled red accent on neutral surface. */
+  --btn-destructive-bg: oklch(0.995 0 0);
+  --btn-destructive-bg-hover: oklch(0.985 0 0);
+  --btn-destructive-fg: oklch(0.48 0.21 27);
+  --btn-destructive-border: oklch(0.55 0.2 27 / 0.18);
+  --btn-destructive-shadow: 0 1px 2px oklch(0 0 0 / 0.04), 0 1px 1px oklch(0 0 0 / 0.015),
+    inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 -1px 2px oklch(0.5 0.05 27 / 0.04);
+  --btn-destructive-shadow-hover: 0 2px 4px oklch(0 0 0 / 0.05), 0 1px 2px oklch(0 0 0 / 0.02),
+    inset 0 1px 0 oklch(1 0 0 / 0.95), inset 0 -1px 2px oklch(0.5 0.05 27 / 0.06);
+  --btn-destructive-shadow-pressed: inset 0 1px 2px oklch(0.5 0.05 27 / 0.1), inset 0 -1px 0 oklch(1 0 0 / 0.4);
+
+  /* Focus ring — neutral, works on light. */
+  --btn-focus-ring: oklch(0.5 0 0 / 0.35);
+
+  /* Button easing */
+  --btn-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* ── Status badge palette ──────────────────────────────────── */
+  --status-pending-bg: oklch(0.96 0.03 60);
+  --status-pending-fg: oklch(0.62 0.14 58);
+  --status-progress-bg: oklch(0.95 0.03 240);
+  --status-progress-fg: oklch(0.55 0.13 245);
+  --status-submitted-bg: oklch(0.95 0.03 290);
+  --status-submitted-fg: oklch(0.50 0.15 285);
+  --status-review-bg: oklch(0.96 0.04 85);
+  --status-review-fg: oklch(0.60 0.12 80);
+  --status-success-bg: oklch(0.95 0.05 150);
+  --status-success-fg: oklch(0.55 0.13 150);
+  --status-failed-bg: oklch(0.95 0.03 25);
+  --status-failed-fg: oklch(0.58 0.15 25);
+  --status-expired-bg: oklch(0.95 0 0);
+  --status-expired-fg: oklch(0.55 0 0);
+
+  /* ── KPI plate — brushed metal ─────────────────────────────── */
+  /* Diagonal sheen over the whole tile — bright corner, dark far corner. */
+  --kpi-sheen: linear-gradient(138deg,
+    oklch(1 0 0 / 0.55) 0%,
+    oklch(1 0 0 / 0) 44%,
+    oklch(0 0 0 / 0.018) 100%);
+  /* Bevel highlight along the top edge, faded at both ends. */
+  --kpi-edge: linear-gradient(90deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.9) 22%,
+    oklch(1 0 0 / 0.9) 78%,
+    transparent 100%);
+}
+
+/* Dark theme: applied via .dark class on <html>. The inline script
+   in layout.tsx sets this class before first paint based on localStorage
+   or system preference, so there is no FOUC.
+   The bare `.dark` in the selector lets a subtree opt into the dark token set
+   on its own — the landing page is dark whatever the app's theme is, and
+   re-declaring eighty variables to say so is how the two drift apart. */
+:root.dark,
+.dark {
+  color-scheme: dark;
+
+  /* ── Surfaces ─────────────────────────────────────────────── */
+  --background: oklch(0.155 0 0);         /* #161616 */
+  --foreground: oklch(0.93 0 0);
+  --card: oklch(0.18 0 0);               /* #1A1A1A */
+  --card-foreground: oklch(0.93 0 0);
+  --popover: oklch(0.2 0 0);             /* #202020 */
+  --popover-foreground: oklch(0.93 0 0);
+  --primary: oklch(0.9 0 0);
+  --primary-foreground: oklch(0.18 0 0);
+  --secondary: oklch(0.23 0 0);           /* #1D1D1D */
+  --secondary-foreground: oklch(0.93 0 0);
+  --muted: oklch(0.21 0 0);              /* #181818 */
+  --muted-foreground: oklch(0.58 0 0);
+  --accent: oklch(0.23 0 0);
+  --accent-foreground: oklch(0.93 0 0);
+  --destructive: oklch(0.637 0.193 21.4);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.1);
+  --ring: oklch(0.5 0 0);
+
+  /* ── Shadows ──────────────────────────────────────────────── */
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.25), 0 1px 1px oklch(0 0 0 / 0.15);
+  --shadow-elevated: 0 4px 14px oklch(0 0 0 / 0.35), 0 1px 3px oklch(0 0 0 / 0.2);
+  --shadow-float: 0 10px 30px oklch(0 0 0 / 0.45), 0 3px 8px oklch(0 0 0 / 0.25);
+  --shadow-inset: inset 0 1px 0 oklch(1 0 0 / 0.04), inset 0 -1px 0 oklch(0 0 0 / 0.15);
+  --shadow-button: 0 1px 2px oklch(0 0 0 / 0.3), 0 1px 1px oklch(0 0 0 / 0.2),
+    inset 0 1px 0 oklch(1 0 0 / 0.05), inset 0 -1px 0 oklch(0 0 0 / 0.1);
+  --shadow-button-pressed: inset 0 1px 2px oklch(0 0 0 / 0.3), inset 0 -1px 0 oklch(1 0 0 / 0.03);
+
+  /* ── Button system ─────────────────────────────────────────── */
+  /* Primary: white surface in dark mode for contrast against #161616.
+     Inner highlight top + faint inner shadow bottom + soft outer shadow. */
+  --btn-primary-bg: oklch(0.96 0 0);
+  --btn-primary-bg-hover: oklch(0.94 0 0);
+  --btn-primary-fg: oklch(0.18 0 0);
+  --btn-primary-border: oklch(1 0 0 / 0.1);
+  --btn-primary-ring: oklch(0.7 0 0);
+  --btn-primary-shadow: 0 1px 2px oklch(0 0 0 / 0.5), 0 1px 1px oklch(0 0 0 / 0.3),
+    inset 0 1px 0 oklch(1 0 0 / 0.7), inset 0 -1px 2px oklch(0 0 0 / 0.08);
+  --btn-primary-shadow-hover: 0 2px 4px oklch(0 0 0 / 0.55), 0 1px 2px oklch(0 0 0 / 0.35),
+    inset 0 1px 0 oklch(1 0 0 / 0.8), inset 0 -1px 2px oklch(0 0 0 / 0.1);
+  --btn-primary-shadow-pressed: inset 0 1px 2px oklch(0 0 0 / 0.15), inset 0 -1px 0 oklch(1 0 0 / 0.3);
+
+  /* Secondary */
+  --btn-secondary-bg: oklch(0.23 0 0);
+  --btn-secondary-bg-hover: oklch(0.245 0 0);
+  --btn-secondary-fg: oklch(0.9 0 0);
+  --btn-secondary-border: oklch(1 0 0 / 0.05);
+  --btn-secondary-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), inset 0 -1px 2px oklch(0 0 0 / 0.2);
+  --btn-secondary-shadow-pressed: inset 0 1px 2px oklch(0 0 0 / 0.4), inset 0 -1px 0 oklch(1 0 0 / 0.02);
+
+  /* Outline */
+  --btn-outline-bg: oklch(1 0 0 / 0.03);
+  --btn-outline-bg-hover: oklch(1 0 0 / 0.06);
+  --btn-outline-fg: oklch(0.9 0 0);
+  --btn-outline-border: oklch(1 0 0 / 0.1);
+  --btn-outline-border-hover: oklch(1 0 0 / 0.15);
+  --btn-outline-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04);
+
+  /* Ghost */
+  --btn-ghost-fg: oklch(0.6 0 0);
+  --btn-ghost-hover-bg: oklch(1 0 0 / 0.06);
+  --btn-ghost-hover-fg: oklch(0.93 0 0);
+
+  /* Destructive */
+  --btn-destructive-bg: oklch(0.2 0 0);
+  --btn-destructive-bg-hover: oklch(0.215 0 0);
+  --btn-destructive-fg: oklch(0.72 0.17 22);
+  --btn-destructive-border: oklch(0.6 0.18 22 / 0.2);
+  --btn-destructive-shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 1px 1px oklch(0 0 0 / 0.2),
+    inset 0 1px 0 oklch(1 0 0 / 0.05), inset 0 -1px 2px oklch(0.2 0.1 22 / 0.1);
+  --btn-destructive-shadow-hover: 0 2px 4px oklch(0 0 0 / 0.45), 0 1px 2px oklch(0 0 0 / 0.25),
+    inset 0 1px 0 oklch(1 0 0 / 0.07), inset 0 -1px 2px oklch(0.2 0.1 22 / 0.12);
+  --btn-destructive-shadow-pressed: inset 0 1px 2px oklch(0.2 0.1 22 / 0.2), inset 0 -1px 0 oklch(1 0 0 / 0.02);
+
+  /* Focus ring */
+  --btn-focus-ring: oklch(0.7 0 0 / 0.4);
+
+  /* Button easing */
+  --btn-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* ── Status badge palette (dark) ───────────────────────────── */
+  --status-pending-bg: oklch(0.28 0.04 60);
+  --status-pending-fg: oklch(0.78 0.10 65);
+  --status-progress-bg: oklch(0.28 0.05 240);
+  --status-progress-fg: oklch(0.75 0.10 245);
+  --status-submitted-bg: oklch(0.28 0.05 290);
+  --status-submitted-fg: oklch(0.75 0.12 285);
+  --status-review-bg: oklch(0.28 0.05 85);
+  --status-review-fg: oklch(0.78 0.10 80);
+  --status-success-bg: oklch(0.28 0.06 150);
+  --status-success-fg: oklch(0.78 0.12 150);
+  --status-failed-bg: oklch(0.30 0.05 25);
+  --status-failed-fg: oklch(0.78 0.12 25);
+  --status-expired-bg: oklch(0.26 0 0);
+  --status-expired-fg: oklch(0.68 0 0);
+
+  /* ── KPI plate — brushed metal (dark) ─────────────────────── */
+  --kpi-sheen: linear-gradient(138deg,
+    oklch(1 0 0 / 0.055) 0%,
+    oklch(1 0 0 / 0) 46%,
+    oklch(0 0 0 / 0.14) 100%);
+  --kpi-edge: linear-gradient(90deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.14) 22%,
+    oklch(1 0 0 / 0.14) 78%,
+    transparent 100%);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--background);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings use Saans with subtle negative letter-spacing.
+   Body text and all other elements keep Inter with no tracking.
+
+   This sits in `@layer base` on purpose. Unlayered author styles outrank
+   everything in `@layer utilities` no matter the specificity, so as a bare
+   element rule it silently beat every `font-*` and `tracking-*` utility ever
+   written on a heading — `tracking-tight` on an <h1> did nothing at all.
+   Inside the layer it goes back to being what it reads as: a default. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.005em;
+  }
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+}
+
+/* Smooth theme transition — only applied after initial load to
+   prevent a light→dark flash. The .theme-ready class is added
+   by ThemeProvider after mount. */
+:root {
+  transition: none;
+}
+:root.theme-ready {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ── Entrance animation ──────────────────────────────────────────── */
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shared page entrance — used by PageContainer on every route */
+.page-enter {
+  animation: enter 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Content reveal — fades content in when the Skeleton flips from
+   loading to revealed. Applied to the inner content wrapper so
+   every page gets a consistent entrance even when the page-enter
+   animation on the container has already finished by the time the
+   skeleton reveals. */
+@keyframes content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-enter {
+  animation: content-enter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ── Reveal animation (EASE_OUT) — for content that slides in/out ─── */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes reveal-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.t-reveal {
+  animation: reveal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.t-reveal[data-state="closed"] {
+  animation: reveal-out 0.12s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Dropdown/select animation (EASE_OUT) — 150-250ms range ───────── */
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes dropdown-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98) translateY(-1px);
+  }
+}
+
+.t-dropdown {
+  animation: dropdown-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: var(--radix-select-content-transform-origin);
+}
+.t-dropdown[data-state="closed"] {
+  animation: dropdown-out 0.12s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .content-enter,
+  .t-reveal,
+  .t-dropdown { animation: none !important; }
+}
+
+/* ── List item fade-in (search results) ────────────────────────────── */
+
+@keyframes list-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.list-fade-in {
+  animation: list-fade-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list-fade-in { animation: none !important; }
+}
+
+/* ── Background patterns ─────────────────────────────────────────── */
+
+.bg-pattern {
+  background-repeat: repeat;
+  background-size: 48px 48px;
+}
+
+.bg-pattern-crosses { background-image: url("/patterns/crosses.svg"); }
+.bg-pattern-diagonals { background-image: url("/patterns/diagonals.svg"); }
+.bg-pattern-brackets { background-image: url("/patterns/brackets.svg"); }
+.bg-pattern-grid { background-image: url("/patterns/grid.svg"); }
+
+.dark .bg-pattern-crosses { background-image: url("/patterns/dark/crosses.svg"); }
+.dark .bg-pattern-diagonals { background-image: url("/patterns/dark/diagonals.svg"); }
+.dark .bg-pattern-brackets { background-image: url("/patterns/dark/brackets.svg"); }
+.dark .bg-pattern-grid { background-image: url("/patterns/dark/grid.svg"); }
+
+/* Radial fade — fade the pattern out toward the edges */
+.bg-pattern-fade {
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+
+/* ── Auth backdrop ──────────────────────────────────────────────── */
+/* The login is the first screen of the product for anyone who did not install
+   it themselves, and it was a form on a flat page. These are the landing's two
+   backdrop layers rebuilt on the app's own tokens, so the two surfaces read as
+   the same product without the login importing anything from `.lp`.
+
+   The grid is drawn here rather than reusing `bg-pattern-grid`: that one is a
+   raster SVG sized for a page body, and behind a single centred card its cell
+   lands at the wrong scale. Two gradients cost nothing and stay crisp at any
+   density. */
+.auth-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--auth-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--auth-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  /* Centred on the card, not on the viewport top: the eye should meet the
+     grid where the form is and lose it before the edges. */
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 0%, transparent 78%);
+}
+
+/* A single soft light behind the card. Neutral, because the product has no
+   accent hue anywhere — this is light falling on the page, not a colour. */
+.auth-glow {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  translate: -50% -50%;
+  width: min(760px, 120vw);
+  height: 30rem;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(90px);
+  background: radial-gradient(closest-side, var(--auth-glow-a) 0%, var(--auth-glow-b) 48%, transparent 100%);
+}
+
+:root {
+  --auth-line: oklch(0 0 0 / 0.055);
+  --auth-glow-a: oklch(0 0 0 / 0.05);
+  --auth-glow-b: oklch(0 0 0 / 0.018);
+}
+
+.dark {
+  --auth-line: oklch(1 0 0 / 0.05);
+  --auth-glow-a: oklch(1 0 0 / 0.06);
+  --auth-glow-b: oklch(1 0 0 / 0.022);
+}
+
+/* ═════════════════════════════════════════════════════════════════ */
+/* Transitions.dev — AI animations                                    */
+/* ═════════════════════════════════════════════════════════════════ */
+
+/* ── Thinking states ─────────────────────────────────────────────── */
+
+:root {
+  --think-hold: 2000ms;
+  --think-swap: 150ms;
+  --think-gap: 50ms;
+  --think-distance: 8px;
+  --think-blur: 2px;
+  --think-shimmer: 2000ms;
+  --think-base: oklch(0.52 0 0);
+  --think-highlight: oklch(0.16 0 0);
+  --think-ease: ease-in-out;
+}
+.dark {
+  --think-base: oklch(0.58 0 0);
+  --think-highlight: oklch(0.93 0 0);
+}
+
+.t-think { position: relative; display: inline-block; text-align: center; }
+.t-think-sizer { display: block; visibility: hidden; white-space: nowrap; }
+.t-think-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: block;
+  color: var(--think-base);
+  white-space: nowrap;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--think-swap) var(--think-ease),
+    filter var(--think-swap) var(--think-ease),
+    opacity var(--think-swap) var(--think-ease);
+  will-change: transform, filter, opacity;
+}
+.t-think-text::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(90deg,
+    transparent 0%, transparent 40%,
+    var(--think-highlight) 50%,
+    transparent 60%, transparent 100%);
+  background-size: 400% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: t-think-shimmer var(--think-shimmer) linear infinite;
+}
+@keyframes t-think-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0% 0; }
+}
+.t-think-text.is-exit {
+  transform: translateY(calc(var(--think-distance) * -1));
+  filter: blur(var(--think-blur));
+  opacity: 0;
+}
+.t-think-text.is-enter-start {
+  transition: none;
+  transform: translateY(var(--think-distance));
+  filter: blur(var(--think-blur));
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-think-text { transition: none !important; transform: none !important; filter: none !important; }
+  .t-think-text::before { display: none !important; }
+}
+
+/* ── Reasoning stream ────────────────────────────────────────────── */
+
+:root {
+  --reason-hold: 840ms;
+  --reason-step: 500ms;
+  --reason-lines: 6;
+  --reason-fade: 28px;
+  --reason-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-reason { position: relative; overflow: hidden; }
+.t-reason-viewport {
+  max-height: calc(var(--reason-lines) * 1.625rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    transparent 0,
+    black var(--reason-fade),
+    black calc(100% - var(--reason-fade)),
+    transparent 100%);
+  mask-image: linear-gradient(
+    transparent 0,
+    black var(--reason-fade),
+    black calc(100% - var(--reason-fade)),
+    transparent 100%);
+}
+.t-reason-viewport::-webkit-scrollbar { display: none; }
+.t-reason-scroll {
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-reason-viewport { mask-image: none !important; -webkit-mask-image: none !important; }
+}
+
+/* ── Streaming text ──────────────────────────────────────────────── */
+
+:root {
+  --stream-gap: 60ms;
+  --stream-fade: 350ms;
+  --stream-blur: 1px;
+  --stream-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-stream-w {
+  opacity: 0;
+  filter: blur(var(--stream-blur));
+  transition:
+    opacity var(--stream-fade) var(--stream-ease),
+    filter var(--stream-fade) var(--stream-ease);
+}
+.t-stream-w.is-in {
+  opacity: 1;
+  filter: blur(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-stream-w { transition: none !important; filter: none !important; opacity: 1 !important; }
+}
+
+/* ── Matrix dot loader ───────────────────────────────────────────── */
+
+:root {
+  --matrix-cycle: 1200ms;
+  --matrix-base: oklch(0.72 0 0);
+  --matrix-active: oklch(0.35 0 0);
+  --matrix-ease: ease-in-out;
+}
+.dark {
+  --matrix-base: oklch(0.4 0 0);
+  --matrix-active: oklch(0.85 0 0);
+}
+
+.t-matrix {
+  display: grid;
+  grid-template-columns: repeat(4, 2px);
+  grid-auto-rows: 2px;
+  gap: 2px;
+}
+.t-matrix i {
+  display: block;
+  background: var(--matrix-base);
+  animation: t-matrix-pulse var(--matrix-cycle) var(--matrix-ease) infinite;
+  animation-delay: calc(var(--d, 0) * 1ms);
+}
+.t-matrix i.is-gap { visibility: hidden; animation: none; }
+@keyframes t-matrix-pulse {
+  0%, 45%, 100% { background-color: var(--matrix-base); }
+  15%           { background-color: var(--matrix-active); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-matrix i { animation: none !important; }
+}
+
+/* ── Shimmer text ────────────────────────────────────────────────── */
+
+:root {
+  --shimmer-dur: 2000ms;
+  --shimmer-base: oklch(0.52 0 0);
+  --shimmer-highlight: oklch(0.16 0 0);
+  --shimmer-band: 400%;
+  --shimmer-ease: linear;
+}
+.dark {
+  --shimmer-base: oklch(0.58 0 0);
+  --shimmer-highlight: oklch(0.93 0 0);
+}
+
+.t-shimmer {
+  position: relative;
+  display: inline-block;
+  color: var(--shimmer-base);
+}
+.t-shimmer::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    transparent          0%,
+    transparent         40%,
+    var(--shimmer-highlight) 50%,
+    transparent         60%,
+    transparent        100%
+  );
+  background-size: var(--shimmer-band) 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: t-shimmer var(--shimmer-dur) var(--shimmer-ease) infinite;
+}
+@keyframes t-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-shimmer::before { animation: none !important; }
+}
+
+/* ── Banner stacking ─────────────────────────────────────────────── */
+
+:root {
+  --stack-open: 350ms;
+  --stack-close: 250ms;
+  --stack-rise: 80px;
+  --stack-blur: 2px;
+  --stack-scale: 0.97;
+  --stack-peek: 12px;
+  --stack-spread-gap: 8px;
+  --stack-depth-scale: 0.06;
+  --stack-depth-fade: 0.4;
+  --stack-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-stack { position: relative; }
+.t-stack-banner {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform-origin: 50% 50%;
+  filter: blur(0);
+  will-change: transform, opacity, filter;
+  transition:
+    transform var(--stack-open) var(--stack-ease),
+    opacity var(--stack-open) var(--stack-ease),
+    filter var(--stack-open) var(--stack-ease);
+}
+.t-stack-banner[data-depth="0"] {
+  z-index: 3;
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.t-stack-banner[data-depth="1"] {
+  z-index: 2;
+  transform-origin: 50% 100%;
+  transform: translateY(calc(var(--stack-peek) * -1))
+             scale(calc(1 - var(--stack-depth-scale)));
+  opacity: calc(1 - var(--stack-depth-fade));
+}
+.t-stack-banner[data-depth="2"] {
+  z-index: 1;
+  transform-origin: 50% 100%;
+  transform: translateY(calc(var(--stack-peek) * -2))
+             scale(calc(1 - var(--stack-depth-scale) * 2));
+  opacity: calc(1 - var(--stack-depth-fade) * 1.6);
+}
+.t-stack.is-spread .t-stack-banner[data-depth="1"],
+.t-stack.is-spread .t-stack-banner[data-depth="2"] { opacity: 1; }
+.t-stack.is-spread .t-stack-banner[data-depth="1"] {
+  transform: translateY(calc((100% + var(--stack-spread-gap)) * -1)) scale(1);
+}
+.t-stack.is-spread .t-stack-banner[data-depth="2"] {
+  transform: translateY(calc((100% + var(--stack-spread-gap)) * -2)) scale(1);
+}
+.t-stack-banner.is-enter {
+  transition: none;
+  transform: translateY(var(--stack-rise)) scale(var(--stack-scale));
+  opacity: 0;
+  filter: blur(var(--stack-blur));
+}
+.t-stack-banner.is-leaving {
+  z-index: 0;
+  transform-origin: 50% 100%;
+  transform: translateY(calc(var(--stack-peek) * -3))
+             scale(calc(1 - var(--stack-depth-scale) * 3));
+  opacity: 0;
+  filter: blur(var(--stack-blur));
+  transition:
+    transform var(--stack-close) var(--stack-ease),
+    opacity var(--stack-close) var(--stack-ease),
+    filter var(--stack-close) var(--stack-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-stack-banner { transition: none !important; transform: none !important; filter: none !important; }
+}
+
+/* ── Toggle ──────────────────────────────────────────────────────── */
+
+:root {
+  --toggle-dur: 350ms;
+  --toggle-travel: 14.66px;
+  --toggle-ov1: 1px;
+  --toggle-ov2: 0px;
+  --toggle-track: 0ms;
+  --toggle-ease: cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+.t-toggle { transition: background var(--toggle-track) var(--toggle-ease); }
+.t-toggle-thumb { translate: 0 0; will-change: translate; }
+.t-toggle[data-on="true"] .t-toggle-thumb { translate: var(--toggle-travel) 0; }
+.t-toggle.is-init[data-on="true"] .t-toggle-thumb { animation: t-toggle-on var(--toggle-dur) var(--toggle-ease) both; }
+.t-toggle.is-init[data-on="false"] .t-toggle-thumb { animation: t-toggle-off var(--toggle-dur) var(--toggle-ease) both; }
+@keyframes t-toggle-on {
+  0% { translate: 0 0; }
+  55% { translate: calc(var(--toggle-travel) + var(--toggle-ov1)) 0; }
+  80% { translate: calc(var(--toggle-travel) - var(--toggle-ov2)) 0; }
+  100% { translate: var(--toggle-travel) 0; }
+}
+@keyframes t-toggle-off {
+  0% { translate: var(--toggle-travel) 0; }
+  55% { translate: calc(0px - var(--toggle-ov1)) 0; }
+  80% { translate: var(--toggle-ov2) 0; }
+  100% { translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-toggle-thumb { animation: none !important; }
+}
+
+/* ── Checkbox check ─────────────────────────────────────────────── */
+
+:root {
+  --check-box: 150ms;
+  --check-draw: 350ms;
+  --check-delay: 0ms;
+  --check-uncheck: 150ms;
+  --check-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-check {
+  transition:
+    background var(--check-box) var(--check-ease),
+    box-shadow var(--check-box) var(--check-ease);
+}
+.t-check svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.t-check svg path {
+  stroke-dasharray: var(--check-len, 15);
+  stroke-dashoffset: var(--check-len, 15);
+  transition: stroke-dashoffset var(--check-uncheck) var(--check-ease);
+}
+.t-check[aria-checked="true"] svg path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--check-draw) var(--check-ease) var(--check-delay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-check, .t-check svg path { transition: none !important; }
+}
+
+/* ── Tabs sliding ─────────────────────────────────────────────────── */
+
+:root {
+  --tabs-dur: 250ms;
+  --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tabs-text-muted: var(--muted-foreground);
+  --tabs-text-active: var(--foreground);
+  --tabs-bar-bg: var(--muted);
+  --tabs-pill-bg: var(--card);
+  --tabs-pill-border: var(--input);
+  --tabs-pill-shadow: var(--shadow-inset);
+}
+
+/* The block above is an alias layer, and a custom property is substituted
+   where it is DECLARED, not where it is used: `--tabs-pill-bg` computes to
+   whatever `--card` is on `:root` — the light card — and then inherits that
+   finished colour down the whole tree. On `<html class="dark">` that is still
+   correct, because `.dark` redefines `--card` on the same element the alias
+   is declared on. It stops being correct the moment `.dark` sits on a
+   DESCENDANT: the landing's `lp dark` wrapper, or any dark island inside a
+   light page. There the subtree gets dark `--card` but keeps the inherited
+   white `--tabs-pill-bg`, and every segmented control renders a white pill
+   and a white pager on a near-black bar.
+   Re-declaring the aliases on `.dark` re-resolves each one against the tokens
+   of the subtree it actually lands in. */
+.dark {
+  --tabs-text-muted: var(--muted-foreground);
+  --tabs-text-active: var(--foreground);
+  --tabs-bar-bg: var(--muted);
+  --tabs-pill-bg: var(--card);
+  --tabs-pill-border: var(--input);
+  --tabs-pill-shadow: var(--shadow-inset);
+}
+
+.t-tabs {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 48px;
+  background: var(--tabs-bar-bg);
+  border: 1px solid var(--input);
+  box-shadow: var(--shadow-inset);
+}
+.t-tab {
+  position: relative;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  height: 30px;
+  padding: 4px 12px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--tabs-text-muted);
+  cursor: pointer;
+  border-radius: 48px;
+  z-index: 1;
+  transition: color var(--tabs-dur) var(--tabs-ease);
+}
+.t-tab:not([aria-selected="true"]):hover,
+.t-tab[aria-selected="true"] {
+  color: var(--tabs-text-active);
+}
+
+.t-tabs-pill {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  height: 30px;
+  width: 0;
+  background: var(--tabs-pill-bg);
+  border: 1px solid var(--tabs-pill-border);
+  border-radius: 48px;
+  box-shadow: var(--tabs-pill-shadow);
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width     var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tabs-pill, .t-tab { transition: none !important; }
+}
+
+/* ── Pagination ──────────────────────────────────────────────────── */
+
+/* Same recessed track as `.t-tabs`, so paging reads as part of the segmented
+   control family instead of a stray row of links. */
+.t-pager {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 48px;
+  background: var(--tabs-bar-bg);
+  border: 1px solid var(--input);
+  box-shadow: var(--shadow-inset);
+}
+
+.t-pager-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  /* The number strip keeps its own breathing room from the raised end caps. */
+  padding-inline: 0.25rem;
+}
+
+/* Prev / Next — raised pills at the ends, the same surface as the tab pill. */
+.t-pager-edge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 30px;
+  padding-inline: 0.75rem;
+  appearance: none;
+  border: 1px solid var(--tabs-pill-border);
+  border-radius: 48px;
+  background: var(--tabs-pill-bg);
+  box-shadow: var(--tabs-pill-shadow);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--tabs-text-active);
+  cursor: pointer;
+  transition:
+    background-color var(--tabs-dur) var(--tabs-ease),
+    color var(--tabs-dur) var(--tabs-ease),
+    opacity var(--tabs-dur) var(--tabs-ease);
+}
+
+.t-pager-edge:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.t-pager-edge:active:not(:disabled) {
+  box-shadow: var(--shadow-button-pressed);
+}
+
+/* Disabled ends stay in place rather than disappearing — the bar must not
+   change width when you reach the first or last page. */
+.t-pager-edge:disabled {
+  opacity: 0.4;
+  cursor: default;
+  box-shadow: none;
+}
+
+.t-pager-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding-inline: 0.4rem;
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--tabs-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--tabs-dur) var(--tabs-ease),
+    color var(--tabs-dur) var(--tabs-ease);
+}
+
+.t-pager-page:hover:not([aria-current="page"]) {
+  background: var(--accent);
+  color: var(--tabs-text-active);
+}
+
+/* The current page is the one filled element in the bar. */
+.t-pager-page[aria-current="page"] {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  font-weight: 600;
+  cursor: default;
+  box-shadow: var(--shadow-soft);
+}
+
+.t-pager-gap {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 20px;
+  height: 30px;
+  padding-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--tabs-text-muted);
+  user-select: none;
+}
+
+.t-pager-edge:focus-visible,
+.t-pager-page:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-pager-edge,
+  .t-pager-page {
+    transition: none;
+  }
+}
+
+/* ── Error state shake ─────────────────────────────────────────────── */
+
+:root {
+  --shake-distance: 6px;
+  --shake-overshoot: 4px;
+  --shake-dur-a: 80ms;
+  --shake-dur-b: 60ms;
+  --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --revert-hold: 3000ms;
+  --revert-dur: 280ms;
+  --shake-error-border: oklch(0.58 0.22 27);
+  --shake-error-text: oklch(0.58 0.22 27);
+}
+
+.t-input {
+  transition: border-color 150ms ease-out;
+  will-change: transform;
+}
+.t-input.is-error {
+  border-color: var(--shake-error-border);
+  transition: border-color var(--revert-dur, 280ms) ease-out;
+}
+
+/* `.t-input` is a wrapper in this app — the `Input` inside owns the visible
+   border — so the colour above lands on an element that has no border to
+   paint. Every call site of this pattern (the inbox contact form, the settings
+   fields, the login) shook and showed its message and none of them ever turned
+   red. Border width is untouched, so nothing inside shifts as it tweens. */
+.t-input :is(input, textarea) {
+  transition: border-color 150ms ease-out;
+}
+
+.t-input.is-error :is(input, textarea) {
+  border-color: var(--shake-error-border);
+  transition: border-color var(--revert-dur, 280ms) ease-out;
+}
+.t-error-msg {
+  opacity: 0;
+  visibility: hidden;
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    opacity    var(--revert-dur, 280ms) ease-out,
+    visibility 0s linear var(--revert-dur, 280ms),
+    max-height 200ms ease-out;
+}
+.t-input-wrap.is-error .t-error-msg {
+  opacity: 1;
+  visibility: visible;
+  max-height: 2rem;
+  transition:
+    opacity    var(--revert-dur, 280ms) ease-out,
+    visibility 0s linear 0s,
+    max-height 200ms ease-out;
+}
+.t-input.is-shaking {
+  animation: t-input-shake calc(
+      var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2
+    ) linear;
+}
+@keyframes t-input-shake {
+  0%      { transform: translateX(0);                                  animation-timing-function: var(--shake-ease); }
+  28.57%  { transform: translateX(var(--shake-distance));              animation-timing-function: var(--shake-ease); }
+  57.14%  { transform: translateX(calc(var(--shake-distance) * -1));  animation-timing-function: var(--shake-ease); }
+  78.57%  { transform: translateX(var(--shake-overshoot));             animation-timing-function: var(--shake-ease); }
+  100%    { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-input { animation: none !important; transform: none !important; }
+}
+
+/* ── Text states swap ─────────────────────────────────────────────── */
+
+:root {
+  --text-swap-dur: 260ms;
+  --text-swap-translate-y: 4px;
+  --text-swap-blur: 2px;
+  --text-swap-ease: ease-in-out;
+}
+
+.t-text-swap {
+  display: inline-block;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--text-swap-ease),
+    filter    var(--text-swap-dur) var(--text-swap-ease),
+    opacity   var(--text-swap-dur) var(--text-swap-ease);
+  will-change: transform, filter, opacity;
+}
+.t-text-swap.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+.t-text-swap.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-text-swap { transition: none !important; }
+}
+
+/* ── Landing locale swap (block-level) ────────────────────────────── */
+/* Same visual language as .t-text-swap above, reused for a whole content
+   block (the landing page body) instead of one inline span. The outer
+   element also tweens `height` across the swap, so sections below don't
+   jump the instant the new locale's copy runs a different length. */
+
+.lp-locale-swap {
+  overflow: hidden;
+  transition: height var(--text-swap-dur) var(--text-swap-ease);
+}
+.lp-locale-swap-inner {
+  display: block;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--text-swap-ease),
+    filter    var(--text-swap-dur) var(--text-swap-ease),
+    opacity   var(--text-swap-dur) var(--text-swap-ease);
+  will-change: transform, filter, opacity;
+}
+.lp-locale-swap-inner.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+.lp-locale-swap-inner.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-locale-swap { transition: none !important; }
+  .lp-locale-swap-inner { transition: none !important; }
+}
+
+/* ── Texts reveal (stagger) ───────────────────────────────────────── */
+
+:root {
+  --stagger-dur: 500ms;
+  --stagger-distance: 12px;
+  --stagger-stagger: 40ms;
+  --stagger-blur: 3px;
+  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-stagger-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(var(--stagger-distance));
+  filter: blur(var(--stagger-blur));
+  transition:
+    opacity   var(--stagger-dur) var(--stagger-ease),
+    transform var(--stagger-dur) var(--stagger-ease),
+    filter    var(--stagger-dur) var(--stagger-ease);
+  will-change: transform, opacity, filter;
+}
+.t-stagger-line--2 { transition-delay: var(--stagger-stagger); }
+
+.t-stagger.is-shown .t-stagger-line {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+.t-stagger.is-hiding .t-stagger-line {
+  opacity: 0;
+  transform: translateY(0);
+  filter: blur(0);
+  transition:
+    opacity 200ms ease,
+    transform 0s linear,
+    filter 0s linear;
+  transition-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-stagger-line { transition: none !important; }
+}
+
+/* ── Notification badge ────────────────────────────────────────────── */
+
+:root {
+  --badge-slide-dur: 260ms;
+  --badge-pop-dur: 500ms;
+  --badge-pop-close-dur: 180ms;
+  --badge-fade-dur: 400ms;
+  --badge-fade-close-dur: 180ms;
+  --badge-blur: 2px;
+  --badge-offset-x: -8.2px;
+  --badge-offset-y: 12.4px;
+  --badge-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --badge-pop-ease: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --badge-close-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --badge-bg: var(--primary);
+  --badge-fg: var(--primary-foreground);
+}
+
+/* Same substitution trap as the tab aliases above — see the note there. The
+   notification badge is on the sidebar, and the landing renders the sidebar
+   inside a nested `.dark`, so without this it wears the light theme's near
+   black on a dark rail. */
+.dark {
+  --badge-bg: var(--primary);
+  --badge-fg: var(--primary-foreground);
+}
+
+@keyframes t-badge-slide-in {
+  from { transform: translate(var(--badge-offset-x), var(--badge-offset-y)); }
+  to   { transform: translate(0, 0); }
+}
+
+.t-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  pointer-events: none;
+  will-change: transform;
+}
+.t-badge[data-open="true"] {
+  animation: t-badge-slide-in var(--badge-slide-dur) var(--badge-slide-ease);
+}
+
+.t-badge-dot {
+  display: block;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  transform-origin: center;
+  transform: scale(1);
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    transform var(--badge-pop-dur)  var(--badge-pop-ease),
+    opacity   var(--badge-fade-dur) var(--badge-pop-ease),
+    filter    var(--badge-pop-dur)  var(--badge-pop-ease);
+  will-change: transform, opacity, filter;
+}
+.t-badge[data-open="false"] .t-badge-dot {
+  transform: scale(0);
+  opacity: 0;
+  filter: blur(var(--badge-blur));
+  transition:
+    transform var(--badge-pop-close-dur)  var(--badge-close-ease),
+    opacity   var(--badge-fade-close-dur) var(--badge-close-ease),
+    filter    var(--badge-pop-close-dur)  var(--badge-close-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-badge, .t-badge-dot { animation: none !important; transition: none !important; }
+}
+
+/* ── Input clear with dissolve ─────────────────────────────────────── */
+
+:root {
+  --clear-dur: 1000ms;
+  --clear-out-dur: 400ms;
+  --clear-in-dur: 400ms;
+  --clear-out-fly: 12px;
+  --clear-in-fly: 12px;
+  --clear-out-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --clear-in-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --clear-blur: 2px;
+  --glow-delay: 50ms;
+  --glow-peak-at: 0.15;
+  --glow-opacity: 0.85;
+  --glow-spread: 1.5;
+}
+
+/* ── Skeleton loader and reveal ───────────────────────────────────── */
+
+:root {
+  --pulse-dur: 1500ms;
+  --pulse-count: infinite;
+  --pulse-min: 0.4;
+  --reveal-dur: 400ms;
+  --reveal-blur: 2px;
+  --reveal-ease: ease-in-out;
+}
+
+/* ── Modal open / close ─────────────────────────────────────────── */
+
+:root {
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale: 0.96;
+  --modal-scale-close: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Keyframes, not transitions: Radix's Presence holds a closing element in the
+   tree until its ANIMATION ends and ignores transitions entirely, so a
+   transition-based exit is simply never seen — the node is gone first. */
+@keyframes t-modal-in {
+  from { opacity: 0; transform: scale(var(--modal-scale)); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes t-modal-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(var(--modal-scale-close)); }
+}
+@keyframes t-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes t-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.t-modal {
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+/* Radix stamps data-state on the content element. */
+.t-modal[data-state="open"] {
+  animation: t-modal-in var(--modal-open-dur) var(--modal-ease) both;
+}
+.t-modal[data-state="closed"] {
+  animation: t-modal-out var(--modal-close-dur) var(--modal-ease) both;
+  pointer-events: none;
+}
+
+/* The scrim behind it, on the same clock. */
+.t-scrim[data-state="open"] {
+  animation: t-fade-in var(--modal-open-dur) var(--modal-ease) both;
+}
+.t-scrim[data-state="closed"] {
+  animation: t-fade-out var(--modal-close-dur) var(--modal-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-modal,
+  .t-scrim { animation: none !important; }
+}
+
+.t-skel { position: relative; }
+
+/* During loading: skeleton is in normal flow (provides height),
+   content is absolute (hidden, overlaid). When revealed: content is
+   in normal flow (provides height), skeleton is absolute (fading out).
+   This prevents the container from collapsing to 0 height. */
+.t-skel-skeleton {
+  position: relative;
+  z-index: 1;
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity var(--reveal-dur) var(--reveal-ease),
+    filter  var(--reveal-dur) var(--reveal-ease);
+}
+.t-skel-content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  filter: blur(var(--reveal-blur));
+  transition:
+    opacity var(--reveal-dur) var(--reveal-ease),
+    filter  var(--reveal-dur) var(--reveal-ease);
+}
+/* When revealed: swap which layer is in-flow */
+.t-skel.is-revealed .t-skel-skeleton {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  filter: blur(var(--reveal-blur));
+}
+.t-skel.is-revealed .t-skel-content {
+  position: relative;
+  opacity: 1;
+  filter: blur(0);
+}
+/* Snap-back when replaying: kill transitions so the reverse
+   (revealed → skeleton) is instant. Drop `.is-resetting`
+   after a forced reflow and the next reveal animates again. */
+.t-skel.is-resetting .t-skel-skeleton,
+.t-skel.is-resetting .t-skel-content {
+  transition: none !important;
+}
+
+/* Pulse: place the animation on the bar/avatar children, not
+   on the skeleton itself, so the skeleton's opacity / filter
+   stay free for the cross-fade transition above. */
+.t-skel-skeleton.is-pulsing > * {
+  animation: t-skel-pulse var(--pulse-dur) ease-in-out var(--pulse-count);
+}
+@keyframes t-skel-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: var(--pulse-min); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-skel-skeleton, .t-skel-content {
+    transition: none !important;
+  }
+  .t-skel-skeleton.is-pulsing > * { animation: none !important; }
+}
+
+/* ── Chat message text size override ────────────────────────────── */
+/* Streamdown renders markdown <p> at browser default 16px. Force
+   inheritance of the parent's text-sm (14px) to match design spec. */
+.is-assistant .streamdown p,
+.is-assistant .streamdown li,
+.is-assistant .streamdown blockquote {
+  font-size: inherit;
+  line-height: inherit;
+}
+.is-assistant .streamdown h1,
+.is-assistant .streamdown h2,
+.is-assistant .streamdown h3,
+.is-assistant .streamdown h4 {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-top: 0.75em;
+  margin-bottom: 0.25em;
+  font-weight: 600;
+}
+
+/* ── KPI card — large decorative icon clipped by card ──────────────── */
+
+/* ── KPI plate ───────────────────────────────────────────────────── */
+
+/* `isolation` keeps the glow and sheen in this card's own stacking context,
+   so a blurred halo can never bleed over a neighbouring tile. */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Surface sheen. */
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--kpi-sheen);
+  pointer-events: none;
+}
+
+/* Bevel highlight on the top edge. */
+.kpi-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  height: 1px;
+  z-index: 3;
+  background: var(--kpi-edge);
+  pointer-events: none;
+}
+
+/* Everything the tile draws rides above the sheen. */
+.kpi-card .kpi-plate {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+/* ── Activity chart ──────────────────────────────────────────────── */
+
+/* Bars grow from the baseline on first paint, staggered by the inline
+   `animation-delay` each column sets, so the week draws itself left to
+   right instead of snapping in as a finished block. */
+.chart-bar {
+  transform-origin: bottom;
+  animation: chart-bar-grow 520ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes chart-bar-grow {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-bar {
+    animation: none;
+  }
+}
+
+/* ── Icon swap ───────────────────────────────────────────────────── */
+:root {
+  --icon-swap-dur: 250ms;
+  --icon-swap-blur: 2px;
+  --icon-swap-start-scale: 0.25;
+  --icon-swap-ease: ease-in-out;
+}
+
+.t-icon-swap {
+  position: relative;
+  display: inline-grid;
+}
+.t-icon-swap .t-icon {
+  grid-area: 1 / 1;
+  transition:
+    opacity   var(--icon-swap-dur) var(--icon-swap-ease),
+    filter    var(--icon-swap-dur) var(--icon-swap-ease),
+    transform var(--icon-swap-dur) var(--icon-swap-ease);
+  will-change: opacity, filter, transform;
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
+  opacity: 0;
+  filter: blur(var(--icon-swap-blur));
+  transform: scale(var(--icon-swap-start-scale));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-icon-swap .t-icon { transition: none !important; }
+}
+
+/* ── Panel reveal ────────────────────────────────────────────────── */
+:root {
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-y: 100px;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-panel-slide {
+  /* Side docks travel on X, dropdowns on Y; one class covers both so the
+     open and close halves always share a timing. */
+  transform: translate(var(--panel-translate-x, 0px), var(--panel-translate-y));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity   var(--panel-close-dur) var(--panel-ease),
+    filter    var(--panel-close-dur) var(--panel-ease);
+  will-change: transform, opacity, filter;
+}
+.t-panel-slide[data-open="true"] {
+  transform: translate(0, 0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity   var(--panel-open-dur) var(--panel-ease),
+    filter    var(--panel-open-dur) var(--panel-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-panel-slide { transition: none !important; }
+}
+
+/* ── Automation flow canvas ──────────────────────────────────────── */
+
+/* Node entrance. Centering is NOT in here: the positioned wrapper owns the
+   translate, so reduced-motion's `animation: none` can't drop it (and the
+   wrapper's translate can't be double-applied by a utility class either). */
+@keyframes flow-node-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.flow-node {
+  animation: flow-node-in 0.34s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Slot "+" affordance — same entrance, centering likewise on the wrapper. */
+@keyframes flow-slot-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.flow-slot {
+  animation: flow-slot-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Edges draw themselves in on mount. --edge-len is set per-path from the
+   measured path length so the dash offset lands exactly at 0. */
+@keyframes flow-edge-draw {
+  from { stroke-dashoffset: var(--edge-len, 200); }
+  to { stroke-dashoffset: 0; }
+}
+
+.flow-edge {
+  stroke-dasharray: var(--edge-len, 200);
+  animation: flow-edge-draw 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-node,
+  .flow-slot,
+  .flow-edge { animation: none !important; }
+}
+
+/* ── Transitions.dev — plus ↔ menu morph ─────────────────────────── */
+/* Closed: a small circular button. Open: a rounded panel. Width, height and
+   corner radius animate together; the plus cross-fades into the menu. */
+:root {
+  --morph-open-dur: 350ms;
+  --morph-close-dur: 250ms;
+  --morph-ease: cubic-bezier(0.34, 1.25, 0.64, 1);
+  --morph-close-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --morph-r-closed: 40px;
+  --morph-r-open: 20px;
+  --morph-fade-dur: 200ms;
+  --morph-slide: 40px;
+  --morph-rotate: 45deg;
+  --morph-scale: 0.97;
+  --morph-blur: 2px;
+  --morph-w-closed: 40px;
+  --morph-h-closed: 40px;
+  --morph-w-open: 183px;
+  --morph-h-open: 172px;
+}
+
+.t-morph {
+  position: relative;
+  width: var(--morph-w-closed);
+  height: var(--morph-h-closed);
+  border-radius: var(--morph-r-closed);
+  overflow: hidden;
+  transition:
+    width var(--morph-close-dur) var(--morph-close-ease),
+    height var(--morph-close-dur) var(--morph-close-ease),
+    border-radius var(--morph-close-dur) var(--morph-close-ease);
+}
+.t-morph[data-open="true"] {
+  width: var(--morph-w-open);
+  height: var(--morph-h-open);
+  border-radius: var(--morph-r-open);
+  transition:
+    width var(--morph-open-dur) var(--morph-ease),
+    height var(--morph-open-dur) var(--morph-ease),
+    border-radius var(--morph-open-dur) var(--morph-ease);
+}
+.t-morph-plus {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition:
+    opacity var(--morph-fade-dur) var(--morph-close-ease),
+    transform var(--morph-open-dur) var(--morph-close-ease),
+    filter var(--morph-fade-dur) var(--morph-close-ease);
+}
+.t-morph-plus svg {
+  transition: transform var(--morph-open-dur) var(--morph-close-ease);
+}
+.t-morph[data-open="true"] .t-morph-plus {
+  opacity: 0;
+  transform: translateX(calc(-1 * var(--morph-slide)));
+  filter: blur(var(--morph-blur));
+  pointer-events: none;
+}
+.t-morph[data-open="true"] .t-morph-plus svg {
+  transform: scale(var(--morph-scale)) rotate(var(--morph-rotate));
+}
+.t-morph-menu {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateX(var(--morph-slide)) scale(var(--morph-scale));
+  filter: blur(var(--morph-blur));
+  pointer-events: none;
+  transition:
+    opacity var(--morph-fade-dur) var(--morph-close-ease),
+    transform var(--morph-open-dur) var(--morph-close-ease),
+    filter var(--morph-fade-dur) var(--morph-close-ease);
+}
+.t-morph[data-open="true"] .t-morph-menu {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+}
+
+/* ── Transitions.dev — accordion expand ──────────────────────────── */
+/* grid-template-rows 0fr → 1fr gives a height animation with no JS
+   measurement; the inner element clips the overflow. */
+:root {
+  --acc-expand: 250ms;
+  --acc-collapse: 250ms;
+  --acc-chevron: 250ms;
+  --acc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-acc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--acc-collapse) var(--acc-ease);
+}
+.t-acc[data-open="true"] .t-acc-panel {
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--acc-expand) var(--acc-ease);
+}
+.t-acc-panel-inner {
+  overflow: hidden;
+  opacity: 0;
+  filter: blur(2px);
+  transition:
+    opacity var(--acc-collapse) var(--acc-ease),
+    filter var(--acc-collapse) var(--acc-ease);
+}
+.t-acc[data-open="true"] .t-acc-panel-inner {
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity var(--acc-expand) var(--acc-ease),
+    filter var(--acc-expand) var(--acc-ease);
+}
+/* Flip the chevron vertically to turn the "v" into a "^". scaleY(-1) passes
+   through a flat line at the midpoint (same look as morphing the `d:` path)
+   but animates in every browser, unlike CSS `d:` morphing. The path is
+   symmetric about the viewBox centre so the flip lands exactly on the "^";
+   non-scaling-stroke keeps the stroke width constant through it. */
+.t-acc-chevron {
+  display: inline-flex;
+  transform: scaleY(1);
+  transform-origin: center;
+  transition: transform var(--acc-chevron) var(--acc-ease);
+}
+.t-acc-chevron path { vector-effect: non-scaling-stroke; }
+.t-acc[data-open="true"] .t-acc-chevron { transform: scaleY(-1); }
+.t-acc-head {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-morph,
+  .t-morph-plus,
+  .t-morph-plus svg,
+  .t-morph-menu,
+  .t-acc-panel,
+  .t-acc-panel-inner,
+  .t-acc-chevron { transition: none !important; }
+}
+
+/* ── Node hover toolbar ──────────────────────────────────────────── */
+/* Rides above a node on hover: lifts, fades and un-blurs together, and the
+   icons stagger in behind it. Hidden from the pointer while closed so it
+   can't swallow a click meant for the node underneath. */
+.flow-node-tools {
+  opacity: 0;
+  transform: translateY(4px) scale(0.96);
+  filter: blur(2px);
+  pointer-events: none;
+  transition:
+    opacity 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.34, 1.25, 0.64, 1),
+    filter 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.flow-node-tools[data-open="true"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+}
+.flow-node-tools > * {
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity 140ms ease-out,
+    transform 200ms cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+.flow-node-tools[data-open="true"] > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+.flow-node-tools[data-open="true"] > :nth-child(1) { transition-delay: 20ms; }
+.flow-node-tools[data-open="true"] > :nth-child(2) { transition-delay: 50ms; }
+.flow-node-tools[data-open="true"] > :nth-child(3) { transition-delay: 80ms; }
+.flow-node-tools[data-open="true"] > :nth-child(4) { transition-delay: 110ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-node-tools,
+  .flow-node-tools > * { transition: none !important; }
+}
+
+/* ── Transitions.dev — toggle ────────────────────────────────────── */
+/* The thumb travels with a double bounce: it overshoots the end, swings back
+   past the target, then settles. The track colour cross-fades on its own
+   clock, so the surface doesn't wait for the thumb to arrive.
+
+   `.is-init` is added on first interaction: without it the "off" keyframes
+   would play on page load and every switch in the app would twitch. */
+:root {
+  --toggle-dur: 350ms;
+  --toggle-travel: 22px;
+  --toggle-ov1: 1.5px;
+  --toggle-ov2: 0px;
+  --toggle-track: 220ms;
+  --toggle-ease: cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+.t-toggle {
+  transition: background-color var(--toggle-track) var(--toggle-ease);
+}
+.t-toggle-thumb {
+  translate: 0 0;
+  will-change: translate;
+}
+.t-toggle[data-on="true"] .t-toggle-thumb {
+  translate: var(--toggle-travel) 0;
+}
+.t-toggle.is-init[data-on="true"] .t-toggle-thumb {
+  animation: t-toggle-on var(--toggle-dur) var(--toggle-ease) both;
+}
+.t-toggle.is-init[data-on="false"] .t-toggle-thumb {
+  animation: t-toggle-off var(--toggle-dur) var(--toggle-ease) both;
+}
+@keyframes t-toggle-on {
+  0% { translate: 0 0; }
+  55% { translate: calc(var(--toggle-travel) + var(--toggle-ov1)) 0; }
+  80% { translate: calc(var(--toggle-travel) - var(--toggle-ov2)) 0; }
+  100% { translate: var(--toggle-travel) 0; }
+}
+@keyframes t-toggle-off {
+  0% { translate: var(--toggle-travel) 0; }
+  55% { translate: calc(0px - var(--toggle-ov1)) 0; }
+  80% { translate: var(--toggle-ov2) 0; }
+  100% { translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-toggle,
+  .t-toggle-thumb { animation: none !important; transition: none !important; }
+}
+
+/* ── Tooltip (radix content, restyled) ───────────────────────────── */
+/* Borderless inverted chip. Radix drives mount/unmount via its own
+   Presence, so a plain CSS transition on [data-state] is enough — no
+   keyframes needed. The 60ms hold before the enter transition starts
+   is what gives the "settle" feel; leaving has no delay so it never
+   feels sticky. */
+:root {
+  --tooltip-in-dur: 140ms;
+  --tooltip-out-dur: 90ms;
+  --tooltip-delay: 60ms;
+  --tooltip-scale: 0.96;
+  --tooltip-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-tooltip {
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+  transform: scale(var(--tooltip-scale));
+  opacity: 0;
+  transition:
+    opacity var(--tooltip-out-dur) var(--tooltip-ease),
+    transform var(--tooltip-out-dur) var(--tooltip-ease);
+}
+.t-tooltip[data-state="delayed-open"],
+.t-tooltip[data-state="instant-open"] {
+  transform: scale(1);
+  opacity: 1;
+  transition:
+    opacity var(--tooltip-in-dur) var(--tooltip-ease) var(--tooltip-delay),
+    transform var(--tooltip-in-dur) var(--tooltip-ease) var(--tooltip-delay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tooltip { transition: none !important; transform: none !important; }
+}
+
+/* ── Success check ────────────────────────────────────────────────
+   transitions.dev's appear treatment for a checkmark: fade + rotate
+   + blur + a small upward bob, with the path itself drawing in.
+   Wrap any inline SVG checkmark in it and flip data-state on the
+   moment of success. */
+:root {
+  --check-opacity-dur: 450ms;
+  --check-rotate-dur: 450ms;
+  --check-rotate-from: 70deg;
+  --check-bob-dur: 450ms;
+  --check-y-amount: 10px;
+  --check-blur-dur: 450ms;
+  --check-blur-from: 4px;
+  --check-path-dur: 350ms;
+  --check-path-delay: 60ms;
+  --check-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-bob: cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+.t-success-check {
+  display: inline-block;
+  transform-origin: center;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+.t-success-check svg { display: block; overflow: visible; }
+.t-success-check svg path {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+}
+.t-success-check[data-state="in"] {
+  animation:
+    t-check-fade   var(--check-opacity-dur) var(--check-ease-out) forwards,
+    t-check-rotate var(--check-rotate-dur)  var(--check-ease-out) forwards,
+    t-check-blur   var(--check-blur-dur)    var(--check-ease-out) forwards,
+    t-check-bob    var(--check-bob-dur)     var(--check-ease-bob) forwards;
+}
+.t-success-check[data-state="in"] svg path {
+  animation: t-check-draw var(--check-path-dur) var(--check-ease-out) var(--check-path-delay) forwards;
+}
+
+@keyframes t-check-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes t-check-rotate {
+  from { transform: rotate(var(--check-rotate-from)); }
+  to   { transform: rotate(0deg); }
+}
+@keyframes t-check-blur {
+  from { filter: blur(var(--check-blur-from)); }
+  to   { filter: blur(0); }
+}
+@keyframes t-check-bob {
+  from { translate: 0 var(--check-y-amount); }
+  to   { translate: 0 0; }
+}
+@keyframes t-check-draw { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-success-check { animation: none !important; opacity: 1; }
+  .t-success-check svg path { animation: none !important; stroke-dashoffset: 0 !important; }
+}
+
+
+/* ── Switch (on/off) ──────────────────────────────────────────────── */
+/* Monochrome, like the rest of the chrome: "on" is the dark track, not a
+   colour. The thumb is a stadium — wider than it is tall — sitting on 3px of
+   padding, which is what `--toggle-travel` on the element has to agree with. */
+:root {
+  --switch-on: oklch(0.24 0 0);
+  --switch-off: oklch(0.885 0 0);
+  --switch-thumb: oklch(1 0 0);
+  --switch-thumb-shadow:
+    0 2px 4px oklch(0 0 0 / 0.16),
+    0 1px 1px oklch(0 0 0 / 0.1);
+  --switch-track-shadow: inset 0 1px 2px oklch(0 0 0 / 0.07);
+}
+:root.dark {
+  --switch-on: oklch(0.6 0 0);
+  --switch-off: oklch(0.3 0 0);
+  --switch-thumb: oklch(0.985 0 0);
+  --switch-thumb-shadow:
+    0 2px 5px oklch(0 0 0 / 0.45),
+    0 1px 1px oklch(0 0 0 / 0.3);
+  --switch-track-shadow: inset 0 1px 2px oklch(0 0 0 / 0.35);
+}
+
+/* ── Liquid slider ────────────────────────────────────────────────── */
+/* The visible thumb is a liquid-gooey blob; the real <input type="range">
+   lies invisible on top so keyboard, pointer capture and assistive tech all
+   keep working. The native thumb is sized to match the painted one, so the
+   browser's value mapping and our own `x` maths land on the same pixel. */
+.liquid-slider-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+.liquid-slider-input:disabled { cursor: not-allowed; }
+.liquid-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  border-radius: 50%;
+}
+.liquid-slider-input::-moz-range-thumb {
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  border: 0;
+  border-radius: 50%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Landing page (/landing)
+   ═══════════════════════════════════════════════════════════════════
+   The marketing surface is dark whatever the app's theme is set to. The
+   wrapper carries `lp dark`: `.dark` brings the whole dark token set with it
+   (shadows, buttons, status pills, the KPI plate), and `.lp` then pushes the
+   handful of surface colours it wants deeper. Every component the landing
+   borrows from the app (Card, KpiCard, Badge, StatusBadge, Button) reads
+   those same variables, so they re-light themselves for this surface without
+   a single prop change.
+
+   The palette is not the landing's own: `.lp` declares no surface colours at
+   all. The wrapper carries `dark` alongside it, so every token below the
+   header — background, card, muted, border, the whole button system — is the
+   exact value the app renders in dark mode. A rebuilt screen and the page
+   around it are therefore the same neutral scale by construction, and cannot
+   drift apart on a later edit. What separates a screenshot from the page is
+   the frame's bezel and shadow, not a second palette. */
+
+/* The landing is dark whatever the visitor last chose inside the product, but
+   the `dark` class sits on the page wrapper, not on `<html>` — so without this
+   the document element keeps the app's theme underneath it. On a light-themed
+   visitor that means a white rubber-band overscroll above and below a black
+   page, and light scrollbars down its edge.
+
+   `:has()` reaches back up from the wrapper and settles both: `color-scheme`
+   is what actually repaints the scrollbars and any UA widget, and the two
+   backgrounds paint the canvas the page is composited onto. Scoped to the
+   landing, so the app's own theme switching is untouched. Where `:has()` is
+   unsupported the page still renders correctly — it just keeps today's white
+   overscroll, which is the behaviour being improved on, not a regression. */
+/* The marketing wrapper paints its own background, but the document element
+   behind it does not, so an overscroll bounce past the top or the foot shows
+   the browser's own ground. These two carry the surface up to `<html>`.
+
+   They used to hardcode the dark value — the surface was dark by definition
+   then. It follows the app's theme now, so they follow `--background`, which
+   is the token both themes already define. */
+html:has(.lp) {
+  background-color: var(--background);
+}
+
+html:has(.lp) body {
+  background-color: var(--background);
+}
+
+@font-face {
+  font-family: "Cooper";
+  src: url("/fonts/cooper/CooperLtBT_400-s.p.0ayak-z9t8l45.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cooper";
+  src: url("/fonts/cooper/CooperLtBT_500-s.p.268aeup1v2w88.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Cooper is the display face — the landing's headings, and now the login. The
+   token sits on `:root` rather than on `.lp` because the login is not inside
+   the marketing wrapper, and a face declared on a subtree is a face only that
+   subtree can ask for. */
+:root {
+  --font-cooper: "Cooper", "Saans", "Inter", system-ui, sans-serif;
+}
+
+.lp {
+  /* ── Landing-only scale ───────────────────────────────────── */
+  /* Nothing here names a colour except the two hairlines, which are pure
+     white at an alpha — the same neutral the app's own `--border` is. Body
+     copy uses `text-muted-foreground`, and micro-labels the app's own
+     `/60`–`/70` step of it, so there is no landing-only text ramp to keep
+     in sync. */
+  --lp-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --lp-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  /* 420ms, not 760. At 760 an element revealed on a normal scroll is still
+     settling well after it has reached the middle of the screen, which reads
+     as the page lagging behind the wheel rather than as anything arriving. */
+  --lp-reveal-dur: 420ms;
+  --lp-shell: 1120px;          /* outer rail — wider than the prose rail */
+  --lp-prose: 900px;           /* headings + copy */
+  /* The two hairlines are the only colours this block names, and they are the
+     only thing on the marketing surface that cannot be derived from the app's
+     tokens: they are a wash of the foreground over the page, which is white at
+     an alpha on dark and black at an alpha on light. Declared here for light
+     and overridden below for dark, so the surface can be either. */
+  --lp-hairline: oklch(0 0 0 / 0.07);      /* decorative rules, hero grid */
+  --lp-hairline-strong: oklch(0 0 0 / 0.12); /* = the app's --border */
+  --lp-bevel: oklch(1 0 0 / 0.9);
+  --lp-bevel-strong: oklch(1 0 0 / 1);
+  /* A bloom on white has to be a shadow, not a light — the same gesture
+     inverted, or the hero's centre reads as a smudge. */
+  --lp-glow-a: oklch(0 0 0 / 0.04);
+  --lp-glow-b: oklch(0 0 0 / 0.015);
+
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Landing display titles use Cooper at a light weight (not bold). The rebuilt
+   app screens keep Inter; only the Inbox mockup's chrome title (inside
+   #bandeja) is Saans. The Cooper class never reaches inside a frame. */
+.font-cooper {
+  font-family: var(--font-cooper);
+  font-weight: 400;
+}
+#bandeja .lp-frame h1 { font-family: var(--font-heading); }
+
+/* ── Display type ───────────────────────────────────────────────── */
+/* The landing has no display face of its own. Headlines are Saans — the same
+   `--font-heading` every `h1`–`h6` in the app already resolves to — set with
+   utilities per heading (`font-heading font-semibold text-balance
+   leading-[1.02] tracking-[-0.03em]`) rather than by a class here, so a
+   heading's type reads in the markup like the rest of the app's. Saans is a
+   grotesque with tight apertures: at display sizes it wants more negative
+   tracking than it does at 24px, and a line-height just above 1. */
+
+.lp-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* The same step the app uses for the mono category label on a flow node. */
+  color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+}
+
+/* ── Scroll reveal ──────────────────────────────────────────────── */
+/* One observer in landing.tsx flips `is-in` on every [data-reveal].
+   Two properties, both compositor-friendly, and nothing else.
+
+   There used to be a third: `filter: blur(4px)` resolving to zero. It is the
+   single most expensive thing a reveal can animate — it forces a filter pass
+   over every revealing subtree, makes each wrapper a containing block, and
+   text sliding out of focus is the visual signature of a generated page
+   rather than a designed one. Opacity and a short rise say the same thing at
+   a fraction of the cost.
+
+   No `will-change` either. Forty-five elements asking for a compositor layer
+   at load costs more than the one hitch each transition might have when it
+   starts, and the browser promotes on its own once the transition runs. */
+.lp [data-reveal] {
+  opacity: 0;
+  /* 10px, not 18. The guide's content reveal is "a short lift" — far enough to
+     read as arriving, not far enough to read as sliding. At 18 a paragraph and
+     the heading above it visibly travel different distances relative to their
+     own size, which is what made a scroll down this page feel like a stack of
+     separate animations rather than one page assembling. */
+  translate: 0 10px;
+  transition:
+    opacity var(--lp-reveal-dur) var(--lp-ease-soft),
+    translate var(--lp-reveal-dur) var(--lp-ease-soft);
+  transition-delay: var(--lp-d, 0ms);
+}
+
+/* Large surfaces fade without travelling — see the `lift` note on `Reveal`. */
+.lp [data-reveal][data-reveal-still] {
+  translate: none;
+}
+
+.lp [data-reveal].is-in {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ── Marketing surface, dark ────────────────────────────────────── */
+/* Everything the `.lp` block derives from the app's tokens flips on its own
+   with `.dark`. These four do not, because they are light *on* the surface
+   rather than a colour *of* it: two hairline washes, the bloom behind the
+   headline, and the bevel that lights a frame's top edge. On white they have
+   to be black at an alpha and a far softer bloom, or they vanish; on near
+   black they have to be white, or they do. */
+.lp.dark,
+.dark .lp {
+  --lp-hairline: oklch(1 0 0 / 0.06);
+  --lp-hairline-strong: oklch(1 0 0 / 0.1);
+  --lp-bevel: oklch(1 0 0 / 0.05);
+  --lp-bevel-strong: oklch(1 0 0 / 0.06);
+  --lp-glow-a: oklch(1 0 0 / 0.07);
+  --lp-glow-b: oklch(1 0 0 / 0.03);
+}
+
+/* ── Smooth scroll ──────────────────────────────────────────────── */
+/* Lenis' own required rules, inlined rather than imported from `lenis/dist`
+   so this file stays the single stylesheet the app loads. Without the first
+   rule the page cannot grow past the viewport while Lenis drives it. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+/* The bar itself carries only the hairline. Its frost is a child layer —
+   `.lp-header-blur` — for the reason the note over `.lp-overlay` sets out: a
+   hand-written `backdrop-filter` does not survive this file's CSS pipeline.
+   This rule used to declare one, and shipped none of it. Worse, the base
+   `blur(0px)` came out the other side as `blur()`, which is not a valid filter
+   function, so the browser threw the whole declaration away — the header has
+   been a flat translucent strip over a sharp page since it was written.
+
+   The tint moved onto the layer with the blur. On one element a background
+   paints on top of its own filtered backdrop; split across two, a tint left up
+   here would sit *behind* the layer and be blurred along with the page. */
+.lp-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 64px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 260ms var(--lp-ease);
+}
+
+.lp-header.is-stuck {
+  border-bottom-color: var(--lp-hairline);
+}
+
+/* Fades rather than switching: `opacity` interpolates, a filter list going
+   from `none` to `blur(24px)` does not, so the frost would otherwise snap on
+   at the twelfth pixel of scroll. At zero opacity the layer paints nothing, so
+   the top of the page is genuinely unfiltered — the blur is not merely
+   invisible there, it is not sampled. */
+.lp-header-blur {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  background-color: color-mix(in oklab, var(--background) 45%, transparent);
+  transition: opacity 260ms var(--lp-ease);
+}
+
+.lp-header.is-stuck .lp-header-blur {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-header-blur {
+    transition: none;
+  }
+}
+
+/* Keyboard focus. The header had `:hover` and nothing else, so tabbing
+   through it moved an invisible cursor. Matches the app's focus language —
+   the `--ring` neutral, offset far enough to clear the text. */
+.lp-focus {
+  outline: none;
+}
+.lp-focus:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.lp-navlink {
+  position: relative;
+  padding-block: 6px;
+  /* Two-word labels — "Meta Ads" — wrap into a second line and push the bar
+     off its own baseline, because the nav is centred on the viewport rather
+     than sized by its content. */
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  transition: color 150ms var(--lp-ease);
+}
+.lp-navlink:hover { color: var(--foreground); }
+
+/* The active-section mark: one hairline, drawn under the link the reader is
+   currently inside. It scales from the centre rather than fading, so moving
+   between sections reads as the mark travelling along the bar. */
+.lp-navlink::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: var(--foreground);
+  scale: 0 1;
+  transition: scale 220ms var(--lp-ease-soft);
+}
+.lp-navlink[aria-current]{
+  color: var(--foreground);
+}
+.lp-navlink[aria-current]::after {
+  scale: 1 1;
+}
+
+/* ── Mobile menu ────────────────────────────────────────────────── */
+/* No rules of its own any more. It had a keyframe pair and a `data-closing`
+   attribute driven by a timer that held the unmount open long enough for the
+   exit to play; it uses `.t-panel-slide` now, which transitions between two
+   states instead of animating between two mounts and needs no timer. */
+
+/* ── Hero backdrop ──────────────────────────────────────────────── */
+/* Three stacked layers, cheapest first: a hairline grid, a wide soft glow
+   behind the headline, and a horizon line where the hero meets the mockup. */
+.lp-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--lp-hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--lp-hairline) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(120% 80% at 50% 0%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(120% 80% at 50% 0%, #000 0%, transparent 72%);
+  opacity: 0.5;
+}
+
+.lp-glow {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(80px);
+  /* Neutral, because the product is. `--primary` in dark is a near-white and
+     there is no accent hue anywhere in the app, so a coloured bloom here
+     would be inventing a brand the interface never shows. This is light
+     falling on the page, not a colour. */
+  background: radial-gradient(
+    closest-side,
+    var(--lp-glow-a) 0%,
+    var(--lp-glow-b) 45%,
+    transparent 100%
+  );
+}
+
+.lp-hairline-x {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--lp-hairline-strong) 22%,
+    var(--lp-hairline-strong) 78%,
+    transparent 100%
+  );
+}
+
+/* ── Mockup frame ───────────────────────────────────────────────── */
+/* The app screens are rebuilt in markup rather than pasted in as PNGs, so
+   they stay crisp at any density and re-flow on a phone. The frame is what
+   makes them read as a screenshot: a bright top bevel, a hairline border,
+   and a shadow deep enough to lift the whole thing off the page. */
+/* There is deliberately no token override for the rebuilt screen. It renders
+   on the app's own dark scale — the same one the page around it uses — so
+   what you see inside the frame is the colour the product actually is, not a
+   lighter stand-in chosen to make the frame pop. The separation comes from
+   the bezel and the shadow below. */
+
+/* Two borders, not one: an outer bezel one surface step up from the page
+   (`--card`, exactly as an app card sits on the app background) with its own
+   hairline, and the screen's own hairline inside it, separated by 6px of
+   gutter. A single border makes the screen look pasted onto the page; the
+   gutter reads as the window the app is running in, which is what gives the
+   composition somewhere for the overlaid cards to sit on top of. */
+/* No drop shadow. The frame used to cast a 80px black bloom under itself,
+   which is the layer the bottom veil then had to fade through: the wash
+   dissolved the screen into a dark smudge instead of into the page, and the
+   smudge had a visible outline everywhere the shadow reached past it. The
+   separation is carried by the two hairlines and the surface step alone —
+   which is how the app's own cards sit on the app's own background. */
+.lp-frame {
+  position: relative;
+  border-radius: 22px;
+  border: 1px solid var(--lp-hairline);
+  background: var(--card);
+  padding: 6px;
+  box-shadow: 0 1px 0 var(--lp-bevel) inset;
+}
+
+.lp-frame-inner {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--lp-hairline-strong);
+  background: var(--background);
+  box-shadow: 0 1px 0 var(--lp-bevel-strong) inset;
+  overflow: hidden;
+}
+
+/* The KPI plate's 30px number is sized for a dashboard column. Inside a
+   phone-width mockup the same plate is 120px across, and `385.032` runs off
+   the edge of its own card — a clipped number is the one thing a figure about
+   metrics cannot show. Scoped to the landing's mockups: the product's own
+   dashboard has the width it was drawn for. */
+@media (max-width: 767px) {
+  .lp .lp-kpi-row .kpi-value {
+    font-size: clamp(1rem, 5vw, 1.75rem);
+  }
+}
+
+/* ── Bottom veil ────────────────────────────────────────────────── */
+/* A screenshot is a rectangle of information — the eye should land on the top
+   of it, not the bottom edge.
+
+   The veil sits OUTSIDE the frame rather than inside it, and overhangs the
+   bezel on three sides, so what dissolves is the whole window — screen,
+   gutter, hairline and shadow together — instead of the screen ending inside
+   a frame that carries on being sharp around it.
+
+   Four stacked backdrop layers, each blurrier than the last and each masked
+   in lower down. One layer at 24px would put a hard line across the screen
+   wherever its mask starts; four overlapping ramps read as focus falling off,
+   which is the thing lenses do and flat gradients don't. The fifth layer is
+   the colour wash that lands it on the page background.
+
+   Every layer is pointer-transparent: the screens under it are operable
+   demos, and a veil that ate clicks would kill the bottom third of one. */
+/* It is a plain rectangle, and it overhangs far enough on three sides to
+   swallow the frame's corners whole. The old veil was a rounded box inset
+   14px: the radius drew a curve across the wash at exactly the height the
+   wash went opaque, so the screen ended on a visible lens shape instead of
+   ending nowhere. A rectangle that is already page-coloured by the time it
+   reaches the bezel has no edge to show. */
+.lp-veil {
+  position: absolute;
+  /* The sideways overhang stops at 20px on purpose: the rail's own padding is
+     24px on a phone, so anything wider than that hangs past the viewport and
+     the document picks up a horizontal scrollbar. 20px is still more than the
+     22px corner needs, because what has to disappear under the wash is the
+     corner's outer edge, not its whole arc. */
+  inset: auto -20px -40px -20px;
+  height: 46%;
+  min-height: 200px;
+  max-height: 380px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.lp-veil > span {
+  position: absolute;
+  inset: 0;
+}
+
+/* Only the ramps live here. The blur itself is a `backdrop-blur-[Npx]`
+   utility on each span in `ScreenFrame` — see the note above `.lp-overlay`
+   for why a hand-written `backdrop-filter` does not survive the build. */
+/* Five ramps, each starting before the one under it has finished, so no
+   single mask edge ever lands on its own. Four ramps over a 260px veil put
+   their seams close enough together to read as steps; five over 380px do
+   not. */
+.lp-veil > span:nth-child(1) {
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 20%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 20%);
+}
+.lp-veil > span:nth-child(2) {
+  mask-image: linear-gradient(to bottom, transparent 14%, #000 36%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 14%, #000 36%);
+}
+.lp-veil > span:nth-child(3) {
+  mask-image: linear-gradient(to bottom, transparent 30%, #000 52%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 30%, #000 52%);
+}
+.lp-veil > span:nth-child(4) {
+  mask-image: linear-gradient(to bottom, transparent 46%, #000 70%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 46%, #000 70%);
+}
+.lp-veil > span:nth-child(5) {
+  mask-image: linear-gradient(to bottom, transparent 62%, #000 88%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 62%, #000 88%);
+}
+/* The wash, on an eased curve rather than a straight one. A linear ramp to
+   the page colour spends its whole first half doing almost nothing visible
+   and then arrives all at once, which is the "grey band across the bottom"
+   look; these stops track ease-in-out, so the screen loses light the way a
+   lens loses focus. It reaches the page colour a hair before the foot and
+   holds it, so the bezel underneath is gone rather than half-there. */
+.lp-veil > span:nth-child(6) {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklab, var(--background) 6%, transparent) 18%,
+    color-mix(in oklab, var(--background) 20%, transparent) 34%,
+    color-mix(in oklab, var(--background) 42%, transparent) 50%,
+    color-mix(in oklab, var(--background) 68%, transparent) 66%,
+    color-mix(in oklab, var(--background) 88%, transparent) 80%,
+    color-mix(in oklab, var(--background) 98%, transparent) 91%,
+    var(--background) 97%
+  );
+}
+
+/* ── Overlaid data cards ────────────────────────────────────────── */
+/* The floating panels that sit on top of each screenshot. They carry the one
+   number or message the section is actually about, so the screenshot behind
+   them can stay unannotated. */
+/* The frost is `backdrop-blur-xl backdrop-saturate-150` on the element, not a
+   `backdrop-filter` here.
+   
+   A hand-written `backdrop-filter` declaration does not survive this project's
+   CSS pipeline — Lightning CSS drops it from every plain rule in this file,
+   prefixed copy included, while Tailwind's own utilities come through because
+   they resolve through the `--tw-backdrop-*` chain. This rule carried the
+   blur for months and shipped none of it: the panel was a flat translucent
+   card over a sharp screen. */
+.lp-overlay {
+  border-radius: 14px;
+  border: 1px solid var(--lp-hairline-strong);
+  /* The app's popover surface, thinned so the screen reads through it. */
+  background: color-mix(in oklab, var(--popover) 88%, transparent);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.07) inset,
+    0 24px 48px -12px oklch(0 0 0 / 0.65);
+}
+
+/* Overlays drift up into place a beat after the screenshot lands, which is
+   what sells them as a layer above it rather than part of the image. They
+   travel further than everything else for the same reason.
+
+   They used to keep drifting afterwards, on a 7s infinite loop. That was two
+   bugs wearing one costume: the loop animated `translate`, the same property
+   the reveal transitions, so the two fought over every overlay as it landed —
+   and it never stopped, so six cards held compositor work for as long as the
+   tab stayed open, to move six pixels nobody was looking at. */
+.lp [data-reveal].lp-overlay { translate: 0 26px; }
+
+/* ── Channel marquee ────────────────────────────────────────────── */
+.lp-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
+.lp-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: lp-marquee 28s linear infinite;
+}
+
+.lp-marquee:hover .lp-marquee-track { animation-play-state: paused; }
+
+@keyframes lp-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* ── Feature tile ───────────────────────────────────────────────── */
+/* The app's `Card` in its `interactive` form, down to the transition: same
+   16px radius, same `--card` surface, same soft→elevated shadow step and the
+   same border swap on hover. It does not lift — nothing in the app lifts on
+   hover, and a card that rises off the page under the cursor is the tell that
+   a marketing surface has stopped using the product's own components. */
+.lp-tile {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  /* Both shadows the app's own surfaces carry: the soft drop that lifts a card
+     off the page, and the inset bevel that gives its top edge a lit lip. The
+     bevel is what the buttons and the KPI plates have, and leaving it off here
+     was the difference between a card and a rectangle with a border. */
+  box-shadow: var(--shadow-soft), var(--shadow-inset);
+  transition:
+    border-color 200ms var(--lp-ease),
+    box-shadow 200ms var(--lp-ease);
+}
+
+.lp-tile:hover {
+  border-color: var(--input);
+  box-shadow: var(--shadow-elevated), var(--shadow-inset);
+}
+
+/* Landing accordions reuse the global `.t-acc` expand; this only swaps the
+   easing + duration so they bounce open (overshoot) inside the landing subtree.
+   Scoped to `.lp`, so the app's own accordions keep the reference easing. The
+   plus (`.t-acc-chevron`) rotates to an "×" on open rather than flipping. */
+.lp {
+  --acc-expand: 380ms;
+  --acc-collapse: 300ms;
+  --acc-chevron: 300ms;
+  --acc-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lp .t-acc-chevron { transform: rotate(0deg); }
+.lp .t-acc[data-open="true"] .t-acc-chevron { transform: rotate(45deg); }
+
+/* ── Typing caret, used once in the chat mockup ─────────────────── */
+.lp-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  translate: 0 2px;
+  background: currentColor;
+  animation: lp-blink 1.1s steps(1) infinite;
+}
+@keyframes lp-blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+/* ── Transitions.dev — Number pop-in ──────────────────────────────
+   Usage:
+     <span class="t-digit-group is-animating">
+       <span class="t-digit">1</span>
+       <span class="t-digit">2</span>
+       <span class="t-digit" data-stagger="1">.</span>
+       <span class="t-digit" data-stagger="2">3</span>
+     </span>
+
+   Replay:
+     - Remove `.is-animating`, re-render digits (or swap text),
+       force a reflow, then re-add `.is-animating`.
+     - Use data-stagger="1", "2", … to delay individual
+       digits by `n * var(--digit-stagger)`.
+
+   Direction:
+     --digit-dir-x / --digit-dir-y are unit-less multipliers
+     (e.g. 1, -1, 0) applied to --digit-distance.
+*/
+:root {
+  --digit-dur: 500ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --digit-dir-x: 0;
+  --digit-dir-y: 1;
+}
+
+
+@keyframes t-digit-pop-in {
+  0% {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% { transform: translate(0, 0); opacity: 1; filter: blur(0); }
+}
+
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+.t-digit-group.is-animating .t-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+.t-digit-group.is-animating .t-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-digit-group .t-digit { animation: none !important; }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lp [data-reveal] {
+    opacity: 1;
+    translate: 0 0;
+    transition: none;
+  }
+  .lp-marquee-track { animation: none; }
+  .t-acc-panel, .t-acc-panel-inner, .t-acc-chevron { transition: none !important; }
+  .lp-caret { animation: none; }
+  /* The running-tool pulse inside the chat mockup. In the app it stops when
+     the call returns; on a still screenshot it would run forever. */
+  .lp .animate-pulse { animation: none; }
+  .lp-navlink::after { transition: none; }
+}

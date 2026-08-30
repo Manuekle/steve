@@ -1,0 +1,14 @@
+node_modules
+.next
+.output
+.nitro
+.eve
+.vercel
+.workflow-data
+.git
+dist
+logs
+*.tsbuildinfo
+.env
+.env.local
+.DS_Store

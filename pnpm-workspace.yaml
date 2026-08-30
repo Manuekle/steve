@@ -1,0 +1,13 @@
+minimumReleaseAgeExclude:
+  - eve
+  - ai
+  - "@ai-sdk/anthropic"
+  - "@ai-sdk/openai"
+  - workflow
+  - "@workflow/world-postgres"
+overrides:
+  "postcss@<8.5.10": "8.5.10"
+onlyBuiltDependencies:
+  - "@swc/core"
+  - esbuild
+  - sharp
