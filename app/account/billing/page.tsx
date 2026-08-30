@@ -7,7 +7,7 @@ import {
   ArrowLeft02Icon,
   CrownIcon,
   Invoice01Icon,
-  CreditCardIcon,
+  StripeIcon,
   Calendar01Icon,
   CheckIcon,
 } from "@hugeicons/core-free-icons";
@@ -114,8 +114,8 @@ export default function BillingPage() {
 
           <Card className="mb-4">
             <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={CreditCardIcon} size={16} strokeWidth={1.75} />
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground shadow-[var(--shadow-inset)]">
+                <HugeiconsIcon icon={StripeIcon} size={16} strokeWidth={1.75} className="text-muted-foreground" />
               </div>
               <div className="min-w-0 flex-1">
                 <CardTitle>Método de pago</CardTitle>
