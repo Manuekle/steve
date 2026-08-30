@@ -172,7 +172,7 @@ export default function AccountPage() {
                     </p>
                   </div>
                   <a
-                    href="/pricing"
+                    href="/account/billing"
                     className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-[var(--shadow-button)] hover:opacity-90"
                   >
                     <HugeiconsIcon icon={Invoice01Icon} size={14} strokeWidth={1.75} />
