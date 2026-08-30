@@ -2,7 +2,15 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { KeyRoundIcon, Loading03Icon, Logout01Icon, UserCircleIcon } from "@hugeicons/core-free-icons";
+import {
+  KeyRoundIcon,
+  Loading03Icon,
+  Logout01Icon,
+  UserCircleIcon,
+  CrownIcon,
+  Invoice01Icon,
+} from "@hugeicons/core-free-icons";
+import type { LicenseInfo } from "@/lib/license/types";
 import { AppShell } from "../_components/app-shell";
 import { PageContainer } from "../_components/page-container";
 import {
@@ -27,6 +35,7 @@ export default function AccountPage() {
   const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<UiError | null>(null);
+  const [license, setLicense] = useState<LicenseInfo | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -50,6 +59,15 @@ export default function AccountPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void fetch("/api/license")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: LicenseInfo | null) => {
+        if (data) setLicense(data);
+      })
+      .catch(() => null);
+  }, []);
 
   const resetForm = () => {
     setCurrentPassword("");
@@ -114,6 +132,53 @@ export default function AccountPage() {
               <CardSeparator />
               <CardBody>
                 <p className="truncate text-sm font-medium">{email ?? "—"}</p>
+              </CardBody>
+            </Card>
+
+            <Card className="mb-4">
+              <CardHeader>
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                  <HugeiconsIcon icon={CrownIcon} size={16} strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <CardTitle>Mi plan</CardTitle>
+                  <CardDescription>Tu suscripción y facturación</CardDescription>
+                </div>
+                <a
+                  href="/pricing"
+                  className="hidden shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-[var(--shadow-inset)] hover:bg-accent sm:inline-flex"
+                >
+                  Ver planes
+                </a>
+              </CardHeader>
+              <CardSeparator />
+              <CardBody>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {license?.payload?.edition
+                        ? license.payload.edition.charAt(0).toUpperCase() + license.payload.edition.slice(1)
+                        : license?.status === "missing"
+                          ? "Sin plan"
+                          : "Cargando…"}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {license?.payload?.company ? license.payload.company : t("account.emailCardDescription")}
+                      {license?.status === "valid" && license.maintenanceActive
+                        ? " · Activo"
+                        : license?.status === "valid"
+                          ? " · Mantenimiento vencido"
+                          : ""}
+                    </p>
+                  </div>
+                  <a
+                    href="/pricing"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-[var(--shadow-button)] hover:opacity-90"
+                  >
+                    <HugeiconsIcon icon={Invoice01Icon} size={14} strokeWidth={1.75} />
+                    Gestionar facturación
+                  </a>
+                </div>
               </CardBody>
             </Card>
 
