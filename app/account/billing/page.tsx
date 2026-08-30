@@ -130,8 +130,9 @@ export default function BillingPage() {
               </p>
               <Button
                 asChild
+                variant="ghost"
                 size="sm"
-                className="mt-3 bg-violet-600 text-white shadow-[var(--shadow-soft)] hover:bg-violet-700 hover:text-white"
+                className="mt-3 px-0 text-violet-600 hover:bg-violet-50 hover:text-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 dark:hover:text-violet-300"
               >
                 <Link href="/pricing">Agregar método de pago</Link>
               </Button>
