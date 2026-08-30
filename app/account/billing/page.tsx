@@ -128,7 +128,11 @@ export default function BillingPage() {
                 Aún no hay método de pago guardado. Al comprar Enterprise se creará tu suscripción y podrás
                 gestionarla desde el portal de facturación.
               </p>
-              <Button asChild variant="outline" size="sm" className="mt-3">
+              <Button
+                asChild
+                size="sm"
+                className="mt-3 bg-violet-600 text-white shadow-[var(--shadow-soft)] hover:bg-violet-700 hover:text-white"
+              >
                 <Link href="/pricing">Agregar método de pago</Link>
               </Button>
             </CardBody>
