@@ -51,6 +51,39 @@ RUN pnpm build
 # Verified against a real `docker build` + `eve start` boot, not assumed. ----
 FROM base AS eve
 ENV NODE_ENV=production
+
+# The Docker CLI, and only the CLI — the daemon is the host's, reached over the
+# socket docker-compose.enterprise.yml mounts.
+#
+# agent/sandbox/sandbox.ts uses defaultBackend(), which falls through
+# Vercel -> Docker -> microsandbox -> just-bash. It detects the Docker backend
+# by the *client binary*, not by the mounted socket, so this image resolved all
+# the way down to just-bash — which eve does not bundle and this app does not
+# depend on. The container crash-looped on boot with "Cannot find package
+# 'just-bash'". Verified: socket present, `command -v docker` empty.
+#
+# Adding just-bash instead would have booted, and been worse: it is the pure-JS
+# fallback with none of the container isolation this agent's run_python and
+# bash tools are relying on.
+ARG TARGETARCH
+ARG DOCKER_CLI_VERSION=27.5.1
+RUN set -eux; \
+    case "${TARGETARCH}" in \
+      amd64) arch=x86_64 ;; \
+      arm64) arch=aarch64 ;; \
+      *) echo "unsupported TARGETARCH=${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates curl; \
+    curl -fsSL "https://download.docker.com/linux/static/stable/${arch}/docker-${DOCKER_CLI_VERSION}.tgz" \
+      -o /tmp/docker.tgz; \
+    tar -xzf /tmp/docker.tgz -C /tmp docker/docker; \
+    install -m 0755 /tmp/docker/docker /usr/local/bin/docker; \
+    rm -rf /tmp/docker /tmp/docker.tgz; \
+    apt-get purge -y --auto-remove curl; \
+    rm -rf /var/lib/apt/lists/*; \
+    docker --version
+
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/.output ./.output
 COPY --from=build /app/agent ./agent

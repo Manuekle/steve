@@ -4,7 +4,7 @@
  * vendored under `components/elevenlabs/` — see the note in `orb.tsx` for why
  * these do not live in `components/ui/`.
  *
- * Three edits against upstream:
+ * Four edits against upstream:
  *   - `<Card>` is a plain div. The registry expects shadcn's `card`, which this
  *     project never installed; `app/_components/dashboard-card.tsx` already
  *     owns the name `Card`, and a second one under a near-identical import path
@@ -15,6 +15,9 @@
  *     `startSession({ agentId })`, which the WebRTC transport accepts for
  *     public agents only; an agent created through the API is private, and
  *     needs a short-lived token minted server-side instead.
+ *   - The four icon-only controls (mute, keyboard, call, send) had no
+ *     accessible name at all upstream. Each now has an `aria-label` and a
+ *     `Tooltip` from the project's own tooltip primitive.
  */
 
 import * as React from "react"
@@ -30,14 +33,16 @@ import {
   Mic,
   MicOff,
   PhoneIcon,
-  XIcon,
 } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { CallDisabled02Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LiveWaveform } from "./live-waveform"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 export interface ConversationBarProps {
   /**
@@ -73,13 +78,20 @@ export interface ConversationBarProps {
    * upstream hardcoded "Customer Support".
    */
   label?: string
+
+  /**
+   * Called when starting the call fails. Upstream only logged to the console,
+   * so a denied microphone prompt left the bar sitting on "idle" with nothing
+   * on screen explaining why the call never started.
+   */
+  onStartError?: (error: unknown) => void
 }
 
 export const ConversationBar = React.forwardRef<
   HTMLDivElement,
   ConversationBarProps
 >((
-  { agentId, getConversationToken, className, waveformClassName, onSendMessage, label },
+  { agentId, getConversationToken, className, waveformClassName, onSendMessage, label, onStartError },
   ref
 ) => {
   const { status } = useConversationStatus()
@@ -114,8 +126,9 @@ export const ConversationBar = React.forwardRef<
       startSession({ agentId, connectionType: "webrtc" })
     } catch (error) {
       console.error("Error starting conversation:", error)
+      onStartError?.(error)
     }
-  }, [getMicStream, agentId, getConversationToken, startSession])
+  }, [getMicStream, agentId, getConversationToken, startSession, onStartError])
 
   const handleEndSession = React.useCallback(() => {
     endSession()
@@ -221,54 +234,77 @@ export const ConversationBar = React.forwardRef<
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleMute}
-                  aria-pressed={isMuted}
-                  className={cn("rounded-full h-9 w-9", isMuted ? "bg-muted" : "")}
-                  disabled={!isConnected}
-                >
-                  {isMuted ? <MicOff className="h-[18px] w-[18px]" /> : <Mic className="h-[18px] w-[18px]" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setKeyboardOpen((v) => !v)}
-                  aria-pressed={keyboardOpen}
-                  className="relative rounded-full h-9 w-9"
-                  disabled={!isConnected}
-                >
-                  <Keyboard
-                    className={
-                      "h-[18px] w-[18px] transform-gpu transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] " +
-                      (keyboardOpen ? "scale-75 opacity-0" : "scale-100 opacity-100")
-                    }
-                  />
-                  <ChevronDown
-                    className={
-                      "absolute inset-0 m-auto h-[18px] w-[18px] transform-gpu transition-all delay-50 duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] " +
-                      (keyboardOpen ? "scale-100 opacity-100" : "scale-75 opacity-0")
-                    }
-                  />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleMute}
+                      aria-pressed={isMuted}
+                      aria-label={isMuted ? "Unmute" : "Mute"}
+                      className={cn("rounded-full h-9 w-9", isMuted ? "bg-muted" : "")}
+                      disabled={!isConnected}
+                    >
+                      {isMuted ? <MicOff className="h-[18px] w-[18px]" /> : <Mic className="h-[18px] w-[18px]" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{isMuted ? "Unmute" : "Mute"}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setKeyboardOpen((v) => !v)}
+                      aria-pressed={keyboardOpen}
+                      aria-label={keyboardOpen ? "Hide text input" : "Show text input"}
+                      className="relative rounded-full h-9 w-9"
+                      disabled={!isConnected}
+                    >
+                      <Keyboard
+                        className={
+                          "h-[18px] w-[18px] transform-gpu transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] " +
+                          (keyboardOpen ? "scale-75 opacity-0" : "scale-100 opacity-100")
+                        }
+                      />
+                      <ChevronDown
+                        className={
+                          "absolute inset-0 m-auto h-[18px] w-[18px] transform-gpu transition-all delay-50 duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] " +
+                          (keyboardOpen ? "scale-100 opacity-100" : "scale-75 opacity-0")
+                        }
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{keyboardOpen ? "Hide text input" : "Show text input"}</TooltipContent>
+                </Tooltip>
                 <Separator orientation="vertical" className="mx-1.5 h-6" />
-                <Button
-                  size="icon"
-                  onClick={handleStartOrEnd}
-                  className={cn(
-                    "rounded-full h-9 w-9 shadow-[var(--shadow-button)]",
-                    isConnected || status === "connecting"
-                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90",
-                  )}
-                >
-                  {isConnected || status === "connecting" ? (
-                    <XIcon className="h-[18px] w-[18px]" />
-                  ) : (
-                    <PhoneIcon className="h-[18px] w-[18px]" />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant={isConnected || status === "connecting" ? "ghost" : "default"}
+                      onClick={handleStartOrEnd}
+                      aria-label={isConnected || status === "connecting" ? "End call" : "Start call"}
+                      className={cn(
+                        "rounded-full h-9 w-9",
+                        // Literal white, not `text-destructive-foreground`: that
+                        // token is tuned for red-as-accent text on a near-white/
+                        // near-black surface (see button.tsx's destructive
+                        // variant), not for a solid red fill — on this bg it read
+                        // as low-contrast in both themes.
+                        (isConnected || status === "connecting") &&
+                          "bg-destructive text-white shadow-[var(--shadow-button)] hover:bg-destructive/90",
+                      )}
+                    >
+                      {isConnected || status === "connecting" ? (
+                        <HugeiconsIcon icon={CallDisabled02Icon} size={18} strokeWidth={1.75} />
+                      ) : (
+                        <PhoneIcon className="h-[18px] w-[18px]" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{isConnected || status === "connecting" ? "End call" : "Start call"}</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -288,15 +324,21 @@ export const ConversationBar = React.forwardRef<
                 className="min-h-[100px] resize-none border-0 pr-12 shadow-none focus-visible:ring-0"
                 disabled={!isConnected}
               />
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleSendText}
-                disabled={!textInput.trim() || !isConnected}
-                className="absolute right-3 bottom-3 h-8 w-8"
-              >
-                <ArrowUpIcon className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleSendText}
+                    aria-label="Send message"
+                    disabled={!textInput.trim() || !isConnected}
+                    className="absolute right-3 bottom-3 h-8 w-8"
+                  >
+                    <ArrowUpIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Send message</TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>

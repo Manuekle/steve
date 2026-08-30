@@ -26,11 +26,23 @@ function statusTone(info: LicenseInfo | null): StatusTone {
   return info.maintenanceActive ? "valid-active" : "valid-inactive";
 }
 
+// Same chip shape the rest of the app uses for a status pill — a tinted
+// background and a dot, no border — e.g. Connections' "Conectado" /
+// "Configurado" badges. This one used to be its own one-off (bordered chip,
+// text-600 instead of 700), which read as a different component next to
+// them instead of the same kind of status.
 const TONE_CLASS: Record<StatusTone, string> = {
-  "valid-active": "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  "valid-inactive": "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  missing: "border-border bg-muted text-muted-foreground",
-  invalid: "border-destructive/30 bg-destructive/10 text-destructive",
+  "valid-active": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  "valid-inactive": "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  missing: "bg-muted text-muted-foreground",
+  invalid: "bg-destructive/10 text-destructive",
+};
+
+const TONE_DOT: Record<StatusTone, string> = {
+  "valid-active": "bg-emerald-500",
+  "valid-inactive": "bg-amber-500",
+  missing: "bg-muted-foreground/40",
+  invalid: "bg-destructive",
 };
 
 export function LicenseCard() {
@@ -116,8 +128,9 @@ export function LicenseCard() {
             <h3 className="text-sm font-medium">{t("settings.license.title")}</h3>
             {!loading ? (
               <span
-                className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${TONE_CLASS[tone]}`}
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${TONE_CLASS[tone]}`}
               >
+                <span className={`size-1.5 rounded-full ${TONE_DOT[tone]}`} />
                 {t(`settings.license.status.${tone}`)}
               </span>
             ) : null}

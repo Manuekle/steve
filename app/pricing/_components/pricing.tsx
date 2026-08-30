@@ -21,10 +21,11 @@ import { ENTITY } from "@/app/landing/_components/legal-page";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
 import { useT } from "@/lib/i18n/provider";
 
-/* Precios en USD para la primera publicación: Pro $49/mes o $490/año,
-   Managed $199/mes o $1990/año — el pago anual sale el equivalente a dos
-   meses gratis frente al mensual, en los dos planes de suscripción — y
-   Enterprise $9990, pago único, para quien prefiere correrlo en su propia
+/* Precios en USD: Pro $79/mes o $790/año (100K AI Credits/mes), Managed
+   $249/mes o $2490/año (500K AI Credits/mes) — el pago anual sale el
+   equivalente a dos meses gratis frente al mensual, en los dos planes de
+   suscripción — y Enterprise $9990, pago único, sin créditos (self-hosted +
+   tus propias claves), para quien prefiere correrlo en su propia
    infraestructura en vez de la nuestra. Pro y Managed llevan a /login — no
    hay checkout real todavía, así que "suscribirse" hoy es entrar a la cuenta
    que ya se creó al instalar la instancia. Enterprise abre un modal de
@@ -70,6 +71,9 @@ const PLANS: readonly Plan[] = [
       "pricing.pro.feature3",
       "pricing.pro.feature4",
       "pricing.pro.feature5",
+      "pricing.pro.feature6",
+      "pricing.pro.feature7",
+      "pricing.pro.feature8",
     ],
   },
   {
@@ -84,6 +88,9 @@ const PLANS: readonly Plan[] = [
       "pricing.managed.feature3",
       "pricing.managed.feature4",
       "pricing.managed.feature5",
+      "pricing.managed.feature6",
+      "pricing.managed.feature7",
+      "pricing.managed.feature8",
     ],
   },
   {
@@ -100,6 +107,7 @@ const PLANS: readonly Plan[] = [
       "pricing.enterprise.feature5",
       "pricing.enterprise.feature6",
       "pricing.enterprise.feature7",
+      "pricing.enterprise.feature8",
     ],
   },
 ] as const;
@@ -115,8 +123,8 @@ const PLAN_AMOUNTS: Record<
   string,
   { readonly monthly: number; readonly annual: number } | { readonly oneTime: number }
 > = {
-  "pricing.pro.name": { monthly: 49, annual: 490 },
-  "pricing.managed.name": { monthly: 199, annual: 1990 },
+  "pricing.pro.name": { monthly: 79, annual: 790 },
+  "pricing.managed.name": { monthly: 249, annual: 2490 },
   "pricing.enterprise.name": { oneTime: 9990 },
 };
 

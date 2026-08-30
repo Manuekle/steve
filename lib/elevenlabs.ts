@@ -28,6 +28,15 @@ const MAX_CHARS = 4500;
 export type SpeechResult = {
   readonly data: Uint8Array;
   readonly mimeType: string;
+  /** The model actually used — the configured ELEVENLABS_MODEL_ID, or
+   *  DEFAULT_MODEL_ID when none is set. For AI-usage recording: ElevenLabs'
+   *  API returns no usage/cost figure in the response, so the caller prices
+   *  this against `characters` itself (see lib/model-pricing.ts). */
+  readonly modelId: string;
+  /** Characters actually sent for synthesis, after the MAX_CHARS clip —
+   *  what ElevenLabs bills for, not the caller's original, possibly longer,
+   *  text. */
+  readonly characters: number;
 };
 
 function readKey(): string | undefined {
@@ -62,17 +71,18 @@ export async function generateElevenLabsSpeech(opts: {
   const { ElevenLabsClient } = await import("@elevenlabs/elevenlabs-js");
   const client = new ElevenLabsClient({ apiKey });
 
+  const text = opts.text.slice(0, MAX_CHARS);
   const audio = await client.textToSpeech.convert(
     voiceId,
     {
-      text: opts.text.slice(0, MAX_CHARS),
+      text,
       modelId,
       outputFormat: OUTPUT_FORMAT,
     },
     { abortSignal: opts.abortSignal, timeoutInSeconds: 60 },
   );
 
-  return { data: await collect(audio), mimeType: MIME_TYPE };
+  return { data: await collect(audio), mimeType: MIME_TYPE, modelId, characters: text.length };
 }
 
 /** Preset voices, so `voice: "sarah"` works as well as a raw voice id. */

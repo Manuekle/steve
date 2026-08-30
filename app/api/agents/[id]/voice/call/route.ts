@@ -1,4 +1,4 @@
-import { getAgent } from "@/lib/business-store";
+import { getAgent, startVoiceCall } from "@/lib/business-store";
 import { startOutboundCall } from "@/lib/elevenlabs-agents";
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, apiFailure, missingField, withApiErrors } from "@/lib/api-error";
@@ -54,6 +54,11 @@ export const POST = withApiErrors(async function POST(
       phoneNumberId,
       toNumber: toNumber.trim(),
     });
+    // Tags the conversation "test" before the post_call_transcription
+    // webhook can arrive — see lib/business-store.ts's startVoiceCall.
+    if (result.conversationId) {
+      await startVoiceCall({ agentId: id, conversationId: result.conversationId, source: "test" });
+    }
     return NextResponse.json(result);
   } catch (error) {
     return apiFailure(error, "upstream_failed");

@@ -7,11 +7,15 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft02Icon, Certificate01Icon, CrownIcon } from "@hugeicons/core-free-icons";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/provider";
 import type { LicenseInfo } from "@/lib/license/types";
 
-type GateState = { loading: true } | { loading: false; allowed: boolean };
+export type GateState = { loading: true } | { loading: false; allowed: boolean };
 
-function useEnterpriseAllowed(): GateState {
+/** Whether this install has a valid Enterprise license — the same check
+ *  `EnterpriseGate` uses, exported so a page can gate a single section
+ *  inline instead of blurring the whole screen behind it. */
+export function useEnterpriseAllowed(): GateState {
   const [state, setState] = useState<GateState>({ loading: true });
 
   useEffect(() => {
@@ -40,6 +44,7 @@ function useEnterpriseAllowed(): GateState {
 
 export function EnterpriseGate({ children }: { readonly children: React.ReactNode }) {
   const router = useRouter();
+  const t = useT();
   const gate = useEnterpriseAllowed();
 
   if (gate.loading) {
@@ -51,14 +56,20 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
   }
 
   return (
-    <div className="relative min-h-[60vh]">
+    // Scoped to the content column, not the viewport. A `fixed inset-0`
+    // backdrop also covered the sidebar, which is where the language, theme
+    // and sign-out controls live — locking Settings and Setup also locked the
+    // only way to switch the app out of Spanish while on either page.
+    <div className="relative flex min-h-0 flex-1 overflow-hidden">
       {/* Content underneath, blurred and inert */}
-      <div aria-hidden="true" className="pointer-events-none select-none blur-[6px] opacity-40">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 select-none overflow-hidden blur-[6px] opacity-40"
+      >
         {children}
       </div>
 
-      {/* Backdrop - fixed to viewport so it always centers, even when page scrolls */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xl p-4">
+      <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 p-4 backdrop-blur-xl">
         <Beam size="pulse-outside" colorVariant="mono" strength={0.7} borderRadius={20} className="w-full max-w-[420px]">
           <div className="w-full rounded-[20px] border border-border bg-card p-6 shadow-[var(--shadow-soft),var(--shadow-soft)] sm:p-7">
             <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--shadow-inset)]">
@@ -66,18 +77,21 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
             </div>
 
             <h2 className="mt-4 text-center font-cooper text-[1.7rem] leading-[1.05] tracking-[-0.02em]">
-              Configuración bloqueada
+              {t("gate.title")}
             </h2>
             <p className="mt-2 text-center text-[13px] leading-relaxed text-muted-foreground" style={{ fontFamily: "var(--font-sans)" }}>
-              Tu suscripción actual es <span className="font-medium text-foreground">Pro / Managed</span>. Configuración e
-              Instalación son funciones <span className="font-medium text-foreground">Enterprise</span>.
+              {t("gate.bodyPrefix")}{" "}
+              <span className="font-medium text-foreground">{t("gate.bodyPlan")}</span>
+              {t("gate.bodyMiddle")}{" "}
+              <span className="font-medium text-foreground">{t("gate.bodyEdition")}</span>
+              {t("gate.bodySuffix")}
             </p>
 
             <div className="mt-6 flex flex-col gap-2">
               <Button asChild className="w-full" size="lg">
                 <Link href="/pricing">
                   <HugeiconsIcon icon={CrownIcon} size={16} strokeWidth={1.75} />
-                  Comprar Enterprise
+                  {t("gate.buy")}
                 </Link>
               </Button>
               <button
@@ -95,10 +109,10 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
                   strokeWidth={1.75}
                   className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-x-0.5"
                 />
-                Atrás
+                {t("gate.back")}
               </button>
               <p className="text-center text-[11px] text-muted-foreground/70" style={{ fontFamily: "var(--font-sans)" }}>
-                Desbloquea claves, base de datos y soporte completo.
+                {t("gate.footnote")}
               </p>
             </div>
           </div>

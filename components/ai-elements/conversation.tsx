@@ -83,6 +83,7 @@ export const ConversationScrollButton = ({
         size="icon"
         type="button"
         variant="outline"
+        aria-label="Scroll to bottom"
         {...props}
       >
         <HugeiconsIcon icon={ArrowDown02Icon} size={16} strokeWidth={1.75} />

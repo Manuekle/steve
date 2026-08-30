@@ -82,7 +82,12 @@ the Workflow 5 beta protocol, while that package's `latest` tag is Workflow 4.
 - Docker Engine or Docker Desktop
 - An OpenAI or Anthropic API key with quota
 
-## Local setup
+## Installation
+
+For the complete installation guide with platform-specific instructions (macOS,
+Linux, Windows), visit **[steve.dev/guide](https://steve.dev/guide)**.
+
+### Quick start (manual)
 
 ```bash
 corepack enable

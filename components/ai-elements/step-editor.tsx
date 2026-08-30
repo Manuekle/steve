@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SlackIcon, DiscordIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
@@ -23,7 +25,14 @@ const CONTACT_STATUSES: ReadonlyArray<{ value: string; labelKey: string }> = [
   { value: "closed", labelKey: "automations.statusClosed" },
 ];
 
-const PAYMENT_CURRENCIES = ["usd", "eur", "mxn", "ars", "cop", "brl", "clp", "pen"] as const;
+const PAYMENT_CURRENCIES = ["usd", "eur", "mxn", "ars", "cop", "brl", "clp", "pen", "uyu"] as const;
+
+/** Mercado Pago bills only in the currencies of the countries it operates in.
+ *  Picking it with USD or EUR selected would fail at run time, so the currency
+ *  list narrows with the processor instead of letting that happen. */
+const MERCADOPAGO_CURRENCIES = new Set(["ars", "brl", "clp", "cop", "mxn", "pen", "uyu"]);
+
+const PAYMENT_PROVIDERS = ["stripe", "mercadopago"] as const;
 
 export function StepEditor({
   step,
@@ -278,6 +287,8 @@ export function StepEditor({
         </div>
       ) : null}
 
+      {step.type === "notify_email" ? <NotifyEmailFields step={step} onConfigChange={onConfigChange} /> : null}
+
       {step.type === "update_contact" ? (
         <div className="space-y-2">
           <label className="block space-y-1 text-sm">
@@ -345,6 +356,32 @@ export function StepEditor({
               value={step.config.productName ?? ""}
             />
           </label>
+          <label className="block space-y-1 text-sm">
+            <span className="text-[13px] font-medium text-muted-foreground">{t("automations.paymentProviderLabel")}</span>
+            <Select
+              value={step.config.paymentProvider ?? "stripe"}
+              onValueChange={(value) => {
+                onConfigChange(step.id, "paymentProvider", value);
+                // Switching to Mercado Pago with USD selected would only fail
+                // at run time, so the currency moves with the processor.
+                const currency = step.config.currency ?? "usd";
+                if (value === "mercadopago" && !MERCADOPAGO_CURRENCIES.has(currency)) {
+                  onConfigChange(step.id, "currency", "ars");
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_PROVIDERS.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {t(`automations.paymentProvider.${value}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
           <div className="grid grid-cols-2 gap-2">
             <label className="block space-y-1 text-sm">
               <span className="text-[13px] font-medium text-muted-foreground">{t("automations.amountLabel")}</span>
@@ -365,7 +402,11 @@ export function StepEditor({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_CURRENCIES.map((code) => (
+                  {PAYMENT_CURRENCIES.filter(
+                    (code) =>
+                      step.config.paymentProvider !== "mercadopago" ||
+                      MERCADOPAGO_CURRENCIES.has(code),
+                  ).map((code) => (
                     <SelectItem key={code} value={code}>
                       {code.toUpperCase()}
                     </SelectItem>
@@ -419,6 +460,109 @@ export function StepEditor({
           </p>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** No template picked means the step sends its own `message` as plain text;
+ *  picking one means the body is that template, rendered with the contact. */
+const PLAIN_TEXT_TEMPLATE = "__plain__";
+
+/**
+ * `notify_email`'s own fields.
+ *
+ * Split out of the big conditional above because it's the only step that has
+ * to fetch something before it can render — the template list, which is
+ * whatever the operator has in the editor plus the five built-ins.
+ */
+function NotifyEmailFields({
+  step,
+  onConfigChange,
+}: {
+  readonly step: WorkflowStep;
+  readonly onConfigChange: (id: string, key: string, value: string) => void;
+}) {
+  const t = useT();
+  const [templates, setTemplates] = useState<ReadonlyArray<{ id: string; label: string }>>([]);
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/email-templates")
+      .then((response) => (response.ok ? response.json() : { templates: [] }))
+      .then((data: { templates?: Array<{ id: string; label: string }> }) => {
+        if (live) setTemplates(data.templates ?? []);
+      })
+      // A failed list leaves the select empty; the rest of the step still works.
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const templateId = step.config.emailTemplate ?? "";
+
+  return (
+    <div className="space-y-2">
+      <label className="block space-y-1 text-sm">
+        <span className="text-[13px] font-medium text-muted-foreground">{t("automations.emailToLabel")}</span>
+        <Input
+          onChange={(e) => onConfigChange(step.id, "emailTo", e.target.value)}
+          placeholder={t("automations.emailToPlaceholder")}
+          value={step.config.emailTo ?? step.config.phone ?? ""}
+        />
+      </label>
+
+      <label className="block space-y-1 text-sm">
+        <span className="text-[13px] font-medium text-muted-foreground">{t("automations.emailSubjectLabel")}</span>
+        <Input
+          onChange={(e) => onConfigChange(step.id, "emailSubject", e.target.value)}
+          placeholder={t("automations.emailSubjectPlaceholder")}
+          value={step.config.emailSubject ?? ""}
+        />
+      </label>
+
+      <label className="block space-y-1 text-sm">
+        <span className="text-[13px] font-medium text-muted-foreground">{t("automations.emailTemplateLabel")}</span>
+        <Select
+          value={templateId || PLAIN_TEXT_TEMPLATE}
+          onValueChange={(value) =>
+            onConfigChange(step.id, "emailTemplate", value === PLAIN_TEXT_TEMPLATE ? "" : value)
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={PLAIN_TEXT_TEMPLATE}>{t("automations.emailTemplateNone")}</SelectItem>
+            {templates.map((template) => (
+              <SelectItem key={template.id} value={template.id}>
+                {template.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </label>
+
+      {templateId ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {t("automations.emailTemplateHelp")}{" "}
+          <Link href="/email-templates" className="underline underline-offset-2 hover:text-foreground">
+            {t("automations.emailTemplateLink")}
+          </Link>
+        </p>
+      ) : (
+        <label className="block space-y-1 text-sm">
+          <span className="text-[13px] font-medium text-muted-foreground">{t("automations.messageToSend")}</span>
+          <Textarea
+            onChange={(e) => onConfigChange(step.id, "message", e.target.value)}
+            placeholder={t("automations.messagePlaceholder")}
+            rows={3}
+            value={step.config.message ?? ""}
+          />
+        </label>
+      )}
+
+      <p className="text-xs leading-relaxed text-muted-foreground">{t("automations.emailHelp")}</p>
     </div>
   );
 }

@@ -42,6 +42,8 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-billing: var(--billing);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -75,6 +77,12 @@
   --accent: oklch(0.955 0 0);
   --accent-foreground: oklch(0.2 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  /* The violet the billing screens use the way the rest of the app uses
+     `--destructive`: a tinted text button, not a filled surface. Kept as a
+     token in both themes rather than a `violet-600 dark:violet-400` pair on
+     the element, which is what left the light-mode hover invisible. */
+  --billing: oklch(0.48 0.23 296);
   --border: oklch(0 0 0 / 0.1);
   --input: oklch(0 0 0 / 0.08);
   --ring: oklch(0.5 0 0);
@@ -197,6 +205,8 @@
   --accent: oklch(0.23 0 0);
   --accent-foreground: oklch(0.93 0 0);
   --destructive: oklch(0.637 0.193 21.4);
+  --destructive-foreground: oklch(0.985 0 0);
+  --billing: oklch(0.75 0.16 296);
   --border: oklch(1 0 0 / 0.1);
   --input: oklch(1 0 0 / 0.1);
   --ring: oklch(0.5 0 0);
@@ -301,6 +311,7 @@ html {
 body {
   min-height: 100%;
   margin: 0;
+  color: var(--foreground);
   background: var(--background);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -327,6 +338,21 @@ button,
 input,
 textarea {
   font-family: inherit;
+}
+
+/* Browsers disagree on the default `<button>` cursor — Safari shows a
+   pointer, Chrome/Firefox show the plain arrow. Every raw <button> in the
+   app inherited that split, so the same control looked different depending
+   on where it was used. One rule, inside @layer base so any explicit
+   cursor-* utility (cursor-not-allowed, cursor-grab, …) still wins. */
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  button[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* Smooth theme transition — only applied after initial load to
@@ -643,6 +669,8 @@ textarea {
     transparent 100%);
 }
 .t-reason-viewport::-webkit-scrollbar { display: none; }
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
 .t-reason-scroll {
   will-change: transform;
 }

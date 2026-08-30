@@ -19,13 +19,15 @@ import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
   // Base — shared by every variant and size.
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-[13px] text-sm font-medium whitespace-nowrap"
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[13px] text-sm font-medium whitespace-nowrap"
   + " transition-[background-color,box-shadow,transform,border-color,color] duration-150 ease-[var(--btn-easing)]"
   + " outline-none"
   // Focus — a soft ring coherent with the system, not the browser default.
   + " focus-visible:ring-[3px] focus-visible:ring-[var(--btn-focus-ring)] focus-visible:ring-offset-0"
-  // Disabled — lower contrast, no interaction.
-  + " disabled:pointer-events-none disabled:opacity-45"
+  // Disabled — lower contrast, no interaction. Native `disabled` already
+  // drops the cursor to the browser default; pointer-events:none keeps it
+  // from ever showing `pointer` again on hover.
+  + " disabled:pointer-events-none disabled:cursor-default disabled:opacity-45"
   // aria-invalid
   + " aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
   // Icon sizing

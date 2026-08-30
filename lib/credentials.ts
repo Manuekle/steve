@@ -45,6 +45,8 @@ export type CredentialKey =
   // Direct providers (alternative to the Gateway)
   | "OPENAI_API_KEY"
   | "ANTHROPIC_API_KEY"
+  // Name fixed by @ai-sdk/google, which reads it straight off process.env.
+  | "GOOGLE_GENERATIVE_AI_API_KEY"
   // WhatsApp
   | "WHATSAPP_ACCESS_TOKEN"
   | "WHATSAPP_APP_SECRET"
@@ -70,12 +72,41 @@ export type CredentialKey =
   | "GOOGLE_SERVICE_ACCOUNT_JSON"
   // Google Calendar (calendar tools)
   | "GOOGLE_CALENDAR_ID"
+  // OAuth app identity for the Connections page. These are the *app's*
+  // credentials, not the operator's account: on a hosted install they come
+  // from the environment and nobody types them. A self-hoster registers their
+  // own app once and fills them here.
+  | "GOOGLE_OAUTH_CLIENT_ID"
+  | "GOOGLE_OAUTH_CLIENT_SECRET"
+  | "HUBSPOT_CLIENT_ID"
+  | "HUBSPOT_CLIENT_SECRET"
+  | "CALENDLY_CLIENT_ID"
+  | "CALENDLY_CLIENT_SECRET"
+  | "SLACK_CLIENT_ID"
+  | "SLACK_CLIENT_SECRET"
+  | "NOTION_CLIENT_ID"
+  | "NOTION_CLIENT_SECRET"
+  | "AIRTABLE_CLIENT_ID"
+  | "AIRTABLE_CLIENT_SECRET"
+  | "MICROSOFT_OAUTH_CLIENT_ID"
+  | "MICROSOFT_OAUTH_CLIENT_SECRET"
+  | "WORDPRESS_CLIENT_ID"
+  | "WORDPRESS_CLIENT_SECRET"
+  | "META_APP_ID"
+  | "META_APP_SECRET"
   // Stripe (send_payment_link step)
   | "STRIPE_SECRET_KEY"
+  | "STRIPE_WEBHOOK_SECRET"
+  // Mercado Pago (send_payment_link step, Latin America)
+  | "MERCADOPAGO_ACCESS_TOKEN"
+  // Shopify (shopify_orders agent tool)
+  | "SHOPIFY_SHOP_DOMAIN"
+  | "SHOPIFY_ADMIN_ACCESS_TOKEN"
   // ElevenLabs (voice generation)
   | "ELEVENLABS_API_KEY"
   | "ELEVENLABS_VOICE_ID"
   | "ELEVENLABS_MODEL_ID"
+  | "ELEVENLABS_WEBHOOK_SECRET"
   // Twilio (phone numbers for voice agents)
   | "TWILIO_ACCOUNT_SID"
   | "TWILIO_AUTH_TOKEN"
@@ -86,6 +117,9 @@ export type CredentialKey =
   | "SMTP_USER"
   | "SMTP_PASS"
   | "SMTP_FROM"
+  // Resend (transactional email)
+  | "RESEND_API_KEY"
+  | "RESEND_FROM_EMAIL"
   // Meta Ads
   | "META_ACCESS_TOKEN"
   | "META_AD_ACCOUNT_ID"
@@ -134,6 +168,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
           { value: "gateway", label: "Vercel AI Gateway" },
           { value: "openai", label: "OpenAI" },
           { value: "anthropic", label: "Anthropic" },
+          { value: "google", label: "Google Gemini" },
         ],
         help: "El Gateway rutea a cualquier modelo del catálogo; OpenAI y Anthropic llaman al proveedor directo.",
       },
@@ -179,6 +214,17 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         help: "console.anthropic.com/settings/keys. Anthropic no ofrece embeddings: el Conocimiento (RAG) necesita además la key de OpenAI o la del Gateway.",
         showWhenProvider: ["anthropic"],
       },
+      {
+        key: "GOOGLE_GENERATIVE_AI_API_KEY",
+        label: "Google Gemini API Key",
+        type: "password",
+        required: false,
+        placeholder: "AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        pattern: "^AIza[A-Za-z0-9_-]{10,}$",
+        title: "Debe comenzar con AIza",
+        help: "aistudio.google.com/apikey. Gemini tampoco cubre embeddings acá: el Conocimiento (RAG) necesita además la key de OpenAI o la del Gateway.",
+        showWhenProvider: ["google"],
+      },
     ],
   },
   {
@@ -221,7 +267,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         label: "Webhook Verify Token",
         type: "password",
         required: true,
-        placeholder: "mi_token_secreto_123",
+        placeholder: "my_secret_token_123",
         help: "Your custom secret string for webhook verification.",
         pattern: "^.{8,}$",
         title: "Mínimo 8 caracteres",
@@ -277,7 +323,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         label: "Webhook Verify Token",
         type: "password",
         required: true,
-        placeholder: "mi_token_secreto_123",
+        placeholder: "my_secret_token_123",
         help: "Your custom secret string for webhook verification.",
         pattern: "^.{8,}$",
         title: "Mínimo 8 caracteres",
@@ -324,7 +370,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         label: "Webhook Verify Token",
         type: "password",
         required: true,
-        placeholder: "mi_token_secreto_123",
+        placeholder: "my_secret_token_123",
         help: "Your custom secret string for webhook verification.",
         pattern: "^.{8,}$",
         title: "Mínimo 8 caracteres",
@@ -352,7 +398,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         label: "Lead webhook secret",
         type: "password",
         required: false,
-        placeholder: "mi_secreto_webhook_123",
+        placeholder: "my_webhook_secret_123",
         help: "Shared secret for POST /api/leads. Send as x-webhook-secret header. Without this, the endpoint is open.",
         pattern: "^.{8,}$",
         title: "Mínimo 8 caracteres",
@@ -395,6 +441,143 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
     ],
   },
   {
+    id: "oauth-apps",
+    label: "Apps OAuth (conexiones)",
+    description:
+      "Solo para instalaciones propias. Son las credenciales de la aplicación, no de tu cuenta: quien usa Steve se conecta con su cuenta desde Conexiones y nunca ve estos valores. Registrá una app en cada proveedor y pegá el par acá una sola vez. En un despliegue gestionado ya vienen por variables de entorno.",
+    fields: [
+      {
+        key: "GOOGLE_OAUTH_CLIENT_ID",
+        label: "Google client ID",
+        required: false,
+        placeholder: "123456789012-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+        help: "From console.cloud.google.com > APIs & Services > Credentials. Redirect URI: <your-domain>/api/connections/google/callback",
+      },
+      {
+        key: "GOOGLE_OAUTH_CLIENT_SECRET",
+        label: "Google client secret",
+        type: "password",
+        required: false,
+        placeholder: "GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx",
+      },
+      {
+        key: "HUBSPOT_CLIENT_ID",
+        label: "HubSpot client ID",
+        required: false,
+        placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        help: "From developers.hubspot.com > Apps > Auth. Redirect URI: <your-domain>/api/connections/hubspot/callback",
+      },
+      {
+        key: "HUBSPOT_CLIENT_SECRET",
+        label: "HubSpot client secret",
+        type: "password",
+        required: false,
+        placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      },
+      {
+        key: "CALENDLY_CLIENT_ID",
+        label: "Calendly client ID",
+        required: false,
+        placeholder: "AbCdEf0123456789AbCdEf0123456789",
+        help: "From developer.calendly.com > My apps. Redirect URI: <your-domain>/api/connections/calendly/callback",
+      },
+      {
+        key: "CALENDLY_CLIENT_SECRET",
+        label: "Calendly client secret",
+        type: "password",
+        required: false,
+        placeholder: "AbCdEf0123456789AbCdEf0123456789AbCdEf01",
+      },
+      {
+        key: "SLACK_CLIENT_ID",
+        label: "Slack client ID",
+        required: false,
+        placeholder: "1234567890123.1234567890123",
+        help: "From api.slack.com/apps > OAuth & Permissions. Redirect URI: <your-domain>/api/connections/slack/callback",
+      },
+      {
+        key: "SLACK_CLIENT_SECRET",
+        label: "Slack client secret",
+        type: "password",
+        required: false,
+        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      },
+      {
+        key: "NOTION_CLIENT_ID",
+        label: "Notion client ID",
+        required: false,
+        placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        help: "From notion.so/my-integrations (public integration). Redirect URI: <your-domain>/api/connections/notion/callback",
+      },
+      {
+        key: "NOTION_CLIENT_SECRET",
+        label: "Notion client secret",
+        type: "password",
+        required: false,
+        placeholder: "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      },
+      {
+        key: "AIRTABLE_CLIENT_ID",
+        label: "Airtable client ID",
+        required: false,
+        placeholder: "xxxxxxxxxxxxxxxx",
+        help: "From airtable.com/create/oauth. Redirect URI: <your-domain>/api/connections/airtable/callback",
+      },
+      {
+        key: "AIRTABLE_CLIENT_SECRET",
+        label: "Airtable client secret",
+        type: "password",
+        required: false,
+        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      },
+    ],
+  },
+  {
+    id: "shopify",
+    label: "Shopify",
+    description:
+      "Deja que el agente responda \"¿dónde está mi pedido?\" mirando los pedidos reales de la tienda. Creá una app privada en tu admin: Configuración > Apps y canales de venta > Desarrollar apps > Crear app, y otorgale los permisos de lectura read_orders y read_customers.",
+    fields: [
+      {
+        key: "SHOPIFY_SHOP_DOMAIN",
+        label: "Dominio de la tienda",
+        required: true,
+        placeholder: "mi-tienda.myshopify.com",
+        help: "El dominio .myshopify.com, no el dominio propio. Podés pegar solo el handle (mi-tienda) y se completa solo.",
+        pattern: "^(https?://)?[a-zA-Z0-9-]+(\\.myshopify\\.com)?/?$",
+        title: "El handle de la tienda o mi-tienda.myshopify.com",
+      },
+      {
+        key: "SHOPIFY_ADMIN_ACCESS_TOKEN",
+        label: "Admin API access token",
+        type: "password",
+        required: true,
+        placeholder: "shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        help: "Se muestra una sola vez, al instalar la app privada. Solo hacen falta los permisos de lectura read_orders y read_customers.",
+        pattern: "^shpat_[A-Za-z0-9]+$",
+        title: "Debe empezar con shpat_",
+      },
+    ],
+  },
+  {
+    id: "mercadopago",
+    label: "Mercado Pago",
+    description:
+      "La otra mitad del paso \"Cobrar\": Checkout Pro para Argentina, Brasil, Chile, Colombia, México, Perú y Uruguay, donde Stripe no llega o no conviene. Sacá el access token de mercadopago.com/developers > Tus integraciones > Credenciales.",
+    fields: [
+      {
+        key: "MERCADOPAGO_ACCESS_TOKEN",
+        label: "Access token",
+        type: "password",
+        required: true,
+        placeholder: "APP_USR-xxxxxxxxxxxxxxxx",
+        help: "Empieza con TEST- (credenciales de prueba, cobra en sandbox) o APP_USR- (producción, cobra de verdad).",
+        pattern: "^(TEST|APP_USR)-.+$",
+        title: "Debe empezar con TEST- o APP_USR-",
+      },
+    ],
+  },
+  {
     id: "stripe",
     label: "Stripe",
     description:
@@ -405,10 +588,20 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         label: "Secret key",
         type: "password",
         required: true,
-        placeholder: "REEMPLAZA_CON_TU_CLAVE",
+        placeholder: "sk_••••••••••••••••••••••••••••••",
         help: "Starts with sk_test_ (test mode) or sk_live_ (real charges).",
         pattern: "^sk_(test|live)_.+$",
         title: "Debe empezar con sk_test_ o sk_live_",
+      },
+      {
+        key: "STRIPE_WEBHOOK_SECRET",
+        label: "Webhook signing secret",
+        type: "password",
+        required: false,
+        placeholder: "whsec_xxxxxxxxxxxxxxxxxxxxxxxx",
+        help: "dashboard.stripe.com > Developers > Webhooks > tu endpoint > Signing secret. Sin esto, /api/billing/webhook rechaza todos los eventos.",
+        pattern: "^whsec_.+$",
+        title: "Debe empezar con whsec_",
       },
     ],
   },
@@ -450,6 +643,14 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
           { value: "eleven_turbo_v2_5", label: "Turbo v2.5 — equilibrio calidad/latencia (US$0,05/1K)" },
         ],
         help: "Precio por cada 1.000 caracteres generados. Por defecto: Multilingual v2.",
+      },
+      {
+        key: "ELEVENLABS_WEBHOOK_SECRET",
+        label: "Webhook signing secret",
+        type: "password",
+        required: false,
+        placeholder: "wsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        help: "elevenlabs.io/app/agents/settings > Post-Call Webhook. Apuntalo a /api/webhooks/elevenlabs en este host y pegá acá el secret que te da. Sin esto no se guardan las transcripciones de llamadas.",
       },
     ],
   },
@@ -544,6 +745,33 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
     ],
   },
   {
+    id: "resend",
+    label: "Resend",
+    description:
+      "Proveedor de email transaccional. Enviá emails transaccionales y de marketing con tu propia API key de Resend.",
+    fields: [
+      {
+        key: "RESEND_API_KEY",
+        label: "API Key",
+        type: "password",
+        required: true,
+        placeholder: "re_xxxxxxxxxxxxxxxx",
+        help: "resend.com/api-keys — creá una key para enviar emails.",
+        pattern: "^re_[A-Za-z0-9]+$",
+        title: "API key de Resend (empieza con re_)",
+      },
+      {
+        key: "RESEND_FROM_EMAIL",
+        label: "Email remitente",
+        required: false,
+        placeholder: "notificaciones@tudominio.com",
+        help: "Email que aparece como 'de' en los correos. Debe estar en un dominio verificado en Resend.",
+        pattern: "^.+@.+\\..+$",
+        title: "Email válido",
+      },
+    ],
+  },
+  {
     id: "meta-ads",
     label: "Meta Ads",
     description:
@@ -581,7 +809,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         label: "URL de conexión",
         type: "password",
         required: true,
-        placeholder: "postgres://world:contraseña@127.0.0.1:5544/world",
+        placeholder: "postgres://world:password@127.0.0.1:5544/world",
         help: "La que usa el runtime. Si la contraseña tiene caracteres especiales, codificalos (%40 para @).",
         pattern: "^postgres(ql)?://.+$",
         title: "Debe empezar con postgres:// o postgresql://",
@@ -600,7 +828,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         label: "Contraseña",
         type: "password",
         required: false,
-        placeholder: "una-contraseña-larga-y-aleatoria",
+        placeholder: "a-long-random-password",
         help: "Debe ser idéntica a la contraseña dentro de la URL de conexión.",
         pattern: "^.{8,}$",
         title: "Mínimo 8 caracteres",
@@ -720,10 +948,36 @@ export async function getStoredCredentials(): Promise<CredentialStore> {
 }
 
 /**
+ * Where a credential's active value came from, per key. Absent means nothing
+ * is set anywhere.
+ *
+ * The distinction matters to the UI, not just to billing: a value that only
+ * exists as an environment variable is real and working, but it cannot be
+ * cleared from this app and its secret is not ours to echo back. Settings
+ * needs to say "configured, from the environment" rather than either lying
+ * about it being unset or offering a Clear button that would do nothing.
+ */
+export async function getCredentialSources(): Promise<Record<string, "store" | "env">> {
+  const store = await readStore();
+  const sources: Record<string, "store" | "env"> = {};
+  for (const group of CREDENTIAL_GROUPS) {
+    for (const field of group.fields) {
+      if (store[field.key]) sources[field.key] = "store";
+      else if (process.env[field.key]) sources[field.key] = "env";
+    }
+  }
+  return sources;
+}
+
+/**
  * Return a masked view of all credentials for the API: each key maps to
  * a boolean indicating whether a non-empty value exists in the store
- * (not from environment variables). This ensures the UI only shows
- * "Configurado" for values the user explicitly set.
+ * (not from environment variables).
+ *
+ * Deliberately store-only: `lib/credit-gate.ts` reads the same distinction to
+ * decide who pays for a model call, so widening this to the environment would
+ * silently move billing. The UI gets the fuller picture from
+ * `getCredentialSources` instead.
  */
 export async function getMaskedCredentials(): Promise<Record<string, boolean>> {
   const store = await readStore();
@@ -734,4 +988,40 @@ export async function getMaskedCredentials(): Promise<Record<string, boolean>> {
     }
   }
   return masked;
+}
+
+const PASSWORD_KEYS: ReadonlySet<CredentialKey> = new Set(
+  CREDENTIAL_GROUPS.flatMap((group) =>
+    group.fields.filter((field) => field.type === "password").map((field) => field.key),
+  ),
+);
+
+/** True for every field the Settings form renders as a secret (API keys,
+ *  tokens, OAuth client secrets, SMTP password, …) — the set the API never
+ *  echoes a full value back for. */
+export function isPasswordCredential(key: CredentialKey): boolean {
+  return PASSWORD_KEYS.has(key);
+}
+
+/**
+ * A short, non-reversible preview of a secret explicitly saved through the
+ * UI — `"sk-ant-…wXyz"`, never the full value. Only covers password-type
+ * fields, and only ones with a value on disk: an env-only value has nothing
+ * to preview and stays fully hidden, same as `getStoredCredentials` already
+ * treats it. Used to give the Settings/Connections forms something to show
+ * in a field's placeholder without ever sending the real value back to the
+ * browser — see GET /api/settings.
+ */
+export async function getCredentialPreviews(): Promise<Partial<Record<CredentialKey, string>>> {
+  const store = await readStore();
+  const previews: Partial<Record<CredentialKey, string>> = {};
+  for (const key of PASSWORD_KEYS) {
+    // Environment-provided secrets get a preview too. They are just as
+    // configured as a stored one, and without this the field reads as empty
+    // on an install that sets its keys through .env or the container runtime.
+    const value = store[key] ?? process.env[key];
+    if (!value) continue;
+    previews[key] = value.length <= 8 ? "•".repeat(value.length) : `${value.slice(0, 3)}…${value.slice(-4)}`;
+  }
+  return previews;
 }

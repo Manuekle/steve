@@ -19,6 +19,10 @@ export type KnowledgeDocument = {
   id: string;
   name: string;
   mime: string;
+  /** Folder this document is filed under, from lib/media-store.ts. `null` is
+   *  the root. Folders are shared with the media library so the Conocimiento
+   *  page shows one tree over documents and photos alike. */
+  folder_id: string | null;
   /** Size of the uploaded file in bytes. */
   size: number;
   /** Number of chunks this document was split into. */
@@ -57,7 +61,12 @@ function emptyStore(): KnowledgeStore {
 }
 
 function normalize(parsed: Partial<KnowledgeStore>): KnowledgeStore {
-  return { documents: parsed.documents ?? [], chunks: parsed.chunks ?? [] };
+  return {
+    // `folder_id` landed after the first documents were indexed, so stores
+    // written before it exist in the wild — read a missing one as root.
+    documents: (parsed.documents ?? []).map((doc) => ({ ...doc, folder_id: doc.folder_id ?? null })),
+    chunks: parsed.chunks ?? [],
+  };
 }
 
 let writeQueue: Promise<void> = Promise.resolve();
@@ -121,6 +130,7 @@ export async function addDocument(input: {
   size: number;
   characters: number;
   embedding_model: string;
+  folderId?: string | null;
   chunks: ReadonlyArray<{ text: string; embedding: number[] }>;
 }): Promise<KnowledgeDocument> {
   return enqueue(async () => {
@@ -130,6 +140,7 @@ export async function addDocument(input: {
       id,
       name: input.name,
       mime: input.mime,
+      folder_id: input.folderId ?? null,
       size: input.size,
       chunks: input.chunks.length,
       characters: input.characters,
@@ -147,6 +158,21 @@ export async function addDocument(input: {
         embedding: chunk.embedding,
       });
     });
+    await writeStore(store);
+    return document;
+  });
+}
+
+/** Move a document into a folder (or to the root with `null`). */
+export async function setDocumentFolder(
+  id: string,
+  folderId: string | null,
+): Promise<KnowledgeDocument | null> {
+  return enqueue(async () => {
+    const store = await readStore();
+    const document = store.documents.find((d) => d.id === id);
+    if (!document) return null;
+    document.folder_id = folderId;
     await writeStore(store);
     return document;
   });

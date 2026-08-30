@@ -60,3 +60,13 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     };
   }
 }
+
+/** Whether SMTP has the three credentials it can't send without. */
+export async function isSmtpConfigured(): Promise<boolean> {
+  const [host, user, pass] = await Promise.all([
+    getCredential("SMTP_HOST"),
+    getCredential("SMTP_USER"),
+    getCredential("SMTP_PASS"),
+  ]);
+  return Boolean(host && user && pass);
+}

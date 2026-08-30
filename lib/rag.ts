@@ -165,6 +165,7 @@ export async function ingestFile(input: {
   name: string;
   mime: string;
   bytes: Uint8Array;
+  folderId?: string | null;
 }): Promise<KnowledgeDocument> {
   if (input.bytes.byteLength === 0) throw new RagError("El archivo está vacío.");
   if (input.bytes.byteLength > MAX_FILE_BYTES) {
@@ -183,6 +184,7 @@ export async function ingestFile(input: {
   return addDocument({
     name: input.name,
     mime: input.mime,
+    folderId: input.folderId ?? null,
     size: input.bytes.byteLength,
     characters: text.length,
     embedding_model: embedding.modelId,

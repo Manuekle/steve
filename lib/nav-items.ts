@@ -11,7 +11,10 @@ import {
   AiImagineIcon,
   LibraryIcon,
   FilterHorizontalIcon,
+  FileEditIcon,
+  Mail01Icon,
   UserCircleIcon,
+  PlugSocketIcon,
   TelevisionTableIcon,
   UserGroup02Icon,
 } from "@hugeicons/core-free-icons";
@@ -57,6 +60,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { href: "/crm", labelKey: "nav.crm", icon: TelevisionTableIcon },
       { href: "/leads", labelKey: "nav.leads", icon: UserGroup02Icon },
+      { href: "/forms", labelKey: "nav.forms", icon: FileEditIcon },
     ],
   },
   {
@@ -65,6 +69,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { href: "/automations", labelKey: "nav.automations", icon: ZapIcon },
       { href: "/agents", labelKey: "nav.agents", icon: AiImagineIcon },
+      { href: "/email-templates", labelKey: "nav.emailTemplates", icon: Mail01Icon },
       { href: "/reminders", labelKey: "nav.reminders", icon: Timer01Icon },
       { href: "/ads", labelKey: "nav.ads", icon: MetaIcon },
     ],
@@ -79,6 +84,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     labelKey: "nav.groupSystem",
     items: [
       { href: "/account", labelKey: "nav.account", icon: UserCircleIcon },
+      { href: "/connections", labelKey: "nav.connections", icon: PlugSocketIcon },
       { href: "/settings", labelKey: "nav.settings", icon: Settings01Icon },
       { href: "/setup", labelKey: "nav.setup", icon: FilterHorizontalIcon },
     ],

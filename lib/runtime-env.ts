@@ -17,6 +17,7 @@ const MODEL_KEYS: readonly CredentialKey[] = [
   "AI_GATEWAY_API_KEY",
   "OPENAI_API_KEY",
   "ANTHROPIC_API_KEY",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
 ];
 
 const DATABASE_KEYS: readonly CredentialKey[] = [

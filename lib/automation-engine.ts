@@ -125,7 +125,9 @@ function describeStep(step: WorkflowStep): string {
     case "notify_team":
       return `Post to ${c.service ?? "the team"}: ${c.message ?? "(empty)"}`;
     case "notify_email":
-      return `Send email to ${c.phone ?? "(no email set)"}: ${c.message ?? "(empty)"}`;
+      return `Send email to ${c.emailTo ?? c.phone ?? "(no email set)"} with subject "${
+        c.emailSubject ?? "(unset)"
+      }"${c.emailTemplate ? ` using the "${c.emailTemplate}" template` : `: ${c.message ?? "(empty)"}`}.`;
     case "log_sheet":
       return `Log this contact to spreadsheet ${c.spreadsheetId ?? "(unset)"}${c.sheetName ? ` (${c.sheetName})` : ""}. Runs automatically on webhook triggers only — you have no tool for this, so skip it on keyword/new_chat triggers.`;
     case "send_payment_link":

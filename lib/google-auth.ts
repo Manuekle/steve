@@ -1,4 +1,6 @@
 import { createSign } from "node:crypto";
+import { getConnectionAccessToken } from "./connection-store";
+import { getCredential } from "./credentials";
 
 // Shared Google API authentication via service account.
 // Signs a JWT, trades it for an access token, caches for the token's lifetime.
@@ -68,4 +70,26 @@ export async function getAccessToken(account: ServiceAccount, scope: string): Pr
   const data = (await response.json()) as { access_token: string; expires_in: number };
   tokenCache.set(cacheKey, { token: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 });
   return data.access_token;
+}
+
+/**
+ * A Google access token for `scope`, from whichever identity this install has.
+ *
+ * The connected account wins. Someone who signed in on the Connections page
+ * has said, in the clearest way available, which Google account this app acts
+ * as — and that grant covers Sheets, Calendar and Drive at once, so no
+ * spreadsheet has to be shared with a robot's email address first. The service
+ * account stays as the fallback, because installs that were set up that way
+ * keep working without touching anything.
+ *
+ * `null` means neither identity is configured; the caller reports that as a
+ * skipped step rather than a crash.
+ */
+export async function getGoogleToken(scope: string): Promise<string | null> {
+  const connected = await getConnectionAccessToken("google");
+  if (connected) return connected;
+
+  const serviceAccountJson = await getCredential("GOOGLE_SERVICE_ACCOUNT_JSON");
+  if (!serviceAccountJson) return null;
+  return getAccessToken(parseServiceAccount(serviceAccountJson), scope);
 }

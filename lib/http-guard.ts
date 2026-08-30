@@ -28,6 +28,26 @@ export function hostAllowed(host: string, allowlist: string[]): boolean {
  * default HTTP_ALLOWLIST credential, so the error stays accurate.
  */
 export function assertSafeUrl(raw: string, allowlist: string[], allowlistLabel = "HTTP_ALLOWLIST"): URL {
+  const url = assertPublicHttpsUrl(raw);
+  if (allowlist.length === 0) {
+    throw new Error(`${allowlistLabel} is empty.`);
+  }
+  if (!hostAllowed(url.hostname, allowlist)) {
+    throw new Error(`Host ${url.hostname} is not in ${allowlistLabel}.`);
+  }
+  return url;
+}
+
+/**
+ * Every rule `assertSafeUrl` applies except the allowlist: HTTPS only, no
+ * loopback or private range, no raw IP literal. For destinations a signed-in
+ * operator types in themselves — a form's own webhook — where there is no
+ * fixed host list to check against, but the SSRF rules still hold.
+ *
+ * Deliberately not folded into `assertSafeUrl`: an empty allowlist there means
+ * "deny", which is what keeps the agent's `http_request` tool shut by default.
+ */
+export function assertPublicHttpsUrl(raw: string): URL {
   let url: URL;
   try {
     url = new URL(raw);
@@ -46,12 +66,6 @@ export function assertSafeUrl(raw: string, allowlist: string[], allowlistLabel =
   }
   if (url.protocol === "http:") {
     throw new Error("HTTPS is required.");
-  }
-  if (allowlist.length === 0) {
-    throw new Error(`${allowlistLabel} is empty.`);
-  }
-  if (!hostAllowed(host, allowlist)) {
-    throw new Error(`Host ${host} is not in ${allowlistLabel}.`);
   }
   return url;
 }

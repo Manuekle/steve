@@ -49,18 +49,24 @@ const OPENAI_BASE = "https://api.openai.com/v1";
 const ANTHROPIC_BASE = "https://api.anthropic.com/v1";
 const ANTHROPIC_VERSION = "2023-06-01";
 
+const GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta";
+
 /** Catalogs change on the order of days; a minute of staleness is invisible
  *  to the user and keeps a page refresh from re-fetching 200+ models. */
 const CACHE_TTL_MS = 60_000;
 
 const cache = new Map<string, { report: ProviderReport; expires: number }>();
 
-function keyFor(provider: AiProvider): "AI_GATEWAY_API_KEY" | "OPENAI_API_KEY" | "ANTHROPIC_API_KEY" {
+function keyFor(
+  provider: AiProvider,
+): "AI_GATEWAY_API_KEY" | "OPENAI_API_KEY" | "ANTHROPIC_API_KEY" | "GOOGLE_GENERATIVE_AI_API_KEY" {
   return provider === "openai"
     ? "OPENAI_API_KEY"
     : provider === "anthropic"
       ? "ANTHROPIC_API_KEY"
-      : "AI_GATEWAY_API_KEY";
+      : provider === "google"
+        ? "GOOGLE_GENERATIVE_AI_API_KEY"
+        : "AI_GATEWAY_API_KEY";
 }
 
 function credential(provider: AiProvider): string | undefined {
@@ -87,6 +93,10 @@ type RawModel = {
   modelType?: unknown;
   context_window?: unknown;
   pricing?: { input?: unknown; output?: unknown } | null;
+  // Gemini's list endpoint spells these differently from the others.
+  displayName?: unknown;
+  supportedGenerationMethods?: unknown;
+  inputTokenLimit?: unknown;
 };
 
 function normalizeGatewayModel(raw: RawModel): CatalogModel | null {
@@ -373,6 +383,62 @@ async function reportAnthropic(key: string, probe: boolean): Promise<Omit<Provid
 }
 
 /**
+ * Gemini's list endpoint takes the key as a query parameter, not a header,
+ * and returns ids prefixed with "models/" — stripped here so what the app
+ * stores in AI_MODEL is the plain id the SDK expects.
+ *
+ * The list is filtered to models that can actually answer a prompt:
+ * `generateContent` in `supportedGenerationMethods`. Without that the picker
+ * fills with embedding and vision-only entries the agent cannot call.
+ */
+async function reportGoogle(key: string, probe: boolean): Promise<Omit<ProviderReport, "provider" | "checkedAt">> {
+  const models = await fetchJson(`${GOOGLE_BASE}/models?pageSize=200&key=${encodeURIComponent(key)}`, {});
+  if (models.status >= 400) {
+    const message = errorMessage(models.body);
+    return { status: statusFromError(models.status, message), detail: message, models: [], billingChecked: false };
+  }
+
+  const list = ((models.body as { models?: RawModel[] }).models ?? [])
+    .map((raw): CatalogModel | null => {
+      if (typeof raw.name !== "string") return null;
+      const methods = raw.supportedGenerationMethods;
+      if (Array.isArray(methods) && !methods.includes("generateContent")) return null;
+      const id = raw.name.replace(/^models\//, "");
+      return {
+        id,
+        label: typeof raw.displayName === "string" ? raw.displayName : id,
+        vendor: "google",
+        ...(typeof raw.inputTokenLimit === "number" ? { contextWindow: raw.inputTokenLimit } : {}),
+      };
+    })
+    .filter((model): model is CatalogModel => model !== null)
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  if (!probe) {
+    return { status: "ok", models: list, billingChecked: false };
+  }
+
+  const trial = await fetchJson(
+    `${GOOGLE_BASE}/models/${list.find((m) => m.id.includes("flash"))?.id ?? list[0]?.id ?? "gemini-3-flash"}:generateContent?key=${encodeURIComponent(key)}`,
+    { "content-type": "application/json" },
+    {
+      method: "POST",
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: "hi" }] }],
+        generationConfig: { maxOutputTokens: 1 },
+      }),
+    },
+  );
+
+  if (trial.status >= 400) {
+    const message = errorMessage(trial.body);
+    return { status: statusFromError(trial.status, message), detail: message, models: list, billingChecked: true };
+  }
+
+  return { status: "ok", models: list, billingChecked: true };
+}
+
+/**
  * Catalog and health for one provider.
  *
  * `probe` spends a one-token completion to find out whether the account can
@@ -407,7 +473,9 @@ export async function getProviderReport(
         ? await reportOpenai(key, probe)
         : provider === "anthropic"
           ? await reportAnthropic(key, probe)
-          : await reportGateway(key, probe);
+          : provider === "google"
+            ? await reportGoogle(key, probe)
+            : await reportGateway(key, probe);
   } catch (error) {
     partial = {
       status: "unreachable",

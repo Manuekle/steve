@@ -10,10 +10,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { SoundToggle } from "@/components/sound-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
+import { SteveMark } from "@/components/icons/steve-mark";
 import { NotificationBadge } from "@/components/ai-elements/notification-badge";
 import { SidebarNotifications } from "@/components/ai-elements/sidebar-notifications";
 import { SidebarStatus } from "@/components/ai-elements/sidebar-status";
@@ -27,24 +29,25 @@ import { cn } from "@/lib/utils";
 
 const COLLAPSED_KEY = "steve:sidebar-collapsed";
 
-export function AppShell({
-  children,
-  activePath,
-}: {
-  readonly children: ReactNode;
-  readonly activePath: string;
-}) {
+export function AppShell({ children }: { readonly children: ReactNode }) {
   const t = useT();
+  // The shell lives in the `(app)` layout, so it mounts once and survives
+  // navigation: the active route has to come from the router, not a prop.
+  const activePath = usePathname();
   const [chatBadge, setChatBadge] = useState(0);
   const [inboxBadge, setInboxBadge] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  // La preferencia vive en localStorage, que el servidor no tiene: se lee
+  // después de montar para que el HTML del SSR coincida con el cliente.
+  useEffect(() => {
     try {
-      return localStorage.getItem(COLLAPSED_KEY) === "1";
+      setCollapsed(localStorage.getItem(COLLAPSED_KEY) === "1");
     } catch {
-      return false;
+      // Best-effort.
     }
-  });
+  }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -96,6 +99,11 @@ export function AppShell({
       });
   }, []);
 
+  /** Nested routes light up their section: /crm/leads marks /crm, and
+   *  /agents/x/voice marks /agents. */
+  const isActivePath = (href: string): boolean =>
+    activePath === href || activePath.startsWith(`${href}/`);
+
   /** Badges live here, not in the shared nav list, because they're runtime
    *  state — the palette has no use for them. */
   const badgeFor = (href: string): number =>
@@ -104,7 +112,7 @@ export function AppShell({
   /** One nav row. Expanded it carries its own label, so the tooltip only
    *  appears when the sidebar is icons-only. */
   const renderNavItem = (item: NavItem) => {
-    const isActive = activePath === item.href;
+    const isActive = isActivePath(item.href);
     const badgeCount = badgeFor(item.href);
     // A crisp tick on nav hover, a knock on press — the two places the
     // cuelume guide says sound actually earns its keep.
@@ -157,10 +165,13 @@ export function AppShell({
       >
         <div className={cn("flex h-14 shrink-0 items-center", collapsed ? "justify-center px-2" : "gap-2.5 px-5")}>
           {!collapsed ? (
-            <span className="text-lg font-semibold">
-              <span className="text-muted-foreground/40">st</span>
-              <span className="text-foreground">eve</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <SteveMark />
+              <span className="text-lg font-semibold">
+                <span className="text-muted-foreground/40">st</span>
+                <span className="text-foreground">eve</span>
+              </span>
+            </div>
           ) : null}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -205,7 +216,7 @@ export function AppShell({
           <CommandPalette collapsed={collapsed} />
         </div>
 
-        <nav className={cn("flex flex-1 flex-col gap-1 overflow-y-auto py-2", collapsed ? "px-2" : "px-3")}>
+        <nav className={cn("flex flex-1 flex-col gap-1 overflow-y-auto py-2 scrollbar-hide", collapsed ? "px-2" : "px-3")}>
           {NAV_GROUPS.map((group, groupIndex) => (
             <div key={group.id} className={cn("flex flex-col gap-1", groupIndex > 0 && "mt-3")}>
               {/* Collapsed to icons there is no room for a heading, so the
@@ -293,7 +304,7 @@ export function AppShell({
             data-open={mobileMenuOpen}
           >
             {NAV_ITEMS.map((item) => {
-              const isActive = activePath === item.href;
+              const isActive = isActivePath(item.href);
               const badgeCount = badgeFor(item.href);
               return (
                 <Link

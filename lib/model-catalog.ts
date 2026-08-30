@@ -1,15 +1,32 @@
 // Which service answers a prompt. Declared here rather than in
 // lib/ai-provider.ts because that module reads the credential store (and so
 // node:fs), which no client component can import.
-export type AiProvider = "gateway" | "openai" | "anthropic";
+export type AiProvider = "gateway" | "openai" | "anthropic" | "google";
 
-export const AI_PROVIDERS: readonly AiProvider[] = ["gateway", "openai", "anthropic"];
+export const AI_PROVIDERS: readonly AiProvider[] = ["gateway", "openai", "anthropic", "google"];
+
+/**
+ * The credential each provider authenticates with.
+ *
+ * Deliberately here, in the client-safe catalog, and not next to the code
+ * that reads the store: the health check, the setup checklist and the credit
+ * gate each used to inline the same ternary chain, so adding a provider meant
+ * remembering three unrelated files — and forgetting one showed up as
+ * "degraded" on a perfectly configured install.
+ */
+export const PROVIDER_CREDENTIAL_KEY = {
+  gateway: "AI_GATEWAY_API_KEY",
+  openai: "OPENAI_API_KEY",
+  anthropic: "ANTHROPIC_API_KEY",
+  google: "GOOGLE_GENERATIVE_AI_API_KEY",
+} as const satisfies Record<AiProvider, string>;
 
 /** Model each provider uses when AI_MODEL is left empty. */
 export const DEFAULT_MODELS: Record<AiProvider, string> = {
   gateway: "openai/gpt-5-mini-fast",
   openai: "gpt-5-mini",
   anthropic: "claude-sonnet-5",
+  google: "gemini-3.7-flash",
 };
 
 // Which model to use for what.
@@ -74,6 +91,7 @@ const PREFERENCES: Record<AiProvider, Record<ModelTask, readonly string[]>> = {
     chat: [
       "anthropic/claude-sonnet-5",
       "openai/gpt-5-mini",
+      "google/gemini-3.7-flash",
       // The `-fast` variant is the same model on quicker hardware at roughly
       // 1.8x the price. It stays in the chain because a restricted or
       // throttled plan often still reaches it.
@@ -83,6 +101,7 @@ const PREFERENCES: Record<AiProvider, Record<ModelTask, readonly string[]>> = {
     automation: [
       "anthropic/claude-opus-5",
       "openai/gpt-5.1-thinking",
+      "google/gemini-3.1-pro-preview",
       "anthropic/claude-opus-4.8",
       // Reachable tiers, for a plan that blocks the frontier models above.
       "openai/gpt-5",
@@ -92,6 +111,7 @@ const PREFERENCES: Record<AiProvider, Record<ModelTask, readonly string[]>> = {
     agent_design: [
       "anthropic/claude-opus-5",
       "openai/gpt-5.1-thinking",
+      "google/gemini-3.1-pro-preview",
       "anthropic/claude-opus-4.8",
       "openai/gpt-5",
       "openai/gpt-5-mini",
@@ -100,6 +120,7 @@ const PREFERENCES: Record<AiProvider, Record<ModelTask, readonly string[]>> = {
     quick: [
       "anthropic/claude-haiku-4.5",
       "openai/gpt-5-nano",
+      "google/gemini-3.1-flash-lite",
       "openai/gpt-5-mini",
       "openai/gpt-5-mini-fast",
     ],
@@ -116,6 +137,21 @@ const PREFERENCES: Record<AiProvider, Record<ModelTask, readonly string[]>> = {
     agent_design: ["claude-opus-5", "claude-opus-4-8", "claude-sonnet-5"],
     quick: ["claude-haiku-4-5", "claude-haiku-4-1", "claude-sonnet-5"],
   },
+  // Gemini's own id spelling, no vendor prefix. Ids verified against
+  // ai.google.dev/gemini-api/docs/pricing (2026-08-30) — the plain
+  // `gemini-3-flash` and `gemini-3-pro` this list first guessed at do not
+  // exist; the shipping names are `gemini-3.7-flash` and `gemini-3.1-pro-preview`.
+  //
+  // Flash is the value tier and the chat default ($0.75/$3.75); Pro is worth
+  // it for a flow someone runs unattended ($2/$12); Flash-Lite handles titles
+  // and classification ($0.25/$1.50). Each chain ends on a previous
+  // generation so a retired id degrades instead of failing.
+  google: {
+    chat: ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"],
+    automation: ["gemini-3.1-pro-preview", "gemini-2.5-pro", "gemini-3.7-flash"],
+    agent_design: ["gemini-3.1-pro-preview", "gemini-2.5-pro", "gemini-3.7-flash"],
+    quick: ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-3.7-flash"],
+  },
 };
 
 /** Last-resort ids, used when the catalog can't be fetched at all (offline,
@@ -124,6 +160,7 @@ export const FALLBACK_MODEL: Record<AiProvider, string> = {
   gateway: "anthropic/claude-sonnet-5",
   openai: "gpt-5-mini",
   anthropic: "claude-sonnet-5",
+  google: "gemini-3.7-flash",
 };
 
 /** Rough tier for the UI, derived from price rather than from the name — a

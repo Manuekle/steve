@@ -8,11 +8,13 @@ export function Card({
   className,
   interactive = false,
   style,
+  onClick,
 }: {
   readonly children: ReactNode;
   readonly className?: string;
   readonly interactive?: boolean;
   readonly style?: CSSProperties;
+  readonly onClick?: () => void;
 }) {
   return (
     <div
@@ -23,6 +25,7 @@ export function Card({
         className,
       )}
       style={style}
+      onClick={onClick}
     >
       {children}
     </div>

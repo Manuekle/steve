@@ -5,6 +5,13 @@
 
 export type ChannelId = "web" | "whatsapp" | "messenger" | "instagram";
 
+/**
+ * Where a contact came from. A superset of the messaging channels: a lead can
+ * also arrive through a form on the site, which is not somewhere you can reply
+ * but is still an origin the inbox has to be able to draw.
+ */
+export type ContactChannel = ChannelId | "form";
+
 export type ChannelStatus = "connected" | "disconnected" | "error";
 
 export type ChannelInfo = {
@@ -40,7 +47,7 @@ export type Contact = {
    * from the inbound message's auth context — see agent/hooks/persist.ts.
    */
   readonly externalId?: string;
-  readonly channel: ChannelId | "form";
+  readonly channel: ContactChannel;
   readonly sessionId?: string;
   readonly crmId?: string;
   readonly status: ContactStatus;
@@ -58,8 +65,127 @@ export type LeadInput = {
   readonly email?: string;
   readonly source?: string;
   readonly message?: string;
-  readonly channel?: ChannelId | "form";
+  readonly channel?: ContactChannel;
   readonly attributes?: Record<string, string>;
+};
+
+// ── Forms ──────────────────────────────────────────────────────────
+//
+// A form is a short, multi-step questionnaire published at /f/<slug>. Its
+// point is not the answers on their own: every choice carries a score, and the
+// total decides how warm the lead is before anyone reads it. A submission ends
+// up in the same inbox as a WhatsApp message — see `ingestLead`.
+
+export type FormFieldType =
+  /** One choice, scored. The workhorse: this is what qualifies a lead. */
+  | "single_choice"
+  /** Several choices, scores add up. */
+  | "multi_choice"
+  | "text"
+  | "long_text"
+  | "email"
+  | "phone";
+
+/** Which contact field an answer fills. Scored questions have no mapping —
+ *  they say how good the lead is, not who it is. */
+export type FormFieldMapping = "name" | "email" | "phone";
+
+export type FormChoice = {
+  readonly id: string;
+  readonly label: string;
+  /** Rendered before the label. Purely decorative. */
+  readonly emoji?: string;
+  /** Trusted, operator-authored vector markup shown instead of `emoji` — for
+   *  brand marks a unicode emoji can't represent (e.g. the Facebook or Google
+   *  Ads logo on a lead-source choice). Never sourced from visitor input. */
+  readonly iconSvg?: string;
+  /** What picking this adds to the score. Zero is a real answer, not a
+   *  missing one: "I have no leads yet" is worth asking and worth nothing. */
+  readonly points: number;
+};
+
+export type FormField = {
+  readonly id: string;
+  readonly type: FormFieldType;
+  readonly label: string;
+  readonly help?: string;
+  readonly required: boolean;
+  readonly placeholder?: string;
+  /** Choice fields only. */
+  readonly choices?: readonly FormChoice[];
+  /** Contact-capture fields only. */
+  readonly maps?: FormFieldMapping;
+};
+
+/**
+ * Show this step only when an earlier answer matches. Absent means always.
+ * One condition rather than a tree: the branch someone actually draws on a
+ * whiteboard is "if they said X, ask this", and a rule engine that can express
+ * more than that is a rule engine nobody can read back later.
+ */
+export type FormCondition = {
+  readonly fieldId: string;
+  /** Matches when the answer is any one of these choice ids. */
+  readonly equals: readonly string[];
+};
+
+export type FormStep = {
+  readonly id: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly fields: readonly FormField[];
+  readonly showIf?: FormCondition;
+};
+
+/** Score thresholds, inclusive. Anything under `warm` is cold. */
+export type FormScoring = {
+  readonly hot: number;
+  readonly warm: number;
+};
+
+export type FormStatus = "draft" | "published";
+
+export type Form = {
+  readonly id: string;
+  /** URL segment at /f/<slug>. Unique across forms. */
+  readonly slug: string;
+  readonly name: string;
+  readonly description: string;
+  readonly status: FormStatus;
+  readonly steps: readonly FormStep[];
+  readonly scoring: FormScoring;
+  /** Shown after the last step. */
+  readonly thankYou?: string;
+  /** Where each response is POSTed, when the operator wants one. Set from the
+   *  form's own Webhook card and delivered by lib/forms/webhook.ts; the
+   *  Connections page only lists what is set, since a webhook belongs to a
+   *  form and not to the account. */
+  readonly webhookUrl?: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+export type LeadTemperature = "hot" | "warm" | "cold";
+
+export type FormAnswer = {
+  readonly fieldId: string;
+  /** Choice ids for choice fields, typed text for the rest. */
+  readonly value: string | readonly string[];
+};
+
+export type FormResponse = {
+  readonly id: string;
+  readonly formId: string;
+  readonly answers: readonly FormAnswer[];
+  readonly score: number;
+  readonly temperature: LeadTemperature;
+  /** True until the last step is submitted. A partial response is still a
+   *  lead — someone who answered two of four questions told us something. */
+  readonly partial: boolean;
+  /** Set once an answer identified the person well enough to ingest. */
+  readonly contactId?: string;
+  readonly startedAt: string;
+  readonly updatedAt: string;
 };
 
 export type AutomationTrigger = "keyword" | "schedule" | "new_chat" | "no_reply" | "webhook";
@@ -105,12 +231,24 @@ export type WorkflowStep = {
     readonly service?: "slack" | "discord";
     /** notify_team: the service's incoming-webhook URL. */
     readonly webhookUrl?: string;
+    /** notify_email: recipient address. Older automations put it in `phone`,
+     *  which the runner still reads as a fallback. */
+    readonly emailTo?: string;
+    /** notify_email: subject line, `{{contact.x}}` placeholders included. */
+    readonly emailSubject?: string;
+    /** notify_email: which email template renders the body. Unset sends the
+     *  step's own `message` as plain text. */
+    readonly emailTemplate?: string;
     /** update_contact: CRM write-back. */
     readonly contactStatus?: string;
     readonly contactNote?: string;
     /** log_sheet: destination spreadsheet + tab. */
     readonly spreadsheetId?: string;
     readonly sheetName?: string;
+    /** send_payment_link: which processor creates the link. Absent means
+     *  "whichever one has a key", resolved at run time — see
+     *  resolvePaymentProvider in lib/automation-runner.ts. */
+    readonly paymentProvider?: "stripe" | "mercadopago";
     /** send_payment_link: decimal amount ("49.99") and ISO currency code. */
     readonly amount?: string;
     readonly currency?: string;
@@ -217,6 +355,42 @@ export type AgentVoice = {
   readonly syncedAt?: string;
   /** ElevenLabs phone number id routed to this agent, if any. */
   readonly phoneNumberId?: string;
+};
+
+/** One turn in a saved call transcript, mirroring the shape ElevenLabs sends
+ *  on its post_call_transcription webhook. */
+export type VoiceCallTurn = {
+  readonly role: "agent" | "user";
+  readonly message: string;
+  readonly timeInCallSecs: number;
+};
+
+/** "test" — the app itself placed or previewed the call (the "Llamada de
+ *  prueba" button, or the in-browser Orb call on the voice page). "real" —
+ *  a caller dialed the agent's routed number. Set at call start for the two
+ *  paths this app controls; anything the webhook reports without a matching
+ *  pending call defaults to "real". */
+export type VoiceCallSource = "test" | "real";
+
+/**
+ * A call handled by an agent's ElevenLabs mirror — the transcript persists
+ * server-side because the browser is rarely present for the whole call (a
+ * phone call in particular never touches it at all), and the ElevenLabs
+ * conversation record is not something this app can be sure will still be
+ * around whenever someone comes back to check.
+ */
+export type VoiceCall = {
+  readonly id: string;
+  /** This app's agent id, not the ElevenLabs mirror id. */
+  readonly agentId: string;
+  /** The ElevenLabs conversation id — also this record's natural key. */
+  readonly conversationId: string;
+  readonly source: VoiceCallSource;
+  /** Empty until the post_call_transcription webhook fills it in. */
+  readonly transcript: readonly VoiceCallTurn[];
+  readonly durationSecs?: number;
+  readonly startedAt: string;
+  readonly createdAt: string;
 };
 
 export type Agent = {

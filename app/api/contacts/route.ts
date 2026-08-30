@@ -3,6 +3,7 @@ import {
   deleteContact,
   listChats,
   listContacts,
+  moveContact,
   setContactStatus,
   toggleChatPin,
   upsertChat,
@@ -66,6 +67,9 @@ export const PUT = withApiErrors(async function PUT(request: NextRequest) {
   const input = body as {
     contactId?: string;
     status?: ContactStatus;
+    /** Slot inside the destination column, counted within that column only.
+     *  Sent by the CRM board when a card is dropped between two others. */
+    index?: number;
     name?: string;
     notes?: string;
     attributes?: Record<string, string>;
@@ -73,7 +77,13 @@ export const PUT = withApiErrors(async function PUT(request: NextRequest) {
     togglePin?: boolean;
   };
   if (input.contactId) {
-    if (input.status) {
+    const index =
+      typeof input.index === "number" && Number.isInteger(input.index) && input.index >= 0
+        ? input.index
+        : undefined;
+    if (input.status && index !== undefined) {
+      await moveContact(input.contactId, input.status, index);
+    } else if (input.status) {
       await setContactStatus(input.contactId, input.status);
     }
     if (input.name || input.notes || input.attributes) {

@@ -1,5 +1,5 @@
 import { getCredential } from "./credentials";
-import { parseServiceAccount, getAccessToken } from "./google-auth";
+import { getGoogleToken } from "./google-auth";
 
 // Google Calendar utility functions for checking availability and booking events.
 
@@ -16,16 +16,14 @@ export type CalendarEvent = {
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar";
 
 async function getCalendarToken(): Promise<{ token: string; calendarId: string }> {
-  const serviceAccountJson = await getCredential("GOOGLE_SERVICE_ACCOUNT_JSON");
-  if (!serviceAccountJson) {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is not configured.");
+  const token = await getGoogleToken(CALENDAR_SCOPE);
+  if (!token) {
+    throw new Error("Connect a Google account, or set GOOGLE_SERVICE_ACCOUNT_JSON.");
   }
-  const calendarId = await getCredential("GOOGLE_CALENDAR_ID");
-  if (!calendarId) {
-    throw new Error("GOOGLE_CALENDAR_ID is not configured.");
-  }
-  const account = parseServiceAccount(serviceAccountJson);
-  const token = await getAccessToken(account, CALENDAR_SCOPE);
+  // A service account has no calendar of its own, so that setup has to name
+  // one. A connected account does: "primary" is the person's own calendar,
+  // which is what they meant by connecting it.
+  const calendarId = (await getCredential("GOOGLE_CALENDAR_ID")) ?? "primary";
   return { token, calendarId };
 }
 

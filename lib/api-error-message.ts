@@ -136,6 +136,25 @@ export function networkErrorMessage(t: Translate, error: unknown): string {
 }
 
 /**
+ * The `apiErrorBody` shape, when a 2xx response is carrying one. Success
+ * payloads in this app never have a top-level `code`, which is what makes
+ * this safe to check on every response.
+ */
+function apiErrorInBody(
+  data: unknown,
+): { code: ApiErrorCode; message?: string; field?: string; detail?: string } | null {
+  if (!data || typeof data !== "object") return null;
+  const body = data as Record<string, unknown>;
+  if (!isApiErrorCode(body.code) || typeof body.error !== "string") return null;
+  return {
+    code: body.code,
+    message: typeof body.message === "string" ? body.message : undefined,
+    field: typeof body.field === "string" ? body.field : undefined,
+    detail: typeof body.detail === "string" ? body.detail : undefined,
+  };
+}
+
+/**
  * `fetch` that always ends in either data or a localized message — the shape
  * every page in the app now uses for its loads and mutations.
  */
@@ -154,7 +173,27 @@ export async function fetchJson<T>(
     return { ok: false, error: await readApiError(response, t) };
   }
   try {
-    return { ok: true, data: (await response.json()) as T };
+    const data = (await response.json()) as T;
+    // Not every failure comes back with a failing status. `not_configured` is
+    // deliberately a 200 — "this integration has no key yet" is a state, not a
+    // broken request — so the body has to be checked too. Without this the
+    // caller sees `ok: true` and reads fields off an error payload: the
+    // billing dialog navigated to `undefined`, and saving a voice agent with
+    // no ElevenLabs key handed the page an undefined agent.
+    const failure = apiErrorInBody(data);
+    if (failure) {
+      return {
+        ok: false,
+        error: {
+          code: failure.code,
+          message: failure.message ?? translateApiError(t, failure.code, failure.field),
+          field: failure.field,
+          detail: failure.detail,
+          status: response.status,
+        },
+      };
+    }
+    return { ok: true, data };
   } catch {
     // A 200 whose body isn't JSON is a broken route, not a bad request.
     return {

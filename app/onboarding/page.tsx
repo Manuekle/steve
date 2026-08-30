@@ -10,7 +10,7 @@ import {
   ZapIcon,
 } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { CRMS, GOALS, INDUSTRIES, VOLUMES } from "@/lib/onboarding/options";
 import { useAppLocale, useT } from "@/lib/i18n/provider";
+import { countryOptions } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 
 /**
@@ -61,37 +62,11 @@ export default function OnboardingPage() {
   const [busy, setBusy] = useState(false);
 
   const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("+54");
-  const [countries, setCountries] = useState<Array<{ code: string; name: string }>>([]);
+  const [countryIso, setCountryIso] = useState("ar");
+  const countries = useMemo(() => countryOptions(locale), [locale]);
+  const dialCode = countries.find((c) => c.iso2 === countryIso)?.dial ?? "+54";
   const [businessName, setBusinessName] = useState("");
 
-  useEffect(() => {
-    fetch("https://api.restcountries.com/v3.1/all?fields=name,idd,cca2")
-      .then(function (response) {
-        return response.json();
-      })
-      .then(function (data) {
-        const list = (Array.isArray(data) ? data : [])
-          .filter((c: { idd?: { root?: string; suffixes?: string[] } }) => c.idd?.root)
-          .map((c: { name: { common: string }; idd: { root: string; suffixes?: string[] } }) => ({
-            code: `${c.idd.root}${c.idd.suffixes?.[0] ?? ""}`,
-            name: c.name.common,
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-        if (list.length > 0) setCountries(list);
-      })
-      .catch(() => null);
-    fetch("https://api.restcountries.com/countries/v5?q=canada", {
-      headers: { Authorization: "Bearer rc_live_cb07229394904170b35bafe2d5b1441c" },
-    })
-      .then(function (response) {
-        return response.json();
-      })
-      .then(function (data) {
-        console.log(data);
-      })
-      .catch(() => null);
-  }, []);
   const [industry, setIndustry] = useState("");
   const [contactVolume, setContactVolume] = useState("");
   const [crm, setCrm] = useState("");
@@ -108,7 +83,7 @@ export default function OnboardingPage() {
   // the dashboard can order the tour without a second round trip.
   const finish = async () => {
     setBusy(true);
-    const fullPhone = phone.trim() ? (phone.trim().startsWith("+") ? phone.trim() : `${countryCode}${phone.trim().replace(/^0+/, "")}`) : "";
+    const fullPhone = phone.trim() ? (phone.trim().startsWith("+") ? phone.trim() : `${dialCode}${phone.trim().replace(/^0+/, "")}`) : "";
     await fetch("/api/onboarding", {
       body: JSON.stringify({ businessName, contactVolume, crm, goals, industry, phone: fullPhone }),
       headers: { "content-type": "application/json" },
@@ -187,25 +162,14 @@ export default function OnboardingPage() {
 
               <Field hint={t("onboarding.phoneHint")} label={t("onboarding.phone")}>
                 <div className="flex gap-2">
-                  <Select onValueChange={setCountryCode} value={countryCode}>
+                  <Select onValueChange={setCountryIso} value={countryIso}>
                     <SelectTrigger className="w-[9rem] shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(countries.length > 0
-                        ? countries
-                        : [
-                            { code: "+54", name: "Argentina" },
-                            { code: "+52", name: "México" },
-                            { code: "+34", name: "España" },
-                            { code: "+57", name: "Colombia" },
-                            { code: "+56", name: "Chile" },
-                            { code: "+51", name: "Perú" },
-                            { code: "+1", name: "USA/Canada" },
-                          ]
-                      ).map((c) => (
-                        <SelectItem key={`${c.code}-${c.name}`} value={c.code}>
-                          {c.code} {c.name}
+                      {countries.map((c) => (
+                        <SelectItem key={c.iso2} value={c.iso2}>
+                          {c.dial} {c.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

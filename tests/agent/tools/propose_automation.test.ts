@@ -6,7 +6,10 @@ import type { ToolContext } from "eve/tools";
 
 // Same isolation pattern as lib/business-store.test.ts — point the store at
 // a temp dir so these tests never touch the real ~/.steve/business.json.
-const TEST_DIR = join(tmpdir(), `steve-test-${Date.now()}`);
+// Random suffix alongside the timestamp: both files derive this from
+// Date.now(), and parallel vitest workers can land on the same millisecond —
+// same path, same business.json, one file's writes clobbering the other's.
+const TEST_DIR = join(tmpdir(), `steve-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");

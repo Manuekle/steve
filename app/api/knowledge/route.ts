@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { resolveEmbeddingModel } from "@/lib/ai-provider";
-import { deleteDocument, listDocuments } from "@/lib/knowledge-store";
+import { deleteDocument, listDocuments, setDocumentFolder } from "@/lib/knowledge-store";
+import { listFolders } from "@/lib/media-store";
 import { ACCEPT_ATTRIBUTE, MAX_FILE_BYTES, RagError, ingestFile } from "@/lib/rag";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
 
-// GET    /api/knowledge      — list indexed documents + embedding status
+// GET    /api/knowledge      — list indexed documents + folders + embedding status
 // POST   /api/knowledge      — multipart upload; indexes each file
+// PATCH  /api/knowledge      — { id, folder_id } to file a document
 // DELETE /api/knowledge?id=  — remove a document and its chunks
 
 // Embedding a large PDF is a few seconds of model calls, well past the
@@ -13,10 +15,11 @@ import { apiError, missingField, withApiErrors } from "@/lib/api-error";
 export const maxDuration = 300;
 
 export const GET = withApiErrors(async function GET() {
-  const documents = await listDocuments();
+  const [documents, folders] = await Promise.all([listDocuments(), listFolders()]);
   const embedding = resolveEmbeddingModel();
   return NextResponse.json({
     documents,
+    folders,
     embeddings: embedding
       ? { available: true, model: embedding.modelId, route: embedding.route }
       : { available: false },
@@ -39,6 +42,10 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     return apiError("no_file");
   }
 
+  const folderRaw = form.get("folderId");
+  const folderId =
+    typeof folderRaw === "string" && folderRaw && folderRaw !== "root" ? folderRaw : null;
+
   // Per-file results rather than all-or-nothing: one unreadable PDF in a
   // batch shouldn't discard the documents that indexed cleanly.
   const indexed = [];
@@ -49,6 +56,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
         name: file.name,
         mime: file.type,
         bytes: new Uint8Array(await file.arrayBuffer()),
+        folderId,
       });
       indexed.push(document);
     } catch (error) {
@@ -67,6 +75,30 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     { documents: indexed, failed },
     { status: indexed.length === 0 ? 422 : 200 },
   );
+});
+
+export const PATCH = withApiErrors(async function PATCH(request: NextRequest) {
+  let body: { id?: unknown; folder_id?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return apiError("invalid_json");
+  }
+
+  const id = typeof body.id === "string" ? body.id : "";
+  if (!id) return missingField("id");
+  if (body.folder_id !== null && typeof body.folder_id !== "string") {
+    return missingField("folder_id");
+  }
+
+  const folderId =
+    body.folder_id === null || body.folder_id === "" || body.folder_id === "root"
+      ? null
+      : body.folder_id;
+
+  const document = await setDocumentFolder(id, folderId);
+  if (!document) return apiError("not_found");
+  return NextResponse.json({ document });
 });
 
 export const DELETE = withApiErrors(async function DELETE(request: NextRequest) {

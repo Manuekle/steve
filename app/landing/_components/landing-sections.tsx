@@ -16,7 +16,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChromaticTextReveal } from "@/components/motion/chromatic-text-reveal";
 import { TextReveal } from "@/components/motion/text-reveal";
-import { AnthropicLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
+import { AnthropicLogo, GeminiLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
 import { useSession } from "@/lib/auth/use-session";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/provider";
@@ -30,6 +30,7 @@ import {
   StripeMark,
   WhatsAppMark,
 } from "./brand-marks";
+import { MercadoPagoBrandIcon } from "@/components/icons/connection-icons";
 import { AgentOverlay, ConversationOverlay } from "./overlays";
 import { Disclosure, FigureLabel, Reveal, ScreenFrame, SectionIntro, Shell } from "./primitives";
 
@@ -57,10 +58,12 @@ const CHANNELS: readonly { readonly label: string; readonly mark: ReactNode }[] 
   { label: "Meta", mark: <MetaMark size={38} /> },
 ];
 
-/** The three routes `lib/provider-catalog.ts` can be pointed at. */
+/** The four routes `lib/provider-catalog.ts` can be pointed at. Keep in step
+ *  with AI_PROVIDERS in lib/model-catalog.ts. */
 const PROVIDERS: readonly { readonly label: string; readonly mark: ReactNode }[] = [
   { label: "Anthropic", mark: <AnthropicLogo size={20} /> },
   { label: "OpenAI", mark: <OpenAiLogo size={20} /> },
+  { label: "Gemini", mark: <GeminiLogo size={20} /> },
   { label: "Vercel AI Gateway", mark: <VercelLogo size={18} /> },
 ];
 
@@ -353,9 +356,14 @@ const CONNECTORS: readonly {
 }[] = [
   {
     detailKey: "landing.features.automation.connectorStripe",
-    labelKey: null,
-    label: "Stripe",
-    mark: <StripeMark size={26} />,
+    labelKey: "landing.features.automation.connectorPaymentsLabel",
+    label: "",
+    mark: (
+      <span className="flex items-center gap-1.5">
+        <StripeMark size={26} />
+        <MercadoPagoBrandIcon size={22} />
+      </span>
+    ),
   },
   {
     detailKey: "landing.features.automation.connectorSheets",

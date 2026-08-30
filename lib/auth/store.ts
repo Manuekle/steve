@@ -3,25 +3,86 @@ import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
+import {
+  migrateFromFileStore as dbMigrateFromFile,
+  hasAnyAccount as dbHasAnyAccount,
+  createAccount as dbCreateAccount,
+  login as dbLogin,
+  startPasswordReset as dbStartPasswordReset,
+  resetPassword as dbResetPassword,
+  changePassword as dbChangePassword,
+  verifySession as dbVerifySession,
+  getSessionAccountEmail as dbGetSessionAccountEmail,
+  destroySession as dbDestroySession,
+  dbHasAccounts,
+} from "./db-store";
 
 /**
- * The lock on a self-hosted instance.
+ * Auth store with automatic DB/file routing.
  *
- * Every account here shares one instance's data — the inbox, every contact,
- * the model keys on Settings — this file only gates who can sign in, not who
- * sees what once they're in. There are no per-user records anywhere else in
- * the app.
+ * When WORKFLOW_POSTGRES_URL is set, accounts and sessions live in PostgreSQL
+ * (auth schema). When it is not — or on first boot before the DB is reachable —
+ * the store falls back to ~/.steve/auth.json, the original file-based design.
  *
- * It lives beside `credentials.ts` in `~/.steve/`, in the same shape: a JSON
- * file written through a temp file and a rename, so a crash mid-write cannot
- * leave a half-file that locks everyone out of their own install. `0600`,
- * because it holds password hashes.
+ * On the first DB access, if the file exists and the DB is empty, data is
+ * migrated automatically. After migration the file is kept as backup but all
+ * reads and writes go through the database.
  *
- * No database. The app's own state is already a file — `business.json` — and
- * the Postgres this project talks about belongs to the Eve workflow engine,
- * not to the app. Putting accounts in Postgres would mean the app could not
- * start without it, to check a handful of rows.
+ * The file-based path is preserved for single-instance installs where
+ * PostgreSQL is not available (e.g. a quick local trial).
  */
+
+// ── DB availability detection (resolved once, lazily) ────────────────────────
+
+let dbMode: boolean | null = null;
+
+async function useDb(): Promise<boolean> {
+  if (dbMode !== null) return dbMode;
+
+  // No Postgres URL → file mode
+  if (!process.env.WORKFLOW_POSTGRES_URL) {
+    dbMode = false;
+    return false;
+  }
+
+  try {
+    // DB reachable → check if it has accounts yet
+    const hasDb = await dbHasAccounts();
+    if (hasDb) {
+      dbMode = true;
+      return true;
+    }
+
+    // DB is reachable but empty — check if we have a file to migrate from
+    try {
+      const raw = await readFile(AUTH_FILE, "utf-8");
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      // Check for `owner` (legacy) or `accounts` (current) shape
+      const hasOwner = "owner" in parsed && parsed.owner != null;
+      const hasAccounts =
+        "accounts" in parsed &&
+        Array.isArray(parsed.accounts) &&
+        parsed.accounts.length > 0;
+
+      if (hasOwner || hasAccounts) {
+        // Migrate file → DB
+        const fileStore = await read();
+        await dbMigrateFromFile(fileStore);
+      }
+    } catch {
+      // No file or unreadable — that's fine, fresh DB install
+    }
+
+    dbMode = true;
+    return true;
+  } catch {
+    // DB not reachable — fall back to file
+    dbMode = false;
+    return false;
+  }
+}
+
+// ── File-based store (original logic, preserved) ─────────────────────────────
 
 const AUTH_FILE = join(homedir(), ".steve", "auth.json");
 
@@ -81,10 +142,6 @@ type LegacyAuthStore = {
 async function read(): Promise<AuthStore> {
   try {
     const parsed = JSON.parse(await readFile(AUTH_FILE, "utf-8")) as Record<string, unknown>;
-    // A pre-multi-account file has `owner`, not `accounts` — read it into the
-    // new shape here so the first write migrates it on disk. Skipping this
-    // would make that first write silently drop the only account on the file:
-    // `accounts` would read back as `[]` and overwrite `owner` with nothing.
     if ("owner" in parsed) {
       const legacy = parsed as unknown as Partial<LegacyAuthStore>;
       const owner = legacy.owner ?? null;
@@ -107,8 +164,6 @@ async function write(store: AuthStore): Promise<void> {
   const tmp = `${AUTH_FILE}.${process.pid}.tmp`;
   await writeFile(tmp, JSON.stringify(store, null, 2) + "\n", { encoding: "utf-8", mode: 0o600 });
   await rename(tmp, AUTH_FILE);
-  // `rename` keeps the temp file's mode, but an existing target that predates
-  // this code would not have one, so set it either way.
   await chmod(AUTH_FILE, 0o600).catch(() => {});
 }
 
@@ -116,8 +171,6 @@ async function write(store: AuthStore): Promise<void> {
 function equals(a: string, b: string): boolean {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
-  // `timingSafeEqual` throws on a length mismatch, which would itself be a
-  // signal — hash both sides to a fixed width first.
   const l = createHash("sha256").update(left).digest();
   const r = createHash("sha256").update(right).digest();
   return timingSafeEqual(l, r);
@@ -127,17 +180,13 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-// ── Accounts ────────────────────────────────────────────────────────
+// ── File-based account/session helpers ───────────────────────────────────────
 
-export async function hasAnyAccount(): Promise<boolean> {
-  return (await read()).accounts.length > 0;
+function fileHasAnyAccount(store: AuthStore): boolean {
+  return store.accounts.length > 0;
 }
 
-/**
- * Open self-signup: any number of accounts can share this instance. Only a
- * duplicate email is refused — there's no cap and no invite gate.
- */
-export async function createAccount(
+async function fileCreateAccount(
   email: string,
   password: string,
 ): Promise<{ ok: false; reason: "email_exists" | "invalid" } | { ok: true; token: string }> {
@@ -171,15 +220,7 @@ export async function createAccount(
   return { ok: true, token: session.token };
 }
 
-/**
- * Checks the password and, on success, opens a session.
- *
- * The derivation always runs, even when the email matches no account, against
- * a throwaway salt. A wrong email would otherwise return in a microsecond and
- * a wrong password in a hundred milliseconds, which tells an attacker which
- * half they got right.
- */
-export async function login(
+async function fileLogin(
   email: string,
   password: string,
 ): Promise<{ ok: false } | { ok: true; token: string }> {
@@ -198,13 +239,7 @@ export async function login(
   return { ok: true, token: session.token };
 }
 
-/**
- * Starts a reset: issues a token for the account with this email, if one
- * exists. Returns `null` either way to the caller's caller — the API route
- * always answers the same regardless, so an anonymous request can't be used
- * to check which emails have accounts.
- */
-export async function startPasswordReset(email: string): Promise<string | null> {
+async function fileStartPasswordReset(email: string): Promise<string | null> {
   const store = await read();
   const normalised = email.trim().toLowerCase();
   const index = store.accounts.findIndex((candidate) => candidate.email === normalised);
@@ -219,12 +254,7 @@ export async function startPasswordReset(email: string): Promise<string | null> 
   return token;
 }
 
-/**
- * Completes a reset: on success, rehashes the password and drops every other
- * session open on that account, since a leaked-or-forgotten password means
- * any of them could belong to whoever had it.
- */
-export async function resetPassword(
+async function fileResetPassword(
   token: string,
   newPassword: string,
 ): Promise<{ ok: false } | { ok: true }> {
@@ -261,15 +291,7 @@ export async function resetPassword(
   return { ok: true };
 }
 
-/**
- * Changes a signed-in account's own password — different from
- * `resetPassword`: that one comes from an emailed token with no session at
- * all, so it drops every open session on the account. This one comes from
- * inside an active session, so it keeps that one session alive and only
- * drops the *other* ones — the same "everywhere else gets signed out"
- * hygiene, without yanking the session the request is using right now.
- */
-export async function changePassword(
+async function fileChangePassword(
   email: string,
   currentPassword: string,
   newPassword: string,
@@ -308,18 +330,13 @@ export async function changePassword(
   return { ok: true };
 }
 
-// ── Sessions ────────────────────────────────────────────────────────
+// ── Session helpers ──────────────────────────────────────────────────────────
 
 function prune(sessions: readonly Session[]): Session[] {
   const now = Date.now();
   return sessions.filter((session) => Date.parse(session.expiresAt) > now);
 }
 
-/**
- * A session is a random 256-bit token. Only its SHA-256 is stored, so a copy
- * of `auth.json` is not a set of working sessions — the same reason the
- * password is not stored either.
- */
 function newSession(accountEmail: string): { record: Session; token: string } {
   const token = randomBytes(32).toString("base64url");
   const now = new Date();
@@ -334,21 +351,14 @@ function newSession(accountEmail: string): { record: Session; token: string } {
   };
 }
 
-export async function verifySession(token: string | undefined): Promise<boolean> {
+async function fileVerifySession(token: string | undefined): Promise<boolean> {
   if (!token) return false;
   const store = await read();
   const wanted = hashToken(token);
   return prune(store.sessions).some((session) => equals(session.tokenHash, wanted));
 }
 
-/**
- * Which account a session belongs to — `verifySession` only answers whether
- * one is valid, not whose it is. Routes that need to act on "the signed-in
- * account" (changing its password, showing its email) resolve it here
- * instead of trusting a client-supplied email, which the session cookie
- * itself can't be tricked into claiming.
- */
-export async function getSessionAccountEmail(token: string | undefined): Promise<string | null> {
+async function fileGetSessionAccountEmail(token: string | undefined): Promise<string | null> {
   if (!token) return null;
   const store = await read();
   const wanted = hashToken(token);
@@ -356,7 +366,7 @@ export async function getSessionAccountEmail(token: string | undefined): Promise
   return session?.accountEmail ?? null;
 }
 
-export async function destroySession(token: string | undefined): Promise<void> {
+async function fileDestroySession(token: string | undefined): Promise<void> {
   if (!token) return;
   const store = await read();
   const wanted = hashToken(token);
@@ -366,6 +376,60 @@ export async function destroySession(token: string | undefined): Promise<void> {
   });
 }
 
+// ── Public API: routes to DB or file ─────────────────────────────────────────
+
+export async function hasAnyAccount(): Promise<boolean> {
+  return (await useDb()) ? dbHasAnyAccount() : fileHasAnyAccount(await read());
+}
+
+export async function createAccount(
+  email: string,
+  password: string,
+): Promise<{ ok: false; reason: "email_exists" | "invalid" } | { ok: true; token: string }> {
+  return (await useDb()) ? dbCreateAccount(email, password) : fileCreateAccount(email, password);
+}
+
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ ok: false } | { ok: true; token: string }> {
+  return (await useDb()) ? dbLogin(email, password) : fileLogin(email, password);
+}
+
+export async function startPasswordReset(email: string): Promise<string | null> {
+  return (await useDb()) ? dbStartPasswordReset(email) : fileStartPasswordReset(email);
+}
+
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<{ ok: false } | { ok: true }> {
+  return (await useDb()) ? dbResetPassword(token, newPassword) : fileResetPassword(token, newPassword);
+}
+
+export async function changePassword(
+  email: string,
+  currentPassword: string,
+  newPassword: string,
+  currentToken: string,
+): Promise<{ ok: false; reason: "wrong_password" | "invalid" } | { ok: true }> {
+  return (await useDb())
+    ? dbChangePassword(email, currentPassword, newPassword, currentToken)
+    : fileChangePassword(email, currentPassword, newPassword, currentToken);
+}
+
+export async function verifySession(token: string | undefined): Promise<boolean> {
+  return (await useDb()) ? dbVerifySession(token) : fileVerifySession(token);
+}
+
+export async function getSessionAccountEmail(token: string | undefined): Promise<string | null> {
+  return (await useDb()) ? dbGetSessionAccountEmail(token) : fileGetSessionAccountEmail(token);
+}
+
+export async function destroySession(token: string | undefined): Promise<void> {
+  return (await useDb()) ? dbDestroySession(token) : fileDestroySession(token);
+}
+
 /** Cookie attributes, in one place so the login and logout routes agree. */
 export function sessionCookie(token: string, secure: boolean) {
   return {
@@ -373,10 +437,13 @@ export function sessionCookie(token: string, secure: boolean) {
     maxAge: SESSION_DAYS * 86_400,
     name: SESSION_COOKIE,
     path: "/",
-    // `lax`, not `strict`: the webhooks are not browser navigations, and
-    // `strict` would drop the cookie on every arrival from an external link.
     sameSite: "lax" as const,
     secure,
     value: token,
   };
+}
+
+/** Reset the DB mode cache — useful for tests or when config changes at runtime. */
+export function resetDbMode(): void {
+  dbMode = null;
 }

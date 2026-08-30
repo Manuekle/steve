@@ -1,19 +1,19 @@
-import { parseServiceAccount, getAccessToken } from "./google-auth";
+// The Sheets REST API, called directly — no googleapis dependency.
+//
+// Where the token comes from is not this file's business: `getGoogleToken`
+// answers with the connected account's token when there is one and the service
+// account's otherwise, so the same call works for both kinds of install.
 
-// Google Sheets API access with no OAuth flow and no googleapis dependency:
-// sign a short-lived JWT with the service account's private key (Node's
-// built-in crypto covers RS256, so no extra package is needed), trade it
-// for an access token, then call the Sheets REST API directly.
+export const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 
-/** Append one row to a sheet. `serviceAccountJson` is the raw JSON key file contents. */
+/** Append one row to a sheet. */
 export async function appendRow(opts: {
-  readonly serviceAccountJson: string;
+  readonly accessToken: string;
   readonly spreadsheetId: string;
   readonly sheetName: string;
   readonly values: readonly string[];
 }): Promise<void> {
-  const account = parseServiceAccount(opts.serviceAccountJson);
-  const token = await getAccessToken(account, "https://www.googleapis.com/auth/spreadsheets");
+  const token = opts.accessToken;
   const range = encodeURIComponent(opts.sheetName);
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${opts.spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED`,

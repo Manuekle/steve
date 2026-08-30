@@ -284,14 +284,44 @@ function FileUploadRow({
       }
       transition={ROW_TRANSITION}
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border bg-background p-3",
+        "relative isolate overflow-hidden rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-soft)]",
         classNames?.item,
       )}
     >
+      {status === "error" ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 bg-destructive/[0.06]"
+        />
+      ) : showProgress ? (
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
+          aria-label={`${item.name} upload progress`}
+          className={cn("pointer-events-none absolute inset-0 -z-10", classNames?.progress)}
+        >
+          <div
+            className={cn(
+              "absolute inset-0",
+              status === "success"
+                ? "bg-emerald-400/[0.12] dark:bg-emerald-500/[0.1]"
+                : "bg-primary/[0.06]",
+              !reduce && "transition-transform duration-300 ease-out",
+            )}
+            style={{
+              transformOrigin: "left",
+              transform: `scaleX(${progressRatio})`,
+            }}
+          />
+        </div>
+      ) : null}
+
       <div className="flex items-center gap-3">
         <div
           className={cn(
-            "grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground",
+            "grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]",
             classNames?.leading,
           )}
         >
@@ -328,7 +358,7 @@ function FileUploadRow({
                   onClick={() => onRetry(item)}
                   aria-label={`Retry ${item.name}`}
                   className={cn(
-                    "grid h-7 w-7 place-items-center rounded-full text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground active:scale-95",
+                    "grid h-7 w-7 place-items-center rounded-[9px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground active:scale-95",
                     classNames?.action,
                   )}
                 >
@@ -340,7 +370,7 @@ function FileUploadRow({
                 onClick={() => onRemove(item)}
                 aria-label={`Remove ${item.name}`}
                 className={cn(
-                  "grid h-7 w-7 place-items-center rounded-full text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground active:scale-95",
+                  "grid h-7 w-7 place-items-center rounded-[9px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground active:scale-95",
                   classNames?.action,
                 )}
               >
@@ -348,38 +378,6 @@ function FileUploadRow({
               </button>
             </div>
           </div>
-
-          {showProgress ? (
-            <div
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(progress)}
-              aria-label={`${item.name} upload progress`}
-              className={cn(
-                "mt-3 h-1.5 overflow-hidden rounded-full bg-muted",
-                classNames?.progress,
-              )}
-            >
-              <motion.div
-                className={cn(
-                  "h-full rounded-full",
-                  status === "success"
-                    ? "bg-emerald-500"
-                    : "bg-foreground",
-                )}
-                style={{
-                  transformOrigin: "left",
-                  transform: reduce ? `scaleX(${progressRatio})` : undefined,
-                }}
-                initial={false}
-                animate={
-                  reduce ? undefined : { transform: `scaleX(${progressRatio})` }
-                }
-                transition={{ duration: 0.28, ease: EASE_OUT }}
-              />
-            </div>
-          ) : null}
         </div>
       </div>
     </motion.li>
@@ -525,10 +523,10 @@ export function FileUpload({
           addFiles(Array.from(event.dataTransfer.files));
         }}
         className={cn(
-          "group relative flex w-full overflow-hidden rounded-3xl border border-dashed border-border bg-background outline-none",
-          "transition-[border-color,transform] duration-200 active:scale-[0.99]",
+          "group relative flex w-full overflow-hidden rounded-2xl border border-dashed border-border bg-card shadow-[var(--shadow-soft)] outline-none",
+          "transition-[border-color,box-shadow,transform] duration-200 active:scale-[0.99]",
           "hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          "data-[dragging=true]:border-foreground",
+          "data-[dragging=true]:border-foreground data-[dragging=true]:shadow-[var(--shadow-elevated)]",
           "disabled:pointer-events-none disabled:opacity-55",
           centered
             ? "min-h-56 flex-col items-center justify-center gap-3 p-7 text-center"
@@ -539,10 +537,8 @@ export function FileUpload({
         <motion.span
           aria-hidden="true"
           className={cn(
-            "grid shrink-0 place-items-center bg-muted text-foreground",
-            centered
-              ? "h-16 w-16 rounded-[1.35rem] border border-border"
-              : "h-14 w-14 rounded-[1.25rem]",
+            "grid shrink-0 place-items-center rounded-xl bg-muted text-foreground shadow-[var(--shadow-inset)]",
+            centered ? "h-16 w-16 border border-border" : "h-14 w-14",
           )}
           animate={
             reduce
@@ -581,7 +577,7 @@ export function FileUpload({
 
         <span
           className={cn(
-            "shrink-0 rounded-full border border-border text-xs font-medium text-foreground transition-colors duration-150 group-hover:bg-muted",
+            "shrink-0 rounded-[11px] border border-border bg-background text-xs font-medium text-foreground shadow-[var(--shadow-button)] transition-colors duration-150 group-hover:bg-muted",
             centered ? "mt-1 px-4 py-2" : "px-3.5 py-2",
           )}
         >

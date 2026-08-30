@@ -10,10 +10,16 @@ import type {
   ChatSummary,
   Contact,
   ContactStatus,
+  Form,
+  FormResponse,
   LeadInput,
   Reminder,
   ReminderStatus,
+  VoiceCall,
+  VoiceCallSource,
+  VoiceCallTurn,
 } from "./types";
+import { moveContactTo } from "./contact-order";
 
 // Shared by the Eve agent (tools/hooks/schedules) and Next.js API routes.
 // Same-host deploy: both processes read ~/.steve/business.json.
@@ -26,10 +32,22 @@ type BusinessStore = {
   chats: ChatSummary[];
   reminders: Reminder[];
   agents: Agent[];
+  forms: Form[];
+  formResponses: FormResponse[];
+  voiceCalls: VoiceCall[];
 };
 
 function emptyStore(): BusinessStore {
-  return { automations: [], contacts: [], chats: [], reminders: [], agents: [] };
+  return {
+    automations: [],
+    contacts: [],
+    chats: [],
+    reminders: [],
+    agents: [],
+    forms: [],
+    formResponses: [],
+    voiceCalls: [],
+  };
 }
 
 let writeQueue: Promise<void> = Promise.resolve();
@@ -53,6 +71,9 @@ async function readStore(): Promise<BusinessStore> {
       chats: parsed.chats ?? [],
       reminders: parsed.reminders ?? [],
       agents: parsed.agents ?? [],
+      forms: parsed.forms ?? [],
+      formResponses: parsed.formResponses ?? [],
+      voiceCalls: parsed.voiceCalls ?? [],
     };
   } catch {
     return emptyStore();
@@ -69,6 +90,9 @@ function readStoreSync(): BusinessStore {
       chats: parsed.chats ?? [],
       reminders: parsed.reminders ?? [],
       agents: parsed.agents ?? [],
+      forms: parsed.forms ?? [],
+      formResponses: parsed.formResponses ?? [],
+      voiceCalls: parsed.voiceCalls ?? [],
     };
   } catch {
     return emptyStore();
@@ -243,6 +267,22 @@ export async function upsertContact(
 export async function setContactStatus(id: string, status: ContactStatus): Promise<Contact[]> {
   return updateStore((store) => {
     store.contacts = store.contacts.map((c) => (c.id === id ? { ...c, status } : c));
+    return store.contacts;
+  });
+}
+
+/**
+ * Status change plus placement: the CRM board lets a card be dropped between
+ * two others, and the slot it lands in is the order it keeps. Order lives in
+ * the contacts array itself — see `moveContactTo`.
+ */
+export async function moveContact(
+  id: string,
+  status: ContactStatus,
+  index?: number,
+): Promise<Contact[]> {
+  return updateStore((store) => {
+    store.contacts = moveContactTo(store.contacts, id, status, index);
     return store.contacts;
   });
 }
@@ -429,5 +469,237 @@ export async function toggleAgentStatus(id: string): Promise<Agent | undefined> 
     const updated: Agent = { ...existing, status: nextStatus };
     store.agents = store.agents.map((a) => (a.id === id ? updated : a));
     return updated;
+  });
+}
+
+/** Looks an agent up by its ElevenLabs mirror id — what a post-call webhook
+ *  carries, never this app's own agent id. */
+export async function getAgentByElevenLabsAgentId(
+  elevenlabsAgentId: string,
+): Promise<Agent | undefined> {
+  return (await readStore()).agents.find(
+    (a) => a.voice?.elevenlabsAgentId === elevenlabsAgentId,
+  );
+}
+
+// ── Voice calls ──────────────────────────────────────────────────────
+//
+// Every call an agent's ElevenLabs mirror handles — the test button on this
+// app and real inbound calls both land here. `startVoiceCall` runs the
+// instant this app itself places or opens a call, before there is any
+// transcript to show, purely to stamp `source: "test"` on the record ahead
+// of the webhook. `recordVoiceCallTranscript` is the post_call_transcription
+// webhook filling that record in (or creating it fresh, tagged "real", when
+// no such pending row exists — the only way a call reaches this handler
+// without this app having placed it first).
+
+export async function listVoiceCalls(agentId: string): Promise<VoiceCall[]> {
+  const calls = (await readStore()).voiceCalls.filter((c) => c.agentId === agentId);
+  return calls.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+}
+
+export async function startVoiceCall(input: {
+  agentId: string;
+  conversationId: string;
+  source: VoiceCallSource;
+}): Promise<VoiceCall> {
+  return updateStore((store) => {
+    const existing = store.voiceCalls.find((c) => c.conversationId === input.conversationId);
+    if (existing) return existing;
+    const created: VoiceCall = {
+      id: newId("call"),
+      agentId: input.agentId,
+      conversationId: input.conversationId,
+      source: input.source,
+      transcript: [],
+      startedAt: nowIso(),
+      createdAt: nowIso(),
+    };
+    store.voiceCalls = [created, ...store.voiceCalls];
+    return created;
+  });
+}
+
+export async function recordVoiceCallTranscript(input: {
+  agentId: string;
+  conversationId: string;
+  transcript: readonly VoiceCallTurn[];
+  durationSecs?: number;
+  startedAt?: string;
+}): Promise<VoiceCall> {
+  return updateStore((store) => {
+    const existing = store.voiceCalls.find((c) => c.conversationId === input.conversationId);
+    if (existing) {
+      const updated: VoiceCall = {
+        ...existing,
+        transcript: input.transcript,
+        durationSecs: input.durationSecs ?? existing.durationSecs,
+        startedAt: input.startedAt ?? existing.startedAt,
+      };
+      store.voiceCalls = store.voiceCalls.map((c) =>
+        c.conversationId === input.conversationId ? updated : c,
+      );
+      return updated;
+    }
+    // No pending row — this app never placed this call, so it is a real
+    // inbound call reaching the agent's routed number.
+    const created: VoiceCall = {
+      id: newId("call"),
+      agentId: input.agentId,
+      conversationId: input.conversationId,
+      source: "real",
+      transcript: input.transcript,
+      durationSecs: input.durationSecs,
+      startedAt: input.startedAt ?? nowIso(),
+      createdAt: nowIso(),
+    };
+    store.voiceCalls = [created, ...store.voiceCalls];
+    return created;
+  });
+}
+
+// ── Forms ──────────────────────────────────────────────────────────
+//
+// Forms and their responses live in this file rather than in one of their own
+// because `readStore` rebuilds the whole object from a fixed key set: a second
+// module writing the same JSON would drop whatever it did not know about. One
+// owner per file.
+
+/** A slug that reads like the form's name and is safe in a URL. Falls back to
+ *  the id's suffix when a name has nothing a URL can carry (an emoji, CJK). */
+export function slugify(name: string): string {
+  const base = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return base || "form";
+}
+
+/** `slugify`, then `-2`, `-3`… until nothing else claims it. */
+function uniqueSlug(forms: readonly Form[], name: string, ignoreId?: string): string {
+  const taken = new Set(forms.filter((f) => f.id !== ignoreId).map((f) => f.slug));
+  const base = slugify(name);
+  if (!taken.has(base)) return base;
+  for (let n = 2; n < 1000; n++) {
+    const candidate = `${base}-${n}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${base}-${Date.now().toString(36)}`;
+}
+
+export async function listForms(): Promise<Form[]> {
+  return (await readStore()).forms;
+}
+
+export function listFormsSync(): Form[] {
+  return readStoreSync().forms;
+}
+
+export async function getForm(id: string): Promise<Form | undefined> {
+  return (await readStore()).forms.find((f) => f.id === id);
+}
+
+/** How the public page finds a form. Draft forms resolve too — the caller
+ *  decides what an unpublished form looks like to a visitor. */
+export async function getFormBySlug(slug: string): Promise<Form | undefined> {
+  return (await readStore()).forms.find((f) => f.slug === slug);
+}
+
+export async function createForm(
+  input: Pick<Form, "name" | "description" | "steps" | "scoring"> & Partial<Pick<Form, "thankYou" | "status" | "slug">>,
+): Promise<Form> {
+  return updateStore((store) => {
+    const now = nowIso();
+    const created: Form = {
+      id: newId("fm"),
+      slug: uniqueSlug(store.forms, input.slug ?? input.name),
+      name: input.name,
+      description: input.description,
+      // Published on creation: a form nobody can open is not a first win, and
+      // the list screen has a switch for turning it off.
+      status: input.status ?? "published",
+      steps: input.steps,
+      scoring: input.scoring,
+      thankYou: input.thankYou,
+      createdAt: now,
+      updatedAt: now,
+    };
+    store.forms = [created, ...store.forms];
+    return created;
+  });
+}
+
+export async function updateForm(
+  id: string,
+  updates: Partial<Omit<Form, "id" | "createdAt">>,
+): Promise<Form | undefined> {
+  return updateStore((store) => {
+    const existing = store.forms.find((f) => f.id === id);
+    if (!existing) return undefined;
+    // A rename does not move the URL: links already handed out keep working.
+    // Changing the slug is its own edit, and it is checked for collisions.
+    const slug = updates.slug ? uniqueSlug(store.forms, updates.slug, id) : existing.slug;
+    const updated: Form = { ...existing, ...updates, slug, updatedAt: nowIso() };
+    store.forms = store.forms.map((f) => (f.id === id ? updated : f));
+    return updated;
+  });
+}
+
+export async function deleteForm(id: string): Promise<boolean> {
+  return updateStore((store) => {
+    const initial = store.forms.length;
+    store.forms = store.forms.filter((f) => f.id !== id);
+    // Responses go with it. Keeping orphans would leave the responses screen
+    // counting answers to questions nobody can read any more.
+    store.formResponses = store.formResponses.filter((r) => r.formId !== id);
+    return store.forms.length < initial;
+  });
+}
+
+export async function listFormResponses(formId?: string): Promise<FormResponse[]> {
+  const responses = (await readStore()).formResponses;
+  return formId ? responses.filter((r) => r.formId === formId) : responses;
+}
+
+export async function getFormResponse(id: string): Promise<FormResponse | undefined> {
+  return (await readStore()).formResponses.find((r) => r.id === id);
+}
+
+/**
+ * Create or replace a response. The public page writes on every step, so the
+ * same response is updated several times: whoever left after question two is
+ * already stored when they close the tab, which is the whole point of counting
+ * partial submissions as leads.
+ */
+export async function saveFormResponse(
+  input: Omit<FormResponse, "id" | "startedAt" | "updatedAt"> & { id?: string },
+): Promise<FormResponse> {
+  return updateStore((store) => {
+    const now = nowIso();
+    const existing = input.id ? store.formResponses.find((r) => r.id === input.id) : undefined;
+    if (existing) {
+      const updated: FormResponse = {
+        ...existing,
+        answers: input.answers,
+        score: input.score,
+        temperature: input.temperature,
+        partial: input.partial,
+        contactId: input.contactId ?? existing.contactId,
+        updatedAt: now,
+      };
+      store.formResponses = store.formResponses.map((r) => (r.id === existing.id ? updated : r));
+      return updated;
+    }
+    const created: FormResponse = {
+      ...input,
+      id: input.id ?? newId("fr"),
+      startedAt: now,
+      updatedAt: now,
+    };
+    store.formResponses = [created, ...store.formResponses];
+    return created;
   });
 }

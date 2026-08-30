@@ -1,6 +1,8 @@
 import { getCredential } from "./credentials";
-import { appendRow } from "./google-sheets";
+import { appendRow, SHEETS_SCOPE } from "./google-sheets";
+import { getGoogleToken } from "./google-auth";
 import { createPaymentLink } from "./stripe";
+import { createPaymentPreference, isMercadoPagoCurrency } from "./mercadopago";
 import { assertSafeUrl, parseAllowlist } from "./http-guard";
 import { upsertContact } from "./business-store";
 import {
@@ -8,8 +10,43 @@ import {
   sendWhatsAppTemplate,
   sendWhatsAppText,
 } from "./whatsapp-send";
-import { sendEmail } from "./email";
+import { sendAppEmail, sendTemplateEmail } from "./email-send";
 import type { Contact, ContactStatus, WorkflowStep } from "./types";
+
+type PaymentChoice = { readonly provider: "stripe" | "mercadopago"; readonly key: string };
+
+/**
+ * Which processor creates a payment link, and with which key.
+ *
+ * An explicit `paymentProvider` on the step always wins — if someone picked
+ * Mercado Pago and its token is missing, that is an error worth surfacing, not
+ * a reason to silently charge through Stripe instead. With nothing picked, the
+ * currency decides: Mercado Pago cannot bill in USD or EUR, and Stripe is the
+ * safe default everywhere it is configured.
+ */
+async function resolvePaymentProvider(
+  requested: "stripe" | "mercadopago" | undefined,
+  currency: string,
+): Promise<PaymentChoice | null> {
+  const stripeKey = (await getCredential("STRIPE_SECRET_KEY"))?.trim();
+  const mercadoKey = (await getCredential("MERCADOPAGO_ACCESS_TOKEN"))?.trim();
+
+  if (requested === "stripe") return stripeKey ? { provider: "stripe", key: stripeKey } : null;
+  if (requested === "mercadopago") {
+    return mercadoKey ? { provider: "mercadopago", key: mercadoKey } : null;
+  }
+
+  // Nothing picked. Only Mercado Pago can take a local currency it supports,
+  // so prefer it there; otherwise Stripe, then whatever is left.
+  if (mercadoKey && isMercadoPagoCurrency(currency) && !stripeKey) {
+    return { provider: "mercadopago", key: mercadoKey };
+  }
+  if (stripeKey) return { provider: "stripe", key: stripeKey };
+  if (mercadoKey && isMercadoPagoCurrency(currency)) {
+    return { provider: "mercadopago", key: mercadoKey };
+  }
+  return null;
+}
 
 /**
  * Server-side execution of the deterministic part of a workflow.
@@ -126,22 +163,54 @@ async function runStep(step: WorkflowStep, contact: Contact | undefined): Promis
     }
 
     case "notify_email": {
-      const to = config.phone?.trim(); // Reuse phone field for email recipient
-      const subject = config.message?.trim();
-      const text = config.message ?? "";
-      if (!to || !subject) {
-        return { type: step.type, status: "skipped", detail: "Email recipient or subject missing." };
+      // `phone` is where the recipient used to live, back when this step
+      // borrowed the WhatsApp field. Automations saved then still work.
+      const to = renderTemplate((config.emailTo ?? config.phone ?? "").trim(), contact);
+      if (!to) {
+        return { type: step.type, status: "skipped", detail: "No email recipient configured." };
       }
-      const renderedText = renderTemplate(text, contact);
-      const result = await sendEmail({
-        to,
-        subject,
-        text: renderedText,
-      });
+
+      // Whatever the contact record holds is what a template's variables and
+      // the subject's placeholders both resolve against.
+      const variables: Record<string, unknown> = {
+        ...(contact ? { ...contact, ...(contact.attributes ?? {}) } : {}),
+      };
+
+      if (config.emailTemplate) {
+        const result = await sendTemplateEmail({
+          templateId: config.emailTemplate,
+          to,
+          variables,
+          subject: config.emailSubject
+            ? renderTemplate(config.emailSubject, contact)
+            : undefined,
+        });
+        return {
+          type: step.type,
+          status: result.success ? "done" : "failed",
+          detail: result.success
+            ? `Sent "${config.emailTemplate}" to ${to} via ${result.via}`
+            : `Email failed: ${result.error}`,
+        };
+      }
+
+      // No template: the step's own message is the whole email, and its first
+      // line stands in for a subject nobody set.
+      const text = renderTemplate(config.message ?? "", contact);
+      const subject = config.emailSubject
+        ? renderTemplate(config.emailSubject, contact)
+        : text.split("\n")[0]?.slice(0, 120).trim();
+      if (!subject) {
+        return { type: step.type, status: "skipped", detail: "Email subject and body are both empty." };
+      }
+
+      const result = await sendAppEmail({ to, subject, text });
       return {
         type: step.type,
         status: result.success ? "done" : "failed",
-        detail: result.success ? `Email sent to ${to}` : `Email failed: ${result.error}`,
+        detail: result.success
+          ? `Email sent to ${to} via ${result.via}`
+          : `Email failed: ${result.error}`,
       };
     }
 
@@ -183,12 +252,16 @@ async function runStep(step: WorkflowStep, contact: Contact | undefined): Promis
     case "log_sheet": {
       const spreadsheetId = config.spreadsheetId?.trim();
       if (!spreadsheetId) return { type: step.type, status: "skipped", detail: "No spreadsheet configured." };
-      const serviceAccountJson = await getCredential("GOOGLE_SERVICE_ACCOUNT_JSON");
-      if (!serviceAccountJson) {
-        return { type: step.type, status: "skipped", detail: "GOOGLE_SERVICE_ACCOUNT_JSON is not set." };
+      const accessToken = await getGoogleToken(SHEETS_SCOPE);
+      if (!accessToken) {
+        return {
+          type: step.type,
+          status: "skipped",
+          detail: "No Google account is connected and GOOGLE_SERVICE_ACCOUNT_JSON is not set.",
+        };
       }
       await appendRow({
-        serviceAccountJson,
+        accessToken,
         spreadsheetId,
         sheetName: config.sheetName?.trim() || "Sheet1",
         values: [
@@ -209,20 +282,35 @@ async function runStep(step: WorkflowStep, contact: Contact | undefined): Promis
       if (!amount || !productName) {
         return { type: step.type, status: "skipped", detail: "Amount or product name missing." };
       }
-      const secretKey = await getCredential("STRIPE_SECRET_KEY");
-      if (!secretKey) return { type: step.type, status: "skipped", detail: "STRIPE_SECRET_KEY is not set." };
-      const link = await createPaymentLink({
-        secretKey,
-        amount,
-        currency: config.currency?.trim() || "usd",
-        productName,
-      });
+      const currency = config.currency?.trim() || "usd";
+      const chosen = await resolvePaymentProvider(config.paymentProvider, currency);
+      if (!chosen) {
+        return {
+          type: step.type,
+          status: "skipped",
+          detail: "Neither STRIPE_SECRET_KEY nor MERCADOPAGO_ACCESS_TOKEN is set.",
+        };
+      }
+      const link =
+        chosen.provider === "mercadopago"
+          ? await createPaymentPreference({
+              accessToken: chosen.key,
+              amount,
+              currency,
+              productName,
+            })
+          : await createPaymentLink({
+              secretKey: chosen.key,
+              amount,
+              currency,
+              productName,
+            });
       const text = renderTemplate(config.message?.trim() || "{{link}}", contact, { link });
       if (contact?.phone && contact.channel === "whatsapp") {
         const mode = await sendWhatsApp(contact.phone, text, contact.lastMessageAt, contact.name);
         return { type: step.type, status: "done", detail: `Link sent to ${contact.phone} as ${mode}.` };
       }
-      return { type: step.type, status: "done", detail: `Created: ${link}` };
+      return { type: step.type, status: "done", detail: `Created via ${chosen.provider}: ${link}` };
     }
 
     case "wait":

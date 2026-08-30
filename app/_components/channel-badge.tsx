@@ -6,17 +6,28 @@ import {
   MessageCircleIcon,
   MessengerIcon,
   InstagramIcon,
+  FileEditIcon,
 } from "@hugeicons/core-free-icons";
 import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
-import type { ChannelId, ChannelStatus } from "@/lib/types";
+import { useT } from "@/lib/i18n/provider";
+import type { ChannelId, ChannelStatus, ContactChannel } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const CHANNEL_ICONS: Record<ChannelId, IconSvgElement> = {
+const CHANNEL_ICONS: Record<ContactChannel, IconSvgElement> = {
   web: Globe02Icon,
   whatsapp: MessageCircleIcon,
   messenger: MessengerIcon,
   instagram: InstagramIcon,
+  // Not a place you can reply, so it has no entry in CHANNEL_LABELS with the
+  // messaging products — but contacts do arrive this way and have to be drawn.
+  form: FileEditIcon,
 };
+
+/** An icon we can always render. `channel` comes off API data, so a value
+ *  outside the union is a data problem — and an undefined icon throws inside
+ *  HugeiconsIcon, which takes the whole page down with it. */
+const iconFor = (channel: ContactChannel): IconSvgElement =>
+  CHANNEL_ICONS[channel] ?? Globe02Icon;
 
 /** Product names, so they stay as they are in every language. */
 export const CHANNEL_LABELS: Record<ChannelId, string> = {
@@ -27,17 +38,21 @@ export const CHANNEL_LABELS: Record<ChannelId, string> = {
 };
 
 export function ChannelIcon({ channel, className }: {
-  readonly channel: ChannelId;
+  readonly channel: ContactChannel;
   readonly className?: string;
 }) {
-  return <HugeiconsIcon icon={CHANNEL_ICONS[channel]} size={16} strokeWidth={1.75} className={cn("shrink-0", className)} />;
+  return <HugeiconsIcon icon={iconFor(channel)} size={16} strokeWidth={1.75} className={cn("shrink-0", className)} />;
 }
 
-export function ChannelBadge({ channel }: { readonly channel: ChannelId }) {
+export function ChannelBadge({ channel }: { readonly channel: ContactChannel }) {
+  const t = useT();
+  // The four messaging channels are products and keep their names; "form" is a
+  // common noun, so it is the one label here that gets translated.
+  const label = channel === "form" ? t("channel.form") : (CHANNEL_LABELS[channel] ?? channel);
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-      <HugeiconsIcon icon={CHANNEL_ICONS[channel]} size={14} strokeWidth={1.75} className="shrink-0" />
-      {CHANNEL_LABELS[channel]}
+      <HugeiconsIcon icon={iconFor(channel)} size={14} strokeWidth={1.75} className="shrink-0" />
+      {label}
     </span>
   );
 }

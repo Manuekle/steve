@@ -32,7 +32,6 @@ import { cn } from "@/lib/utils";
 import { Beam } from "@/components/ui/beam";
 import { saveConversation } from "@/lib/dashboard-store";
 import { AgentMessage } from "./agent-message";
-import { AppShell } from "./app-shell";
 import {
   ModelPicker,
   ProviderStatusBadge,
@@ -406,141 +405,139 @@ function ConnectedAgentSession({
   );
 
   return (
-    <AppShell activePath="/">
-      <div className="page-enter relative flex h-full flex-col overflow-hidden">
-        {isEmpty ? (
-          <div className="pointer-events-none absolute inset-0 bg-pattern bg-pattern-grid bg-pattern-fade opacity-20" />
-        ) : null}
-        {isEmpty ? null : (
-          <header className="flex h-14 shrink-0 items-center justify-between gap-3 px-4 sm:px-6">
-            <span className="flex min-w-0 items-center gap-2.5">
-              <StatusDot status={agent.status} />
-              <span className="truncate font-medium text-sm">{AGENT_NAME}</span>
-            </span>
-            <span className="flex items-center gap-2">
-              <ProviderStatusBadge data={catalog} />
-              {modelPicker}
+    <div className="page-enter relative flex h-full flex-col overflow-hidden">
+      {isEmpty ? (
+        <div className="pointer-events-none absolute inset-0 bg-pattern bg-pattern-grid bg-pattern-fade opacity-20" />
+      ) : null}
+      {isEmpty ? null : (
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 px-4 sm:px-6">
+          <span className="flex min-w-0 items-center gap-2.5">
+            <StatusDot status={agent.status} />
+            <span className="truncate font-medium text-sm">{AGENT_NAME}</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <ProviderStatusBadge data={catalog} />
+            {modelPicker}
+            <Button
+              onClick={() => void handleNewChat()}
+              size="sm"
+              title={t("chat.newConversation")}
+              variant="ghost"
+            >
+              <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
+              <span className="hidden sm:inline">{t("chat.newChat")}</span>
+            </Button>
+            {onSignOut ? (
               <Button
-                onClick={() => void handleNewChat()}
-                size="sm"
-                title={t("chat.newConversation")}
+                onClick={() => void handleSignOut()}
+                size="icon-sm"
+                title={t("chat.signOut")}
                 variant="ghost"
               >
-                <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
-                <span className="hidden sm:inline">{t("chat.newChat")}</span>
+                <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
+                <span className="sr-only">{t("chat.signOut")}</span>
               </Button>
-              {onSignOut ? (
-                <Button
-                  onClick={() => void handleSignOut()}
-                  size="icon-sm"
-                  title={t("chat.signOut")}
-                  variant="ghost"
-                >
-                  <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
-                  <span className="sr-only">{t("chat.signOut")}</span>
-                </Button>
-              ) : null}
-            </span>
-          </header>
-        )}
+            ) : null}
+          </span>
+        </header>
+      )}
 
-      {agent.error ? (
-        <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pt-2 sm:px-6">
-          <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm shadow-[var(--shadow-soft)]">
-            <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-destructive" />
-            <div>
-              <p className="font-medium">{t("chat.requestFailed")}</p>
-              <p className="mt-0.5 text-muted-foreground">{agent.error.message}</p>
-            </div>
+    {agent.error ? (
+      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pt-2 sm:px-6">
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm shadow-[var(--shadow-soft)]">
+          <HugeiconsIcon icon={AlertCircleIcon} size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-destructive" />
+          <div>
+            <p className="font-medium">{t("chat.requestFailed")}</p>
+            <p className="mt-0.5 text-muted-foreground">{agent.error.message}</p>
+          </div>
+        </div>
+      </div>
+    ) : null}
+
+    {isEmpty ? null : (
+      <Conversation className="min-h-0 flex-1">
+        <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-6 sm:px-6">
+          {agent.data.messages.map((message, index) => (
+            <AgentMessage
+              canRespond={!isBusy}
+              isStreaming={
+                agent.status === "streaming" && index === agent.data.messages.length - 1
+              }
+              key={message.id}
+              message={message}
+              onInputResponses={(inputResponses) => send({ inputResponses })}
+            />
+          ))}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+    )}
+
+    <div
+      className={cn(
+        "mx-auto w-full px-4 sm:px-6",
+        isEmpty
+          ? "flex max-w-xl flex-1 flex-col items-center justify-center gap-8 pb-[10vh]"
+          : "max-w-3xl shrink-0 pb-6",
+      )}
+    >
+      {isEmpty ? (
+        <div className="flex flex-col items-center gap-6 text-center">
+          <h1 className="text-4xl font-semibold sm:text-5xl">
+            <span className="text-muted-foreground/40">st</span>
+            <span className="text-foreground">eve</span>
+          </h1>
+          <p className="max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
+            {t("chat.tagline")}
+          </p>
+          {MONITORING_HREF ? (
+            <Pill href={MONITORING_HREF} title={t("chat.hostMetrics")}>
+              {t("chat.liveMetrics")}
+            </Pill>
+          ) : null}
+          {onSignOut ? (
+            <Button onClick={() => void handleSignOut()} size="sm" variant="ghost">
+              <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
+              {t("chat.signOut")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="w-full">{composer}</div>
+      {isEmpty ? (
+        <div className="flex w-full flex-col items-center gap-5">
+          {/* The header carries the picker once a chat is under way; on the
+              empty screen there is no header, and this is the moment the
+              choice actually matters. */}
+          <div className="flex items-center gap-2">
+            <ProviderStatusBadge data={catalog} />
+            {modelPicker}
+          </div>
+          <SlidingTabs
+            onValueChange={setPromptTab}
+            tabs={PROMPT_TABS.map(({ id, label }) => ({ id, label: t(label) }))}
+            value={promptTab}
+          />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {activePromptTab.prompts.map((promptKey) => (
+              // The chip surface goes opaque here: the beam's core is painted
+              // behind the child, and `bg-card/50` let it read through.
+              <Beam active={!isBusy} colorVariant="mono" key={promptKey} strength={0.4}>
+                <button
+                  className="rounded-full border border-border bg-card px-3.5 py-1.5 text-xs text-muted-foreground shadow-[var(--shadow-inset)] transition-all duration-150 hover:bg-accent hover:text-accent-foreground hover:border-input active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                  disabled={isBusy}
+                  onClick={() => void send({ message: t(promptKey) })}
+                  type="button"
+                >
+                  {t(promptKey)}
+                </button>
+              </Beam>
+            ))}
           </div>
         </div>
       ) : null}
-
-      {isEmpty ? null : (
-        <Conversation className="min-h-0 flex-1">
-          <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-6 sm:px-6">
-            {agent.data.messages.map((message, index) => (
-              <AgentMessage
-                canRespond={!isBusy}
-                isStreaming={
-                  agent.status === "streaming" && index === agent.data.messages.length - 1
-                }
-                key={message.id}
-                message={message}
-                onInputResponses={(inputResponses) => send({ inputResponses })}
-              />
-            ))}
-          </ConversationContent>
-          <ConversationScrollButton />
-        </Conversation>
-      )}
-
-      <div
-        className={cn(
-          "mx-auto w-full px-4 sm:px-6",
-          isEmpty
-            ? "flex max-w-xl flex-1 flex-col items-center justify-center gap-8 pb-[10vh]"
-            : "max-w-3xl shrink-0 pb-6",
-        )}
-      >
-        {isEmpty ? (
-          <div className="flex flex-col items-center gap-6 text-center">
-            <h1 className="text-4xl font-semibold sm:text-5xl">
-              <span className="text-muted-foreground/40">st</span>
-              <span className="text-foreground">eve</span>
-            </h1>
-            <p className="max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
-              {t("chat.tagline")}
-            </p>
-            {MONITORING_HREF ? (
-              <Pill href={MONITORING_HREF} title={t("chat.hostMetrics")}>
-                {t("chat.liveMetrics")}
-              </Pill>
-            ) : null}
-            {onSignOut ? (
-              <Button onClick={() => void handleSignOut()} size="sm" variant="ghost">
-                <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
-                {t("chat.signOut")}
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="w-full">{composer}</div>
-        {isEmpty ? (
-          <div className="flex w-full flex-col items-center gap-5">
-            {/* The header carries the picker once a chat is under way; on the
-                empty screen there is no header, and this is the moment the
-                choice actually matters. */}
-            <div className="flex items-center gap-2">
-              <ProviderStatusBadge data={catalog} />
-              {modelPicker}
-            </div>
-            <SlidingTabs
-              onValueChange={setPromptTab}
-              tabs={PROMPT_TABS.map(({ id, label }) => ({ id, label: t(label) }))}
-              value={promptTab}
-            />
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {activePromptTab.prompts.map((promptKey) => (
-                // The chip surface goes opaque here: the beam's core is painted
-                // behind the child, and `bg-card/50` let it read through.
-                <Beam active={!isBusy} colorVariant="mono" key={promptKey} strength={0.4}>
-                  <button
-                    className="rounded-full border border-border bg-card px-3.5 py-1.5 text-xs text-muted-foreground shadow-[var(--shadow-inset)] transition-all duration-150 hover:bg-accent hover:text-accent-foreground hover:border-input active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-                    disabled={isBusy}
-                    onClick={() => void send({ message: t(promptKey) })}
-                    type="button"
-                  >
-                    {t(promptKey)}
-                  </button>
-                </Beam>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-      </div>
-    </AppShell>
+    </div>
+    </div>
   );
 }
 

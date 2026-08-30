@@ -141,6 +141,8 @@ const PREVIEW_FIELDS: Record<
     | "mediaCaption"
     | "url"
     | "phone"
+    | "emailTo"
+    | "emailSubject"
     | "webhookUrl"
     | "contactStatus"
     | "contactNote"
@@ -160,7 +162,7 @@ const PREVIEW_FIELDS: Record<
   http_request: ["url"],
   notify_whatsapp: ["message", "phone"],
   notify_team: ["message", "webhookUrl"],
-  notify_email: ["message", "phone"],
+  notify_email: ["emailSubject", "message", "emailTo", "phone"],
   update_contact: ["contactNote", "contactStatus"],
   log_sheet: ["spreadsheetId"],
   send_payment_link: ["productName", "amount"],

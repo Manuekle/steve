@@ -35,7 +35,7 @@ export const CRMS: readonly { readonly host: string | null; readonly id: string 
   { host: "api.clientify.net", id: "clientify" },
   { host: "services.leadconnectorhq.com", id: "ghl" },
   { host: null, id: "bitrix24" },
-  { host: "login.salesforce.com", id: "salesforce" },
+  { host: "api.notion.com", id: "notion" },
   { host: "api.activecampaign.com", id: "activecampaign" },
   { host: "api.pipedrive.com", id: "pipedrive" },
   { host: "www.zohoapis.com", id: "zoho" },

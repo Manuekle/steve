@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import type { ReactNode } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { SoundProvider } from "@/components/sound-provider";
+import { ToastProvider } from "@/components/toast-provider";
 import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import "./globals.css";
@@ -25,44 +25,63 @@ const mono = Geist_Mono({
 export const metadata: Metadata = {
   // Every route under this layout resolves its relative metadata URLs against
   // this — the auto-attached `opengraph-image`, and the `icon.svg` /
-  // `apple-icon` links Next emits from the file convention. The marketing
-  // pages set their own through `marketingMetadata`; without it here the app
-  // routes emitted relative OG paths, which crawlers do not follow.
+  // `apple-icon` links Next emits from the file convention.
   metadataBase: new URL(SITE_URL),
   title: "steve — AI agent manager",
-  description: "A self-hosted AI agent manager for the Meta ecosystem — WhatsApp, Instagram, Messenger, and Meta Ads.",
+  description:
+    "A self-hosted AI agent manager for the Meta ecosystem — WhatsApp, Instagram, Messenger, and Meta Ads.",
 };
 
-// Inline script runs before paint to set the theme class from
-// localStorage or system preference, preventing FOUC.
+/**
+ * Sets the theme class before the browser paints anything.
+ *
+ * This has to be a raw inline <script>, not `next/script`. In the App Router
+ * a `beforeInteractive` script is not inlined into the HTML — it is pushed
+ * onto `self.__next_s` and replayed by the Next runtime once the framework
+ * bundle has loaded. That is long after first paint, so every full page load
+ * in dark mode rendered the light palette first and then snapped to dark: the
+ * white flash. A plain inline script runs during head parsing, before any
+ * paint, which is the whole point of it.
+ *
+ * `color-scheme` goes on too, so the parts the page does not paint itself —
+ * the canvas behind it, scrollbars, form controls — start out dark as well.
+ */
 const themeInitScript = `
 (function() {
   try {
     var stored = localStorage.getItem('steve-theme');
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var theme = stored || (prefersDark ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    document.documentElement.classList.toggle('light', theme === 'light');
+    var theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
+    var root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
+    root.classList.toggle('light', theme === 'light');
+    root.style.colorScheme = theme;
   } catch (e) {}
 })();
 `;
 
-export default function RootLayout({ children }: { readonly children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  readonly children: ReactNode;
+}) {
   return (
-    // `es`, because that is what the app actually serves: `DEFAULT_LOCALE` is
-    // Spanish, so every server-rendered page — the landing included — ships
-    // Spanish copy. `lang="en"` here was telling screen readers and
-    // translation tools the wrong thing about the whole app, not just the
-    // landing. The client swaps this when the visitor picks English.
-    <html className={cn(mono.variable)} lang="es" suppressHydrationWarning>
+    <html
+      className={cn(mono.variable)}
+      lang="es"
+      suppressHydrationWarning
+    >
       <head>
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
+
       <body suppressHydrationWarning>
         <ThemeProvider>
           <I18nProvider>
             <SoundProvider>
-              <TooltipProvider>{children}</TooltipProvider>
+              <TooltipProvider>
+                <ToastProvider>{children}</ToastProvider>
+              </TooltipProvider>
             </SoundProvider>
           </I18nProvider>
         </ThemeProvider>
@@ -70,3 +89,4 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
     </html>
   );
 }
+

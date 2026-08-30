@@ -25,6 +25,7 @@ export type WorkflowStepInput = {
   readonly contactNote?: string;
   readonly spreadsheetId?: string;
   readonly sheetName?: string;
+  readonly paymentProvider?: "stripe" | "mercadopago";
   readonly amount?: string;
   readonly currency?: string;
   readonly productName?: string;
@@ -67,11 +68,15 @@ export const workflowStepSchema: z.ZodType<WorkflowStepInput> = z.lazy(() =>
     url: z.string().optional().describe("HTTPS endpoint to call. Used by: http_request."),
     method: z.string().optional().describe("GET, POST, PUT, PATCH or DELETE. Used by: http_request."),
     body: z.string().optional().describe("JSON body sent with the request. Used by: http_request."),
-    phone: z.string().optional().describe("Destination number in E.164, e.g. +5215512345678. Used by: notify_whatsapp. Also used as email recipient for notify_email."),
+    phone: z.string().optional().describe("Destination number in E.164, e.g. +5215512345678. Used by: notify_whatsapp."),
+    emailTo: z.string().optional().describe("Recipient email address. Used by: notify_email."),
+    emailSubject: z.string().optional().describe("Subject line. Used by: notify_email."),
+    emailTemplate: z.string().optional().describe("Id of an email template to render as the body, e.g. 'welcome'. Omit to send `message` as plain text. Used by: notify_email."),
     service: z.enum(["slack", "discord"]).optional().describe("Which service the webhook belongs to. Used by: notify_team."),
     webhookUrl: z.string().optional().describe("The service's incoming-webhook URL. Used by: notify_team."),
     spreadsheetId: z.string().optional().describe("Google Sheets spreadsheet ID (from its URL). Used by: log_sheet."),
     sheetName: z.string().optional().describe("Tab name inside the spreadsheet, e.g. 'Sheet1'. Used by: log_sheet."),
+    paymentProvider: z.enum(["stripe", "mercadopago"]).optional().describe("Which processor creates the checkout link. Mercado Pago covers ARS, BRL, CLP, COP, MXN, PEN and UYU; Stripe covers the rest. Omit to use whichever one is configured. Used by: send_payment_link."),
     amount: z.string().optional().describe("Decimal amount, e.g. '49.99'. Used by: send_payment_link."),
     currency: z.string().optional().describe("ISO currency code, e.g. 'usd', 'mxn'. Used by: send_payment_link."),
     productName: z.string().optional().describe("What the customer is paying for, shown on the checkout page. Used by: send_payment_link."),
@@ -127,10 +132,14 @@ const leafStepSchema = z.object({
   method: z.string().nullable().describe("GET, POST, PUT, PATCH or DELETE. Used by: http_request. null otherwise."),
   body: z.string().nullable().describe("JSON body for the request. Used by: http_request. null otherwise."),
   phone: z.string().nullable().describe("Destination number in E.164. Used by: notify_whatsapp. null otherwise."),
+  emailTo: z.string().nullable().describe("Recipient email address. Used by: notify_email. null otherwise."),
+  emailSubject: z.string().nullable().describe("Subject line. Used by: notify_email. null otherwise."),
+  emailTemplate: z.string().nullable().describe("Id of an email template to render as the body. Used by: notify_email. null otherwise."),
   service: z.enum(["slack", "discord"]).nullable().describe("Which service the webhook belongs to. Used by: notify_team. null otherwise."),
   webhookUrl: z.string().nullable().describe("The service's incoming-webhook URL. Used by: notify_team. null otherwise."),
   spreadsheetId: z.string().nullable().describe("Google Sheets spreadsheet ID. Used by: log_sheet. null otherwise."),
   sheetName: z.string().nullable().describe("Tab name inside the spreadsheet. Used by: log_sheet. null otherwise."),
+  paymentProvider: z.enum(["stripe", "mercadopago"]).nullable().describe("Which processor creates the checkout link. Mercado Pago covers ARS, BRL, CLP, COP, MXN, PEN and UYU; Stripe covers the rest. null to use whichever is configured. Used by: send_payment_link."),
   amount: z.string().nullable().describe("Decimal amount, e.g. '49.99'. Used by: send_payment_link. null otherwise."),
   currency: z.string().nullable().describe("ISO currency code. Used by: send_payment_link. null otherwise."),
   productName: z.string().nullable().describe("What the customer is paying for. Used by: send_payment_link. null otherwise."),
@@ -173,10 +182,14 @@ export function planToInput(steps: readonly WorkflowPlanStep[]): WorkflowStepInp
     ...(step.method ? { method: step.method } : {}),
     ...(step.body ? { body: step.body } : {}),
     ...(step.phone ? { phone: step.phone } : {}),
+    ...(step.emailTo ? { emailTo: step.emailTo } : {}),
+    ...(step.emailSubject ? { emailSubject: step.emailSubject } : {}),
+    ...(step.emailTemplate ? { emailTemplate: step.emailTemplate } : {}),
     ...(step.service ? { service: step.service } : {}),
     ...(step.webhookUrl ? { webhookUrl: step.webhookUrl } : {}),
     ...(step.spreadsheetId ? { spreadsheetId: step.spreadsheetId } : {}),
     ...(step.sheetName ? { sheetName: step.sheetName } : {}),
+    ...(step.paymentProvider ? { paymentProvider: step.paymentProvider } : {}),
     ...(step.amount ? { amount: step.amount } : {}),
     ...(step.currency ? { currency: step.currency } : {}),
     ...(step.productName ? { productName: step.productName } : {}),
@@ -214,6 +227,7 @@ export function toWorkflowSteps(steps: readonly WorkflowStepInput[]): WorkflowSt
         webhookUrl: s.webhookUrl,
         spreadsheetId: s.spreadsheetId,
         sheetName: s.sheetName,
+        paymentProvider: s.paymentProvider ?? undefined,
         amount: s.amount,
         currency: s.currency,
         productName: s.productName,

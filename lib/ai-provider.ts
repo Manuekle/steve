@@ -1,5 +1,6 @@
 import type { EmbeddingModel, LanguageModel } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { getCredentialSync } from "./credentials";
 import { applyModelEnv } from "./runtime-env";
@@ -18,8 +19,9 @@ export type { AiProvider };
 // own key. The choice lives in the same ~/.steve/credentials.json the
 // Settings page writes, so switching providers never means editing .env.
 
-/** Anthropic ships no embedding models, so retrieval always runs on OpenAI —
- *  directly when there's an OpenAI key, through the Gateway otherwise. */
+/** Neither Anthropic nor the Gemini route is wired for embeddings here, so
+ *  retrieval always runs on OpenAI — directly when there's an OpenAI key,
+ *  through the Gateway otherwise. */
 const OPENAI_EMBEDDING_MODEL = "text-embedding-3-small";
 const GATEWAY_EMBEDDING_MODEL = "openai/text-embedding-3-small";
 
@@ -27,7 +29,9 @@ const GATEWAY_EMBEDDING_MODEL = "openai/text-embedding-3-small";
  *  can't be compared against these, so the dimension is worth pinning. */
 export const EMBEDDING_DIMENSIONS = 1536;
 
-function credential(key: "AI_GATEWAY_API_KEY" | "OPENAI_API_KEY" | "ANTHROPIC_API_KEY"): string | undefined {
+function credential(
+  key: "AI_GATEWAY_API_KEY" | "OPENAI_API_KEY" | "ANTHROPIC_API_KEY" | "GOOGLE_GENERATIVE_AI_API_KEY",
+): string | undefined {
   const value = getCredentialSync(key);
   return value && value.length > 0 ? value : undefined;
 }
@@ -39,11 +43,12 @@ function credential(key: "AI_GATEWAY_API_KEY" | "OPENAI_API_KEY" | "ANTHROPIC_AP
  */
 export function resolveProvider(): AiProvider {
   const stored = getCredentialSync("AI_PROVIDER");
-  if (stored === "gateway" || stored === "openai" || stored === "anthropic") {
+  if (stored === "gateway" || stored === "openai" || stored === "anthropic" || stored === "google") {
     return stored;
   }
   if (credential("OPENAI_API_KEY")) return "openai";
   if (credential("ANTHROPIC_API_KEY")) return "anthropic";
+  if (credential("GOOGLE_GENERATIVE_AI_API_KEY")) return "google";
   return "gateway";
 }
 
@@ -88,6 +93,11 @@ export function resolveLanguageModel(modelIdOverride?: string): LanguageModel {
   if (provider === "anthropic") {
     const apiKey = credential("ANTHROPIC_API_KEY");
     return createAnthropic(apiKey ? { apiKey } : {})(modelId);
+  }
+
+  if (provider === "google") {
+    const apiKey = credential("GOOGLE_GENERATIVE_AI_API_KEY");
+    return createGoogleGenerativeAI(apiKey ? { apiKey } : {})(modelId);
   }
 
   return modelId;

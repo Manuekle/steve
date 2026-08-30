@@ -221,6 +221,7 @@ export function SmoothScroll({
           smoothWheel: true,
           syncTouch: touch,
           easing: EASE_SCROLL,
+          anchors: true,
         }}
       >
         <LenisBridge

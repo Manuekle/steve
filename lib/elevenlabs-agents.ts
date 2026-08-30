@@ -1,5 +1,6 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { getCredential } from "./credentials";
-import type { Agent, AgentVoice } from "./types";
+import type { Agent, AgentVoice, VoiceCallTurn } from "./types";
 
 // The ElevenLabs Agents platform, which is what answers a phone call.
 //
@@ -209,6 +210,81 @@ export async function startOutboundCall(input: {
     conversationId: result.conversationId ?? undefined,
     callSid: result.callSid ?? undefined,
   };
+}
+
+/**
+ * Verifies the `elevenlabs-signature` header on a post-call webhook.
+ *
+ * Same scheme as Stripe's (see `verifyStripeWebhookSignature` in lib/stripe.ts):
+ * `t=<unix seconds>,v0=<hex hmac-sha256>` over `${timestamp}.${rawBody}`. Done
+ * locally rather than through the SDK's own `webhooks.constructEvent` so this
+ * has no dependency on an ELEVENLABS_API_KEY being configured — the signing
+ * secret alone is what proves the request came from ElevenLabs.
+ */
+export function verifyElevenLabsWebhookSignature(opts: {
+  readonly rawBody: string;
+  readonly signatureHeader: string | null;
+  readonly webhookSecret: string;
+  /** Seconds. ElevenLabs' own docs use 30 minutes; this app is stricter. */
+  readonly toleranceSeconds?: number;
+}): boolean {
+  if (!opts.signatureHeader) return false;
+
+  const parts = new Map<string, string>();
+  for (const entry of opts.signatureHeader.split(",")) {
+    const [key, value] = entry.split("=");
+    if (key && value) parts.set(key.trim(), value.trim());
+  }
+  const timestamp = parts.get("t");
+  const signature = parts.get("v0");
+  if (!timestamp || !signature) return false;
+
+  const tolerance = opts.toleranceSeconds ?? 300;
+  const age = Math.abs(Date.now() / 1000 - Number(timestamp));
+  if (!Number.isFinite(age) || age > tolerance) return false;
+
+  const expected = createHmac("sha256", opts.webhookSecret)
+    .update(`${timestamp}.${opts.rawBody}`, "utf8")
+    .digest("hex");
+
+  const expectedBuf = Buffer.from(expected, "hex");
+  const actualBuf = Buffer.from(signature, "hex");
+  if (expectedBuf.length !== actualBuf.length) return false;
+  return timingSafeEqual(expectedBuf, actualBuf);
+}
+
+/** The fields this app reads off a `post_call_transcription` webhook body —
+ *  ElevenLabs sends more than this, none of it typed by the SDK, and none of
+ *  it needed here. */
+export type PostCallTranscriptionEvent = {
+  readonly type: string;
+  readonly data?: {
+    readonly agent_id?: string;
+    readonly conversation_id?: string;
+    readonly transcript?: ReadonlyArray<{
+      readonly role?: string;
+      readonly message?: string | null;
+      readonly time_in_call_secs?: number;
+    }>;
+    readonly metadata?: {
+      readonly start_time_unix_secs?: number;
+      readonly call_duration_secs?: number;
+    };
+  };
+};
+
+/** Normalizes a webhook transcript entry into this app's own shape, dropping
+ *  turns with no text (tool-call-only turns ElevenLabs also includes). */
+export function normalizeTranscript(
+  raw: PostCallTranscriptionEvent["data"],
+): VoiceCallTurn[] {
+  return (raw?.transcript ?? [])
+    .filter((turn) => typeof turn.message === "string" && turn.message.trim().length > 0)
+    .map((turn) => ({
+      role: turn.role === "agent" ? "agent" : "user",
+      message: turn.message as string,
+      timeInCallSecs: turn.time_in_call_secs ?? 0,
+    }));
 }
 
 /**

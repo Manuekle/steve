@@ -30,7 +30,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { Tooltip } from "@/components/motion/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   EASE_OUT,
   SPRING_LAYOUT,
@@ -194,41 +194,47 @@ function RowAction({
 
   if (state === "complete") {
     return (
-      <Tooltip content="Upload complete" side="top" delay={100}>
-        <motion.span
-          role="status"
-          aria-label={`Upload complete for ${label}`}
-          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={ITEM_TRANSITION}
-          className="grid size-9 shrink-0 place-items-center rounded-xl text-emerald-600 dark:text-emerald-400"
-        >
-          <Check className="size-4" />
-        </motion.span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <motion.span
+            role="status"
+            aria-label={`Upload complete for ${label}`}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={ITEM_TRANSITION}
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-emerald-600 dark:text-emerald-400"
+          >
+            <Check className="size-4" />
+          </motion.span>
+        </TooltipTrigger>
+        <TooltipContent side="top">Upload complete</TooltipContent>
       </Tooltip>
     );
   }
 
   if (state === "removing") {
     return (
-      <Tooltip content="Removing attachment" side="top" delay={100}>
-        <span
-          role="status"
-          aria-label={`Removing ${label}`}
-          className="grid size-9 shrink-0 place-items-center rounded-xl text-muted-foreground"
-        >
-          <motion.span
-            animate={reduce ? undefined : { rotate: 360 }}
-            transition={{
-              duration: 0.7,
-              ease: "linear",
-              repeat: Infinity,
-            }}
-            className="grid place-items-center"
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            role="status"
+            aria-label={`Removing ${label}`}
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-muted-foreground"
           >
-            <LoaderCircle className="size-4" />
-          </motion.span>
-        </span>
+            <motion.span
+              animate={reduce ? undefined : { rotate: 360 }}
+              transition={{
+                duration: 0.7,
+                ease: "linear",
+                repeat: Infinity,
+              }}
+              className="grid place-items-center"
+            >
+              <LoaderCircle className="size-4" />
+            </motion.span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top">Removing attachment</TooltipContent>
       </Tooltip>
     );
   }
@@ -236,46 +242,55 @@ function RowAction({
   if (state === "failed") {
     if (!retryable) {
       return (
-        <Tooltip content="Upload failed" side="top" delay={100}>
-          <span
-            role="status"
-            aria-label={`Upload failed for ${label}`}
-            className="grid size-9 shrink-0 place-items-center rounded-xl text-destructive"
-          >
-            <AlertCircle className="size-4" />
-          </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              role="status"
+              aria-label={`Upload failed for ${label}`}
+              className="grid size-9 shrink-0 place-items-center rounded-xl text-destructive"
+            >
+              <AlertCircle className="size-4" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top">Upload failed</TooltipContent>
         </Tooltip>
       );
     }
 
     return (
-      <Tooltip content="Retry upload" side="top" delay={100}>
-        <motion.button
-          type="button"
-          aria-label={`Retry ${label}`}
-          onClick={onClick}
-          whileTap={reduce ? undefined : { scale: 0.92 }}
-          transition={SPRING_PRESS}
-          className="grid size-9 shrink-0 place-items-center rounded-xl text-destructive outline-none transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <RotateCcw className="size-4" />
-        </motion.button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <motion.button
+            type="button"
+            aria-label={`Retry ${label}`}
+            onClick={onClick}
+            whileTap={reduce ? undefined : { scale: 0.92 }}
+            transition={SPRING_PRESS}
+            className="grid size-9 shrink-0 place-items-center rounded-xl text-destructive outline-none transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RotateCcw className="size-4" />
+          </motion.button>
+        </TooltipTrigger>
+        <TooltipContent side="top">Retry upload</TooltipContent>
       </Tooltip>
     );
   }
 
   return (
-    <Tooltip content="Remove attachment" side="top" delay={100}>
-      <motion.button
-        type="button"
-        aria-label={`Remove ${label}`}
-        onClick={onClick}
-        whileTap={reduce ? undefined : { scale: 0.92 }}
-        transition={SPRING_PRESS}
-        className="grid size-9 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <X className="size-4" />
-      </motion.button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <motion.button
+          type="button"
+          aria-label={`Remove ${label}`}
+          onClick={onClick}
+          whileTap={reduce ? undefined : { scale: 0.92 }}
+          transition={SPRING_PRESS}
+          className="grid size-9 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <X className="size-4" />
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent side="top">Remove attachment</TooltipContent>
     </Tooltip>
   );
 }
@@ -305,12 +320,33 @@ function ImageThumbnail({
   }
 
   return (
-    <Tooltip
-      side="top"
-      delay={160}
-      wrapperClassName="shrink-0"
-      className="rounded-xl p-1 shadow-xl"
-      content={
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <motion.button
+          type="button"
+          aria-label={`Preview ${item.name}`}
+          onClick={(event) => {
+            event.currentTarget.blur();
+            onPreview(item);
+          }}
+          whileTap={reduce ? undefined : { scale: 0.94 }}
+          transition={SPRING_PRESS}
+          className="group/image relative size-9 shrink-0 overflow-hidden rounded-[10px] bg-muted outline-none ring-1 ring-border/70 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {/* biome-ignore lint/performance/noImgElement: Motion layout requires the image element and portable blob URLs. */}
+          <motion.img
+            layoutId={layoutId}
+            src={src}
+            alt=""
+            className="size-full object-cover"
+            transition={{ layout: SPRING_LAYOUT }}
+          />
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        className="rounded-xl border border-border bg-card p-1 text-foreground shadow-[var(--shadow-float)]"
+      >
         <span className="block w-32">
           {/* biome-ignore lint/performance/noImgElement: Blob and remote previews keep this registry component framework-agnostic. */}
           <img
@@ -322,28 +358,7 @@ function ImageThumbnail({
             Click to preview
           </span>
         </span>
-      }
-    >
-      <motion.button
-        type="button"
-        aria-label={`Preview ${item.name}`}
-        onClick={(event) => {
-          event.currentTarget.blur();
-          onPreview(item);
-        }}
-        whileTap={reduce ? undefined : { scale: 0.94 }}
-        transition={SPRING_PRESS}
-        className="group/image relative size-9 shrink-0 overflow-hidden rounded-[10px] bg-muted outline-none ring-1 ring-border/70 focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {/* biome-ignore lint/performance/noImgElement: Motion layout requires the image element and portable blob URLs. */}
-        <motion.img
-          layoutId={layoutId}
-          src={src}
-          alt=""
-          className="size-full object-cover"
-          transition={{ layout: SPRING_LAYOUT }}
-        />
-      </motion.button>
+      </TooltipContent>
     </Tooltip>
   );
 }
@@ -449,7 +464,7 @@ function ImagePreviewDialog({
                   }
                   whileTap={reduce ? undefined : { scale: 0.92 }}
                   transition={SPRING_PRESS}
-                  className="absolute -right-3 -top-3 grid size-9 place-items-center rounded-full bg-background text-foreground shadow-xl outline-none ring-1 ring-border/70 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                  className="absolute -right-3 -top-3 grid size-9 place-items-center rounded-xl border border-border bg-background text-foreground shadow-[var(--shadow-elevated)] outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <X className="size-4" />
                 </motion.button>
@@ -624,7 +639,7 @@ function AttachmentRow({
               onClick={() => onAudioToggle?.(item)}
               whileTap={{ scale: 0.94 }}
               transition={SPRING_PRESS}
-              className="grid size-9 shrink-0 place-items-center rounded-full bg-foreground text-background outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="grid size-9 shrink-0 place-items-center rounded-xl bg-foreground text-background shadow-[var(--shadow-inset)] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span

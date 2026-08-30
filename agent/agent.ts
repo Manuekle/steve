@@ -1,7 +1,9 @@
+import type { LanguageModel } from "ai";
 import { defineAgent, defineDynamic } from "eve";
 import { resolveLanguageModel, resolveProvider, resolveModelId } from "../lib/ai-provider";
 import { applyStoredEnv } from "../lib/runtime-env";
 import { claimChatModelSync } from "../lib/chat-model-store";
+import { billingSourceForProvider, checkCreditGate } from "../lib/credit-gate";
 
 // The model comes from Settings → Modelo de IA, which persists to
 // ~/.steve/credentials.json. Three routes are supported:
@@ -26,6 +28,33 @@ if (process.env.NODE_ENV !== "production") {
   console.log(`[steve] model provider: ${resolveProvider()} · ${resolveModelId()}`);
 }
 
+/**
+ * A model that fails every call with `reason`. Handed back from the
+ * `step.started` resolver below when the AI-credits gate refuses an
+ * included-credit call. Returning `null` or throwing from a dynamic model
+ * resolver does *not* block the turn — per Eve's own docs, "failures
+ * degrade, never fail the turn," and the scope just falls back to the next
+ * one, which would silently let a blocked call through on `fallbackModel`.
+ * A model that fails inside `doGenerate`/`doStream`, on the other hand, is a
+ * genuine request-time failure ("a selected model without credentials fails
+ * at request time" — same doc), which is the one mechanism that actually
+ * stops the call. See lib/credit-gate.ts for why the gate exists and what it
+ * checks.
+ */
+function creditsExhaustedModel(reason: string): LanguageModel {
+  const fail = async (): Promise<never> => {
+    throw new Error(reason);
+  };
+  return {
+    specificationVersion: "v2",
+    provider: "steve",
+    modelId: "credits-exhausted",
+    supportedUrls: {},
+    doGenerate: fail,
+    doStream: fail,
+  } as unknown as LanguageModel;
+}
+
 // Per-conversation model choice, made in the chat's model picker.
 //
 // The picker cannot reach into Eve, so it writes to ~/.steve/chat-models.json
@@ -35,10 +64,21 @@ if (process.env.NODE_ENV !== "production") {
 // id string, which only the Gateway route can express, while `step.started`
 // may return a live AI SDK model. The id is stable within a conversation, so
 // returning the same model each step keeps the prompt cache intact.
+//
+// Also where the AI-credits gate runs, once per model call — the same grain
+// `step.completed` records usage at (agent/hooks/usage.ts). A BYOK or
+// Enterprise call never touches the database here at all: `billingSourceForProvider`
+// short-circuits to "BYOK" without a query, and `checkCreditGate` only reads
+// the ledger for the one case that can actually be gated — an included-credit
+// call on a hosted Pro/Managed installation.
 const model = defineDynamic({
   fallback: fallbackModel,
   events: {
-    "step.started": (_event, ctx) => {
+    "step.started": async (_event, ctx) => {
+      const billingSource = await billingSourceForProvider(resolveProvider());
+      const gate = await checkCreditGate(billingSource);
+      if (!gate.allowed) return creditsExhaustedModel(gate.reason);
+
       const chosen = claimChatModelSync(ctx.session.id);
       return chosen ? resolveLanguageModel(chosen) : null;
     },

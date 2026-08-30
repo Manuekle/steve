@@ -5,7 +5,12 @@ import { tmpdir } from "node:os";
 
 // ── Setup: point store to a temp dir ──────────────────────────────
 
-const TEST_DIR = join(tmpdir(), `steve-test-${Date.now()}`);
+// Random suffix alongside the timestamp: two test files (this one and
+// tests/agent/tools/propose_automation.test.ts) both derive their temp dir
+// from Date.now(), and running in parallel vitest workers they can land on
+// the same millisecond — same path, same underlying business.json, and one
+// file's writes clobber the other's mid-test.
+const TEST_DIR = join(tmpdir(), `steve-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const TEST_FILE = join(TEST_DIR, "business.json");
 
 // We need to set HOME so the business-store reads from our test dir.
@@ -37,6 +42,12 @@ const {
   deleteChat,
   toggleChatPin,
   channelFromKind,
+  createAgent,
+  updateAgent,
+  getAgentByElevenLabsAgentId,
+  startVoiceCall,
+  recordVoiceCallTranscript,
+  listVoiceCalls,
 } = await import("./business-store");
 
 beforeEach(() => {
@@ -229,4 +240,75 @@ describe("channelFromKind", () => {
   it("defaults to web", () => expect(channelFromKind("web")).toBe("web"));
   it("defaults to web for unknown", () => expect(channelFromKind("telegram")).toBe("web"));
   it("defaults to web for undefined", () => expect(channelFromKind(undefined)).toBe("web"));
+});
+
+// ── Voice calls ──────────────────────────────────────────────────
+
+describe("business-store: voice calls", () => {
+  async function makeVoiceAgent(elevenlabsAgentId: string) {
+    const agent = await createAgent({
+      name: "Vendedor",
+      description: "",
+      systemPrompt: "",
+      tools: [],
+    });
+    return updateAgent(agent.id, { voice: { enabled: true, elevenlabsAgentId } });
+  }
+
+  it("looks an agent up by its ElevenLabs mirror id", async () => {
+    const agent = await makeVoiceAgent("el-agent-1");
+    expect(await getAgentByElevenLabsAgentId("el-agent-1")).toMatchObject({ id: agent!.id });
+    expect(await getAgentByElevenLabsAgentId("no-such-mirror")).toBeUndefined();
+  });
+
+  it("a call this app placed keeps source 'test' once the transcript lands", async () => {
+    const agent = await makeVoiceAgent("el-agent-2");
+    await startVoiceCall({ agentId: agent!.id, conversationId: "conv-test-1", source: "test" });
+
+    const filled = await recordVoiceCallTranscript({
+      agentId: agent!.id,
+      conversationId: "conv-test-1",
+      transcript: [{ role: "user", message: "Hola", timeInCallSecs: 0 }],
+      durationSecs: 12,
+    });
+
+    expect(filled.source).toBe("test");
+    expect(filled.transcript).toEqual([{ role: "user", message: "Hola", timeInCallSecs: 0 }]);
+    expect(filled.durationSecs).toBe(12);
+
+    const [listed] = await listVoiceCalls(agent!.id);
+    expect(listed).toMatchObject({ conversationId: "conv-test-1", source: "test" });
+  });
+
+  it("a call the webhook reports with no pending row defaults to 'real'", async () => {
+    const agent = await makeVoiceAgent("el-agent-3");
+
+    const created = await recordVoiceCallTranscript({
+      agentId: agent!.id,
+      conversationId: "conv-inbound-1",
+      transcript: [{ role: "agent", message: "Hola, en qué te ayudo?", timeInCallSecs: 0 }],
+    });
+
+    expect(created.source).toBe("real");
+  });
+
+  it("registering the same conversation id twice does not duplicate the row", async () => {
+    const agent = await makeVoiceAgent("el-agent-4");
+    await startVoiceCall({ agentId: agent!.id, conversationId: "conv-dup", source: "test" });
+    await startVoiceCall({ agentId: agent!.id, conversationId: "conv-dup", source: "test" });
+
+    const calls = await listVoiceCalls(agent!.id);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("lists an agent's calls newest first and never another agent's calls", async () => {
+    const agentA = await makeVoiceAgent("el-agent-5");
+    const agentB = await makeVoiceAgent("el-agent-6");
+    await startVoiceCall({ agentId: agentA!.id, conversationId: "conv-a1", source: "test" });
+    await startVoiceCall({ agentId: agentB!.id, conversationId: "conv-b1", source: "real" });
+    await startVoiceCall({ agentId: agentA!.id, conversationId: "conv-a2", source: "real" });
+
+    const calls = await listVoiceCalls(agentA!.id);
+    expect(calls.map((c) => c.conversationId)).toEqual(["conv-a2", "conv-a1"]);
+  });
 });

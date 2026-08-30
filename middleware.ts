@@ -29,6 +29,18 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/store";
  *
  *   `/api/health`, because a monitor that has to log in is not a monitor.
  *
+ *   `/f/<slug>` and `/api/f/<slug>`, because a form nobody can open collects
+ *   nothing. Only published forms answer there, the route never returns the
+ *   scoring, and it is rate-limited — see app/api/f/[slug]/route.ts.
+ *
+ *   `/api/billing/webhook`, because Stripe calls it directly and carries no
+ *   session cookie to send. Its own HMAC signature check over the raw body
+ *   stands in for auth — see lib/stripe.ts's verifyStripeWebhookSignature.
+ *
+ *   `/api/webhooks/elevenlabs`, same reasoning — ElevenLabs' post-call
+ *   webhook calls it directly, verified by
+ *   verifyElevenLabsWebhookSignature in lib/elevenlabs-agents.ts.
+ *
  * Everything else — the inbox, the contacts, the model keys on Settings, and
  * every route under `/api` not named above — needs a session.
  */
@@ -53,6 +65,10 @@ const PUBLIC_PATHS = [
   "/api/auth",
   "/api/health",
   "/api/leads",
+  "/f",
+  "/api/f",
+  "/api/billing/webhook",
+  "/api/webhooks/elevenlabs",
   // Files Next serves from the app directory rather than from `public/`.
   "/icon.svg",
   "/apple-icon",

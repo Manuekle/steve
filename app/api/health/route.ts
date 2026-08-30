@@ -3,6 +3,7 @@ import { getMaskedCredentials } from "@/lib/credentials";
 import { resolveProvider } from "@/lib/ai-provider";
 import { listAutomations } from "@/lib/business-store";
 import { withApiErrors } from "@/lib/api-error";
+import { PROVIDER_CREDENTIAL_KEY, type AiProvider } from "@/lib/model-catalog";
 
 // GET /api/health — what the sidebar's status dot reads.
 //
@@ -29,19 +30,14 @@ export const GET = withApiErrors(async function GET() {
   }
 
   let aiOk = false;
-  let provider = "gateway";
+  let provider: AiProvider = "gateway";
   let channelsConnected = 0;
   try {
     const masked = await getMaskedCredentials();
     // Which key counts depends on the selected provider: an Anthropic setup
     // with no Gateway key is fully configured, not degraded.
     provider = resolveProvider();
-    const providerKey =
-      provider === "openai"
-        ? "OPENAI_API_KEY"
-        : provider === "anthropic"
-          ? "ANTHROPIC_API_KEY"
-          : "AI_GATEWAY_API_KEY";
+    const providerKey = PROVIDER_CREDENTIAL_KEY[provider];
     aiOk = Boolean(masked[providerKey] || process.env[providerKey]);
     channelsConnected = Object.values(CHANNEL_KEYS).filter((keys) =>
       keys.every((key) => masked[key]),

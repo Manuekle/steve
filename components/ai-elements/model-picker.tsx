@@ -20,6 +20,7 @@ import {
 import { ProviderLogo } from "@/components/provider-logo";
 import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
 import { useI18n } from "@/lib/i18n/provider";
+import type { AiProvider } from "@/lib/model-catalog";
 import { cn } from "@/lib/utils";
 
 // The model chooser used by the chat header and the agents form.
@@ -45,7 +46,7 @@ export type PickerModel = {
 };
 
 export type ModelsResponse = {
-  readonly provider: "gateway" | "openai" | "anthropic";
+  readonly provider: AiProvider;
   readonly status:
     | "ok"
     | "missing"
