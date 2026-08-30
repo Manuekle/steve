@@ -1,21 +1,21 @@
 <p align="center">
-  <img src="public/logos/steve.svg" alt="steve" width="120" />
+  <img src="public/logos/steve.svg" alt="steve" width="120" style="border-radius: 24px;" />
 </p>
 
 <h1 align="center">steve</h1>
 
 <p align="center">
-  <strong>el sistema de atención para tu negocio y tus agentes</strong><br/>
-  WhatsApp, Instagram, Messenger y Meta Ads en una sola bandeja. Autoalojado, con tus claves y tu base de datos.
+  <strong>the service system for your business and your agents</strong><br/>
+  WhatsApp, Instagram, Messenger and Meta Ads in one inbox. Self-hosted, with your own keys and database.
 </p>
 
 <p align="center">
-  <a href="#local-setup">Instalación local</a> · <a href="#architecture">Arquitectura</a> · <a href="https://eve.dev">Eve</a>
+  <a href="#local-setup">Local setup</a> · <a href="#architecture">Architecture</a> · <a href="https://eve.dev">Eve</a>
 </p>
 
 ---
 
-Steve es un agente de atención y ventas construido con [Eve](https://eve.dev) y desplegado en un host Node.js propio. Demuestra cómo correr Eve sin infraestructura gestionada por Vercel:
+Steve is a service and sales agent built with [Eve](https://eve.dev) and deployed on a self-hosted Node.js host. It shows how to run Eve without Vercel-managed runtime infrastructure:
 
 - PostgreSQL stores durable Workflow state.
 - Docker isolates model-authored Python and blocks sandbox network egress.
