@@ -50,10 +50,24 @@ function getPool(): Pool {
   return pool;
 }
 
+// These live in `steve`, next to the document and blob tables, and not in a
+// schema called `auth` — which is where they used to be, and which is a name
+// this app does not get to own.
+//
+// On Supabase, `auth` is GoTrue's: it already holds `auth.users`,
+// `steve.sessions` and twenty more tables, and the database role cannot create
+// anything in it. `CREATE TABLE IF NOT EXISTS steve.sessions` against that is
+// the worst possible outcome — not an error, a no-op, leaving every session
+// query pointed at GoTrue's table, which has none of these columns. Any
+// managed Postgres is free to reserve a name like that; `steve` is ours.
+//
+// Installs that predate this keep their accounts: `migrateFromLegacySchema`
+// below moves them once, and only from a table whose shape proves it is one
+// of ours.
 const SCHEMA_SQL = `
-CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS steve;
 
-CREATE TABLE IF NOT EXISTS auth.accounts (
+CREATE TABLE IF NOT EXISTS steve.accounts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text NOT NULL UNIQUE,
   password_hash text NOT NULL,
@@ -63,21 +77,60 @@ CREATE TABLE IF NOT EXISTS auth.accounts (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS auth.sessions (
+CREATE TABLE IF NOT EXISTS steve.sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  account_email text NOT NULL REFERENCES auth.accounts(email) ON DELETE CASCADE,
+  account_email text NOT NULL REFERENCES steve.accounts(email) ON DELETE CASCADE,
   token_hash text NOT NULL UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_sessions_token_hash ON auth.sessions (token_hash);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON auth.sessions (expires_at);
-CREATE INDEX IF NOT EXISTS idx_sessions_account_email ON auth.sessions (account_email);
+CREATE INDEX IF NOT EXISTS idx_steve_sessions_token_hash ON steve.sessions (token_hash);
+CREATE INDEX IF NOT EXISTS idx_steve_sessions_expires_at ON steve.sessions (expires_at);
+CREATE INDEX IF NOT EXISTS idx_steve_sessions_account_email ON steve.sessions (account_email);
 `;
+
+/**
+ * Move accounts out of the old `auth` schema, once.
+ *
+ * Deliberately narrow. It runs only when `steve.accounts` is empty, and only
+ * against an `steve.accounts` that has this app's own columns — on Supabase
+ * that table does not exist at all, and `auth.users` (which does) will never
+ * match. Sessions are not carried over: they are cheap to re-make and a
+ * logged-in browser signing in again is a smaller cost than getting this
+ * wrong.
+ */
+async function migrateFromLegacySchema(): Promise<void> {
+  const pool = getPool();
+  const already = await pool.query("SELECT 1 FROM steve.accounts LIMIT 1");
+  if ((already.rowCount ?? 0) > 0) return;
+
+  const legacy = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'auth' AND table_name = 'accounts'
+        AND column_name IN ('email', 'password_hash', 'password_salt')`,
+  );
+  if ((legacy.rowCount ?? 0) < 3) return;
+
+  await pool.query(
+    `INSERT INTO steve.accounts
+       (email, password_hash, password_salt, reset_token_hash, reset_token_expires_at, created_at)
+     SELECT email, password_hash, password_salt, reset_token_hash, reset_token_expires_at, created_at
+       FROM auth.accounts
+     ON CONFLICT (email) DO NOTHING`,
+  );
+}
 
 async function ensureSchema(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = getPool().query(SCHEMA_SQL).then(() => undefined);
+    schemaReady = getPool()
+      .query(SCHEMA_SQL)
+      .then(() => migrateFromLegacySchema())
+      .catch((error: unknown) => {
+        // Let the next call retry rather than caching a failure for the life
+        // of the process — see lib/doc-store.ts.
+        schemaReady = undefined;
+        throw error;
+      });
   }
   await schemaReady;
 }
@@ -110,7 +163,7 @@ function newSessionToken(): { token: string; tokenHash: string; expiresAt: Date 
 
 export async function hasAnyAccount(): Promise<boolean> {
   await ensureSchema();
-  const result = await getPool().query("SELECT 1 FROM auth.accounts LIMIT 1");
+  const result = await getPool().query("SELECT 1 FROM steve.accounts LIMIT 1");
   return result.rowCount! > 0;
 }
 
@@ -129,7 +182,7 @@ export async function createAccount(
     await client.query("BEGIN");
 
     // Check for duplicate email
-    const existing = await client.query("SELECT 1 FROM auth.accounts WHERE email = $1", [normalised]);
+    const existing = await client.query("SELECT 1 FROM steve.accounts WHERE email = $1", [normalised]);
     if (existing.rowCount! > 0) {
       await client.query("ROLLBACK");
       return { ok: false, reason: "email_exists" };
@@ -141,7 +194,7 @@ export async function createAccount(
 
     // Insert account
     await client.query(
-      `INSERT INTO auth.accounts (email, password_hash, password_salt)
+      `INSERT INTO steve.accounts (email, password_hash, password_salt)
        VALUES ($1, $2, $3)`,
       [normalised, derived.toString("hex"), salt.toString("hex")],
     );
@@ -149,7 +202,7 @@ export async function createAccount(
     // Create session
     const session = newSessionToken();
     await client.query(
-      `INSERT INTO auth.sessions (account_email, token_hash, expires_at)
+      `INSERT INTO steve.sessions (account_email, token_hash, expires_at)
        VALUES ($1, $2, $3)`,
       [normalised, session.tokenHash, session.expiresAt],
     );
@@ -172,7 +225,7 @@ export async function login(
   await ensureSchema();
 
   const result = await getPool().query(
-    "SELECT password_hash, password_salt FROM auth.accounts WHERE email = $1",
+    "SELECT password_hash, password_salt FROM steve.accounts WHERE email = $1",
     [normalised],
   );
 
@@ -187,7 +240,7 @@ export async function login(
   // Create session
   const session = newSessionToken();
   await getPool().query(
-    `INSERT INTO auth.sessions (account_email, token_hash, expires_at)
+    `INSERT INTO steve.sessions (account_email, token_hash, expires_at)
      VALUES ($1, $2, $3)`,
     [normalised, session.tokenHash, session.expiresAt],
   );
@@ -200,7 +253,7 @@ export async function startPasswordReset(email: string): Promise<string | null> 
   await ensureSchema();
 
   const result = await getPool().query(
-    "SELECT id FROM auth.accounts WHERE email = $1",
+    "SELECT id FROM steve.accounts WHERE email = $1",
     [normalised],
   );
   if (result.rowCount === 0) return null;
@@ -209,7 +262,7 @@ export async function startPasswordReset(email: string): Promise<string | null> 
   const expiresAt = new Date(Date.now() + RESET_TOKEN_HOURS * 3_600_000);
 
   await getPool().query(
-    `UPDATE auth.accounts
+    `UPDATE steve.accounts
        SET reset_token_hash = $1, reset_token_expires_at = $2
      WHERE email = $3`,
     [hashToken(token), expiresAt, normalised],
@@ -233,7 +286,7 @@ export async function resetPassword(
     const now = new Date();
 
     const result = await client.query(
-      `SELECT id, email FROM auth.accounts
+      `SELECT id, email FROM steve.accounts
        WHERE reset_token_hash IS NOT NULL
          AND reset_token_hash = $1
          AND reset_token_expires_at > $2`,
@@ -251,7 +304,7 @@ export async function resetPassword(
 
     // Update password, clear reset token
     await client.query(
-      `UPDATE auth.accounts
+      `UPDATE steve.accounts
          SET password_hash = $1, password_salt = $2,
              reset_token_hash = NULL, reset_token_expires_at = NULL
        WHERE id = $3`,
@@ -260,7 +313,7 @@ export async function resetPassword(
 
     // Drop all other sessions on this account
     await client.query(
-      "DELETE FROM auth.sessions WHERE account_email = $1",
+      "DELETE FROM steve.sessions WHERE account_email = $1",
       [account.email],
     );
 
@@ -289,7 +342,7 @@ export async function changePassword(
     await client.query("BEGIN");
 
     const result = await client.query(
-      "SELECT id, password_hash, password_salt FROM auth.accounts WHERE email = $1",
+      "SELECT id, password_hash, password_salt FROM steve.accounts WHERE email = $1",
       [normalised],
     );
     if (result.rowCount === 0) {
@@ -309,7 +362,7 @@ export async function changePassword(
     const derivedNew = await scrypt(newPassword, newSalt, KEY_LENGTH, SCRYPT);
 
     await client.query(
-      `UPDATE auth.accounts
+      `UPDATE steve.accounts
          SET password_hash = $1, password_salt = $2
        WHERE id = $3`,
       [derivedNew.toString("hex"), newSalt.toString("hex"), account.id],
@@ -318,7 +371,7 @@ export async function changePassword(
     // Keep current session, drop all others
     const currentTokenHash = hashToken(currentToken);
     await client.query(
-      `DELETE FROM auth.sessions
+      `DELETE FROM steve.sessions
        WHERE account_email = $1 AND token_hash != $2`,
       [normalised, currentTokenHash],
     );
@@ -341,7 +394,7 @@ export async function verifySession(token: string | undefined): Promise<boolean>
 
   const wanted = hashToken(token);
   const result = await getPool().query(
-    "SELECT 1 FROM auth.sessions WHERE token_hash = $1 AND expires_at > now()",
+    "SELECT 1 FROM steve.sessions WHERE token_hash = $1 AND expires_at > now()",
     [wanted],
   );
   return result.rowCount! > 0;
@@ -353,7 +406,7 @@ export async function getSessionAccountEmail(token: string | undefined): Promise
 
   const wanted = hashToken(token);
   const result = await getPool().query(
-    "SELECT account_email FROM auth.sessions WHERE token_hash = $1 AND expires_at > now()",
+    "SELECT account_email FROM steve.sessions WHERE token_hash = $1 AND expires_at > now()",
     [wanted],
   );
   return result.rows[0]?.account_email ?? null;
@@ -364,7 +417,7 @@ export async function destroySession(token: string | undefined): Promise<void> {
   await ensureSchema();
 
   const wanted = hashToken(token);
-  await getPool().query("DELETE FROM auth.sessions WHERE token_hash = $1", [wanted]);
+  await getPool().query("DELETE FROM steve.sessions WHERE token_hash = $1", [wanted]);
 }
 
 // ── Migration from file-based store ──────────────────────────────────────────
@@ -386,7 +439,7 @@ export async function migrateFromFileStore(
     for (const account of fileStore.accounts) {
       try {
         await client.query(
-          `INSERT INTO auth.accounts (email, password_hash, password_salt, created_at)
+          `INSERT INTO steve.accounts (email, password_hash, password_salt, created_at)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (email) DO NOTHING`,
           [account.email, account.hash, account.salt, account.createdAt],
@@ -401,7 +454,7 @@ export async function migrateFromFileStore(
     for (const session of fileStore.sessions) {
       try {
         await client.query(
-          `INSERT INTO auth.sessions (account_email, token_hash, created_at, expires_at)
+          `INSERT INTO steve.sessions (account_email, token_hash, created_at, expires_at)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (token_hash) DO NOTHING`,
           [session.accountEmail, session.tokenHash, session.createdAt, session.expiresAt],
@@ -424,6 +477,6 @@ export async function migrateFromFileStore(
 /** Check if the DB has any accounts (for migration decision). */
 export async function dbHasAccounts(): Promise<boolean> {
   await ensureSchema();
-  const result = await getPool().query("SELECT 1 FROM auth.accounts LIMIT 1");
+  const result = await getPool().query("SELECT 1 FROM steve.accounts LIMIT 1");
   return result.rowCount! > 0;
 }
