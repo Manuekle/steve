@@ -1,7 +1,7 @@
 "use client";
 
 import type { EveDynamicToolPart, EveMessage, EveMessagePart } from "eve/react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ExternalLinkIcon, File01Icon } from "@hugeicons/core-free-icons";
 import { type FormEvent, useState } from "react";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";

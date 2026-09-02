@@ -88,6 +88,23 @@ const buttonVariants = cva(
   },
 );
 
+type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>["variant"]>;
+
+/**
+ * The press cue, chosen by how much weight the variant carries.
+ *
+ * Only the variants that mean "do the thing" make a sound. `ghost` and `link`
+ * are the close X, the toolbar icon, the inline "see more" — wiring those up
+ * turns every stray click into a noise and is how a sounding interface earns
+ * itself muted at the OS level.
+ */
+const PRESS_CUE: Partial<Record<ButtonVariant, string>> = {
+  default: "pulse",
+  destructive: "pulse",
+  secondary: "scan",
+  outline: "scan",
+};
+
 function Button({
   className,
   variant = "default",
@@ -99,12 +116,16 @@ function Button({
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot.Root : "button";
+  const pressCue = variant ? PRESS_CUE[variant] : undefined;
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      // Ahead of `props`, so a caller that wants a different cue — or none —
+      // can still say so at the call site.
+      {...(pressCue ? { "data-cuelume-press": pressCue } : {})}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

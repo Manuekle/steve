@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowLeft02Icon,
   ZapIcon,
@@ -35,7 +35,7 @@ import { FlowCanvas } from "@/components/ai-elements/flow-canvas";
 import { FlowAssistant } from "@/components/ai-elements/flow-assistant";
 import { StepPanel } from "@/components/ai-elements/step-panel";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
-import { fireConfettiFrom } from "@/lib/confetti";
+import { useCelebrate } from "@/components/use-celebrate";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beam } from "@/components/ui/beam";
 import { Orb } from "@/components/ui/orb";
@@ -71,6 +71,7 @@ type DockTab = "assistant" | "step";
 export default function AutomationFlowPage() {
   const t = useT();
   const { cue } = useSound();
+  const celebrate = useCelebrate();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -338,7 +339,7 @@ export default function AutomationFlowPage() {
       if (!updated) return;
       // Going live is the one moment on this page worth celebrating —
       // pausing is not, and neither is saving a step.
-      if (status === "active") fireConfettiFrom(button);
+      if (status === "active") celebrate({ from: button });
     })();
   };
 

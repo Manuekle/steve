@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { SearchIcon, Download01Icon, Delete01Icon, Add01Icon, Edit02Icon } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
-import { Card } from "../../_components/dashboard-card";
+import { Card, CardBody, CardHeader, CardSeparator, CardTitle, CardDescription } from "../../_components/dashboard-card";
+import { RankedBars, TimeSeries } from "../../_components/chart";
+import { countByDay } from "@/lib/chart-data";
 import { ContactDialog } from "../../_components/contact-dialog";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
-import { Skeleton } from "@/components/ai-elements/skeleton";
+import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,49 @@ import type { Contact, ContactStatus } from "@/lib/types";
 import { usePolling } from "@/lib/use-polling";
 
 const STATUS_OPTIONS: readonly ContactStatus[] = ["open", "waiting_human", "followup_due", "closed"];
+
+/** Skeleton for the Leads page — header + filters, then a table of rows. */
+function LeadsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <header className="flex items-center justify-between gap-4">
+        <div className="space-y-2">
+          <SkeletonBar className="h-7 w-28" />
+          <SkeletonBar className="h-4 w-64" />
+        </div>
+        <div className="flex items-center gap-2">
+          <SkeletonBar className="h-9 w-32 rounded-lg" />
+          <SkeletonBar className="h-9 w-32 rounded-lg" />
+        </div>
+      </header>
+      <div className="flex flex-wrap gap-2">
+        <SkeletonBar className="h-9 min-w-[200px] flex-1 rounded-lg" />
+        <SkeletonBar className="h-9 w-40 rounded-lg" />
+        <SkeletonBar className="h-9 w-40 rounded-lg" />
+      </div>
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-4 border-b border-border px-4 py-2.5">
+          <SkeletonBar className="h-3 w-24" />
+          <SkeletonBar className="h-3 w-28" />
+          <SkeletonBar className="h-3 w-16" />
+          <SkeletonBar className="h-3 w-16" />
+          <SkeletonBar className="h-3 w-20" />
+          <SkeletonBar className="ml-auto h-3 w-16" />
+        </div>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 border-b border-border/50 px-4 py-3 last:border-0">
+            <SkeletonBar className="h-3.5 w-24" />
+            <SkeletonBar className="h-3 w-28" />
+            <SkeletonBar className="h-5 w-14 rounded-full" />
+            <SkeletonBar className="h-3 w-12" />
+            <SkeletonBar className="h-3 w-16" />
+            <SkeletonBar className="ml-auto h-3 w-12" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function LeadsPage() {
   const { locale, t } = useI18n();
@@ -67,6 +112,30 @@ export default function LeadsPage() {
     });
   }, [contacts, search, sourceFilter, statusFilter]);
 
+  /**
+   * The two charts read off `filtered`, not off every contact loaded. A chart
+   * that ignored the filters would contradict the table under it — pick a
+   * source and the trend has to be that source's trend.
+   */
+  const leadsPerDay = useMemo(
+    () => countByDay(filtered.map((c) => c.createdAt), { locale }),
+    [filtered, locale],
+  );
+
+  const leadsBySource = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const contact of filtered) {
+      const source = contact.source || "unknown";
+      counts.set(source, (counts.get(source) ?? 0) + 1);
+    }
+    return [...counts].map(([source, count]) => ({
+      key: source,
+      label: contactSourceLabel(t, source),
+      formatted: String(count),
+      value: count,
+    }));
+  }, [filtered, t]);
+
   const openCreate = () => {
     setEditingContact(null);
     setDialogOpen(true);
@@ -101,7 +170,7 @@ export default function LeadsPage() {
   return (
     <PageContainer maxWidth="max-w-6xl" pattern="grid">
       {confirmDialog}
-      <Skeleton className="min-h-[400px]" isLoading={isLoading} skeleton={<div className="h-64 rounded-xl bg-muted" />}>
+      <Skeleton className="min-h-[400px]" isLoading={isLoading} skeleton={<LeadsSkeleton />}>
         <div className="content-enter">
           <ErrorBanner className="mb-6" error={error} onDismiss={() => setError(null)} />
           <header className="mb-6 flex items-center justify-between gap-4">
@@ -122,13 +191,54 @@ export default function LeadsPage() {
             </div>
           </header>
 
+          {/* Held back until there is something to chart. An account with no
+              leads yet would otherwise meet two large empty panels before the
+              empty state that actually tells it what to do. */}
+          {contacts.length > 0 ? (
+          <div className="mb-4 grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <Card>
+              <CardHeader>
+                <div className="min-w-0 flex-1">
+                  <CardTitle>{t("leads.trendTitle")}</CardTitle>
+                  <CardDescription>{t("leads.trendDescription")}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardSeparator />
+              <CardBody>
+                <TimeSeries
+                  data={leadsPerDay}
+                  emptyLabel={t("leads.trendEmpty")}
+                  formatValue={(point) => (
+                    <span className="tabular-nums">
+                      {point.label} · {t("leads.trendTooltip", { count: point.value })}
+                    </span>
+                  )}
+                />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardHeader>
+                <div className="min-w-0 flex-1">
+                  <CardTitle>{t("leads.bySourceTitle")}</CardTitle>
+                  <CardDescription>{t("leads.bySourceDescription")}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardSeparator />
+              <CardBody>
+                <RankedBars bars={leadsBySource} emptyLabel={t("leads.bySourceEmpty")} />
+              </CardBody>
+            </Card>
+          </div>
+          ) : null}
+
           <div className="mb-4 flex flex-wrap gap-2">
             <div className="relative min-w-[200px] flex-1">
               <HugeiconsIcon icon={SearchIcon} size={16} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("leads.searchPlaceholder")} className="pl-9" />
+              <Input
+                aria-label={t("leads.searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("leads.searchPlaceholder")} className="pl-9" />
             </div>
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label={t("common.filterBySource")} className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("leads.allSources")}</SelectItem>
                 {sources.map((source) => (
@@ -139,7 +249,7 @@ export default function LeadsPage() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as ContactStatus | "all")}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label={t("common.filterByStatus")} className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("leads.allStatuses")}</SelectItem>
                 {STATUS_OPTIONS.map((status) => (

@@ -9,7 +9,7 @@ import {
   type SessionState,
 } from "eve/client";
 import { useEveAgent } from "eve/react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Add01Icon, AlertCircleIcon, Logout01Icon } from "@hugeicons/core-free-icons";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -590,7 +590,7 @@ function BasicAuthForm({
   };
 
   return (
-    <main className="flex h-dvh items-center justify-center bg-background px-4 text-foreground">
+    <div className="flex h-dvh items-center justify-center bg-background px-4 text-foreground">
       <section className="w-full max-w-sm rounded-2xl border border-border bg-card p-7 shadow-[var(--shadow-elevated)]">
         <p className="text-xs font-medium uppercase text-muted-foreground">steve</p>
         <h1 className="mt-3 text-2xl font-semibold">{t("auth.signIn")}</h1>
@@ -615,24 +615,24 @@ function BasicAuthForm({
           {t("auth.credentialsNote")}
         </p>
       </section>
-    </main>
+    </div>
   );
 }
 
 function AgentLoading() {
   const t = useT();
   return (
-    <main className="flex h-dvh flex-col items-center justify-center gap-4 bg-background text-muted-foreground">
+    <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-background text-muted-foreground">
       <Orb state="connecting" size={64} />
       <p className="text-sm">{t("chat.loadingAgent")}</p>
-    </main>
+    </div>
   );
 }
 
 function SecureConnectionRequired() {
   const t = useT();
   return (
-    <main className="flex h-dvh items-center justify-center bg-background px-4 text-foreground">
+    <div className="flex h-dvh items-center justify-center bg-background px-4 text-foreground">
       <section className="w-full max-w-lg rounded-2xl border border-destructive/20 bg-destructive/5 p-7 shadow-[var(--shadow-elevated)]">
         <div className="flex items-start gap-3.5">
           <HugeiconsIcon icon={AlertCircleIcon} size={20} strokeWidth={1.75} className="mt-0.5 shrink-0 text-destructive" />
@@ -644,14 +644,14 @@ function SecureConnectionRequired() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
 function AuthConfigurationError() {
   const t = useT();
   return (
-    <main className="flex h-dvh items-center justify-center bg-background px-4 text-foreground">
+    <div className="flex h-dvh items-center justify-center bg-background px-4 text-foreground">
       <section className="w-full max-w-lg rounded-2xl border border-destructive/20 bg-destructive/5 p-7 shadow-[var(--shadow-elevated)]">
         <div className="flex items-start gap-3.5">
           <HugeiconsIcon icon={AlertCircleIcon} size={20} strokeWidth={1.75} className="mt-0.5 size-5 shrink-0 text-destructive" />
@@ -663,7 +663,7 @@ function AuthConfigurationError() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 

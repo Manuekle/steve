@@ -132,6 +132,8 @@ function describeStep(step: WorkflowStep): string {
       return `Log this contact to spreadsheet ${c.spreadsheetId ?? "(unset)"}${c.sheetName ? ` (${c.sheetName})` : ""}. Runs automatically on webhook triggers only — you have no tool for this, so skip it on keyword/new_chat triggers.`;
     case "send_payment_link":
       return `Send a ${c.currency ?? "usd"} ${c.amount ?? "?"} Stripe payment link for "${c.productName ?? "(unset)"}". Runs automatically on webhook triggers only — you have no tool for this, so skip it on keyword/new_chat triggers.`;
+    case "book_meeting":
+      return `Book a ${c.meetingDurationMin ?? "30"}-minute meeting at the next available slot, titled "${c.meetingSummary ?? "Reunión con {{contact.name}}"}", with a Google Meet link. Runs automatically on webhook triggers only — you have no tool for this here (use the \`calendar\` tool instead if this is a live conversation), so skip it on keyword/new_chat triggers.`;
     case "update_contact":
       return `Call update_contact${c.contactStatus ? ` status=${c.contactStatus}` : ""}${
         c.contactNote ? ` note="${c.contactNote}"` : ""

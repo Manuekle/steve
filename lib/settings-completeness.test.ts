@@ -18,11 +18,12 @@ const en = dictionaries.en;
 const GROUPS_WITHOUT_CARD = new Set([
   "database",
   "google-calendar",
+  "google-drive",
   "google-sheets",
   "integrations",
   "instagram",
-  "messenger",
   "oauth-apps",
+  "telegram",
   "whatsapp",
 ]);
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowLeft02Icon,
   CrownIcon,
@@ -15,6 +15,7 @@ import { PageContainer } from "../../../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator, CardBody } from "../../../_components/dashboard-card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { useI18n } from "@/lib/i18n/provider";
 import { fetchJson } from "@/lib/api-error-message";
 import type { BillingState } from "@/lib/billing-store";
@@ -27,6 +28,7 @@ export default function BillingPage() {
   const { locale, t } = useI18n();
   const [license, setLicense] = useState<LicenseInfo | null>(null);
   const [billing, setBilling] = useState<BillingState | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void fetch("/api/license")
@@ -40,6 +42,7 @@ export default function BillingPage() {
   const loadBilling = useCallback(async () => {
     const result = await fetchJson<BillingState>("/api/billing/plan", t);
     if (result.ok) setBilling(result.data);
+    setLoading(false);
   }, [t]);
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export default function BillingPage() {
 
   return (
     <PageContainer maxWidth="max-w-4xl" pattern="grid">
+      <Skeleton className="min-h-[500px]" isLoading={loading} skeleton={<BillingSkeleton />}>
       <div className="content-enter">
         <header className="mb-8">
           <Link
@@ -247,6 +251,73 @@ export default function BillingPage() {
           </CardBody>
         </Card>
       </div>
+      </Skeleton>
     </PageContainer>
+  );
+}
+
+function BillingSkeleton() {
+  return (
+    <div className="space-y-4">
+      <SkeletonBar className="h-3 w-16" />
+      <div className="mb-4 space-y-2">
+        <SkeletonBar className="h-7 w-32" />
+        <SkeletonBar className="h-4 w-64" />
+      </div>
+
+      {/* Plan card */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-4 w-28" />
+            <SkeletonBar className="h-3 w-40" />
+          </div>
+          <SkeletonBar className="hidden h-5 w-16 rounded-full sm:block" />
+        </div>
+        <div className="h-px bg-border" />
+        <div className="space-y-4 p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <SkeletonBar className="h-16 rounded-xl" />
+            <SkeletonBar className="h-16 rounded-xl" />
+          </div>
+          <div className="flex gap-2">
+            <SkeletonBar className="h-9 w-28 rounded-lg" />
+            <SkeletonBar className="h-9 w-32 rounded-lg" />
+          </div>
+        </div>
+      </div>
+
+      {/* Payment method card */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-4 w-32" />
+            <SkeletonBar className="h-3 w-48" />
+          </div>
+        </div>
+        <div className="h-px bg-border" />
+        <div className="space-y-3 p-5">
+          <SkeletonBar className="h-3 w-40" />
+          <SkeletonBar className="h-8 w-32 rounded-md" />
+        </div>
+      </div>
+
+      {/* Invoices card */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-4 w-28" />
+            <SkeletonBar className="h-3 w-40" />
+          </div>
+        </div>
+        <div className="h-px bg-border" />
+        <div className="p-5">
+          <SkeletonBar className="h-4 w-full" />
+        </div>
+      </div>
+    </div>
   );
 }

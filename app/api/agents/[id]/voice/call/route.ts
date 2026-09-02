@@ -61,6 +61,25 @@ export const POST = withApiErrors(async function POST(
     }
     return NextResponse.json(result);
   } catch (error) {
+    // Twilio's two standard refusals reach here as raw upstream text, and
+    // both are fixed in the Twilio console rather than in this app — so the
+    // message says where to go. Same treatment the ElevenLabs permission
+    // errors get in app/api/elevenlabs/phone-numbers/route.ts.
+    const detail = error instanceof Error ? error.message : String(error);
+    if (/not authorized to call|geo-permissions|geo permissions/i.test(detail)) {
+      const country = detail.match(/call (\+\d+)/)?.[1];
+      return apiError("forbidden", {
+        detail,
+        message: `Twilio no tiene habilitadas las llamadas a ese destino${country ? ` (${country})` : ""}. Activalo en console.twilio.com > Voice > Settings > Geo Permissions, marcando el país como Low risk.`,
+      });
+    }
+    if (/unverified|not verified|trial account/i.test(detail)) {
+      return apiError("forbidden", {
+        detail,
+        message:
+          "La cuenta de Twilio está en trial: solo llama a números verificados. Verificá el número en console.twilio.com > Phone Numbers > Verified Caller IDs, o cargá saldo para salir de trial.",
+      });
+    }
     return apiFailure(error, "upstream_failed");
   }
 });

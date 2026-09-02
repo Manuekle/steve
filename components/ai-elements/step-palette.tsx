@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -74,7 +74,16 @@ export function StepPalette({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[min(78vh,640px)] gap-0 overflow-hidden p-0 sm:max-w-md"
+        // `flex flex-col` is load-bearing, not decoration. DialogContent is a
+        // grid by default, and in a grid the two children below size to their
+        // content: the list took its full 980px, the dialog clipped it at its
+        // max-height, and the group that fell past the fold could not be
+        // reached at all — the pane had nothing to scroll. As a column the
+        // list is the one item that flexes, so the overflow lands on it.
+        className="flex max-h-[min(78vh,640px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+        // Centred in the 44px search row rather than sitting at the padding
+        // inset this dialog no longer has.
+        closeClassName="top-2 right-3"
         onOpenAutoFocus={(e) => {
           e.preventDefault();
           inputRef.current?.focus();
@@ -85,7 +94,9 @@ export function StepPalette({
           <DialogDescription>{t("automations.searchStep")}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
+        {/* `pr-12` is the close button's lane — without it a long query runs
+            under the ✕. */}
+        <div className="flex shrink-0 items-center gap-2 border-b border-border py-3 pr-12 pl-4">
           <HugeiconsIcon
             icon={Search01Icon}
             size={15}

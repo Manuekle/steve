@@ -9,6 +9,28 @@ const ZERO_DECIMAL_CURRENCIES = new Set([
   "ugx", "vnd", "vuv", "xaf", "xof", "xpf",
 ]);
 
+/**
+ * Two Stripe accounts, never the same one.
+ *
+ * The key on the Settings page is the *operator's* merchant account: it is
+ * what `send_payment_link` charges their customers with, and its money is
+ * theirs. This installation's own subscription (Pro/Managed) is money moving
+ * the other way, to the vendor — so it runs on the vendor's account, supplied
+ * by the environment of a hosted install and never typed into the UI. Sharing
+ * one key made the operator bill themselves for their own plan.
+ *
+ * Env-only is the point: a self-hosted Enterprise install has no plan to buy
+ * (see docs/commercial-licensing.md) and simply leaves these unset, which
+ * turns checkout and the billing webhook off with a readable message.
+ */
+export function getPlatformStripeKey(): string | undefined {
+  return process.env.STRIPE_PLATFORM_SECRET_KEY?.trim() || undefined;
+}
+
+export function getPlatformWebhookSecret(): string | undefined {
+  return process.env.STRIPE_PLATFORM_WEBHOOK_SECRET?.trim() || undefined;
+}
+
 /** Stripe wants the amount in the currency's smallest unit (cents, unless zero-decimal). */
 function toSmallestUnit(amount: string, currency: string): number {
   const value = Number(amount);
@@ -17,13 +39,20 @@ function toSmallestUnit(amount: string, currency: string): number {
   return Math.round(value * factor);
 }
 
-/** Creates a one-time Stripe Payment Link and returns its hosted checkout URL. */
+/**
+ * Creates a one-time Stripe Payment Link.
+ *
+ * The id comes back with the URL because it is the only handle
+ * `checkout.session.completed` will name later (`session.payment_link`), and
+ * that is how a payment finds its way back to the contact it was sent to —
+ * see lib/payment-store.ts.
+ */
 export async function createPaymentLink(opts: {
   readonly secretKey: string;
   readonly amount: string;
   readonly currency: string;
   readonly productName: string;
-}): Promise<string> {
+}): Promise<{ readonly id: string; readonly url: string }> {
   const unitAmount = toSmallestUnit(opts.amount, opts.currency);
   const body = new URLSearchParams({
     "line_items[0][price_data][currency]": opts.currency.toLowerCase(),
@@ -40,11 +69,15 @@ export async function createPaymentLink(opts: {
     body,
     signal: AbortSignal.timeout(10_000),
   });
-  const data = (await response.json()) as { url?: string; error?: { message?: string } };
-  if (!response.ok || !data.url) {
+  const data = (await response.json()) as {
+    id?: string;
+    url?: string;
+    error?: { message?: string };
+  };
+  if (!response.ok || !data.url || !data.id) {
     throw new Error(`Stripe ${response.status}: ${data.error?.message ?? "unknown error"}`);
   }
-  return data.url;
+  return { id: data.id, url: data.url };
 }
 
 /**

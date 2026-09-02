@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArtificialIntelligence08Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ProviderLogo } from "@/components/provider-logo";

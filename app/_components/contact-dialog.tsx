@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import {
   DialogContent,
   DialogDescription,
@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { useT } from "@/lib/i18n/provider";
+import { useI18n } from "@/lib/i18n/provider";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
+import { relativeTime } from "@/lib/format";
 import type { Contact, ContactStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: readonly ContactStatus[] = ["open", "waiting_human", "followup_due", "closed"];
@@ -49,7 +50,13 @@ export function ContactDialog({
   /** Called with the fresh contact list once the save round-trips. */
   readonly onSaved: (contacts: Contact[]) => void;
 }) {
-  const t = useT();
+  const { t, locale } = useI18n();
+  // The one control here a <label> cannot wrap: a Radix Select is a button,
+  // not a labelable element, which is why this field was a bare span while
+  // every other field in this form is correctly wrapped.
+  const base = useId();
+  const statusLabelId = `${base}-status-label`;
+  const statusControlId = `${base}-status`;
   const isEditing = !!editing;
   const [name, setName] = useState(editing?.name ?? "");
   const [phone, setPhone] = useState(editing?.phone ?? "");
@@ -130,9 +137,15 @@ export function ContactDialog({
           </label>
         </div>
         <div className="space-y-1.5">
-          <span className="text-sm font-medium">{t("contactDialog.status")}</span>
+          <span className="text-sm font-medium" id={statusLabelId}>
+            {t("contactDialog.status")}
+          </span>
           <Select value={status} onValueChange={(val) => setStatus(val as ContactStatus)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger
+              aria-labelledby={`${statusLabelId} ${statusControlId}`}
+              className="w-full"
+              id={statusControlId}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -153,6 +166,46 @@ export function ContactDialog({
             rows={3}
           />
         </label>
+
+        {editing?.research ? (
+          // Read-only: this comes from the research_lead tool, run by the
+          // agent mid-conversation — there is nothing here to edit by hand.
+          <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium">{t("contactDialog.research")}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("contactDialog.researchedAt", { when: relativeTime(editing.research.researchedAt, locale) })}
+              </span>
+            </div>
+            <p className="text-muted-foreground">{editing.research.summary}</p>
+            {editing.research.companyName ? (
+              <p>
+                <span className="font-medium">{t("contactDialog.researchCompany")}: </span>
+                {editing.research.companyName}
+              </p>
+            ) : null}
+            {editing.research.signals.length > 0 ? (
+              <ul className="list-inside list-disc text-muted-foreground">
+                {editing.research.signals.map((signal) => (
+                  <li key={signal}>{signal}</li>
+                ))}
+              </ul>
+            ) : null}
+            {editing.research.sources.length > 0 ? (
+              <p className="truncate text-xs text-muted-foreground">
+                {t("contactDialog.researchSources")}:{" "}
+                {editing.research.sources.map((url, i) => (
+                  <span key={url}>
+                    {i > 0 ? ", " : ""}
+                    <a href={url} target="_blank" rel="noreferrer" className="underline">
+                      {new URL(url).hostname}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {fieldError ? <p className="text-xs text-destructive">{fieldError}</p> : null}
         <ErrorBanner error={saveError} onDismiss={() => setSaveError(null)} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon, EyeIcon, EyeOffIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";

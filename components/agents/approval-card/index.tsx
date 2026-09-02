@@ -139,6 +139,7 @@ function QuestionOptions({
 
       {question.allowCustom ? (
         <Input
+          aria-label={question.customPlaceholder ?? "Add another response…"}
           value={custom}
           disabled={disabled}
           placeholder={question.customPlaceholder ?? "Add another response…"}

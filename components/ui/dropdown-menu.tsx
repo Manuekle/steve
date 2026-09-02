@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "@hugeicons/core-free-icons";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
@@ -20,7 +20,14 @@ function DropdownMenuPortal({
 function DropdownMenuTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
+  // Same as the select: a menu opening gets the menu cue, not a button press.
+  return (
+    <DropdownMenuPrimitive.Trigger
+      data-slot="dropdown-menu-trigger"
+      data-cuelume-press="scan"
+      {...props}
+    />
+  );
 }
 
 function DropdownMenuContent({

@@ -6,12 +6,7 @@ import {
   recordAutomationFire,
   upsertContact,
 } from "../../lib/business-store";
-import { getCredential } from "../../lib/credentials";
-import {
-  isWithin24hWindow,
-  sendWhatsAppText,
-  sendWhatsAppTemplate,
-} from "../../lib/whatsapp-send";
+import { replyToContact } from "../../lib/automation-runner";
 
 function followupText(autoName: string, stepsMessage: string | undefined): string {
   return stepsMessage?.trim() || `Following up from ${autoName}. Can we continue?`;
@@ -28,10 +23,6 @@ export default defineSchedule({
           listContacts(),
         ]);
         const active = automations.filter((a) => a.status === "active");
-
-        // Pre-read template config (shared across all sends).
-        const templateName = await getCredential("WHATSAPP_TEMPLATE_NAME");
-        const templateLang = (await getCredential("WHATSAPP_TEMPLATE_LANG")) || "es";
 
         for (const auto of active) {
           if (auto.trigger !== "no_reply") continue;
@@ -54,25 +45,18 @@ export default defineSchedule({
             });
             await recordAutomationFire(auto.id);
 
-            // WhatsApp outbound: respect 24h free-form window.
-            if (contact.channel === "whatsapp" && contact.phone) {
-              const withinWindow = isWithin24hWindow(contact.lastMessageAt);
-              const text = followupText(auto.name, messageStep);
-
-              if (withinWindow) {
-                // Free-form message allowed.
-                await sendWhatsAppText(contact.phone, text);
-              } else if (templateName) {
-                // Outside window: send HSM template.
-                await sendWhatsAppTemplate(
-                  contact.phone,
-                  templateName,
-                  templateLang,
-                  [contact.name, text],
-                );
-              }
-              // else: no template configured → followup_due is set but
-              // message is not sent. User sees it in inbox to handle manually.
+            // Outbound on whichever channel this contact uses: WhatsApp
+            // (free-form inside the 24h window, an approved template outside
+            // it) or an Instagram DM. A contact with no transport, and a send
+            // Meta refused, both still leave followup_due set — it shows up in
+            // the inbox for someone to handle by hand.
+            const sent = await replyToContact(contact, followupText(auto.name, messageStep));
+            if (sent && !sent.ok) {
+              console.warn("[followups] follow-up not delivered", {
+                automation: auto.id,
+                contact: contact.id,
+                detail: sent.detail,
+              });
             }
           }
         }

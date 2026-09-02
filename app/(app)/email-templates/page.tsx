@@ -8,9 +8,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
+  ArtificialIntelligence08Icon,
   Copy01Icon,
   Loading03Icon,
   Mail01Icon,
@@ -19,6 +20,17 @@ import {
 } from "@hugeicons/core-free-icons";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { Beam } from "@/components/ui/beam";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CodeEditor } from "@/components/email-editor/code-editor";
@@ -26,9 +38,11 @@ import { PreviewPane } from "@/components/email-editor/preview-pane";
 import { TemplateRail, type TemplateItem } from "@/components/email-editor/template-rail";
 import { TestSend, type EmailProvider } from "@/components/email-editor/test-send";
 import { VariableInspector } from "@/components/email-editor/variable-inspector";
+import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { useT } from "@/lib/i18n/provider";
 import { useSound } from "@/components/sound-provider";
+import { useCelebrate } from "@/components/use-celebrate";
 import { cn } from "@/lib/utils";
 
 const DOCK_MIN = 320;
@@ -65,6 +79,7 @@ const NO_PREVIEW: PreviewState = { html: null, subject: null, error: null, loadi
 export default function EmailTemplatesPage() {
   const t = useT();
   const { cue } = useSound();
+  const celebrate = useCelebrate();
 
   const [templates, setTemplates] = useState<TemplateMeta[]>([]);
   const [provider, setProvider] = useState<EmailProvider | null>(null);
@@ -77,6 +92,11 @@ export default function EmailTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<UiError | null>(null);
   const [preview, setPreview] = useState<PreviewState>(NO_PREVIEW);
+
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<UiError | null>(null);
 
   const [dockOpen, setDockOpen] = useState(true);
   const [dockWidth, setDockWidth] = useState(400);
@@ -285,6 +305,61 @@ export default function EmailTemplatesPage() {
     cue("success");
   }, [selected, source, variables, t, loadList, openTemplate, cue]);
 
+  /** Turns a plain-language description into a whole new custom template —
+   *  label, subject, sample data and source — then opens it the same way a
+   *  hand-created one opens, so reviewing the AI's work is just editing. */
+  const handleGenerateWithAI = useCallback(async () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt) return;
+    setAiGenerating(true);
+    setAiError(null);
+
+    const draft = await fetchJson<{
+      label: string;
+      description: string;
+      subject: string;
+      source: string;
+      sample: Record<string, unknown>;
+    }>("/api/email-templates/generate", t, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!draft.ok) {
+      setAiGenerating(false);
+      setAiError(draft.error);
+      return;
+    }
+
+    const created = await fetchJson<{ template: TemplateMeta }>("/api/email-templates", t, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        label: draft.data.label,
+        description: draft.data.description,
+        subject: draft.data.subject,
+        source: draft.data.source,
+        sample: draft.data.sample,
+      }),
+    });
+    setAiGenerating(false);
+    if (!created.ok) {
+      setAiError(created.error);
+      return;
+    }
+
+    setAiPrompt("");
+    setAiDialogOpen(false);
+    await loadList();
+    await openTemplate(created.data.template.id);
+    setDockTab("preview");
+    // Watching a sentence become a finished template is the first-time wow
+    // here. It is also something you might do five times in one sitting, so
+    // only the first one bursts — after that `success` says it landed.
+    celebrate({ once: "ai-email-template" });
+    cue("success");
+  }, [aiPrompt, t, loadList, openTemplate, cue, celebrate]);
+
   const handleSave = useCallback(async () => {
     if (!selectedId || readOnly || !dirty) return;
     setSaveStatus("saving");
@@ -393,6 +468,21 @@ export default function EmailTemplatesPage() {
           <div className="flex shrink-0 items-center gap-2">
             <SaveIndicator status={saveStatus} dirty={dirty && !readOnly} />
 
+            <Beam colorVariant="mono" strength={0.55}>
+              <button
+                type="button"
+                onClick={() => setAiDialogOpen(true)}
+                className={cn(
+                  "hidden items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium sm:inline-flex",
+                  "shadow-[var(--shadow-inset)] transition-[background-color,border-color] duration-150 ease-out",
+                  "hover:border-input hover:bg-accent active:scale-[0.98]",
+                )}
+              >
+                <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={14} strokeWidth={1.75} />
+                {t("emailTemplates.generateWithAI")}
+              </button>
+            </Beam>
+
             <button
               type="button"
               onClick={() => void handleCreate()}
@@ -486,20 +576,27 @@ export default function EmailTemplatesPage() {
 
         {/* Editor */}
         <div className="relative min-w-0 flex-1">
-          {loading ? (
-            <div className="h-full bg-muted/20" />
-          ) : selectedId ? (
-            <div key={selectedId} className="content-enter h-full">
-              <CodeEditor value={source} onChange={handleSourceChange} readOnly={readOnly} />
-            </div>
-          ) : (
-            <EmptyState onCreate={() => void handleCreate()} />
-          )}
+          <Skeleton className="h-full" isLoading={loading} skeleton={<EditorSkeleton />}>
+            {selectedId ? (
+              <div key={selectedId} className="content-enter h-full">
+                <CodeEditor value={source} onChange={handleSourceChange} readOnly={readOnly} />
+              </div>
+            ) : (
+              <EmptyState onCreate={() => void handleCreate()} />
+            )}
+          </Skeleton>
 
           {!dockOpen && selectedId ? (
             <Beam
               className="transition-transform duration-150 ease-out hover:-translate-y-px"
-              style={{ position: "absolute", top: "1rem", right: "1rem" }}
+              // z-index has to travel with `position` here, not in `className` —
+              // see the note on `Beam` about its injected stylesheet winning
+              // equal-specificity ties against Tailwind classes. Without it the
+              // pill sits at the implicit stacking order of a `position:
+              // absolute` wrapper with no `z-index` of its own, which the
+              // Monaco editor's internal layers (scrollbar, overlay widgets)
+              // can end up in front of.
+              style={{ position: "absolute", top: "1rem", right: "1rem", zIndex: 20 }}
               colorVariant="mono"
             >
               <button
@@ -648,6 +745,60 @@ export default function EmailTemplatesPage() {
           </div>
         </aside>
       </div>
+
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("emailTemplates.generateDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("emailTemplates.generateDialogDescription")}</DialogDescription>
+          </DialogHeader>
+
+          <ErrorBanner error={aiError} onDismiss={() => setAiError(null)} />
+
+          <Textarea
+            aria-label={t("emailTemplates.generatePlaceholder")}
+            value={aiPrompt}
+            onChange={(event) => setAiPrompt(event.target.value)}
+            placeholder={t("emailTemplates.generatePlaceholder")}
+            rows={4}
+            autoFocus
+          />
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" disabled={aiGenerating}>
+                {t("common.cancel")}
+              </Button>
+            </DialogClose>
+            <Beam colorVariant="mono" strength={aiGenerating ? 0.9 : 0.55}>
+              <Button
+                type="button"
+                variant="outline"
+                className="bg-card"
+                disabled={aiGenerating || !aiPrompt.trim()}
+                onClick={() => void handleGenerateWithAI()}
+              >
+                {aiGenerating ? (
+                  <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={1.75} className="animate-spin" />
+                ) : (
+                  <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={14} strokeWidth={1.75} />
+                )}
+                {aiGenerating ? t("emailTemplates.generating") : t("emailTemplates.generateAction")}
+              </Button>
+            </Beam>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function EditorSkeleton() {
+  return (
+    <div className="h-full space-y-2.5 bg-muted/10 p-6">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <SkeletonBar key={i} className="h-3" width={`${72 - (i % 5) * 11}%`} />
+      ))}
     </div>
   );
 }

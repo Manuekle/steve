@@ -86,6 +86,11 @@
   --border: oklch(0 0 0 / 0.1);
   --input: oklch(0 0 0 / 0.08);
   --ring: oklch(0.5 0 0);
+  /* The scrollbar thumb is a wash of the foreground over the page, the same
+     way `--border` is — so it reads as part of the surface rather than as a
+     platform widget sitting on top of it. */
+  --scrollbar-thumb: oklch(0 0 0 / 0.16);
+  --scrollbar-thumb-hover: oklch(0 0 0 / 0.32);
   --radius: 0.75rem;                        /* 12px base */
 
   /* ── Shadows ──────────────────────────────────────────────── */
@@ -210,6 +215,8 @@
   --border: oklch(1 0 0 / 0.1);
   --input: oklch(1 0 0 / 0.1);
   --ring: oklch(0.5 0 0);
+  --scrollbar-thumb: oklch(1 0 0 / 0.16);
+  --scrollbar-thumb-hover: oklch(1 0 0 / 0.34);
 
   /* ── Shadows ──────────────────────────────────────────────── */
   --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.25), 0 1px 1px oklch(0 0 0 / 0.15);
@@ -352,6 +359,54 @@ textarea {
   button:disabled,
   button[aria-disabled="true"] {
     cursor: not-allowed;
+  }
+}
+
+/* ── Scrollbars ─────────────────────────────────────────── */
+/* The one surface in the app that ignored the token system: a 15px grey
+   trough with a chunky square thumb, drawn by the platform and out of scale
+   with everything around it. Every scrolling region gets the same thin
+   trackless pill instead, in both themes.
+
+   Chromium and Safari take the pseudo-element version — it is the only one
+   that can carry a hover state and inset the thumb off the edge. Firefox has
+   no ::-webkit-scrollbar, so it falls back to the standard properties. That
+   fallback is gated behind @supports because setting `scrollbar-width`
+   anywhere makes Chromium drop the ::-webkit-scrollbar rules entirely. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* The transparent border plus `background-clip: padding-box` is what makes a
+   10px-wide scrollbar paint a 4px thumb: the border is track, not thumb, so
+   the pill floats clear of the edge and of the content beside it. */
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Stepper arrows at a 4px width are unhittable, and on Windows they are the
+   only reason the trough has to be that wide. */
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 }
 
@@ -1507,6 +1562,11 @@ textarea {
 .t-skel-skeleton {
   position: relative;
   z-index: 1;
+  /* A no-op when `.t-skel` sizes by content (the common case, an auto height
+     resolves a percentage to auto); real height for a full-bleed skeleton
+     whose wrapper is given an explicit height (e.g. `h-full`) — see
+     email-templates' editor pane. */
+  height: 100%;
   opacity: 1;
   filter: blur(0);
   transition:
@@ -1532,6 +1592,8 @@ textarea {
 }
 .t-skel.is-revealed .t-skel-content {
   position: relative;
+  /* Same no-op-unless-explicit-height reasoning as `.t-skel-skeleton` above. */
+  height: 100%;
   opacity: 1;
   filter: blur(0);
 }
@@ -1559,6 +1621,16 @@ textarea {
     transition: none !important;
   }
   .t-skel-skeleton.is-pulsing > * { animation: none !important; }
+}
+
+/* Same pulse, for a placeholder that isn't inside a `.t-skel` wrapper (e.g. a
+   tab-switch loading state that lives outside the isLoading/reveal flow) —
+   so every loading placeholder in the app pulses on the same clock. */
+.t-skel-pulse-self {
+  animation: t-skel-pulse var(--pulse-dur) ease-in-out var(--pulse-count);
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-skel-pulse-self { animation: none !important; }
 }
 
 /* ── Chat message text size override ────────────────────────────── */
@@ -1684,6 +1756,66 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .t-icon-swap .t-icon { transition: none !important; }
+}
+
+/* ── Page side-by-side ───────────────────────────────────────────── */
+/* Two views that live next to each other — read ↔ edit, list ↔ detail.
+   Page 1 leaves to the left, page 2 to the right, so the direction of
+   travel says which way you moved.
+
+   The height line is the one addition to the transitions.dev snippet, and
+   it is not optional here: `.t-page` is absolutely positioned, so the
+   container collapses to nothing unless something gives it a height. The
+   caller measures the visible page and sets `--page-height`; this tweens
+   between the two so a taller edit form grows instead of snapping. */
+:root {
+  --page-slide-dur: 250ms;
+  --page-fade-dur: 250ms;
+  --page-slide-distance: 8px;
+  --page-blur: 3px;
+  --page-stagger: 0ms;
+  --page-exit-enabled: 1;
+  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-height-dur: 250ms;
+}
+
+.t-page-slide {
+  position: relative;
+  height: var(--page-height, auto);
+  transition: height var(--page-height-dur) var(--page-slide-ease);
+}
+.t-page-slide .t-page[data-page-id="1"] {
+  --t-page-from-x: calc(var(--page-slide-distance) * -1);
+}
+.t-page-slide .t-page[data-page-id="2"] {
+  --t-page-from-x: var(--page-slide-distance);
+}
+.t-page-slide .t-page {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(calc(var(--t-page-from-x, 0px) * var(--page-exit-enabled)));
+  filter: blur(calc(var(--page-blur) * var(--page-exit-enabled)));
+  transition:
+    opacity   var(--page-fade-dur)  var(--page-fade-ease),
+    transform var(--page-slide-dur) var(--page-slide-ease),
+    filter    var(--page-slide-dur) var(--page-slide-ease);
+  will-change: opacity, transform, filter;
+}
+.t-page-slide[data-page="1"] .t-page[data-page-id="1"],
+.t-page-slide[data-page="2"] .t-page[data-page-id="2"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+  filter: blur(0);
+  transition-delay: var(--page-stagger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-page-slide .t-page { transition: none !important; }
+  .t-page-slide { transition: none !important; }
 }
 
 /* ── Panel reveal ────────────────────────────────────────────────── */
@@ -2607,9 +2739,17 @@ html.lenis body {
      22px corner needs, because what has to disappear under the wash is the
      corner's outer edge, not its whole arc. */
   inset: auto -20px -40px -20px;
-  height: 46%;
-  min-height: 200px;
-  max-height: 380px;
+  /* Was 46% / 200–380px, measured against a frame that ran 1263px tall — a
+     380px wash over the last 30% of it. The frames are windows now and a
+     third that size, so the same percentage would put nearly half the screen
+     out of focus. Same proportion of the new height, not the old number. */
+  /* 32% of a 672px window put the wash over the composer — the control the
+     demo types into and clicks, out of focus for the whole lap. A window's
+     worth of screen needs less of it than a page did: this covers the clipped
+     foot of the sidebar and the last rows of a list, and stops there. */
+  height: 24%;
+  min-height: 110px;
+  max-height: 170px;
   pointer-events: none;
   z-index: 1;
 }
@@ -2626,25 +2766,18 @@ html.lenis body {
    single mask edge ever lands on its own. Four ramps over a 260px veil put
    their seams close enough together to read as steps; five over 380px do
    not. */
+/* Two blurred ramps, and the count is a measurement. A `backdrop-filter` has
+   to re-blur whenever its backdrop moves, and scrolling moves everything: five
+   ramps under every frame cost 47ms a frame while the page scrolled, two cost
+   32, none cost 22. The ramps overlap, so two still arrive as a gradient
+   rather than as a step — which is what the masks were always for. */
 .lp-veil > span:nth-child(1) {
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 20%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 20%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
 }
 .lp-veil > span:nth-child(2) {
-  mask-image: linear-gradient(to bottom, transparent 14%, #000 36%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 14%, #000 36%);
-}
-.lp-veil > span:nth-child(3) {
-  mask-image: linear-gradient(to bottom, transparent 30%, #000 52%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 30%, #000 52%);
-}
-.lp-veil > span:nth-child(4) {
-  mask-image: linear-gradient(to bottom, transparent 46%, #000 70%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 46%, #000 70%);
-}
-.lp-veil > span:nth-child(5) {
-  mask-image: linear-gradient(to bottom, transparent 62%, #000 88%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 62%, #000 88%);
+  mask-image: linear-gradient(to bottom, transparent 26%, #000 74%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 26%, #000 74%);
 }
 /* The wash, on an eased curve rather than a straight one. A linear ramp to
    the page colour spends its whole first half doing almost nothing visible
@@ -2652,7 +2785,7 @@ html.lenis body {
    look; these stops track ease-in-out, so the screen loses light the way a
    lens loses focus. It reaches the page colour a hair before the foot and
    holds it, so the bezel underneath is gone rather than half-there. */
-.lp-veil > span:nth-child(6) {
+.lp-veil > span:nth-child(3) {
   background: linear-gradient(
     to bottom,
     transparent 0%,
@@ -2721,30 +2854,11 @@ html.lenis body {
 }
 
 /* ── Feature tile ───────────────────────────────────────────────── */
-/* The app's `Card` in its `interactive` form, down to the transition: same
-   16px radius, same `--card` surface, same soft→elevated shadow step and the
-   same border swap on hover. It does not lift — nothing in the app lifts on
-   hover, and a card that rises off the page under the cursor is the tell that
-   a marketing surface has stopped using the product's own components. */
-.lp-tile {
-  position: relative;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  /* Both shadows the app's own surfaces carry: the soft drop that lifts a card
-     off the page, and the inset bevel that gives its top edge a lit lip. The
-     bevel is what the buttons and the KPI plates have, and leaving it off here
-     was the difference between a card and a rectangle with a border. */
-  box-shadow: var(--shadow-soft), var(--shadow-inset);
-  transition:
-    border-color 200ms var(--lp-ease),
-    box-shadow 200ms var(--lp-ease);
-}
-
-.lp-tile:hover {
-  border-color: var(--input);
-  box-shadow: var(--shadow-elevated), var(--shadow-inset);
-}
+/* `.lp-tile` used to live here: the app's `Card` in its `interactive` form,
+   duplicated for the landing. Every one of its callers now uses `.lp-cap`,
+   which is the same surface plus the flex column and the clipping a staged
+   scene needs — so the page has one card, not two that have to be kept in
+   step with each other and with the app. */
 
 /* Landing accordions reuse the global `.t-acc` expand; this only swaps the
    easing + duration so they bounce open (overshoot) inside the landing subtree.
@@ -2837,6 +2951,446 @@ html.lenis body {
   .t-digit-group .t-digit { animation: none !important; }
 }
 
+/* ── Capability cards ───────────────────────────────────────────── */
+/* The grid in `section-capabilities.tsx`. Each card is a small stage with a
+   built scene on it — panels, plates, an icon, a connector — and the scene
+   animates only under the cursor.
+   
+   The previous version looped twelve SVG line drawings forever while they were
+   on screen. Two things were wrong with it. A wireframe of rounded rectangles
+   is not an illustration, it is a loading skeleton that never resolves; and
+   motion that runs unprompted asks to be watched twelve times at once, so the
+   grid read as a page still loading rather than as twelve answers. Hover is
+   the whole contract now: at rest every card is a finished, still picture, and
+   the scene only moves for the one card the reader is actually pointing at. */
+
+.lp {
+  /* The inner half of the double edge — a second hairline one pixel inside the
+     border. It has to *contrast with the card*, which is the thing a white lip
+     on a white card does not do: on light the card is white, so the lip is a
+     whisper of black; on dark the card is near-black, so it is a whisper of
+     white. Same gesture, opposite ink, which is the only way a double edge
+     survives both themes. */
+  --lp-cap-lip: oklch(0 0 0 / 0.045);
+}
+.lp.dark,
+.dark .lp {
+  --lp-cap-lip: oklch(1 0 0 / 0.055);
+}
+
+/* The card is the app's KPI tile, not a rounded rectangle with a border.
+   That tile is four things stacked, and it was missing three of them:
+
+     the border            the outer edge
+     an inset lip          the inner edge, one pixel in — the "double border"
+     `--kpi-sheen`         a diagonal wash, bright corner to dark corner, which
+                           is what stops a card reading as flat paper
+     `--kpi-edge`          a bevel highlight along the top, faded at both ends
+
+   Reaching for the same two tokens the dashboard uses rather than
+   approximating them is the point: when the product's tile changes, every card
+   on the landing changes with it. */
+.lp-cap {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  /* No `flex-direction` here. This file sits outside `@layer`, so it beats
+     Tailwind's utilities whatever the order — a `lg:flex-row` on a wide card
+     was silently overruled and every card stayed stacked. The direction is the
+     caller's decision; each one passes `flex-col` and the wide ones add their
+     own breakpoint on top of it. */
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px var(--lp-cap-lip);
+  text-decoration: none;
+  transition:
+    border-color 260ms var(--lp-ease),
+    box-shadow 260ms var(--lp-ease);
+}
+
+.lp-cap:hover {
+  border-color: var(--input);
+  box-shadow:
+    var(--shadow-elevated),
+    inset 0 0 0 1px var(--lp-cap-lip);
+}
+
+/* A card that is only there to be read. The lift on `.lp-cap:hover` is the
+   page's way of saying "this answers you" — every other card in the landing
+   either opens a page or resolves a drawing under the cursor. A testimonial
+   does neither: it is a quote, it goes nowhere, and a card that brightens
+   under the cursor and then does nothing is a promise the section cannot
+   keep. The wall still pauses on hover; that is the wall answering, not the
+   card. */
+.lp-cap-still:hover {
+  border-color: var(--border);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px var(--lp-cap-lip);
+}
+
+/* The sheen. `isolation` above keeps it in this card's stacking context so it
+   can never bleed over a neighbour. */
+.lp-cap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--kpi-sheen);
+  pointer-events: none;
+}
+
+/* The bevel along the top edge. Above everything — including a scene's own
+   fade — because it is the card's edge and nothing the card contains should
+   paint over it. */
+.lp-cap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  z-index: 40;
+  height: 1px;
+  background: var(--kpi-edge);
+  pointer-events: none;
+}
+
+/* The stage. Scenes deliberately overflow it — a panel that runs off the edge
+   is what stops a drawing reading as an icon centred in a box — and the card's
+   `overflow: hidden` is what crops them. */
+.lp-scene {
+  position: relative;
+  z-index: 10;
+  flex: 1 1 auto;
+  user-select: none;
+  pointer-events: none;
+}
+/* The capabilities bento only. Its rows are all one height — that is what lets
+   two cards swap places without resizing anything — so a card whose scene is
+   short has room left over. Centring the scene in what is left splits that
+   room above and below the drawing instead of pooling it under the card, which
+   is the difference between a card with air in it and a card that failed to
+   fill. */
+.lp-scene-fill {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* No `min-height` here on purpose. This file's rules sit outside `@layer`, so
+   they beat Tailwind's utilities whatever the order — a `min-h-[17rem]` on the
+   element would have been silently overruled, and the card that asked to be
+   tall would have come out the same height as the one that did not. The height
+   is the card's decision and it passes it as a utility. */
+
+/* ── Scene furniture ─────────────────────────────────────────────────
+   The three surfaces every scene is built from, so twelve scenes share one
+   material rather than each inventing its own. All three derive from the app's
+   tokens; none of them names a colour. */
+
+/* A raised plate — the thing an icon sits on. The app's own inset bevel plus a
+   drop, which is what separates it from the panel behind it.
+
+   The drop was 10px at 12% and it read as a smudge under every icon in the
+   section — twelve plates each casting a soft grey blob is what made the grid
+   look muddy rather than crisp. Tightened to the weight the app's own plates
+   carry: a 1px seat, not a shadow. */
+.lp-plate {
+  background: var(--muted);
+  box-shadow:
+    var(--shadow-inset),
+    0 1px 2px oklch(0 0 0 / 0.06);
+}
+
+/* A recessed panel — a row, a card, a field. It takes the same double edge the
+   card does, one step quieter: without the inner lip a panel sitting on a card
+   that has one reads as a flat sticker on a bevelled surface. */
+.lp-panel {
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.05),
+    inset 0 0 0 1px var(--lp-cap-lip);
+}
+
+/* The washes that fade a scene into the card at the edges it runs off. Both
+   directions: a card whose copy sits below the scene runs off the top, and one
+   whose copy sits above it runs off the bottom. A scene that stops with a hard
+   edge reads as a cropped screenshot; one that dissolves reads as a window
+   onto something that continues. */
+.lp-fade-b {
+  background: linear-gradient(to top, var(--card) 12%, transparent 62%);
+}
+.lp-fade-t {
+  background: linear-gradient(to bottom, var(--card) 6%, transparent 58%);
+}
+
+/* The chat mockup's log. Masked at the top so a turn that outgrows the window
+   fades out of it instead of being cut on a hard edge — the same argument as
+   the testimonial wall, at a twentieth of the cost: this is a mask, not a
+   blur, so it is one compositing pass and nothing re-computes per frame. */
+.lp-chat-log {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 2.5rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2.5rem);
+}
+
+/* ── Drifting columns ───────────────────────────────────────────────
+   The testimonial wall: columns that scroll on their own, alternate ones
+   going the other way, fading and blurring out at both edges.
+
+   The page argued against a marquee once — a quote that slides past is one
+   nobody finishes reading — and the answer to that is not to refuse the
+   motion but to make it stoppable. The whole wall pauses on hover, so the
+   drift is what draws you in and stopping is what lets you read.
+
+   Each track holds its items twice. The animation travels exactly -50% (or
+   +50%), which lands the second copy precisely where the first started, so
+   the loop has no seam and no jump. Duplicating in the markup rather than
+   cloning in JS keeps it working before hydration. */
+
+.lp-wall {
+  position: relative;
+  overflow: hidden;
+  /* How far the wall takes to dissolve at each edge. A length rather than a
+     percentage: the fade is a physical distance — about half a card — and a
+     wall that is 4rem taller on a desktop should not also fade over 4rem more
+     of itself.
+
+     Shorter than the haze band below, and that order is the point: the blur
+     starts on a card that is still fully opaque, so the card goes soft first
+     and gone second. The other way round — the fade leading — spends the blur
+     on cards that have already faded out, which is a lot of `backdrop-filter`
+     for something nobody can see. */
+  --lp-wall-fade: 4.5rem;
+  /* A mask rather than a gradient overlay, because the section behind this is
+     not a flat colour — the cards have to dissolve into whatever is there,
+     not into a painted rectangle. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    oklch(0 0 0) var(--lp-wall-fade),
+    oklch(0 0 0) calc(100% - var(--lp-wall-fade)),
+    transparent 100%
+  );
+}
+
+/* The blur half of "desvanecido". The mask above takes the opacity down; these
+   two take the focus with it, so a card leaving the frame goes soft before it
+   goes away instead of simply dimming.
+
+   Carried on stacked spans with utility classes rather than a `backdrop-filter`
+   declared here — the build strips hand-written `backdrop-filter`, which is the
+   same reason `.lp-veil` and the header's frost are shaped this way. */
+/* Four edges, one construction. The wall fades at the top and the bottom, the
+   self-hosted rail at the left and the right, and neither should have grown
+   its own copy of five stacked blur layers to do it. The only thing an edge
+   decides is which side the band sits on and which way its ramps run. */
+.lp-wall-haze {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+}
+.lp-wall-haze[data-edge="top"],
+.lp-wall-haze[data-edge="bottom"] {
+  left: 0;
+  right: 0;
+  height: 5.5rem;
+}
+.lp-wall-haze[data-edge="left"],
+.lp-wall-haze[data-edge="right"] {
+  top: 0;
+  bottom: 0;
+  /* Narrower than the horizontal band. A card leaving sideways crosses the
+     blur at the track's own speed and there is a whole card's width of it to
+     cross; 5.5rem of side haze eats a third of a card before it is gone. */
+  width: 4rem;
+}
+.lp-wall-haze[data-edge="top"] {
+  top: 0;
+  /* Ramps run towards the edge the band sits on: up at the top, down at the
+     bottom, out to the sides. One direction variable is what lets the five
+     layers below be written once instead of four times. */
+  --lp-haze-dir: to top;
+}
+.lp-wall-haze[data-edge="bottom"] {
+  bottom: 0;
+  --lp-haze-dir: to bottom;
+}
+.lp-wall-haze[data-edge="left"] {
+  left: 0;
+  --lp-haze-dir: to left;
+}
+.lp-wall-haze[data-edge="right"] {
+  right: 0;
+  --lp-haze-dir: to right;
+}
+
+/* Every layer covers the whole band and is masked to its own ramp, the way
+   `.lp-veil` is built.
+
+   What this replaced was five equal strips, one blur value each, stacked in
+   the wrong order: `blur(1px)` sat on the outer edge, where a card is meant to
+   be least legible, and `blur(14px)` sat eighty pixels in, over cards that the
+   mask above leaves fully opaque. The blur was heaviest exactly where the wall
+   was sharpest, and each strip ended in a hard line — five of them across the
+   column. The ramps now run the other way and overlap, so the focus goes out
+   with the opacity and no single mask edge lands on its own. */
+.lp-wall-haze > span {
+  position: absolute;
+  inset: 0;
+  mask-image: linear-gradient(
+    var(--lp-haze-dir),
+    transparent var(--lp-haze-from),
+    #000 var(--lp-haze-to)
+  );
+  -webkit-mask-image: linear-gradient(
+    var(--lp-haze-dir),
+    transparent var(--lp-haze-from),
+    #000 var(--lp-haze-to)
+  );
+}
+/* Two layers: the wide mild one, then the narrow heavy one over it. They
+   overlap by a third of the band so neither ramp ever lands on its own, and
+   the outer edge carries both. See the note on `Haze` for why this is two and
+   not five — a backdrop blur over moving content is one full pass per layer
+   per frame, and five of them cost the wall a third of its frame rate. */
+.lp-wall-haze > span:nth-child(1) { --lp-haze-from: 0%; --lp-haze-to: 52%; }
+.lp-wall-haze > span:nth-child(2) { --lp-haze-from: 34%; --lp-haze-to: 92%; }
+
+/* The gap lives on the items, not on the track. A gapped flex column cannot
+   loop on `-50%`: the join between the two copies is one gap, but half of
+   `n items + (n-1) gaps` lands half a gap short of it, and the column jumps by
+   that much every lap. Giving every item its own trailing margin makes the
+   track exactly two identical halves. */
+.lp-wall-track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+.lp-wall-track > * {
+  margin-bottom: 1rem;
+}
+
+@keyframes lp-drift-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+@keyframes lp-drift-down {
+  from { transform: translateY(-50%); }
+  to { transform: translateY(0); }
+}
+
+.lp-wall-track[data-dir="up"] {
+  animation: lp-drift-up var(--lp-drift, 48s) linear infinite;
+}
+.lp-wall-track[data-dir="down"] {
+  animation: lp-drift-down var(--lp-drift, 48s) linear infinite;
+}
+
+/* ── The self-hosted rail ────────────────────────────────────────────
+   Two rows of guarantees travelling sideways, the lower one against the upper.
+   Same argument as the wall a section below it: the drift is what gets you to
+   look, and it stops on hover so you can read. What it adds is the spotlight —
+   pausing a row full of cards still leaves you looking at a row full of cards,
+   so the one under the cursor holds its light and the rest go down. The
+   section is six claims about security; the point of the interaction is that
+   you end up reading one of them.
+
+   Rows, not a grid: a grid of six equals says "here are six features" and a
+   rail says "there is more of this than fits", which is the truer thing about
+   a list of guarantees. */
+.lp-rail {
+  position: relative;
+  overflow: hidden;
+  /* Room for the shadow a card lifts into. `overflow: hidden` clips at the
+     padding box, so with none of it the top row's shadow was sliced off at the
+     rail's upper edge and the bottom row's at the lower one — a card that
+     raises on hover and comes back with its shadow cut square is the tell that
+     something is clipping it. `--shadow-elevated` reaches 18px below the card
+     and 10px above; 20px covers both. The margin utility on the element is
+     reduced by the same amount, so the section's rhythm does not move.
+
+     Written long-hand: `padding-block` here did not survive the build — it
+     came out of the served stylesheet with the rest of the rule intact, the
+     same way a hand-written `backdrop-filter` does. */
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+  /* Same length as the wall's, and for the same reason — the blur band runs
+     wider than this, so a card blurs while it is still legible and is gone by
+     the time it reaches the edge. */
+  --lp-rail-fade: 3.25rem;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    oklch(0 0 0) var(--lp-rail-fade),
+    oklch(0 0 0) calc(100% - var(--lp-rail-fade)),
+    transparent 100%
+  );
+}
+
+/* `max-content` so the row is as wide as its cards rather than as wide as the
+   rail — without it the flex line shrinks every card to a third of a screen.
+   The gap is a margin for the reason the wall's is: `-50%` of a gapped track
+   is half a gap short of where the second copy starts. */
+.lp-rail-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+.lp-rail-track > * {
+  flex: none;
+  margin-right: 1.25rem;
+}
+
+@keyframes lp-rail-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes lp-rail-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+.lp-rail-track[data-dir="left"] {
+  animation: lp-rail-left var(--lp-drift, 64s) linear infinite;
+}
+.lp-rail-track[data-dir="right"] {
+  animation: lp-rail-right var(--lp-drift, 64s) linear infinite;
+}
+
+/* Both rows stop, not the row under the cursor: one row frozen beside one
+   still moving reads as a bug, and the reader who stopped to read the top row
+   did not ask for the bottom one to keep going. */
+.lp-rail:hover .lp-rail-track,
+.lp-rail:focus-within .lp-rail-track {
+  animation-play-state: paused;
+}
+
+/* The spotlight. `:has` rather than a plain `.lp-rail:hover` so the cards only
+   go down once the cursor is actually on one of them — crossing the gap
+   between the rows would otherwise dim all six with nothing lit, which reads
+   as the section switching off rather than as one card answering. */
+.lp-rail-card {
+  transition: opacity 320ms var(--lp-ease);
+}
+.lp-rail:has(.lp-rail-card:hover) .lp-rail-card {
+  opacity: 0.32;
+}
+.lp-rail:has(.lp-rail-card:hover) .lp-rail-card:hover {
+  opacity: 1;
+}
+
+/* Stopping is the point, so it stops for the whole wall rather than the one
+   column under the cursor — three columns where one froze and two kept going
+   would read as a bug. */
+.lp-wall:hover .lp-wall-track,
+.lp-wall:focus-within .lp-wall-track {
+  animation-play-state: paused;
+}
+
 /* ── Reduced motion ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .lp [data-reveal] {
@@ -2845,10 +3399,30 @@ html.lenis body {
     transition: none;
   }
   .lp-marquee-track { animation: none; }
+  /* A rail that cannot travel has to be reachable some other way, or the
+     cards past the fold are simply cut off. Scrolling is that other way. */
+  .lp-rail-track { animation: none; }
+  .lp-rail {
+    overflow-x: auto;
+    mask-image: none;
+  }
+  .lp-rail .lp-wall-haze { display: none; }
   .t-acc-panel, .t-acc-panel-inner, .t-acc-chevron { transition: none !important; }
   .lp-caret { animation: none; }
   /* The running-tool pulse inside the chat mockup. In the app it stops when
      the call returns; on a still screenshot it would run forever. */
   .lp .animate-pulse { animation: none; }
   .lp-navlink::after { transition: none; }
+  /* The drifting testimonial columns stand still. The mask stays: it is what
+     makes the wall read as a window onto a longer list rather than a box that
+     got cut off. */
+  .lp-wall-track { animation: none !important; }
+
+  /* The capability scenes. Everything in them is a hover transition on a
+     compositor property, so stopping the transitions leaves each card on its
+     resting frame — which is a finished picture by construction. */
+  .lp-cap *, .lp-cap *::before, .lp-cap *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

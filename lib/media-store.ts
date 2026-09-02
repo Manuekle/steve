@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
+import { deleteFromDrive, downloadFromDrive, isDriveConfigured, uploadToDrive } from "./google-drive";
 
 // Media library: the photos, videos, and audio the business wants the agent
 // to be able to *send*, organized in folders.
@@ -15,7 +16,11 @@ import { homedir } from "node:os";
 // both: a knowledge document carries a `folder_id` pointing at this list, so
 // the Conocimiento page shows one folder tree over documents and media.
 //
-// Metadata sits in ~/.steve/media.json; the bytes sit in ~/.steve/media/.
+// Metadata always sits in ~/.steve/media.json. The bytes sit in the
+// connected Google account's Drive when one is connected (see
+// lib/google-drive.ts — `drive.file` scope, so it only ever sees files this
+// app created), and in ~/.steve/media/ otherwise. An asset already on disk
+// stays on disk even after Google gets connected; only new uploads move.
 // Embeddings are kept in their own array so listing a folder (every page
 // load) never walks the vectors.
 
@@ -43,8 +48,13 @@ export type MediaAsset = {
    *  the UI pushes hard for it on upload. */
   description: string;
   tags: string[];
-  /** Basename inside BLOB_DIR. Never a path — joined here, never by callers. */
+  /** Basename inside BLOB_DIR. Never a path — joined here, never by callers.
+   *  Kept even for a Drive-backed asset (nothing reads it then), so the
+   *  field never has to be conditionally present. */
   file: string;
+  /** Set when the bytes live on the connected Google Drive instead of
+   *  BLOB_DIR — the file id `alt=media` reads back. */
+  drive_file_id?: string;
   /** Model that produced this asset's embedding, or "" when none was made. */
   embedding_model: string;
   created_at: string;
@@ -219,7 +229,10 @@ export function blobPath(asset: Pick<MediaAsset, "file">): string {
   return join(BLOB_DIR, asset.file);
 }
 
-export async function readAssetBytes(asset: Pick<MediaAsset, "file">): Promise<Uint8Array> {
+export async function readAssetBytes(
+  asset: Pick<MediaAsset, "file" | "drive_file_id">,
+): Promise<Uint8Array> {
+  if (asset.drive_file_id) return downloadFromDrive(asset.drive_file_id);
   return new Uint8Array(await readFile(blobPath(asset)));
 }
 
@@ -241,8 +254,24 @@ export async function addAsset(input: {
   // name: an uploaded "../../.ssh/authorized_keys" must not escape BLOB_DIR.
   const file = `${id}${extension.replace(/[^a-z0-9.]/g, "")}`;
 
-  await mkdir(BLOB_DIR, { recursive: true });
-  await writeFile(join(BLOB_DIR, file), input.bytes);
+  // Connected Google account wins, same as Sheets and Calendar: try Drive
+  // first, and only write to disk if it isn't connected or the upload fails
+  // — a token that exists but was granted before `drive.file` was added to
+  // the scope list would otherwise silently drop the file.
+  let driveFileId: string | undefined;
+  if (await isDriveConfigured()) {
+    try {
+      const uploaded = await uploadToDrive({ name: input.name, mime: input.mime, bytes: input.bytes });
+      driveFileId = uploaded?.fileId;
+    } catch {
+      driveFileId = undefined;
+    }
+  }
+
+  if (!driveFileId) {
+    await mkdir(BLOB_DIR, { recursive: true });
+    await writeFile(join(BLOB_DIR, file), input.bytes);
+  }
 
   return enqueue(async () => {
     const store = await readStore();
@@ -256,6 +285,7 @@ export async function addAsset(input: {
       description: input.description?.trim() ?? "",
       tags: (input.tags ?? []).map((tag) => tag.trim()).filter(Boolean),
       file,
+      ...(driveFileId ? { drive_file_id: driveFileId } : {}),
       embedding_model: input.embedding ? (input.embeddingModel ?? "") : "",
       created_at: new Date().toISOString(),
     };
@@ -263,6 +293,44 @@ export async function addAsset(input: {
     if (input.embedding) {
       store.embeddings.push({ asset_id: id, vector: [...input.embedding] });
     }
+    await writeStore(store);
+    return asset;
+  });
+}
+
+/**
+ * Register a file that already lives on Drive — a folder import (see
+ * lib/drive-import.ts) — without re-uploading its bytes. `readAssetBytes`
+ * fetches from Drive on demand, exactly as it does for an asset this app
+ * uploaded itself; the only difference is nothing was ever written locally.
+ */
+export async function addAssetFromDrive(input: {
+  name: string;
+  mime: string;
+  size: number;
+  driveFileId: string;
+  folderId?: string | null;
+  description?: string;
+}): Promise<MediaAsset> {
+  return enqueue(async () => {
+    const store = await readStore();
+    const asset: MediaAsset = {
+      id: newId("med"),
+      folder_id: input.folderId ?? null,
+      name: input.name,
+      mime: input.mime,
+      kind: kindForMime(input.mime, input.name),
+      size: input.size,
+      description: input.description?.trim() ?? "",
+      tags: [],
+      // No local basename: nothing was ever written to BLOB_DIR for this
+      // asset, and `drive_file_id` below is what readAssetBytes checks first.
+      file: "",
+      drive_file_id: input.driveFileId,
+      embedding_model: "",
+      created_at: new Date().toISOString(),
+    };
+    store.assets.push(asset);
     await writeStore(store);
     return asset;
   });
@@ -312,9 +380,13 @@ export async function deleteAsset(id: string): Promise<boolean> {
     return asset;
   });
   if (!removed) return false;
-  // Best-effort: a stranded blob costs disk, a failed delete costs the user
-  // their action.
-  await rm(join(BLOB_DIR, removed.file), { force: true }).catch(() => undefined);
+  // Best-effort: a stranded blob (or Drive file) costs storage, a failed
+  // delete costs the user their action.
+  if (removed.drive_file_id) {
+    await deleteFromDrive(removed.drive_file_id).catch(() => undefined);
+  } else {
+    await rm(join(BLOB_DIR, removed.file), { force: true }).catch(() => undefined);
+  }
   return true;
 }
 

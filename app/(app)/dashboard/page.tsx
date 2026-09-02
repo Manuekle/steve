@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   MessageCircleIcon,
   ZapIcon,
@@ -21,7 +21,7 @@ import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { ChannelIcon, ChannelBadge, ChannelStatusBadge, CHANNEL_LABELS } from "../../_components/channel-badge";
 import { KpiBars, KpiCard, KpiSparkline, KpiSplit } from "../../_components/kpi-card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TimeSeries } from "../../_components/chart";
 import { Skeleton, DashboardSkeleton } from "@/components/ai-elements/skeleton";
 import { useT } from "@/lib/i18n/provider";
 import { relativeTime } from "@/lib/format";
@@ -40,7 +40,6 @@ import type {
   ActivityPoint,
 } from "@/lib/types";
 import { usePolling } from "@/lib/use-polling";
-import { cn } from "@/lib/utils";
 
 function DashboardPageContent() {
   const t = useT();
@@ -503,106 +502,28 @@ export default function DashboardPage() {
 
 // ── Activity chart ─────────────────────────────────────────────────
 
-const CHART_HEIGHT = 148;
-
 /**
  * Weekly message volume.
  *
- * Every column is a full-height track so the week reads as a comparison even
- * where a day is empty, with the fill scaled against the busiest day. The
- * busiest day is drawn solid; the rest sit back, which is what gives the row a
- * shape instead of a flat fence of identical bars.
+ * A thin adapter over the shared time-series mark: the dashboard owns the
+ * dictionary lookup and the tooltip sentence, the chart owns the geometry.
  */
 function ActivityChart({ data }: { readonly data: ActivityPoint[] }) {
   const t = useT();
-  const max = Math.max(...data.map((d) => d.value), 1);
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-
-  if (total === 0) {
-    return (
-      <div
-        className="flex items-center justify-center text-muted-foreground/60 text-xs"
-        style={{ height: CHART_HEIGHT }}
-      >
-        {t("dashboard.noActivity")}
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <div className="relative" style={{ height: CHART_HEIGHT }}>
-        {/* Reference lines at the peak and its midpoint. They give the bars a
-            scale to be read against — without them a tall bar means nothing. */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          {[0, 0.5, 1].map((fraction) => (
-            <div
-              className="absolute inset-x-0 border-border border-t border-dashed"
-              key={fraction}
-              style={{ bottom: `${fraction * 100}%` }}
-            >
-              <span className="-top-2 -translate-x-full absolute left-0 pr-2 text-[10px] text-muted-foreground/45 tabular-nums">
-                {Math.round(max * fraction)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex h-full items-end gap-1.5 sm:gap-2">
-          {data.map((point, index) => {
-            const isPeak = point.value === max && point.value > 0;
-            // Zero still gets a sliver so the column reads as "nothing here"
-            // rather than as a rendering gap.
-            const percent = point.value === 0 ? 1.5 : Math.max((point.value / max) * 100, 6);
-            return (
-              <Tooltip key={point.labelKey}>
-                <TooltipTrigger asChild>
-                  <button
-                    className="group relative flex h-full flex-1 items-end rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                    type="button"
-                  >
-                    <span className="absolute inset-0 rounded-lg bg-foreground/[0.035] transition-colors duration-150 group-hover:bg-foreground/[0.07]" />
-                    <span
-                      className={cn(
-                        // Square bottom: the fill sits on the baseline, so a
-                        // rounded foot would float it off the axis.
-                        "chart-bar relative w-full rounded-t-lg bg-gradient-to-t transition-[filter,opacity] duration-150",
-                        isPeak
-                          ? "from-foreground/70 to-foreground"
-                          : "from-foreground/25 to-foreground/45 group-hover:from-foreground/40 group-hover:to-foreground/65",
-                      )}
-                      style={{
-                        height: `${percent}%`,
-                        animationDelay: `${index * 45}ms`,
-                      }}
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <span className="font-medium tabular-nums">{point.value}</span>{" "}
-                  {t("dashboard.messages")} · {t(point.labelKey)}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Axis labels sit outside the plot so the bars all share one baseline. */}
-      <div className="mt-2.5 flex gap-1.5 sm:gap-2">
-        {data.map((point) => (
-          <div className="flex-1 text-center" key={point.labelKey}>
-            <p
-              className={cn(
-                "text-[11px] tabular-nums",
-                point.value === max ? "font-medium text-foreground" : "text-muted-foreground",
-              )}
-            >
-              {t(point.labelKey)}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
+    <TimeSeries
+      data={data.map((point) => ({
+        key: point.labelKey,
+        label: t(point.labelKey),
+        value: point.value,
+      }))}
+      emptyLabel={t("dashboard.noActivity")}
+      formatValue={(point) => (
+        <>
+          <span className="font-medium tabular-nums">{point.value}</span>{" "}
+          {t("dashboard.messages")} · {point.label}
+        </>
+      )}
+    />
   );
 }

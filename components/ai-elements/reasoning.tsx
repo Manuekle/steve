@@ -7,7 +7,7 @@ import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Brain02Icon, ChevronDownIcon } from "@hugeicons/core-free-icons";
 import type { ComponentProps, ReactNode } from "react";
 import {

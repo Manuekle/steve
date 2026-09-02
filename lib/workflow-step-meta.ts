@@ -15,6 +15,7 @@ import {
   DiscordIcon,
   GoogleSheetIcon,
   StripeIcon,
+  Calendar03Icon,
 } from "@hugeicons/core-free-icons";
 import type { WorkflowStepType } from "./types";
 
@@ -22,29 +23,14 @@ import type { WorkflowStepType } from "./types";
 // and the automation detail page — one source of truth for step type
 // metadata so all three stay in sync.
 
-export const STEP_TYPES: readonly WorkflowStepType[] = [
-  "message",
-  "ai_response",
-  "wait",
-  "condition",
-  "transfer_human",
-  "notify_whatsapp",
-  "http_request",
-  "update_contact",
-  "send_image",
-  "send_video",
-  "send_audio",
-];
-
 /**
- * Grouping used by the canvas step picker. Same order as {@link STEP_TYPES}
- * within each group, so the palette reads as a catalogue rather than a
- * flat ring of icons.
+ * Grouping used by the canvas step picker, so the palette reads as a
+ * catalogue rather than a flat ring of icons.
  */
 export const STEP_GROUPS: readonly { readonly labelKey: string; readonly types: readonly WorkflowStepType[] }[] = [
   { labelKey: "automations.groupConversation", types: ["message", "ai_response", "transfer_human"] },
   { labelKey: "automations.groupLogic", types: ["condition", "wait"] },
-  { labelKey: "automations.groupConnectors", types: ["notify_whatsapp", "notify_team", "notify_email", "http_request", "update_contact", "log_sheet", "send_payment_link"] },
+  { labelKey: "automations.groupConnectors", types: ["notify_whatsapp", "notify_team", "notify_email", "http_request", "update_contact", "log_sheet", "send_payment_link", "book_meeting"] },
   { labelKey: "automations.groupMedia", types: ["send_image", "send_video", "send_audio"] },
 ];
 
@@ -64,7 +50,21 @@ export const STEP_ICONS: Record<WorkflowStepType, IconSvgElement> = {
   update_contact: UserEdit01Icon,
   log_sheet: GoogleSheetIcon,
   send_payment_link: StripeIcon,
+  book_meeting: Calendar03Icon,
 };
+
+/**
+ * Every step type there is, for callers that need the full set — the flow
+ * assistant tells the model which types it may propose.
+ *
+ * Derived from {@link STEP_ICONS} rather than written out again: that map is
+ * a `Record<WorkflowStepType, …>`, so the compiler makes it exhaustive and a
+ * new step type cannot go missing here. The hand-maintained list this
+ * replaces had fallen five types behind — the assistant was told it could not
+ * use notify_team, notify_email, log_sheet, send_payment_link or book_meeting
+ * while the very same prompt went on to document three of them.
+ */
+export const STEP_TYPES: readonly WorkflowStepType[] = Object.keys(STEP_ICONS) as WorkflowStepType[];
 
 export const STEP_LABEL_KEYS: Record<WorkflowStepType, string> = {
   message: "automations.stepMessage",
@@ -82,6 +82,7 @@ export const STEP_LABEL_KEYS: Record<WorkflowStepType, string> = {
   update_contact: "automations.stepUpdateContact",
   log_sheet: "automations.stepLogSheet",
   send_payment_link: "automations.stepSendPaymentLink",
+  book_meeting: "automations.stepBookMeeting",
 };
 
 export const STEP_DESCRIPTION_KEYS: Record<WorkflowStepType, string> = {
@@ -100,6 +101,7 @@ export const STEP_DESCRIPTION_KEYS: Record<WorkflowStepType, string> = {
   update_contact: "automations.stepUpdateContactDesc",
   log_sheet: "automations.stepLogSheetDesc",
   send_payment_link: "automations.stepSendPaymentLinkDesc",
+  book_meeting: "automations.stepBookMeetingDesc",
 };
 
 /**
@@ -122,6 +124,7 @@ export const STEP_CATEGORY_KEYS: Record<WorkflowStepType, string> = {
   update_contact: "automations.catCrm",
   log_sheet: "automations.catIntegration",
   send_payment_link: "automations.catIntegration",
+  book_meeting: "automations.catIntegration",
 };
 
 /**
@@ -149,6 +152,7 @@ const PREVIEW_FIELDS: Record<
     | "spreadsheetId"
     | "amount"
     | "productName"
+    | "meetingSummary"
   >
 > = {
   message: ["message"],
@@ -166,6 +170,7 @@ const PREVIEW_FIELDS: Record<
   update_contact: ["contactNote", "contactStatus"],
   log_sheet: ["spreadsheetId"],
   send_payment_link: ["productName", "amount"],
+  book_meeting: ["meetingSummary"],
 };
 
 export const STEP_EMPTY_KEYS: Record<WorkflowStepType, string> = {
@@ -184,6 +189,7 @@ export const STEP_EMPTY_KEYS: Record<WorkflowStepType, string> = {
   update_contact: "automations.emptyContact",
   log_sheet: "automations.emptySheet",
   send_payment_link: "automations.emptyPaymentLink",
+  book_meeting: "automations.emptyMeeting",
 };
 
 /**

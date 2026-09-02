@@ -2,6 +2,7 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { listDocuments } from "../../lib/knowledge-store";
 import { RagError, searchKnowledge } from "../../lib/rag";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 // Retrieval over the documents uploaded in the Conocimiento page: prices,
 // catalogs, policies, scripts — anything the business wrote down that the
@@ -39,7 +40,8 @@ export default defineTool({
       .optional(),
     message: z.string(),
   }),
-  async execute(input) {
+  async execute(input, ctx) {
+    await assertToolAllowed(ctx.session.id, "search_knowledge");
     try {
       const matches = await searchKnowledge(input.query, { limit: input.limit ?? 5 });
 

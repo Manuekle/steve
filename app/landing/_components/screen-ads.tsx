@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Coins01Icon,
   CursorPointer01Icon,
@@ -27,7 +27,7 @@ import { AppChrome } from "./screen-chrome";
  * The Meta Ads page, rendered from the page's own rows.
  *
  * `CampaignRow`, `formatObjective` and `formatStatus` are imported from
- * `app/_components/ads-rows.tsx` — the same module `app/ads/page.tsx` renders.
+ * `app/_components/ads-rows.tsx` — the same module `app/(app)/ads/page.tsx` renders.
  * The demo data below is therefore Meta's own vocabulary, enum names and minor
  * units included, and it comes out the other side as «Ventas · Activa» here
  * for exactly the reason it does in the product. A redesign of the row now

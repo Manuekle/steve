@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import {
   useCallback,

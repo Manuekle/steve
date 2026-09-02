@@ -33,13 +33,22 @@ export const POST = withApiErrors(async function POST(request: NextRequest, cont
   if (automation.trigger !== "webhook") {
     return apiError("conflict", { message: "This automation is not webhook-triggered." });
   }
-  // A token is optional, but when one is configured it is required.
+  // The token is mandatory. This route is public (a third-party dashboard
+  // cannot send a session cookie) and running an automation sends WhatsApp
+  // messages, emails and payment links on the operator's behalf — so an
+  // automation with no token is not an open endpoint, it is a broken one.
+  // Automations saved through the API get a token generated for them; one
+  // that predates that gets this error instead of running for anybody.
   const token = automation.triggerValue?.trim();
-  if (token) {
-    const provided = request.headers.get("x-webhook-secret");
-    if (!provided || !secretsMatch(provided, token)) {
-      return apiError("unauthorized");
-    }
+  if (!token) {
+    return apiError("unauthorized", {
+      message:
+        "This webhook automation has no secret token. Re-save it in Automations to have one generated, then send it as the x-webhook-secret header.",
+    });
+  }
+  const provided = request.headers.get("x-webhook-secret");
+  if (!provided || !secretsMatch(provided, token)) {
+    return apiError("unauthorized");
   }
   if (automation.status !== "active") {
     return apiError("conflict", { message: "This automation is not active." });

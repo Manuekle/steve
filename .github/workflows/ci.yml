@@ -25,6 +25,8 @@ jobs:
         run: pnpm exec eve info --json
       - name: Typecheck
         run: pnpm run typecheck
+      - name: Test
+        run: pnpm run test
       - name: Build the Eve host
         run: pnpm run build:eve
       - name: Build the Next.js app

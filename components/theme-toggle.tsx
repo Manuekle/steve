@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { useThemeToggle } from "@/components/motion/theme-toggle";
 import { useT } from "@/lib/i18n/provider";
@@ -54,6 +54,9 @@ export function ThemeToggle({
         <button
           ref={buttonRef}
           onClick={handleClick}
+          // Light/dark is a two-state switch, so it gets the switch cue rather
+          // than the generic press the provider would otherwise fall back to.
+          data-cuelume-toggle
           className={cn(
             "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 hover:bg-accent hover:text-foreground text-muted-foreground",
             !showLabel && "px-1.5 py-1",

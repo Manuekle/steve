@@ -7,7 +7,7 @@ set -euo pipefail
 #           PostgreSQL (via Docker), and runs migrations.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/your-org/steve/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Manuekle/steve/main/install.sh | bash
 #   or: bash install.sh
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -150,9 +150,11 @@ info "Checking .env..."
 if [ ! -f .env ]; then
   if [ -f .env.example ]; then
     cp .env.example .env
-    warn "Created .env from template. ${BOLD}Edit it with your API keys:${NC}"
+    warn "Created .env from template. ${BOLD}Set a database password and a route password in it:${NC}"
     echo ""
     echo -e "    ${BOLD}nano $INSTALL_DIR/.env${NC}"
+    echo ""
+    echo -e "    API keys do not go here — add them in Settings once the app is up."
     echo ""
   else
     fail ".env.example not found. Is this the Steve project directory?"
@@ -194,8 +196,9 @@ echo -e "${GREEN}${BOLD}══════════════════�
 echo -e "${GREEN}${BOLD}  Installation Complete!${NC}"
 echo -e "${GREEN}${BOLD}═══════════════════════════════════════════${NC}"
 echo ""
-echo -e "  ${BOLD}1.${NC} Edit .env with your API keys:"
+echo -e "  ${BOLD}1.${NC} Edit .env with your database and route passwords:"
 echo -e "     ${BOLD}nano $INSTALL_DIR/.env${NC}"
+echo -e "     (API keys go in Settings / Connections, not in .env)"
 echo ""
 echo -e "  ${BOLD}2.${NC} Start the app:"
 echo -e "     ${BOLD}cd $INSTALL_DIR && pnpm dev${NC}"

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   LibraryIcon,
   File01Icon,
@@ -16,6 +16,7 @@ import {
   MoreHorizontalIcon,
   FolderAddIcon,
 } from "@hugeicons/core-free-icons";
+import { GoogleDriveBrandIcon } from "@/components/icons/connection-icons";
 import {
   FileUpload,
   type FileUploadItem,
@@ -35,7 +36,7 @@ import {
 import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { useI18n } from "@/lib/i18n/provider";
-import { networkUiError, readApiError, type UiError } from "@/lib/api-error-message";
+import { fetchJson, isApiError, networkUiError, readApiError, type UiError } from "@/lib/api-error-message";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { useSound } from "@/components/sound-provider";
 import { useConfirmDialog } from "@/components/confirm-dialog";
@@ -53,6 +54,7 @@ import {
 } from "../../_components/dashboard-card";
 import { FolderArt, FolderDialog, FolderGrid, type FolderSummary } from "./_components/folder-grid";
 import { MediaLibrary } from "./_components/media-library";
+import { BusinessCard } from "./_components/business-card";
 
 type EmbeddingStatus =
   | { available: true; model: string; route: "openai" | "gateway" }
@@ -99,6 +101,7 @@ export default function KnowledgePage() {
   // The ingest queue, controlled so each row's status tracks the real
   // request rather than an animation.
   const [queue, setQueue] = useState<FileUploadItem[]>([]);
+  const [syncingDrive, setSyncingDrive] = useState(false);
 
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<KnowledgeMatch[] | null>(null);
@@ -216,6 +219,50 @@ export default function KnowledgePage() {
     },
     [upload],
   );
+
+  const handleDriveSync = useCallback(async () => {
+    setSyncingDrive(true);
+    try {
+      // `not_configured` comes back as HTTP 200 (see lib/api-error.ts) — it's
+      // a state, not a broken request — so a plain `fetch`/`res.ok` check
+      // reads its error body as a success payload and crashes on the missing
+      // `imported`/`skipped`/`errors` fields. `fetchJson` already checks the
+      // body for an error shape on 2xx responses too.
+      const result = await fetchJson<{
+        imported: number;
+        skipped: { name: string; reason: string }[];
+        errors: { name: string; error: string }[];
+      }>("/api/knowledge/drive-sync", t, { method: "POST" });
+      if (!result.ok) {
+        if (isApiError(result.error) && result.error.code === "not_configured") {
+          toast({
+            title: t("knowledge.driveSyncNotConfigured"),
+            description: t("knowledge.driveSyncNotConfiguredHint"),
+            status: "error",
+          });
+        } else {
+          setError(result.error);
+        }
+        return;
+      }
+      const data = result.data;
+      // A sync that dropped files is a recoverable failure, not a dismissal —
+      // `droplet` is the collapse/discard cue and read as "fine, gone".
+      cue(data.errors.length > 0 ? "error" : "success");
+      toast({
+        title: t("knowledge.driveSyncDone"),
+        description: t("knowledge.driveSyncSummary", {
+          imported: String(data.imported),
+          skipped: String(data.skipped.length),
+          errors: String(data.errors.length),
+        }),
+        status: data.errors.length > 0 ? "error" : "success",
+      });
+      await Promise.all([loadDocuments(), loadFolders()]);
+    } finally {
+      setSyncingDrive(false);
+    }
+  }, [cue, loadDocuments, loadFolders, t, toast]);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -398,20 +445,30 @@ export default function KnowledgePage() {
               <h1 className="text-2xl font-semibold">{t("knowledge.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("knowledge.subtitle")}</p>
             </div>
-            {documents.length > 0 ? (
-              <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] sm:inline-flex">
-                <HugeiconsIcon
-                  icon={LibraryIcon}
-                  size={16}
-                  strokeWidth={1.75}
-                  className="text-muted-foreground"
-                />
-                <span>
-                  <span className="tabular-nums">{documents.length}</span>{" "}
-                  {t("knowledge.docsWord")}
-                </span>
-              </div>
-            ) : null}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => void handleDriveSync()} disabled={syncingDrive}>
+                {syncingDrive ? (
+                  <HugeiconsIcon icon={Loading03Icon} size={15} strokeWidth={1.75} className="animate-spin" />
+                ) : (
+                  <GoogleDriveBrandIcon size={15} />
+                )}
+                {t("knowledge.driveSyncButton")}
+              </Button>
+              {documents.length > 0 ? (
+                <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] sm:inline-flex">
+                  <HugeiconsIcon
+                    icon={LibraryIcon}
+                    size={16}
+                    strokeWidth={1.75}
+                    className="text-muted-foreground"
+                  />
+                  <span>
+                    <span className="tabular-nums">{documents.length}</span>{" "}
+                    {t("knowledge.docsWord")}
+                  </span>
+                </div>
+              ) : null}
+            </div>
           </header>
 
           {!embeddings.available ? (
@@ -481,6 +538,8 @@ export default function KnowledgePage() {
               />
             </div>
           ) : null}
+
+          <BusinessCard />
 
           <Card className="mb-6">
             <CardHeader>
@@ -710,6 +769,7 @@ export default function KnowledgePage() {
                     className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
                   />
                   <Input
+                    aria-label={t("knowledge.searchPlaceholder")}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder={t("knowledge.searchPlaceholder")}

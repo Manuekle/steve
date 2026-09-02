@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "react-and-nextjs-data-visualization": {
+      "source": "openai/plugins",
+      "sourceType": "github",
+      "skillPath": "plugins/build-web-data-visualization/skills/react-and-nextjs-data-visualization/SKILL.md",
+      "computedHash": "59d86c22ad2769d35214a8878bd495ec2eecc31b501c6fb5bc15017a238510e9"
+    },
     "text-to-speech": {
       "source": "elevenlabs/skills",
       "sourceType": "github",

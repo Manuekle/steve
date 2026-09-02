@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowLeft02Icon,
   Copy01Icon,
@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Skeleton } from "@/components/ai-elements/skeleton";
+import { Skeleton, SkeletonAvatar, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { maxScore } from "@/lib/forms/scoring";
 import { useI18n } from "@/lib/i18n/provider";
@@ -34,6 +34,97 @@ function TemperatureBadge({ temperature }: { readonly temperature: LeadTemperatu
   const { t } = useI18n();
   const variant = temperature === "hot" ? "failed" : temperature === "warm" ? "pending" : "expired";
   return <StatusBadge status={variant} label={t(`forms.temperature.${temperature}`)} />;
+}
+
+/** Skeleton for the form detail page — back link, header, and the five
+ *  stacked cards (public link, QR, webhook, questions, responses). */
+function FormDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <SkeletonBar className="h-3 w-16" />
+
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <SkeletonBar className="h-7 w-48" />
+          <SkeletonBar className="h-4 w-64" />
+        </div>
+        <SkeletonBar className="h-6 w-20 rounded-full" />
+      </header>
+
+      {/* Public link */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="p-5">
+          <SkeletonBar className="h-4 w-32" />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 px-5 pb-5">
+          <SkeletonBar className="h-9 min-w-0 flex-1 rounded-lg" />
+          <SkeletonBar className="h-9 w-24 rounded-lg" />
+          <SkeletonBar className="h-9 w-24 rounded-lg" />
+          <SkeletonBar className="h-9 w-28 rounded-lg" />
+        </div>
+      </div>
+
+      {/* QR code */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonAvatar className="rounded-xl" />
+          <div className="space-y-2">
+            <SkeletonBar className="h-4 w-24" />
+            <SkeletonBar className="h-3 w-40" />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-5 px-5 pb-5">
+          <SkeletonBar className="size-36 rounded-xl" />
+          <div className="space-y-2">
+            <SkeletonBar className="h-9 w-40 rounded-lg" />
+            <SkeletonBar className="h-3 w-48" />
+          </div>
+        </div>
+      </div>
+
+      {/* Webhook */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="space-y-2 p-5">
+          <SkeletonBar className="h-4 w-28" />
+          <SkeletonBar className="h-3 w-56" />
+        </div>
+        <div className="flex items-center gap-2 px-5 pb-3">
+          <SkeletonBar className="h-9 min-w-0 flex-1 rounded-lg" />
+          <SkeletonBar className="h-9 w-24 rounded-lg" />
+        </div>
+        <SkeletonBar className="mx-5 mb-5 h-3 w-64" />
+      </div>
+
+      {/* Questions */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="space-y-2 p-5">
+          <SkeletonBar className="h-4 w-24" />
+          <SkeletonBar className="h-3 w-48" />
+        </div>
+        <div className="space-y-3 px-5 pb-5">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="space-y-2 rounded-lg border border-border/60 p-3">
+              <SkeletonBar className="h-3.5 w-40" />
+              <SkeletonBar className="h-3 w-56" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Responses */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="space-y-2 p-5">
+          <SkeletonBar className="h-4 w-28" />
+          <SkeletonBar className="h-3 w-40" />
+        </div>
+        <div className="space-y-2 px-5 pb-5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonBar key={i} className="h-8 w-full" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function FormDetailPage() {
@@ -184,9 +275,9 @@ export default function FormDetailPage() {
   return (
     <PageContainer maxWidth="max-w-4xl" pattern="grid">
       <Skeleton
-        className="min-h-[400px]"
+        className="min-h-[600px]"
         isLoading={isLoading}
-        skeleton={<div className="h-64 rounded-xl bg-muted" />}
+        skeleton={<FormDetailSkeleton />}
       >
         <div className="content-enter">
           <ErrorBanner className="mb-6" error={error} onDismiss={() => setError(null)} />
@@ -231,6 +322,7 @@ export default function FormDetailPage() {
                     <div className="flex min-w-0 flex-1 items-center gap-1.5">
                       <span className="shrink-0 text-xs text-muted-foreground">{origin}/f/</span>
                       <Input
+                        aria-label={t("forms.detail.slugLabel")}
                         autoFocus
                         value={slugDraft}
                         onChange={(event) => setSlugDraft(event.target.value)}
@@ -344,6 +436,7 @@ export default function FormDetailPage() {
                 </CardHeader>
                 <div className="flex flex-wrap items-center gap-2 px-5 pb-5">
                   <Input
+                    aria-label={t("forms.detail.webhookPlaceholder")}
                     type="url"
                     inputMode="url"
                     value={webhookDraft}

@@ -4,7 +4,7 @@
 // root layout, so the locale provider is available and both languages get the
 // same sentence — which is why this is a client component.
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { FileXIcon, ArrowLeft02Icon } from "@hugeicons/core-free-icons";
 import { useT } from "@/lib/i18n/provider";
 

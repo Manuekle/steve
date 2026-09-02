@@ -17,7 +17,7 @@ import { getCredential, getCredentialSync } from "./credentials";
 export const DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
 export const DEFAULT_MODEL_ID = "eleven_multilingual_v2";
 
-/** mp3 44.1kHz 128kbps — audio/mpeg, which WhatsApp, Messenger and Instagram all accept. */
+/** mp3 44.1kHz 128kbps — audio/mpeg, which WhatsApp and Instagram both accept. */
 const OUTPUT_FORMAT = "mp3_44100_128";
 const MIME_TYPE = "audio/mpeg";
 
@@ -97,6 +97,40 @@ function resolveVoiceId(voice: string | undefined): string | undefined {
   const trimmed = voice?.trim();
   if (!trimmed) return undefined;
   return PRESET_VOICES[trimmed.toLowerCase()] ?? trimmed;
+}
+
+/**
+ * Transcribe `data` (raw audio bytes) to text via ElevenLabs speech-to-text.
+ *
+ * Throws when no key is configured or when ElevenLabs rejects the request —
+ * same contract as generateElevenLabsSpeech, callers decide the fallback.
+ */
+export async function transcribeAudio(opts: {
+  data: Buffer;
+  mimeType?: string;
+  filename?: string;
+  abortSignal?: AbortSignal;
+}): Promise<string> {
+  const apiKey = (await getCredential("ELEVENLABS_API_KEY")) ?? readKey();
+  if (!apiKey) throw new Error("ElevenLabs API key is not configured.");
+
+  const { ElevenLabsClient } = await import("@elevenlabs/elevenlabs-js");
+  const client = new ElevenLabsClient({ apiKey });
+
+  // scribe_v1: the generally-available multilingual transcription model.
+  const response = await client.speechToText.convert(
+    {
+      modelId: "scribe_v1",
+      file: { data: opts.data, filename: opts.filename, contentType: opts.mimeType },
+    },
+    { abortSignal: opts.abortSignal, timeoutInSeconds: 60 },
+  );
+
+  const text = (response as { text?: unknown }).text;
+  if (typeof text !== "string" || !text) {
+    throw new Error("ElevenLabs speech-to-text returned no text.");
+  }
+  return text;
 }
 
 async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {

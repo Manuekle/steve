@@ -7,8 +7,10 @@
 // `lib/api-error-message.ts` is what produces it, so nothing here ever renders
 // a status code or a server sentence.
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { useEffect, useRef } from "react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { AlertCircleIcon, RotateCwIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { useSound } from "@/components/sound-provider";
 import { useT } from "@/lib/i18n/provider";
 import { isApiError, uiErrorMessage, type UiError } from "@/lib/api-error-message";
 import { cn } from "@/lib/utils";
@@ -39,6 +41,7 @@ export function ErrorBanner({
   readonly className?: string;
 }) {
   const t = useT();
+  const { cue } = useSound();
 
   const text = error
     ? uiErrorMessage(t, error)
@@ -46,6 +49,28 @@ export function ErrorBanner({
       ? t(messageKey)
       : message;
   const context = detail ?? (error && isApiError(error) ? error.detail : undefined);
+
+  // Sound the banner when it *appears*, not when it is merely on screen.
+  //
+  // A banner already rendered on the first pass is a load that failed before
+  // anyone touched anything — a background event, and cuelume's own guidance
+  // is to keep those quiet. One that shows up later is the response to
+  // something the user just did, which is exactly what `error` is for.
+  // Keyed on the previous message, not on a "have I mounted" flag: an effect
+  // that re-runs without the banner changing — StrictMode's double invoke in
+  // dev, a new `cue` identity — must not sound a second time for the same
+  // failure.
+  //
+  // The previous value is boxed because `text` is itself usually `undefined`
+  // before anything fails: a bare `undefined` sentinel could not tell "no
+  // banner yet" from "first pass already ran", and the error that followed
+  // would be the one that stayed silent.
+  const seen = useRef<{ readonly value: typeof text } | null>(null);
+  useEffect(() => {
+    const previous = seen.current;
+    if (text && previous && previous.value !== text) cue("error");
+    seen.current = { value: text };
+  }, [text, cue]);
 
   if (!text) return null;
 

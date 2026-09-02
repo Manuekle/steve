@@ -15,7 +15,7 @@ function makePayload(overrides: Partial<LicensePayload> = {}): LicensePayload {
     customerEmail: "ops@acme.example",
     edition: "enterprise",
     deploymentType: "self-hosted",
-    features: ["whatsapp", "instagram", "messenger", "agents"],
+    features: ["whatsapp", "instagram", "agents"],
     issuedAt: "2026-01-01T00:00:00.000Z",
     maintenanceUntil: "2099-01-01T00:00:00.000Z",
     schemaVersion: 1,

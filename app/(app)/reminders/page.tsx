@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   Timer01Icon,
   Delete01Icon,
@@ -221,6 +221,7 @@ export default function RemindersPage() {
                   className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
+                  aria-label={t("reminders.searchPlaceholder")}
                   placeholder={t("reminders.searchPlaceholder")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}

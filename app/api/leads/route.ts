@@ -1,17 +1,6 @@
-import { matchInbound } from "@/lib/automation-engine";
-import {
-  ingestLead,
-  listAutomations,
-  recordAutomationFire,
-  upsertChat,
-} from "@/lib/business-store";
 import { getCredential } from "@/lib/credentials";
+import { intakeLead } from "@/lib/lead-intake";
 import type { LeadInput } from "@/lib/types";
-import {
-  isWithin24hWindow,
-  sendWhatsAppText,
-  sendWhatsAppTemplate,
-} from "@/lib/whatsapp-send";
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, withApiErrors } from "@/lib/api-error";
 
@@ -24,16 +13,34 @@ function timingSafeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-async function verifySecret(request: NextRequest): Promise<boolean> {
-  const secret = await getCredential("LEAD_WEBHOOK_SECRET");
-  if (!secret) return true; // No secret configured = open endpoint
+/**
+ * The secret is required, not optional.
+ *
+ * This route is public in middleware.ts — a lead form or a third-party
+ * dashboard has no session cookie to send — and it writes contacts, opens
+ * chats and fires automations that message people over WhatsApp. Treating a
+ * missing secret as "open" made an unconfigured install an open relay for all
+ * of that, so an install without one now refuses every call and says why.
+ */
+async function verifySecret(request: NextRequest): Promise<"ok" | "not_configured" | "denied"> {
+  const secret = (await getCredential("LEAD_WEBHOOK_SECRET"))?.trim();
+  if (!secret) return "not_configured";
   const provided = request.headers.get("x-webhook-secret");
-  if (!provided) return false;
-  return timingSafeEqual(provided, secret);
+  if (!provided) return "denied";
+  return timingSafeEqual(provided, secret) ? "ok" : "denied";
 }
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
-  if (!(await verifySecret(request))) {
+  const auth = await verifySecret(request);
+  if (auth === "not_configured") {
+    // 401, not the 200 that `not_configured` carries: the caller must see
+    // this as a rejected delivery and retry once the secret exists.
+    return apiError("unauthorized", {
+      message:
+        "Set a lead webhook secret in Settings > Integrations, then send it as the x-webhook-secret header.",
+    });
+  }
+  if (auth === "denied") {
     return apiError("unauthorized");
   }
 
@@ -46,47 +53,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
   if (!body || typeof body !== "object") {
     return apiError("invalid_body");
   }
-  const input = body as LeadInput;
-  const contact = await ingestLead(input);
-
-  const channel = contact.channel === "form" ? "web" : contact.channel;
-  await upsertChat({
-    title: contact.name,
-    channel,
-    lastMessage: input.message ?? "New lead",
-    lastMessageAt: contact.lastMessageAt,
-    messageCount: input.message ? 1 : 0,
-  });
-
-  const automations = await listAutomations();
-  const matched = matchInbound({
-    automations,
-    channel,
-    message: input.message ?? "",
-    isNewSession: true,
-  });
-  for (const auto of matched) {
-    await recordAutomationFire(auto.id);
-    const welcome = auto.steps?.find((s) => s.type === "message")?.config.message;
-    if (welcome && contact.phone && contact.channel === "whatsapp") {
-      // New lead from webhook: no prior WhatsApp conversation → need template.
-      // New lead from WhatsApp inbound: within 24h window → free-form OK.
-      const withinWindow = isWithin24hWindow(contact.lastMessageAt);
-      if (withinWindow) {
-        await sendWhatsAppText(contact.phone, welcome);
-      } else {
-        const templateName = await getCredential("WHATSAPP_TEMPLATE_NAME");
-        const templateLang = (await getCredential("WHATSAPP_TEMPLATE_LANG")) || "es";
-        if (templateName) {
-          await sendWhatsAppTemplate(contact.phone, templateName, templateLang, [
-            contact.name,
-            welcome,
-          ]);
-        }
-        // else: no template → welcome not sent, lead is saved in inbox.
-      }
-    }
-  }
+  const contact = await intakeLead(body as LeadInput);
 
   return NextResponse.json({ ok: true, contact });
 });

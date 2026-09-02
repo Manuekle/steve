@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
 import { Card } from "./dashboard-card";
@@ -189,6 +189,7 @@ export function AdsBudgetBar({
  * path and no `aria-expanded`, which is a row you cannot open without a mouse.
  */
 export function AdsRow({
+  actions,
   children,
   expanded,
   label,
@@ -199,6 +200,13 @@ export function AdsRow({
   title,
   trailing,
 }: {
+  /**
+   * Row-level controls (a menu, a switch). Rendered *beside* the head button
+   * rather than inside it: a button nested in a button is invalid HTML, and
+   * in practice the outer one swallows the click, so the row would expand
+   * instead of firing the action.
+   */
+  readonly actions?: ReactNode;
   /** The panel. Rendered only while open. */
   readonly children?: ReactNode;
   readonly expanded: boolean;
@@ -213,29 +221,37 @@ export function AdsRow({
 }) {
   return (
     <Card>
-      <button
-        aria-expanded={expanded}
-        aria-label={label}
-        className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left transition-colors duration-150 hover:bg-muted/40"
-        onClick={onToggle}
-        type="button"
-      >
-        {leading}
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-sm">{title}</p>
-          <div className="mt-0.5 flex items-center gap-1.5 truncate text-muted-foreground text-xs">
-            {subtitle}
+      {/* The hover tint lives on the wrapper, not the button, so the strip
+          under the actions lights up with the rest of the row instead of
+          stopping short of it. */}
+      <div className="group flex items-stretch rounded-2xl transition-colors duration-150 hover:bg-muted/40">
+        <button
+          aria-expanded={expanded}
+          aria-label={label}
+          className="flex min-w-0 flex-1 items-center gap-4 rounded-2xl px-5 py-4 text-left"
+          onClick={onToggle}
+          type="button"
+        >
+          {leading}
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium text-sm">{title}</p>
+            <div className="mt-0.5 flex items-center gap-1.5 truncate text-muted-foreground text-xs">
+              {subtitle}
+            </div>
           </div>
-        </div>
-        {metrics}
-        {trailing}
-        <HugeiconsIcon
-          className="shrink-0 text-muted-foreground"
-          icon={expanded ? ArrowUp01Icon : ArrowDown01Icon}
-          size={14}
-          strokeWidth={1.75}
-        />
-      </button>
+          {metrics}
+          {trailing}
+          <HugeiconsIcon
+            className="shrink-0 text-muted-foreground"
+            icon={expanded ? ArrowUp01Icon : ArrowDown01Icon}
+            size={14}
+            strokeWidth={1.75}
+          />
+        </button>
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-1 pr-3 pl-1">{actions}</div>
+        ) : null}
+      </div>
 
       {expanded && children ? (
         <div className="border-border border-t px-5 py-4">{children}</div>
@@ -270,11 +286,15 @@ export type CampaignRowView = {
 };
 
 export function CampaignRow({
+  actions,
   expanded,
   labels,
   onToggle,
   view,
 }: {
+  /** Pause, edit, delete. Absent on the landing screenshot, which renders
+   *  this same row with nothing to click. */
+  readonly actions?: ReactNode;
   readonly expanded: boolean;
   /** Column and cell headings, so the row needs no translator of its own. */
   readonly labels: {
@@ -291,6 +311,7 @@ export function CampaignRow({
 }) {
   return (
     <AdsRow
+      actions={actions}
       expanded={expanded}
       label={view.name}
       leading={<AdsStatusDot status={view.status} />}

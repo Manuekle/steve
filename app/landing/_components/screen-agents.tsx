@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   AiImagineIcon,
@@ -77,7 +77,7 @@ function useMockAgents(t: (key: string) => string): readonly {
 }
 
 /**
- * The agents list, as `app/agents/page.tsx` renders it: the page header with
+ * The agents list, as `app/(app)/agents/page.tsx` renders it: the page header with
  * the provider badge and the new-agent action, the search row, and the cards —
  * icon, name, active/inactive pill, description, and the pause/play plus
  * expand controls. Static like every landing screen.

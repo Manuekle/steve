@@ -57,6 +57,23 @@ const CACHE_TTL_MS = 60_000;
 
 const cache = new Map<string, { report: ProviderReport; expires: number }>();
 
+/**
+ * Drop cached reports so the next read asks the provider again.
+ *
+ * Saving a key has to change what this file says immediately: without this,
+ * a freshly pasted key still reads "missing" for up to a minute, which looks
+ * exactly like a key that did not save. Called from POST /api/settings.
+ */
+export function invalidateProviderReports(provider?: AiProvider): void {
+  if (!provider) {
+    cache.clear();
+    return;
+  }
+  for (const key of [...cache.keys()]) {
+    if (key.startsWith(`${provider}:`)) cache.delete(key);
+  }
+}
+
 function keyFor(
   provider: AiProvider,
 ): "AI_GATEWAY_API_KEY" | "OPENAI_API_KEY" | "ANTHROPIC_API_KEY" | "GOOGLE_GENERATIVE_AI_API_KEY" {

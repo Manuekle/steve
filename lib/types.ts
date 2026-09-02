@@ -3,7 +3,7 @@
 // lib/dashboard-store.ts. The Eve runtime owns the real session state;
 // these types model the app-level metadata we layer on top.
 
-export type ChannelId = "web" | "whatsapp" | "messenger" | "instagram";
+export type ChannelId = "web" | "whatsapp" | "instagram" | "telegram";
 
 /**
  * Where a contact came from. A superset of the messaging channels: a lead can
@@ -43,7 +43,7 @@ export type Contact = {
   readonly email?: string;
   /**
    * Platform-scoped recipient id for channels that don't use a phone number
-   * as identity (Messenger PSID, Instagram IGSID). Captured automatically
+   * as identity (the Instagram IGSID). Captured automatically
    * from the inbound message's auth context — see agent/hooks/persist.ts.
    */
   readonly externalId?: string;
@@ -57,6 +57,8 @@ export type Contact = {
   readonly lastMessageAt: string;
   readonly createdAt: string;
   readonly notes?: string;
+  /** What the agent found researching this lead. Absent until asked for. */
+  readonly research?: LeadResearch;
 };
 
 export type LeadInput = {
@@ -207,7 +209,8 @@ export type WorkflowStepType =
   | "notify_email"
   | "update_contact"
   | "log_sheet"
-  | "send_payment_link";
+  | "send_payment_link"
+  | "book_meeting";
 
 export type WorkflowStep = {
   readonly id: string;
@@ -253,6 +256,12 @@ export type WorkflowStep = {
     readonly amount?: string;
     readonly currency?: string;
     readonly productName?: string;
+    /** book_meeting: length of the slot to find and book. Default 30. */
+    readonly meetingDurationMin?: string;
+    /** book_meeting: event title, `{{contact.x}}` placeholders included.
+     *  The step's own `message` doubles as the confirmation text sent to the
+     *  contact — see runStep in lib/automation-runner.ts. */
+    readonly meetingSummary?: string;
   };
   /**
    * Canvas position, in flow coordinates, once someone has dragged this node.
@@ -379,6 +388,9 @@ export type VoiceCallSource = "test" | "real";
  * conversation record is not something this app can be sure will still be
  * around whenever someone comes back to check.
  */
+/** ElevenLabs' own conversation vocabulary, stored as it comes. */
+export type VoiceCallStatus = "initiated" | "in-progress" | "processing" | "done" | "failed";
+
 export type VoiceCall = {
   readonly id: string;
   /** This app's agent id, not the ElevenLabs mirror id. */
@@ -386,11 +398,121 @@ export type VoiceCall = {
   /** The ElevenLabs conversation id — also this record's natural key. */
   readonly conversationId: string;
   readonly source: VoiceCallSource;
-  /** Empty until the post_call_transcription webhook fills it in. */
+  /** Where the call is. Absent on rows written before this was tracked. */
+  readonly status?: VoiceCallStatus;
+  /** Why a call ended badly, when ElevenLabs says. */
+  readonly terminationReason?: string;
+  /** Empty until the transcript arrives — by webhook, or by the poll in
+   *  app/api/agents/[id]/voice/calls when no webhook can reach this install. */
   readonly transcript: readonly VoiceCallTurn[];
   readonly durationSecs?: number;
+  /** Where the call left the person commercially. Absent until assessed. */
+  readonly prospect?: ProspectAssessment;
   readonly startedAt: string;
   readonly createdAt: string;
+};
+
+// ── Prospect assessment ────────────────────────────────────────────
+//
+// Where a conversation left the person commercially — the question an owner
+// actually asks about a pile of chats and calls ("did any of these buy?"),
+// which the operational contact status (open / waiting_human / closed) does
+// not answer. Written by the model over the transcript, never by a rule.
+
+export type ProspectStage =
+  /** Bought, booked, signed — the conversation closed in a sale. */
+  | "won"
+  /** Said no, or bought elsewhere. */
+  | "lost"
+  /** Price sent, terms being discussed, decision pending. */
+  | "negotiating"
+  /** Asked real questions and is engaged, but nothing was quoted yet. */
+  | "interested"
+  /** Went quiet before it went anywhere. */
+  | "no_response"
+  /** Wrong fit: outside the service, the area, or the budget. */
+  | "unqualified"
+  /** Not a sale at all — an existing customer with a support question. */
+  | "support";
+
+export type ProspectAssessment = {
+  readonly stage: ProspectStage;
+  /** One line, in the conversation's own language, saying what decided it. */
+  readonly reason: string;
+  /** What should happen next, when anything should. */
+  readonly nextStep?: string;
+  readonly assessedAt: string;
+  /** How many turns the assessment read. A longer transcript than this is
+   *  what makes it stale and worth running again. */
+  readonly turnCount: number;
+  /** "ai" — the model read the transcript. "manual" — a person overrode it. */
+  readonly source: "ai" | "manual";
+};
+
+// ── Lead research ──────────────────────────────────────────────────
+//
+// What the agent found composing internal knowledge with a live web search —
+// on demand, when a conversation calls for it, not on a schedule like the
+// prospect assessment above.
+
+export type LeadResearch = {
+  /** 2-4 sentences, in the conversation's own language. */
+  readonly summary: string;
+  readonly companyName?: string;
+  /** Notable facts found — budget signals, company size, public presence. */
+  readonly signals: readonly string[];
+  /** URLs actually consulted, so a person reading this can verify it. */
+  readonly sources: readonly string[];
+  readonly researchedAt: string;
+};
+
+/** One turn of a saved playground conversation. */
+export type AgentChatTurn = {
+  readonly role: "user" | "assistant";
+  readonly content: string;
+};
+
+/**
+ * A text conversation someone held with an agent in the playground.
+ *
+ * Saved for the same reason a call transcript is: the rehearsal is where you
+ * find out the prompt answers the wrong thing, and that is worth still having
+ * on screen after the tab is closed and the prompt edited. It is not the
+ * agent's production history — nothing here reached a customer.
+ */
+export type AgentChatSession = {
+  readonly id: string;
+  readonly agentId: string;
+  /** The opening user line, trimmed — what the sidebar lists it by. */
+  readonly title: string;
+  readonly turns: readonly AgentChatTurn[];
+  readonly startedAt: string;
+  readonly updatedAt: string;
+};
+
+/**
+ * A real conversation the agent held with a customer on a connected channel.
+ *
+ * The channel adapters run through Eve, whose durable session is the system
+ * of record for what was said. This is the app's own copy, written turn by
+ * turn by agent/hooks/persist.ts, and it exists because the operator's
+ * screens — the transcript viewer, the prospect assessment — need to read a
+ * conversation without holding an Eve session open, and need somewhere to
+ * hang the assessment that is not the model's history.
+ */
+export type ChannelConversation = {
+  readonly id: string;
+  /** The Eve session this mirrors. Also its natural key. */
+  readonly sessionId: string;
+  readonly channel: ChannelId;
+  readonly contactId?: string;
+  /** The contact's name when known, the channel's own name otherwise. */
+  readonly title: string;
+  readonly turns: readonly AgentChatTurn[];
+  readonly startedAt: string;
+  readonly updatedAt: string;
+  /** Where this left the person commercially. Absent until assessed. */
+  readonly prospect?: ProspectAssessment;
 };
 
 export type Agent = {

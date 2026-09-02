@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArtificialIntelligence08Icon, PanelLeftIcon } from "@hugeicons/core-free-icons";
 import { FlowCanvas } from "@/components/ai-elements/flow-canvas";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -56,7 +56,9 @@ export function FlowScreen() {
   const steps = buildSteps(t);
 
   return (
-    <div className="flex min-h-[600px] bg-background text-foreground">
+    // Same window as `AppChrome`: this screen builds its own shell for the
+    // full-bleed canvas, so it carries the same fixed height and clip.
+    <div className="flex h-[38rem] overflow-hidden bg-background text-foreground lg:h-[42rem]">
       <MockSidebar active="/automations" />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -64,7 +66,8 @@ export function FlowScreen() {
         <div className="flex shrink-0 items-center gap-3 border-border border-b bg-card/40 px-3 py-2.5 backdrop-blur-sm sm:px-4">
           <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <h1 className="truncate text-sm font-semibold tracking-tight">{t("landing.demo.flow.title")}</h1>
+            {/* Mockup chrome, not a page heading — see screen-chrome.tsx. */}
+            <p className="truncate text-sm font-semibold tracking-tight">{t("landing.demo.flow.title")}</p>
             <StatusBadge status="draft" />
           </div>
           <div className="flex shrink-0 items-center gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   ChartAverageIcon,
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { AppChrome, HeaderAction } from "./screen-chrome";
 
 /**
- * The dashboard, as `app/dashboard/page.tsx` renders it: the four KPI tiles,
+ * The dashboard, as `app/(app)/dashboard/page.tsx` renders it: the four KPI tiles,
  * the week's bars beside the channel split, the three channel cards, and the
  * recent conversations. Everything below the chart lives under the frame's
  * veil, which is the point — a page that ends exactly where the blur starts
@@ -50,9 +50,8 @@ const BREAKDOWN: readonly {
   readonly count: number;
   readonly percentage: number;
 }[] = [
-  { channel: "whatsapp", count: 742, percentage: 62 },
-  { channel: "instagram", count: 289, percentage: 24 },
-  { channel: "messenger", count: 168, percentage: 14 },
+  { channel: "whatsapp", count: 742, percentage: 72 },
+  { channel: "instagram", count: 289, percentage: 28 },
 ];
 
 const CHANNEL_CARDS: readonly {
@@ -63,7 +62,6 @@ const CHANNEL_CARDS: readonly {
 }[] = [
   { id: "whatsapp", messageCount: 2984, status: "connected", when: "2m" },
   { id: "instagram", messageCount: 1162, status: "connected", when: "9m" },
-  { id: "messenger", messageCount: 666, status: "disconnected", when: "3h" },
 ];
 
 /** `relativeTime` renders "2m" / "3h" / "1d" — never "hace 2 min", which is
@@ -98,7 +96,7 @@ function useRecent(t: (key: string) => string): readonly {
       when: "11m",
     },
     {
-      channel: "messenger",
+      channel: "instagram",
       last: t("landing.demo.msg.diego"),
       messageCount: 3,
       title: "Diego Salas",

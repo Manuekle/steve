@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { CheckIcon, Copy01Icon } from "@hugeicons/core-free-icons";
 import type { ComponentProps, CSSProperties, HTMLAttributes } from "react";
 import {

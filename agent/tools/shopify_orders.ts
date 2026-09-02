@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { findOrdersForCustomer, getShopifyConfig } from "../../lib/shopify";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
@@ -40,7 +41,8 @@ export default defineTool({
     ),
     error: z.string().optional(),
   }),
-  async execute(input) {
+  async execute(input, ctx) {
+    await assertToolAllowed(ctx.session.id, "shopify_orders");
     // Answered before the call so the agent can say "no está conectada la
     // tienda" instead of inventing an order.
     if (!(await getShopifyConfig())) {

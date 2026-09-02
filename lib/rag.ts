@@ -51,7 +51,7 @@ function extensionOf(name: string): string {
   return dot === -1 ? "" : name.slice(dot).toLowerCase();
 }
 
-function stripMarkup(html: string): string {
+export function stripMarkup(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
@@ -66,7 +66,7 @@ function stripMarkup(html: string): string {
 /** Collapse the runs of whitespace that PDF extraction and HTML stripping
  *  leave behind, while keeping paragraph breaks — they're the split points
  *  the chunker prefers. */
-function tidy(text: string): string {
+export function tidy(text: string): string {
   return text
     .replace(/\r\n?/g, "\n")
     .replace(/[ \t ]+/g, " ")
@@ -166,6 +166,8 @@ export async function ingestFile(input: {
   mime: string;
   bytes: Uint8Array;
   folderId?: string | null;
+  /** Set when the bytes came from a Google Drive import — see lib/drive-import.ts. */
+  driveSourceId?: string;
 }): Promise<KnowledgeDocument> {
   if (input.bytes.byteLength === 0) throw new RagError("El archivo está vacío.");
   if (input.bytes.byteLength > MAX_FILE_BYTES) {
@@ -189,6 +191,7 @@ export async function ingestFile(input: {
     characters: text.length,
     embedding_model: embedding.modelId,
     chunks: chunks.map((chunk, index) => ({ text: chunk, embedding: embeddings[index] })),
+    ...(input.driveSourceId ? { driveSourceId: input.driveSourceId } : {}),
   });
 }
 

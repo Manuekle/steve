@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, withApiErrors } from "@/lib/api-error";
-import { getCredential } from "@/lib/credentials";
-import { verifyStripeWebhookSignature } from "@/lib/stripe";
+import { getPlatformWebhookSecret, verifyStripeWebhookSignature } from "@/lib/stripe";
 import { updateBillingState, nextPeriodEnd } from "@/lib/billing-store";
 import { isPlanId } from "@/lib/plans";
 
@@ -11,7 +10,7 @@ import { isPlanId } from "@/lib/plans";
 //
 // This installation is mono-tenant (see docs/commercial-licensing.md), so
 // there is no customer/subscription lookup table to consult: any event that
-// verifies against our own STRIPE_WEBHOOK_SECRET is necessarily about this
+// verifies against our own STRIPE_PLATFORM_WEBHOOK_SECRET is necessarily about this
 // installation's one billing relationship, and the events below write
 // straight into the single billing-store file.
 //
@@ -41,10 +40,13 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
   // round trip.
   const rawBody = await request.text();
 
-  const webhookSecret = await getCredential("STRIPE_WEBHOOK_SECRET");
+  // The vendor's webhook secret, from the environment. The operator's own
+  // Stripe key on Settings signs nothing here — see lib/stripe.ts.
+  const webhookSecret = getPlatformWebhookSecret();
   if (!webhookSecret) {
     return apiError("not_configured", {
-      message: "STRIPE_WEBHOOK_SECRET is not set — add it in Settings before pointing Stripe at this endpoint.",
+      message:
+        "STRIPE_PLATFORM_WEBHOOK_SECRET is not set — subscription billing is not enabled on this installation.",
     });
   }
 

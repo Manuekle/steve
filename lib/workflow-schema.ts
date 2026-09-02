@@ -29,6 +29,8 @@ export type WorkflowStepInput = {
   readonly amount?: string;
   readonly currency?: string;
   readonly productName?: string;
+  readonly meetingDurationMin?: string;
+  readonly meetingSummary?: string;
   readonly thenSteps?: readonly WorkflowStepInput[];
   readonly elseSteps?: readonly WorkflowStepInput[];
 };
@@ -57,8 +59,9 @@ export const workflowStepSchema: z.ZodType<WorkflowStepInput> = z.lazy(() =>
       "update_contact",
       "log_sheet",
       "send_payment_link",
+      "book_meeting",
     ]),
-    message: z.string().optional().describe("Exact text to send. Used by: message, transfer_human."),
+    message: z.string().optional().describe("Exact text to send. Used by: message, transfer_human. Also the confirmation text sent to the contact (with {{start}} and {{meetLink}} placeholders) for book_meeting."),
     duration: z.string().optional().describe("e.g. '30min', '2h', '1d'. Used by: wait."),
     condition: z.string().optional().describe("Plain-language condition the agent evaluates at runtime. Used by: condition."),
     prompt: z.string().optional().describe("Guidance for the AI-generated reply. Used by: ai_response."),
@@ -80,6 +83,8 @@ export const workflowStepSchema: z.ZodType<WorkflowStepInput> = z.lazy(() =>
     amount: z.string().optional().describe("Decimal amount, e.g. '49.99'. Used by: send_payment_link."),
     currency: z.string().optional().describe("ISO currency code, e.g. 'usd', 'mxn'. Used by: send_payment_link."),
     productName: z.string().optional().describe("What the customer is paying for, shown on the checkout page. Used by: send_payment_link."),
+    meetingDurationMin: z.string().optional().describe("Length of the meeting in minutes, e.g. '30'. Books the next available slot on the connected Google Calendar, with a Google Meet link. Used by: book_meeting."),
+    meetingSummary: z.string().optional().describe("Event title, `{{contact.x}}` placeholders included. Used by: book_meeting."),
     contactStatus: z.string().optional().describe("open, waiting_human, followup_due or closed. Used by: update_contact."),
     contactNote: z.string().optional().describe("Note appended to the contact. Used by: update_contact."),
     thenSteps: z.array(workflowStepSchema).optional().describe("condition only: steps to run when the condition is true."),
@@ -112,6 +117,7 @@ const STEP_TYPE_ENUM = z.enum([
   "update_contact",
   "log_sheet",
   "send_payment_link",
+  "book_meeting",
 ]);
 
 // Every field is required-but-nullable rather than optional: OpenAI's strict
@@ -143,6 +149,8 @@ const leafStepSchema = z.object({
   amount: z.string().nullable().describe("Decimal amount, e.g. '49.99'. Used by: send_payment_link. null otherwise."),
   currency: z.string().nullable().describe("ISO currency code. Used by: send_payment_link. null otherwise."),
   productName: z.string().nullable().describe("What the customer is paying for. Used by: send_payment_link. null otherwise."),
+  meetingDurationMin: z.string().nullable().describe("Length of the meeting in minutes, e.g. '30'. Used by: book_meeting. null otherwise."),
+  meetingSummary: z.string().nullable().describe("Event title, `{{contact.x}}` placeholders included. Used by: book_meeting. null otherwise."),
   contactStatus: z.string().nullable().describe("open, waiting_human, followup_due or closed. Used by: update_contact. null otherwise."),
   contactNote: z.string().nullable().describe("Note appended to the contact. Used by: update_contact. null otherwise."),
 });
@@ -193,6 +201,8 @@ export function planToInput(steps: readonly WorkflowPlanStep[]): WorkflowStepInp
     ...(step.amount ? { amount: step.amount } : {}),
     ...(step.currency ? { currency: step.currency } : {}),
     ...(step.productName ? { productName: step.productName } : {}),
+    ...(step.meetingDurationMin ? { meetingDurationMin: step.meetingDurationMin } : {}),
+    ...(step.meetingSummary ? { meetingSummary: step.meetingSummary } : {}),
     ...(step.contactStatus ? { contactStatus: step.contactStatus } : {}),
     ...(step.contactNote ? { contactNote: step.contactNote } : {}),
     ...(step.thenSteps?.length ? { thenSteps: step.thenSteps.map(clean) } : {}),
@@ -231,6 +241,8 @@ export function toWorkflowSteps(steps: readonly WorkflowStepInput[]): WorkflowSt
         amount: s.amount,
         currency: s.currency,
         productName: s.productName,
+        meetingDurationMin: s.meetingDurationMin,
+        meetingSummary: s.meetingSummary,
         contactStatus: s.contactStatus,
         contactNote: s.contactNote,
       },

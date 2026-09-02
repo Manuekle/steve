@@ -4,7 +4,7 @@
  * vendored under `components/elevenlabs/` — see the note in `orb.tsx` for why
  * these do not live in `components/ui/`.
  *
- * Four edits against upstream:
+ * Five edits against upstream:
  *   - `<Card>` is a plain div. The registry expects shadcn's `card`, which this
  *     project never installed; `app/_components/dashboard-card.tsx` already
  *     owns the name `Card`, and a second one under a near-identical import path
@@ -18,6 +18,8 @@
  *   - The four icon-only controls (mute, keyboard, call, send) had no
  *     accessible name at all upstream. Each now has an `aria-label` and a
  *     `Tooltip` from the project's own tooltip primitive.
+ *   - The microphone pre-flight stream is now released on every way a call can
+ *     end, not just the end-call button. See `stopMicStream` below.
  */
 
 import * as React from "react"
@@ -34,7 +36,7 @@ import {
   MicOff,
   PhoneIcon,
 } from "lucide-react"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { HugeiconsIcon } from "@/components/icons/icon"
 import { CallDisabled02Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
@@ -113,6 +115,15 @@ export const ConversationBar = React.forwardRef<
     return stream
   }, [])
 
+  const stopMicStream = React.useCallback(() => {
+    const stream = mediaStreamRef.current
+    if (!stream) return
+    // Null the ref first: a second call while the tracks are stopping must not
+    // hand the same dead stream back out of `getMicStream`.
+    mediaStreamRef.current = null
+    stream.getTracks().forEach((t) => t.stop())
+  }, [])
+
   const startConversation = React.useCallback(async () => {
     try {
       await getMicStream()
@@ -125,19 +136,18 @@ export const ConversationBar = React.forwardRef<
       if (!agentId) throw new Error("No agentId and no getConversationToken")
       startSession({ agentId, connectionType: "webrtc" })
     } catch (error) {
+      // The status never left "disconnected", so the effect below will not
+      // fire on this path — release the stream here.
+      stopMicStream()
       console.error("Error starting conversation:", error)
       onStartError?.(error)
     }
-  }, [getMicStream, agentId, getConversationToken, startSession, onStartError])
+  }, [getMicStream, stopMicStream, agentId, getConversationToken, startSession, onStartError])
 
   const handleEndSession = React.useCallback(() => {
     endSession()
-
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => t.stop())
-      mediaStreamRef.current = null
-    }
-  }, [endSession])
+    stopMicStream()
+  }, [endSession, stopMicStream])
 
   const toggleMute = React.useCallback(() => {
     setMuted(!isMuted)
@@ -182,13 +192,26 @@ export const ConversationBar = React.forwardRef<
     [handleSendText]
   )
 
+  // The pre-flight stream is never handed to the SDK — it exists so a denied
+  // microphone fails before `startSession` — but it is held for the length of
+  // the call because Firefox drops a non-remembered permission as soon as the
+  // last track stops, which would make the SDK's own track re-prompt. That put
+  // teardown entirely on the end-call button, and a call can end without that
+  // button ever being pressed: the agent hangs up, the session times out, the
+  // transport errors. Each of those left the stream live and the browser's
+  // microphone indicator lit long after the call was over. Tie the stream's
+  // lifetime to the session status instead, so whoever ends the call releases
+  // the microphone.
+  React.useEffect(() => {
+    if (status === "connected" || status === "connecting") return
+    stopMicStream()
+  }, [status, stopMicStream])
+
   React.useEffect(() => {
     return () => {
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((t) => t.stop())
-      }
+      stopMicStream()
     }
-  }, [])
+  }, [stopMicStream])
 
   return (
     <div
@@ -317,6 +340,7 @@ export const ConversationBar = React.forwardRef<
           >
             <div className="relative px-2 pt-2 pb-2">
               <Textarea
+                aria-label="Enter your message"
                 value={textInput}
                 onChange={handleTextChange}
                 onKeyDown={handleKeyDown}

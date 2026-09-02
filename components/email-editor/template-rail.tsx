@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   Delete02Icon,

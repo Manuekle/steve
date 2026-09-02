@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { getCredential } from "./credentials";
 import { getGoogleToken } from "./google-auth";
 
@@ -11,20 +12,43 @@ export type CalendarSlot = {
 export type CalendarEvent = {
   readonly event_id: string;
   readonly link: string;
+  /** Set when the event got a Google Meet conference — see `bookCalendarEvent`. */
+  readonly meetLink?: string;
+};
+
+export type UpcomingEvent = {
+  readonly id: string;
+  readonly summary: string;
+  /** ISO datetime, or just a date for an all-day event. */
+  readonly start: string;
+  readonly end: string;
+  readonly allDay: boolean;
+  readonly link?: string;
+  readonly meetLink?: string;
+  readonly attendees: readonly string[];
 };
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar";
 
-async function getCalendarToken(): Promise<{ token: string; calendarId: string }> {
+/** `null` means neither a connected Google account nor a service account is
+ *  configured — the caller decides whether that's a thrown error (the agent
+ *  tool) or a "connect Google" empty state (the Calendar page). */
+async function getCalendarTokenOrNull(): Promise<{ token: string; calendarId: string } | null> {
   const token = await getGoogleToken(CALENDAR_SCOPE);
-  if (!token) {
-    throw new Error("Connect a Google account, or set GOOGLE_SERVICE_ACCOUNT_JSON.");
-  }
+  if (!token) return null;
   // A service account has no calendar of its own, so that setup has to name
   // one. A connected account does: "primary" is the person's own calendar,
   // which is what they meant by connecting it.
   const calendarId = (await getCredential("GOOGLE_CALENDAR_ID")) ?? "primary";
   return { token, calendarId };
+}
+
+async function getCalendarToken(): Promise<{ token: string; calendarId: string }> {
+  const result = await getCalendarTokenOrNull();
+  if (!result) {
+    throw new Error("Connect a Google account, or set GOOGLE_SERVICE_ACCOUNT_JSON.");
+  }
+  return result;
 }
 
 /**
@@ -99,7 +123,10 @@ export async function checkCalendarSlots(opts: {
 
 /**
  * Book a calendar event.
- * Creates a new event in the specified calendar.
+ * Creates a new event in the specified calendar, with a Google Meet
+ * conference by default — `conferenceDataVersion=1` is what makes the API
+ * honor `conferenceData` at all; without it Google silently drops the
+ * request and the event books with no meeting link.
  */
 export async function bookCalendarEvent(opts: {
   readonly start: string;
@@ -107,6 +134,7 @@ export async function bookCalendarEvent(opts: {
   readonly summary: string;
   readonly description?: string;
   readonly contactEmail?: string;
+  readonly withMeet?: boolean;
 }): Promise<CalendarEvent> {
   const { token, calendarId } = await getCalendarToken();
 
@@ -124,7 +152,17 @@ export async function bookCalendarEvent(opts: {
     event.attendees = [{ email: opts.contactEmail }];
   }
 
-  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
+  const withMeet = opts.withMeet ?? true;
+  if (withMeet) {
+    event.conferenceData = {
+      createRequest: {
+        requestId: randomUUID(),
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    };
+  }
+
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events${withMeet ? "?conferenceDataVersion=1" : ""}`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -140,10 +178,78 @@ export async function bookCalendarEvent(opts: {
     throw new Error(`Calendar API ${response.status}: ${await response.text()}`);
   }
 
-  const created = (await response.json()) as { id?: string; htmlLink?: string };
+  const created = (await response.json()) as { id?: string; htmlLink?: string; hangoutLink?: string };
 
   return {
     event_id: created.id ?? "",
     link: created.htmlLink ?? "",
+    meetLink: created.hangoutLink,
   };
+}
+
+/**
+ * Events on the calendar between `start` and `end`, for the Calendar page —
+ * a read-only view of what `calendar`'s `book_event` action (and anyone
+ * booking straight in Google Calendar) has put there. `null` means no Google
+ * identity is configured at all; an empty array means the calendar is just
+ * clear for that range.
+ */
+export async function listUpcomingEvents(opts: {
+  readonly start: string;
+  readonly end: string;
+  readonly maxResults?: number;
+}): Promise<UpcomingEvent[] | null> {
+  const auth = await getCalendarTokenOrNull();
+  if (!auth) return null;
+  const { token, calendarId } = auth;
+
+  const params = new URLSearchParams({
+    timeMin: opts.start,
+    timeMax: opts.end,
+    singleEvents: "true",
+    orderBy: "startTime",
+    maxResults: String(opts.maxResults ?? 50),
+  });
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Calendar API ${response.status}: ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as {
+    items?: Array<{
+      id?: string;
+      summary?: string;
+      htmlLink?: string;
+      hangoutLink?: string;
+      status?: string;
+      start?: { dateTime?: string; date?: string };
+      end?: { dateTime?: string; date?: string };
+      attendees?: Array<{ email?: string }>;
+    }>;
+  };
+
+  return (data.items ?? [])
+    .filter((event) => event.status !== "cancelled" && (event.start?.dateTime || event.start?.date))
+    .map((event) => {
+      const allDay = Boolean(event.start?.date && !event.start?.dateTime);
+      return {
+        id: event.id ?? "",
+        // Empty, not a placeholder sentence: the page picks the "(untitled)"
+        // wording in whatever language is active.
+        summary: event.summary ?? "",
+        start: (event.start?.dateTime ?? event.start?.date) as string,
+        end: (event.end?.dateTime ?? event.end?.date) as string,
+        allDay,
+        link: event.htmlLink,
+        meetLink: event.hangoutLink,
+        attendees: (event.attendees ?? []).map((a) => a.email).filter((email): email is string => Boolean(email)),
+      };
+    });
 }

@@ -5,19 +5,22 @@ import {
   sendResendEmail,
   type EmailSendResult,
 } from "./resend";
+import { isGmailConfigured, sendGmailEmail } from "./gmail";
 import { renderTemplateById, TemplateRenderError, type TemplateVariables } from "./email-render";
 import { getTemplateMeta, renderSubject } from "./email-templates";
 
 /**
  * The one way this app sends an email.
  *
- * Two providers, one order: Resend when it has a key, SMTP otherwise. Callers
- * — the automation runner, the editor's test send — say what to send, never
- * which provider sends it, so configuring Resend switches every email over
- * without touching a call site.
+ * Three providers, one order: Resend when it has a key (a deliberate,
+ * verified sender), the connected Google account's own Gmail next (zero
+ * setup beyond connecting it — see lib/gmail.ts), SMTP as the last resort.
+ * Callers — the automation runner, the editor's test send — say what to
+ * send, never which provider sends it, so connecting Google or configuring
+ * Resend switches every email over without touching a call site.
  */
 
-export type SentVia = "resend" | "smtp";
+export type SentVia = "resend" | "gmail" | "smtp";
 
 export type AppEmailResult = EmailSendResult & {
   /** Which provider actually took it, for the line the UI shows afterwards. */
@@ -44,6 +47,21 @@ export async function sendAppEmail(options: AppEmailOptions): Promise<AppEmailRe
       replyTo: options.replyTo,
     });
     return { ...result, via: "resend" };
+  }
+
+  if (await isGmailConfigured()) {
+    const result = await sendGmailEmail({
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+      replyTo: options.replyTo,
+    });
+    // A connected token existing doesn't prove it actually carries the
+    // gmail.send grant — an account connected before that scope was added
+    // to Google's card, or one that denied it, has a token but no send
+    // access. Falling through to SMTP beats returning a failure outright.
+    if (result.success) return { ...result, via: "gmail" };
   }
 
   // SMTP wants a text body, so an HTML-only email falls back to its tags

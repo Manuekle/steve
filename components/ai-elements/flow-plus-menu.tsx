@@ -1,7 +1,7 @@
 "use client";
 
 import { Liquid } from "liquid-gooey";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

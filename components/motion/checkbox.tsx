@@ -44,6 +44,9 @@ export function Checkbox({
         id={id}
         type="button"
         role="checkbox"
+        // Checked/unchecked is a switch, so it gets the switch cue instead of
+        // the generic press the provider falls back to.
+        data-cuelume-toggle
         aria-checked={indeterminate ? "mixed" : checked}
         aria-label={ariaLabel}
         aria-describedby={ariaDescribedBy}

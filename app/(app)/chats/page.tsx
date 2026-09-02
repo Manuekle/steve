@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { PinIcon, Delete01Icon, MessageCircleIcon } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -86,7 +86,6 @@ export default function ChatsPage() {
     { id: "all", label: t("chats.filterAll") },
     { id: "web", label: t("chats.filterWeb") },
     { id: "whatsapp", label: t("chats.filterWhatsApp") },
-    { id: "messenger", label: t("chats.filterMessenger") },
     { id: "instagram", label: t("chats.filterInstagram") },
   ];
 

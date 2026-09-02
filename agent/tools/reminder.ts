@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { setReminder, listRemindersForContact, deleteReminderById } from "../../lib/reminder";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 // Eve tool for managing contact reminders.
 
@@ -22,7 +23,8 @@ export default defineTool({
     count: z.number().optional(),
     message: z.string(),
   }),
-  async execute(input) {
+  async execute(input, ctx) {
+    await assertToolAllowed(ctx.session.id, "reminder");
     if (input.action === "set") {
       if (!input.contact_id || !input.datetime || !input.message) {
         return { success: false, message: "contact_id, datetime, and message are required." };

@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   ArrowRight02Icon,
   CheckmarkCircle02Icon,
@@ -10,7 +10,7 @@ import {
   ZapIcon,
 } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -143,27 +143,32 @@ export default function OnboardingPage() {
         <div className="mt-8 flex flex-col gap-5 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft),var(--shadow-inset)] sm:p-7">
           {step === 1 ? (
             <>
-              <Field label={t("onboarding.language")}>
-                {/* Applied on click, not on submit. A language picker that
-                    waits until the end of a form is a language picker you
-                    cannot tell you got right. */}
-                <div className="grid grid-cols-2 gap-2">
-                  {(["es", "en"] as const).map((option) => (
-                    <Choice
-                      key={option}
-                      onClick={() => setLocale(option)}
-                      selected={locale === option}
-                    >
-                      {option === "es" ? "Español" : "English"}
-                    </Choice>
-                  ))}
-                </div>
+              {/* Applied on click, not on submit. A language picker that
+                  waits until the end of a form is a language picker you
+                  cannot tell you got right. */}
+              <Field group label={t("onboarding.language")}>
+                {({ labelId }) => (
+                  <div aria-labelledby={labelId} className="grid grid-cols-2 gap-2" role="group">
+                    {(["es", "en"] as const).map((option) => (
+                      <Choice
+                        key={option}
+                        onClick={() => setLocale(option)}
+                        selected={locale === option}
+                      >
+                        {option === "es" ? "Español" : "English"}
+                      </Choice>
+                    ))}
+                  </div>
+                )}
               </Field>
 
               <Field hint={t("onboarding.phoneHint")} label={t("onboarding.phone")}>
+                {({ controlId, describedBy }) => (
                 <div className="flex gap-2">
+                  {/* Two controls, one label: the number owns it, and the
+                      country code carries its own name instead of stealing it. */}
                   <Select onValueChange={setCountryIso} value={countryIso}>
-                    <SelectTrigger className="w-[9rem] shrink-0">
+                    <SelectTrigger aria-label={t("common.country")} className="w-[9rem] shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -175,6 +180,8 @@ export default function OnboardingPage() {
                     </SelectContent>
                   </Select>
                   <Input
+                    aria-describedby={describedBy}
+                    id={controlId}
                     inputMode="tel"
                     onChange={(event) => setPhone(event.target.value)}
                     placeholder="11 5555 5555"
@@ -182,6 +189,7 @@ export default function OnboardingPage() {
                     className="flex-1"
                   />
                 </div>
+                )}
               </Field>
             </>
           ) : null}
@@ -189,16 +197,23 @@ export default function OnboardingPage() {
           {step === 2 ? (
             <>
               <Field label={t("onboarding.business")}>
-                <Input
-                  autoFocus
-                  onChange={(event) => setBusinessName(event.target.value)}
-                  value={businessName}
-                />
+                {({ controlId }) => (
+                  <Input
+                    autoFocus
+                    id={controlId}
+                    onChange={(event) => setBusinessName(event.target.value)}
+                    value={businessName}
+                  />
+                )}
               </Field>
 
               <Field label={t("onboarding.industry")}>
+                {({ controlId, labelId }) => (
                 <Select onValueChange={setIndustry} value={industry}>
-                  <SelectTrigger className="w-full">
+                  {/* Both ids: the label names it, the trigger's own text says
+                      what is currently picked. Naming it with the label alone
+                      would drop the selected value from the announcement. */}
+                  <SelectTrigger aria-labelledby={`${labelId} ${controlId}`} className="w-full" id={controlId}>
                     <SelectValue placeholder={t("onboarding.choose")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -209,25 +224,34 @@ export default function OnboardingPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                )}
               </Field>
 
-              <Field label={t("onboarding.volume")}>
-                <div className="flex flex-wrap gap-2">
-                  {VOLUMES.map((value) => (
-                    <Choice
-                      key={value}
-                      onClick={() => setContactVolume(value)}
-                      selected={contactVolume === value}
-                    >
-                      {value}
-                    </Choice>
-                  ))}
-                </div>
+              <Field group label={t("onboarding.volume")}>
+                {({ labelId }) => (
+                  <div aria-labelledby={labelId} className="flex flex-wrap gap-2" role="group">
+                    {VOLUMES.map((value) => (
+                      <Choice
+                        key={value}
+                        onClick={() => setContactVolume(value)}
+                        selected={contactVolume === value}
+                      >
+                        {value}
+                      </Choice>
+                    ))}
+                  </div>
+                )}
               </Field>
 
               <Field hint={t("onboarding.crmHint")} label={t("onboarding.crm")}>
+                {({ controlId, describedBy, labelId }) => (
                 <Select onValueChange={setCrm} value={crm}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    aria-describedby={describedBy}
+                    aria-labelledby={`${labelId} ${controlId}`}
+                    className="w-full"
+                    id={controlId}
+                  >
                     <SelectValue placeholder={t("onboarding.choose")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -238,13 +262,15 @@ export default function OnboardingPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                )}
               </Field>
             </>
           ) : null}
 
           {step === 3 ? (
-            <Field hint={t("onboarding.goalsHint")} label={t("onboarding.goals")}>
-              <div className="flex flex-col gap-2">
+            <Field group hint={t("onboarding.goalsHint")} label={t("onboarding.goals")}>
+              {({ labelId }) => (
+              <div aria-labelledby={labelId} className="flex flex-col gap-2" role="group">
                 {GOALS.map((goal) => (
                   <Choice
                     className="justify-start text-left"
@@ -262,6 +288,7 @@ export default function OnboardingPage() {
                   </Choice>
                 ))}
               </div>
+              )}
             </Field>
           ) : null}
 
@@ -305,20 +332,63 @@ const GOAL_ICONS: Record<string, IconSvgElement> = {
   knowledge: LibraryIcon,
 };
 
+/**
+ * A labelled field.
+ *
+ * The label used to be a `<span>`, which meant every control on this screen —
+ * the first one anybody sees after paying — had no accessible name at all. A
+ * screen reader announced "edit, blank", and clicking the label focused
+ * nothing.
+ *
+ * One `htmlFor` could not fix it, because the four shapes here need different
+ * wiring: a native `<Input>` takes `id`; a Radix `<Select>` is a button, so its
+ * trigger takes `aria-labelledby`; a row of `Choice` buttons is a group, named
+ * by `aria-labelledby` on the group; and the phone row is a Select and an Input
+ * side by side, where only one of them can own the label. So the ids are handed
+ * to the caller instead of guessed at.
+ */
 function Field({
   children,
+  group = false,
   hint,
   label,
 }: {
-  readonly children: React.ReactNode;
+  readonly children: (ids: {
+    readonly controlId: string;
+    readonly describedBy: string | undefined;
+    readonly labelId: string;
+  }) => React.ReactNode;
+  /** True when the children are a set of controls rather than one. A `<label
+   *  for>` may only point at a labelable element, and a row of buttons has no
+   *  single one to point at — so the label becomes a plain span and the caller
+   *  names its own `role="group"` with `aria-labelledby={labelId}`. */
+  readonly group?: boolean;
   readonly hint?: string;
   readonly label: string;
 }) {
+  const base = useId();
+  const controlId = `${base}-control`;
+  const labelId = `${base}-label`;
+  const hintId = `${base}-hint`;
+  const ids = { controlId, describedBy: hint ? hintId : undefined, labelId };
+
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="font-medium text-sm">{label}</span>
-      {children}
-      {hint ? <span className="text-muted-foreground text-xs">{hint}</span> : null}
+      {group ? (
+        <span className="font-medium text-sm" id={labelId}>
+          {label}
+        </span>
+      ) : (
+        <label className="font-medium text-sm" htmlFor={controlId} id={labelId}>
+          {label}
+        </label>
+      )}
+      {children(ids)}
+      {hint ? (
+        <span className="text-muted-foreground text-xs" id={hintId}>
+          {hint}
+        </span>
+      ) : null}
     </div>
   );
 }

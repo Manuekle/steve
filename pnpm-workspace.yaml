@@ -5,9 +5,46 @@ minimumReleaseAgeExclude:
   - "@ai-sdk/openai"
   - workflow
   - "@workflow/world-postgres"
-overrides:
-  "postcss@<8.5.10": "8.5.10"
 onlyBuiltDependencies:
   - "@swc/core"
   - esbuild
   - sharp
+overrides:
+  # GHSA-r28c-9q8g-f849: path traversal via sourceMappingURL. Patched 8.5.18;
+  # this pins the current patch. The old floor here was 8.5.10, still vulnerable.
+  
+  # brace-expansion, both live majors, each with its own advisories.
+  # 2.1.1 under minimatch@5/@9; 5.0.6 under minimatch@10, via
+  # @workflow/world-postgres > @vercel/queue. The 5.x advisories only surfaced
+  # once the 2.x ones were resolved, so both lines need pinning — a single
+  # range cannot span them without forcing minimatch@5 onto a major it does
+  # not accept.
+  "brace-expansion@>=2.0.0 <2.1.2": "2.1.4"
+  "brace-expansion@>=3.0.0 <5.0.9": "5.0.9"
+
+  # js-yaml 4.2.0 under cosmiconfig.
+  "js-yaml@<4.3.0": "4.3.2"
+
+  # The rest are transitive: the advisories land on packages this app never
+  # names, pulled in by dependencies the README pins as a compatibility set
+  # (eve / ai / workflow move together, so bumping the parent is not an
+  # option). Overrides are the only lever. Ranges are deliberately narrow —
+  # each one lifts exactly the vulnerable window and leaves other majors of
+  # the same package alone.
+
+  # GHSA-2v37-7h3g-55p8. nanoid resolves three ways here: 5.1.16 direct,
+  # 5.1.6 under @workflow/core, and 3.3.18 under postcss. Only the middle one
+  # is vulnerable — 3.3.18 is already the patched 3.x — so this must not be a
+  # bare "nanoid" override, which would drag postcss's 3.x to 5 and break it.
+  "nanoid@>=5.0.0 <5.1.16": "5.1.16"
+  "postcss@<8.5.26": "8.5.26"
+
+  # sharp 0.34.5 under next. 0.35 is a normal release line, but this is the
+  # one override that touches a native binary — if image optimization
+  # misbehaves, look here first.
+  "sharp@<0.35.0": "0.35.4"
+
+  # undici 7.28.0 under @vercel/sandbox and the workflow world packages.
+  "undici@<7.29.0": "7.29.0"
+patchedDependencies:
+  '@elevenlabs/client@1.23.0': patches/@elevenlabs__client@1.23.0.patch

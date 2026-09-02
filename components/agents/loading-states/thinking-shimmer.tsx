@@ -19,7 +19,7 @@ export function ThinkingShimmer({
     <TextShimmer
       as="span"
       duration={duration}
-      className={cn("font-medium", className)}
+      className={cn("font-medium text-sm", className)}
     >
       {children}
     </TextShimmer>

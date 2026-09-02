@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { upsertChat, upsertContact } from "../../lib/business-store";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
@@ -16,6 +17,7 @@ export default defineTool({
     contactId: z.string(),
   }),
   async execute({ reason, message }, ctx) {
+    await assertToolAllowed(ctx.session.id, "transfer_human");
     const lastMessage = message ?? reason ?? "Transferred to a human.";
     const contact = await upsertContact({
       sessionId: ctx.session.id,

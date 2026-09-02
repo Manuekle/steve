@@ -2,7 +2,7 @@
 # Requires: PowerShell 5.1+, Docker Desktop, WinGet or manual Node.js install.
 #
 # Usage:
-#   irm https://raw.githubusercontent.com/your-org/steve/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/Manuekle/steve/main/install.ps1 | iex
 #   or: powershell -ExecutionPolicy Bypass -File install.ps1
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ Write-Info "Checking .env..."
 if (-not (Test-Path .env)) {
     if (Test-Path .env.example) {
         Copy-Item .env.example .env
-        Write-Warn "Created .env from template. Edit it with your API keys:"
+        Write-Warn "Created .env from template. Set a database password and a route password in it (API keys go in Settings, not here):"
         Write-Host ""
         Write-Host "    notepad $installDir\.env" -ForegroundColor White
         Write-Host ""
@@ -151,7 +151,8 @@ Write-Host "══════════════════════�
 Write-Host "  Installation Complete!" -ForegroundColor Green
 Write-Host "═══════════════════════════════════════════" -ForegroundColor Green
 Write-Host ""
-Write-Host "  1. Edit .env with your API keys:" -ForegroundColor White
+Write-Host "  1. Edit .env with your database and route passwords:" -ForegroundColor White
+Write-Host "     (API keys go in Settings / Connections, not in .env)" -ForegroundColor White
 Write-Host "     notepad $installDir\.env" -ForegroundColor White
 Write-Host ""
 Write-Host "  2. Start the app:" -ForegroundColor White

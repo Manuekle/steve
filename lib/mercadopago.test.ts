@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { createPaymentPreference, isMercadoPagoCurrency } from "./mercadopago";
+import { createHmac } from "node:crypto";
+import {
+  createPaymentPreference,
+  getPayment,
+  isMercadoPagoCurrency,
+  verifyMercadoPagoSignature,
+} from "./mercadopago";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -115,5 +121,129 @@ describe("createPaymentPreference", () => {
         productName: "x",
       }),
     ).rejects.toThrow(/401: invalid access token/);
+  });
+});
+
+describe("external_reference", () => {
+  it("rides along on the preference, so the webhook can find the contact", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(ok({ init_point: "https://mp/checkout" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createPaymentPreference({
+      accessToken: "APP_USR-abc",
+      amount: "10",
+      currency: "ars",
+      productName: "x",
+      externalReference: "steve_deadbeef",
+    });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(init.body).external_reference).toBe("steve_deadbeef");
+  });
+
+  it("is omitted when there is none, rather than sent empty", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(ok({ init_point: "https://mp/checkout" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createPaymentPreference({
+      accessToken: "APP_USR-abc",
+      amount: "10",
+      currency: "ars",
+      productName: "x",
+    });
+
+    expect("external_reference" in JSON.parse(fetchMock.mock.calls[0][1].body)).toBe(false);
+  });
+});
+
+describe("getPayment", () => {
+  it("reads the payment back through the account's own token", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      ok({
+        id: 123,
+        status: "approved",
+        external_reference: "steve_deadbeef",
+        transaction_amount: 49.99,
+        payer: { email: "buyer@example.com" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const payment = await getPayment({ accessToken: "APP_USR-abc", paymentId: "123" });
+
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.mercadopago.com/v1/payments/123");
+    expect(payment).toEqual({
+      id: "123",
+      status: "approved",
+      externalReference: "steve_deadbeef",
+      amount: "49.99",
+      payerEmail: "buyer@example.com",
+    });
+  });
+});
+
+describe("verifyMercadoPagoSignature", () => {
+  const secret = "webhook-secret";
+  const sign = (manifest: string) => createHmac("sha256", secret).update(manifest).digest("hex");
+
+  function header(dataId: string, requestId: string, ts = Math.floor(Date.now() / 1000)) {
+    const v1 = sign(`id:${dataId};request-id:${requestId};ts:${ts};`);
+    return `ts=${ts},v1=${v1}`;
+  }
+
+  it("accepts a signature over the documented manifest", () => {
+    expect(
+      verifyMercadoPagoSignature({
+        signatureHeader: header("123", "req-1"),
+        requestId: "req-1",
+        dataId: "123",
+        secret,
+      }),
+    ).toBe(true);
+  });
+
+  it("lowercases the id, the way Mercado Pago's own examples do", () => {
+    expect(
+      verifyMercadoPagoSignature({
+        signatureHeader: header("abc", "req-1"),
+        requestId: "req-1",
+        dataId: "ABC",
+        secret,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects a tampered id, a wrong secret, and a missing header", () => {
+    expect(
+      verifyMercadoPagoSignature({
+        signatureHeader: header("123", "req-1"),
+        requestId: "req-1",
+        dataId: "456",
+        secret,
+      }),
+    ).toBe(false);
+    expect(
+      verifyMercadoPagoSignature({
+        signatureHeader: header("123", "req-1"),
+        requestId: "req-1",
+        dataId: "123",
+        secret: "other-secret",
+      }),
+    ).toBe(false);
+    expect(
+      verifyMercadoPagoSignature({ signatureHeader: null, requestId: "r", dataId: "123", secret }),
+    ).toBe(false);
+  });
+
+  it("rejects a replay from outside the tolerance window", () => {
+    const old = Math.floor(Date.now() / 1000) - 3600;
+    expect(
+      verifyMercadoPagoSignature({
+        signatureHeader: header("123", "req-1", old),
+        requestId: "req-1",
+        dataId: "123",
+        secret,
+      }),
+    ).toBe(false);
   });
 });

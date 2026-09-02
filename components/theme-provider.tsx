@@ -41,6 +41,12 @@ export function ThemeProvider({ children }: { readonly children: ReactNode }) {
     const root = document.documentElement;
     root.classList.toggle("dark", next === "dark");
     root.classList.toggle("light", next === "light");
+    // The inline script in layout.tsx writes `color-scheme` as an INLINE
+    // style, which outranks the `:root` / `:root.dark` rules in globals.css
+    // forever. Toggling only the class therefore left the UA-painted parts —
+    // scrollbars, form controls, the overscroll canvas — on the theme the
+    // page loaded with until a refresh. Rewrite the same inline property.
+    root.style.colorScheme = next;
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {

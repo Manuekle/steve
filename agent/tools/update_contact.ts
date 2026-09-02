@@ -6,6 +6,7 @@ import {
   getContactBySession,
   normalizePhone,
 } from "../../lib/business-store";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
@@ -50,7 +51,8 @@ export default defineTool({
     name: z.string().optional(),
     error: z.string().optional(),
   }),
-  async execute(input) {
+  async execute(input, ctx) {
+    await assertToolAllowed(ctx.session.id, "update_contact");
     // Resolve the contact to update.
     let contactId = input.contactId;
 

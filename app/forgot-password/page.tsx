@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";

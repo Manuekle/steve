@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { VolumeHighIcon, VolumeOffIcon } from "@hugeicons/core-free-icons";
 import { useSound } from "./sound-provider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -27,6 +27,10 @@ export function SoundToggle({
         <button
           type="button"
           onClick={() => setEnabled(!enabled)}
+          // The only control that opts out of the default press: unmuting
+          // already answers with `success`, and muting should be the one click
+          // in the app that is allowed to make no noise at all.
+          data-cuelume-silent
           aria-pressed={enabled}
           aria-label={t(labelKey)}
           className={cn(

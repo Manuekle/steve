@@ -2,7 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   UserIcon,
   CheckIcon,
@@ -20,7 +20,7 @@ import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Card } from "../../_components/dashboard-card";
 import { ChannelIcon } from "../../_components/channel-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Skeleton } from "@/components/ai-elements/skeleton";
+import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -39,6 +39,46 @@ import { usePolling } from "@/lib/use-polling";
 // Validation patterns
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[\d\s\-()]{7,20}$/;
+
+/** Skeleton for the Inbox page — header + search, then a list of contact rows. */
+function InboxSkeleton() {
+  return (
+    <div className="space-y-6">
+      <header className="flex items-center justify-between gap-4">
+        <div className="space-y-2">
+          <SkeletonBar className="h-7 w-24" />
+          <SkeletonBar className="h-4 w-64" />
+        </div>
+        <div className="flex items-center gap-2">
+          <SkeletonBar className="h-9 w-9 rounded-lg sm:w-24" />
+          <SkeletonBar className="h-9 w-9 rounded-lg sm:w-40" />
+        </div>
+      </header>
+      <SkeletonBar className="h-9 w-full rounded-lg" />
+      <div className="flex items-center gap-2 px-1">
+        <SkeletonBar className="size-4 rounded" />
+        <SkeletonBar className="h-3 w-20" />
+      </div>
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-soft)]"
+          >
+            <SkeletonBar className="size-4 shrink-0 rounded" />
+            <SkeletonBar className="size-10 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkeletonBar className="h-4 w-40" />
+              <SkeletonBar className="h-3 w-64" />
+            </div>
+            <SkeletonBar className="hidden h-3 w-12 sm:block" />
+            <SkeletonBar className="h-8 w-20 rounded-lg" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function InboxPage() {
   const t = useT();
@@ -75,6 +115,9 @@ export default function InboxPage() {
   const [shakingFields, setShakingFields] = useState<Set<string>>(new Set());
   const shakeTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
+  // No arrival cue here: the shell polls the same queue on every route and
+  // owns the `chime`. Ringing it again on the one page you could already see
+  // the new row on would just be the same bell twice.
   const load = useCallback(async () => {
     const result = await fetchJson<{ contacts?: Contact[] }>("/api/contacts?limit=200", t);
     setIsLoading(false);
@@ -320,7 +363,7 @@ export default function InboxPage() {
 
   return (
     <PageContainer maxWidth="max-w-6xl" pattern="grid">
-      <Skeleton className="min-h-[400px]" isLoading={isLoading} skeleton={<div className="h-64 rounded-xl bg-muted" />}>
+      <Skeleton className="min-h-[400px]" isLoading={isLoading} skeleton={<InboxSkeleton />}>
         <div className="content-enter">
           <ErrorBanner
             className="mb-6"
@@ -374,6 +417,7 @@ export default function InboxPage() {
             <div className="relative mb-4">
               <HugeiconsIcon icon={SearchIcon} size={16} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
+                aria-label={t("inbox.search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("inbox.search")}
@@ -417,7 +461,8 @@ export default function InboxPage() {
                         <span className="font-medium">{t("inbox.phone")}</span>
                         <div className="flex gap-2">
                           <Select onValueChange={setNewPhoneIso} value={newPhoneIso}>
-                            <SelectTrigger className="w-[4.5rem] shrink-0 justify-center px-2">
+                            <SelectTrigger
+                              aria-label={t("inbox.phone")} className="w-[4.5rem] shrink-0 justify-center px-2">
                               <span className="flex items-center gap-2">
                                 {(() => {
                                   const selected = phoneCountries.find((c) => c.iso2 === newPhoneIso) ?? phoneCountries[0];
@@ -489,14 +534,14 @@ export default function InboxPage() {
                     <label className="block space-y-1.5 text-sm">
                       <span className="font-medium">{t("inbox.channel")}</span>
                       <Select value={newChannel} onValueChange={(v) => setNewChannel(v as ChannelId | "form")}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger
+                          aria-label={t("inbox.channel")} className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="form">{t("inbox.channelForm")}</SelectItem>
                           <SelectItem value="web">{t("inbox.channelWeb")}</SelectItem>
                           <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                          <SelectItem value="messenger">Messenger</SelectItem>
                         </SelectContent>
                       </Select>
                     </label>
@@ -670,7 +715,8 @@ export default function InboxPage() {
                             <label className="block space-y-1">
                               <span className="font-medium text-foreground">{t("inbox.status")}</span>
                               <Select value={editStatus} onValueChange={(v) => setEditStatus(v as ContactStatus)}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger
+                                  aria-label={t("inbox.status")} className="w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

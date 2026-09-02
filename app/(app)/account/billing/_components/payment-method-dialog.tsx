@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Loading03Icon, LockPasswordIcon, StripeIcon } from "@hugeicons/core-free-icons";
 import {
   Dialog,

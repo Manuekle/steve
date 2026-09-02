@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowDown01Icon,
   CheckIcon,
@@ -20,6 +20,7 @@ import {
 import { ProviderLogo } from "@/components/provider-logo";
 import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
 import { useI18n } from "@/lib/i18n/provider";
+import { useCredentialsChanged } from "@/lib/credentials-changed";
 import type { AiProvider } from "@/lib/model-catalog";
 import { cn } from "@/lib/utils";
 
@@ -87,6 +88,11 @@ export function useModelCatalog(provider?: string) {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  // A key saved in Settings or in the Connections dialog changes which models
+  // this can list — and it is never this component that saved it. Refetch on
+  // the broadcast instead of leaving a stale catalog until the next mount.
+  useCredentialsChanged(reload);
 
   return { data, loading, reload };
 }

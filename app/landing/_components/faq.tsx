@@ -31,7 +31,7 @@ export function Faq() {
       <Shell>
         <div className="grid gap-8 md:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] md:gap-16">
           <Reveal>
-            <FigureLabel>Fig 06</FigureLabel>
+            <FigureLabel>Fig 09</FigureLabel>
             <h2 className="mt-4 text-balance font-heading font-semibold font-cooper text-[clamp(2rem,4.4vw,3rem)] text-foreground leading-[1.02] tracking-[-0.03em]">
               {t("landing.faq.heading")}
             </h2>

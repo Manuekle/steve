@@ -19,6 +19,34 @@ import type { Agent, AgentVoice, VoiceCallTurn } from "./types";
 const DEFAULT_TTS_MODEL = "eleven_flash_v2_5" as const;
 const DEFAULT_LANGUAGE = "es";
 
+/**
+ * The reasoning model behind the voice, named rather than left to the
+ * platform's default.
+ *
+ * Leaving it unset is what produced the "this agent uses an outdated LLM"
+ * warning in the ElevenLabs console: the default is frozen at whatever was
+ * current the day the mirror was created, and the mirror outlives it. Naming
+ * it here means a re-sync moves every agent forward at once. Flash-class on
+ * purpose — a phone call is the one place where a slow first token is heard
+ * as a bad connection.
+ */
+const DEFAULT_LLM = "gemini-3.5-flash" as const;
+
+/**
+ * Guardrails, on by default.
+ *
+ * A voice agent reads a stranger's speech straight into a prompt, so
+ * "ignorá tus instrucciones y…" is an input this thing genuinely receives.
+ * ElevenLabs flags an agent without these as high severity, and it is right:
+ * the app creates these mirrors, so the app is what should be turning them
+ * on rather than leaving it as a checkbox nobody finds.
+ */
+const GUARDRAILS = {
+  version: "1",
+  promptInjection: { isEnabled: true },
+  focus: { isEnabled: true },
+} as const;
+
 /** Tag written on every mirror agent, so an account shared with other tools
  *  still shows which agents this app owns. */
 const OWNER_TAG = "steve";
@@ -90,14 +118,17 @@ export async function syncVoiceAgent(
     agent: {
       firstMessage: voice.firstMessage?.trim() || undefined,
       language: voice.language?.trim() || DEFAULT_LANGUAGE,
-      prompt: { prompt: buildPrompt(agent) },
+      prompt: { prompt: buildPrompt(agent), llm: DEFAULT_LLM },
     },
   };
+
+  const platformSettings = { guardrails: GUARDRAILS };
 
   if (voice.elevenlabsAgentId) {
     await el.conversationalAi.agents.update(voice.elevenlabsAgentId, {
       name: agent.name,
       conversationConfig,
+      platformSettings,
     });
     return { ...voice, syncedAt: new Date().toISOString() };
   }
@@ -106,6 +137,7 @@ export async function syncVoiceAgent(
     name: agent.name,
     tags: [OWNER_TAG],
     conversationConfig,
+    platformSettings,
   });
   return {
     ...voice,
@@ -285,6 +317,49 @@ export function normalizeTranscript(
       message: turn.message as string,
       timeInCallSecs: turn.time_in_call_secs ?? 0,
     }));
+}
+
+/**
+ * One conversation, read back from ElevenLabs.
+ *
+ * The post-call webhook is the push path and stays the one that works
+ * unattended — but it needs a public URL, which a laptop running `next dev`
+ * does not have, and it only ever fires *after* a call. Pulling covers both
+ * gaps: a transcript arrives on a localhost install with no tunnel, and a
+ * call that is still ringing or still talking has a status to show while it
+ * happens. Both paths write the same record; whichever arrives first wins and
+ * the other is a no-op.
+ */
+export type ConversationState = {
+  /** ElevenLabs' own vocabulary, passed through rather than reinterpreted. */
+  readonly status: "initiated" | "in-progress" | "processing" | "done" | "failed";
+  readonly transcript: VoiceCallTurn[];
+  readonly durationSecs?: number;
+  readonly startedAt?: string;
+  /** Why it ended, when it ended badly. Worth surfacing: the useful ones name
+   *  a Twilio problem the operator can actually go and fix. */
+  readonly terminationReason?: string;
+};
+
+export async function getConversation(conversationId: string): Promise<ConversationState> {
+  const el = await client();
+  const conversation = await el.conversationalAi.conversations.get(conversationId);
+  const metadata = conversation.metadata;
+  return {
+    status: conversation.status,
+    transcript: (conversation.transcript ?? [])
+      .filter((turn) => typeof turn.message === "string" && turn.message.trim().length > 0)
+      .map((turn) => ({
+        role: turn.role === "agent" ? ("agent" as const) : ("user" as const),
+        message: turn.message as string,
+        timeInCallSecs: turn.timeInCallSecs ?? 0,
+      })),
+    durationSecs: metadata?.callDurationSecs,
+    startedAt: metadata?.startTimeUnixSecs
+      ? new Date(metadata.startTimeUnixSecs * 1000).toISOString()
+      : undefined,
+    terminationReason: metadata?.terminationReason || metadata?.error?.reason || undefined,
+  };
 }
 
 /**

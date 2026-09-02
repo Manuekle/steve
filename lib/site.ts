@@ -12,13 +12,25 @@
 export const SITE_URL: string = (() => {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   if (configured) return configured.replace(/\/$/, "");
+  // The project's stable production domain. Preferred over VERCEL_URL, which
+  // is per-deployment (`<project>-<hash>-<scope>.vercel.app`) and therefore
+  // changes on every push: canonicals built from it would name a different
+  // host each deploy, and the sitemap would point at whichever preview
+  // happened to build it.
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  // Last Vercel-provided resort: right for a preview looking at itself, wrong
+  // for anything a crawler should remember.
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "http://localhost:3000";
 })();
 
 /** True once the origin has actually been configured for a real deployment. */
 export const SITE_URL_IS_CONFIGURED =
-  Boolean(process.env.NEXT_PUBLIC_SITE_URL) || Boolean(process.env.VERCEL_URL);
+  Boolean(process.env.NEXT_PUBLIC_SITE_URL) ||
+  Boolean(process.env.VERCEL_PROJECT_PRODUCTION_URL) ||
+  Boolean(process.env.VERCEL_URL);
 
 export const SITE_NAME = "steve";
 

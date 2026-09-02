@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { listAutomations } from "../../lib/business-store";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
@@ -22,7 +23,8 @@ export default defineTool({
       }),
     ),
   }),
-  async execute() {
+  async execute(_input, ctx) {
+    await assertToolAllowed(ctx.session.id, "list_automations");
     const list = await listAutomations();
     return {
       automations: list.map((a) => ({

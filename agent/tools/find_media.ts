@@ -2,6 +2,7 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { findMedia } from "../../lib/media-library";
 import { countAssets, listFolders } from "../../lib/media-store";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 // The lookup half of "¿tenés fotos de la mesa de roble?". Returns asset ids
 // that send_stored_media then pushes to the contact — searching and sending
@@ -43,7 +44,8 @@ export default defineTool({
       .optional(),
     message: z.string(),
   }),
-  async execute(input) {
+  async execute(input, ctx) {
+    await assertToolAllowed(ctx.session.id, "find_media");
     const matches = await findMedia(input.query, {
       limit: input.limit ?? 5,
       kind: input.kind,

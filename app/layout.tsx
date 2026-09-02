@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "steve — AI agent manager",
   description:
-    "A self-hosted AI agent manager for the Meta ecosystem — WhatsApp, Instagram, Messenger, and Meta Ads.",
+    "A self-hosted AI agent manager for the Meta ecosystem — WhatsApp, Instagram, and Meta Ads.",
 };
 
 /**

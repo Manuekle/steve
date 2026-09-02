@@ -36,7 +36,10 @@ app_user: "deploy"
 app_dir: "/opt/steve"
 eve_state_dir: "/home/{{ app_user }}/.local/state/steve"
 workflow_backup_dir: "/opt/steve-backups"
-app_repo: "git@github.com:vercel-labs/steve.git"
+# This repository. The default used to name the upstream this codebase came
+# from (vercel-labs/steve), so a deploy run against it silently shipped
+# upstream's code instead of this fork's.
+app_repo: "git@github.com:Manuekle/steve.git"
 # Branch, tag, or commit SHA to deploy. Override per-run with:
 #   ansible-playbook deploy.yml -e git_ref=<ref>
 git_ref: "origin/main"

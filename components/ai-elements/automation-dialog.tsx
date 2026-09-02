@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 import {
   DialogContent,
   DialogDescription,
@@ -33,7 +33,6 @@ const CHANNEL_OPTIONS: ReadonlyArray<{ value: ChannelId | "all"; labelKey: strin
   { value: "all", labelKey: "automations.channelAll" },
   { value: "web", labelKey: "chats.filterWeb" },
   { value: "whatsapp", labelKey: "chats.filterWhatsApp" },
-  { value: "messenger", labelKey: "chats.filterMessenger" },
   { value: "instagram", labelKey: "chats.filterInstagram" },
 ];
 
@@ -41,11 +40,17 @@ const CHANNEL_OPTIONS: ReadonlyArray<{ value: ChannelId | "all"; labelKey: strin
 function WebhookUrl({ id }: { readonly id: string }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
+  const labelId = `${useId()}-webhook-label`;
   const origin = typeof window === "undefined" ? "" : window.location.origin;
   const url = `${origin}/api/automations/${id}/webhook`;
   return (
-    <div className="space-y-1.5">
-      <span className="text-sm font-medium">{t("automations.webhookUrlLabel")}</span>
+    // Not a form field — a read-only value and a copy button. The heading was
+    // a bare span, so the button announced as "Copy" with nothing saying copy
+    // *what*. Naming the group gives it that context.
+    <div aria-labelledby={labelId} className="space-y-1.5" role="group">
+      <span className="text-sm font-medium" id={labelId}>
+        {t("automations.webhookUrlLabel")}
+      </span>
       <div className="flex items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-lg border border-border bg-muted/50 px-3 py-2 font-mono text-xs text-muted-foreground">
           {url}
@@ -94,6 +99,16 @@ export function AutomationDialog({
 }) {
   const t = useT();
   const isEditing = !!editing;
+  // The three controls below cannot be wrapped in a <label>: two are Radix
+  // Selects (a button, not a labelable element) and one is a grid of buttons.
+  // That is why they were bare spans — this gives them real names instead.
+  const base = useId();
+  const triggerLabelId = `${base}-trigger-label`;
+  const channelLabelId = `${base}-channel-label`;
+  const channelControlId = `${base}-channel`;
+  const agentLabelId = `${base}-agent-label`;
+  const agentControlId = `${base}-agent`;
+  const agentHelpId = `${base}-agent-help`;
   const [name, setName] = useState(editing?.name ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
   const [trigger, setTrigger] = useState<AutomationTrigger>(editing?.trigger ?? "keyword");
@@ -135,8 +150,16 @@ export function AutomationDialog({
   };
 
   return (
-    <DialogContent className="sm:max-w-lg flex flex-col max-h-[85vh] p-0 gap-0 overflow-hidden">
-      <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+    <DialogContent
+      className="sm:max-w-lg flex flex-col max-h-[85vh] p-0 gap-0 overflow-hidden"
+      // The padding lives on the sections, not on the dialog, so the default
+      // `top-4 right-4` measured the ✕ against a rail that is not there: it
+      // sat 3px above the title's centre line and 8px inside the 24px rail
+      // everything else in the dialog lines up on. 20px centres it on the
+      // title and lands the icon's edge on that rail.
+      closeClassName="top-5 right-5"
+    >
+      <DialogHeader className="px-6 pt-6 pb-4 pr-14 shrink-0">
         <DialogTitle>{isEditing ? t("automations.editTitle") : t("automations.createTitle")}</DialogTitle>
         <DialogDescription>
           {isEditing ? t("automations.editDescription") : t("automations.createDescription")}
@@ -162,8 +185,10 @@ export function AutomationDialog({
         </label>
 
         <div className="space-y-1.5">
-          <span className="text-sm font-medium">{t("automations.trigger")}</span>
-          <div className="grid grid-cols-2 gap-2">
+          <span className="text-sm font-medium" id={triggerLabelId}>
+            {t("automations.trigger")}
+          </span>
+          <div aria-labelledby={triggerLabelId} className="grid grid-cols-2 gap-2" role="group">
             {TRIGGER_OPTIONS.map((opt) => (
               <button
                 className={cn(
@@ -233,12 +258,20 @@ export function AutomationDialog({
         ) : null}
 
         <div className="space-y-1.5">
-          <span className="text-sm font-medium">{t("automations.channel")}</span>
+          <span className="text-sm font-medium" id={channelLabelId}>
+            {t("automations.channel")}
+          </span>
           <Select
             value={channel}
             onValueChange={(val) => setChannel(val as ChannelId | "all")}
           >
-            <SelectTrigger className="w-full">
+            {/* Both ids: the label names it, the trigger's own text says which
+                channel is picked. The label alone would drop the value. */}
+            <SelectTrigger
+              aria-labelledby={`${channelLabelId} ${channelControlId}`}
+              className="w-full"
+              id={channelControlId}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -252,12 +285,19 @@ export function AutomationDialog({
         </div>
 
         <div className="space-y-1.5">
-          <span className="text-sm font-medium">{t("automations.agent")}</span>
+          <span className="text-sm font-medium" id={agentLabelId}>
+            {t("automations.agent")}
+          </span>
           <Select
             value={agentId || "__default__"}
             onValueChange={(val) => setAgentId(val === "__default__" ? "" : val)}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger
+              aria-describedby={agentHelpId}
+              aria-labelledby={`${agentLabelId} ${agentControlId}`}
+              className="w-full"
+              id={agentControlId}
+            >
               <SelectValue placeholder={t("automations.agentPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
@@ -269,7 +309,9 @@ export function AutomationDialog({
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">{t("automations.agentHelp")}</p>
+          <p className="text-xs text-muted-foreground" id={agentHelpId}>
+            {t("automations.agentHelp")}
+          </p>
         </div>
       </form>
       <div className="px-6 py-4 border-t border-border shrink-0 bg-card">

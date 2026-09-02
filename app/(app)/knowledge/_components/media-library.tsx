@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AlertCircleIcon,
   Delete02Icon,
@@ -345,6 +345,7 @@ export function MediaLibrary({
 
       <div className="space-y-3">
         <Input
+          aria-label={t("knowledge.mediaBatchDescriptionPlaceholder")}
           value={batchDescription}
           onChange={(event) => setBatchDescription(event.target.value)}
           placeholder={t("knowledge.mediaBatchDescriptionPlaceholder")}
@@ -390,6 +391,7 @@ export function MediaLibrary({
                 className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
               />
               <Input
+                aria-label={t("knowledge.mediaFilterPlaceholder")}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t("knowledge.mediaFilterPlaceholder")}
@@ -486,7 +488,11 @@ function EditAssetDialog({
               <label className="text-xs font-medium text-muted-foreground">
                 {t("knowledge.mediaFieldName")}
               </label>
-              <Input value={name} onChange={(event) => setName(event.target.value)} />
+              <Input
+                aria-label={t("knowledge.mediaFieldName")}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
             </div>
           </div>
 
@@ -495,6 +501,7 @@ function EditAssetDialog({
               {t("knowledge.mediaFieldDescription")}
             </label>
             <Textarea
+              aria-label={t("knowledge.mediaFieldDescriptionPlaceholder")}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={3}
@@ -511,6 +518,7 @@ function EditAssetDialog({
                 {t("knowledge.mediaFieldTags")}
               </label>
               <Input
+                aria-label={t("knowledge.mediaFieldTagsPlaceholder")}
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}
                 placeholder={t("knowledge.mediaFieldTagsPlaceholder")}
@@ -521,7 +529,7 @@ function EditAssetDialog({
                 {t("knowledge.mediaFieldFolder")}
               </label>
               <Select value={folder} onValueChange={setFolder}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label={t("knowledge.mediaFieldFolder")} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

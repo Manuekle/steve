@@ -246,7 +246,8 @@ export function ChatsSkeleton() {
   );
 }
 
-/** Skeleton for the Automations page — header + list of automation cards. */
+/** Skeleton for the Automations page — header, stats bar, then a stacked list
+ *  of automation cards (the real list is single-column, not a grid). */
 export function AutomationsSkeleton() {
   return (
     <div className="space-y-6">
@@ -256,25 +257,45 @@ export function AutomationsSkeleton() {
           <SkeletonBar className="h-7 w-52" />
           <SkeletonBar className="h-4 w-64" />
         </div>
-        <SkeletonBar className="h-10 w-36" />
+        <SkeletonBar className="h-9 w-9 rounded-lg sm:w-28" />
       </div>
 
-      {/* Automation cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
+      {/* Stats bar — 3 KPI tiles */}
+      <div className="grid grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
+            <SkeletonBar className="h-7 w-10" />
+            <SkeletonBar className="mt-2 h-3 w-24" />
+            <SkeletonBar className="mt-4 h-1.5 w-full rounded-full" />
+            <div className="mt-4 flex items-center gap-2">
+              <SkeletonAvatar size="size-3.5" />
+              <SkeletonBar className="h-3 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Automation list — single column, matching the real list */}
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
             <div className="flex items-center gap-3 p-5">
-              <SkeletonAvatar />
-              <div className="flex-1 space-y-2">
-                <SkeletonBar className="h-4 w-32" />
-                <SkeletonBar className="h-3 w-48" />
+              <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <SkeletonBar className="h-4 w-40" />
+                <SkeletonBar className="h-3 w-56" />
               </div>
-              <SkeletonBar className="h-6 w-16 rounded-full" />
+              <div className="flex shrink-0 gap-2">
+                {Array.from({ length: 4 }).map((_, j) => (
+                  <SkeletonBar key={j} className="size-8 rounded-lg" />
+                ))}
+              </div>
             </div>
             <div className="h-px bg-border" />
-            <div className="space-y-3 p-5">
-              <SkeletonBar className="h-3 w-full" />
-              <SkeletonBar className="h-3 w-3/4" />
+            <div className="flex flex-wrap gap-4 px-5 py-3">
+              <SkeletonBar className="h-3 w-24" />
+              <SkeletonBar className="h-3 w-20" />
+              <SkeletonBar className="h-3 w-32" />
             </div>
           </div>
         ))}

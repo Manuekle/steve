@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCredentialsChanged } from "./credentials-changed";
 
 export type HealthStatus = "ok" | "degraded" | "down";
 
@@ -53,6 +54,11 @@ async function poll(): Promise<void> {
   }
 }
 
+/** Stable across renders, so the listener is added once per subscriber. */
+function refreshHealth(): void {
+  void poll();
+}
+
 /**
  * The instance's health, for the sidebar's status dot.
  *
@@ -77,6 +83,10 @@ export function useHealth(intervalMs = 30_000): { health: Health | null; reachab
       }
     };
   }, [intervalMs]);
+
+  // The dot's amber state is "no model key". Saving one should turn it green
+  // now, not up to half a minute later.
+  useCredentialsChanged(refreshHealth);
 
   return state;
 }

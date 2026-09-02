@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import type { CSSProperties, ReactNode } from "react";
 import { ChannelIcon } from "@/app/_components/channel-badge";
 import { StatusBadge } from "@/components/ui/status-badge";

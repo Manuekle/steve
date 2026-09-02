@@ -5,9 +5,32 @@ import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogOpenCue } from "@/components/ui/dialog";
 
-function AlertDialog({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+function AlertDialog({
+  open,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
+  // `warning`, not the plain dialog's `bloom`. Every confirm in this app is a
+  // destructive one — `ConfirmOptions` has no gentle variant, and the resolver
+  // documents `true` as "the destructive action" — so a falling two-note is
+  // more honest than the same welcoming swell a settings sheet gets.
+  //
+  // Same rule as the plain dialog otherwise: sound the arrival, not the exit.
+  // It matters more here, because every confirm is followed by the caller's
+  // own `droplet` for the delete it just authorised, and cueing the close too
+  // would fire that sound twice in a row.
+  const handleOpenChange = useDialogOpenCue(open, onOpenChange, "warning");
+
+  return (
+    <AlertDialogPrimitive.Root
+      data-slot="alert-dialog"
+      open={open}
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  );
 }
 
 function AlertDialogTrigger({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -280,7 +280,7 @@ export function PublicForm({ form }: { readonly form: PublicFormView | null }) {
                     value={phoneCountry[field.id] ?? countries[0]?.iso2 ?? "ar"}
                     onValueChange={(iso2) => setPhoneCountryFor(field.id, iso2)}
                   >
-                    <SelectTrigger className="w-[4.5rem] shrink-0 justify-center px-2">
+                    <SelectTrigger aria-label={t("common.country")} className="w-[4.5rem] shrink-0 justify-center px-2">
                       <span className="flex items-center gap-2">
                         {(() => {
                           const selectedIso = phoneCountry[field.id] ?? countries[0]?.iso2 ?? "ar";

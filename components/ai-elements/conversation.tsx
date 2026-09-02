@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "ai";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowDown02Icon, Download04Icon } from "@hugeicons/core-free-icons";
 import type { ComponentProps } from "react";
 import { useCallback } from "react";

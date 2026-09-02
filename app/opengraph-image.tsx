@@ -64,7 +64,7 @@ export default function OpengraphImage() {
               maxWidth: 820,
             }}
           >
-            WhatsApp, Instagram, Messenger y Meta Ads en una sola bandeja. Autoalojado, con tus claves.
+            WhatsApp, Instagram y Meta Ads en una sola bandeja. Autoalojado, con tus claves.
           </div>
         </div>
 

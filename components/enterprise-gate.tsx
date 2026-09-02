@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon, Certificate01Icon, CrownIcon } from "@hugeicons/core-free-icons";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";

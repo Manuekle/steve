@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   Delete02Icon,
@@ -202,6 +202,7 @@ export function FolderDialog({
               {t("knowledge.folderFieldName")}
             </label>
             <Input
+              aria-label={t("knowledge.folderFieldNamePlaceholder")}
               autoFocus
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -215,6 +216,7 @@ export function FolderDialog({
               {t("knowledge.folderFieldDescription")}
             </label>
             <Textarea
+              aria-label={t("knowledge.folderFieldDescriptionPlaceholder")}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={2}

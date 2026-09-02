@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  fetchJson,
   networkUiError,
   readApiError,
   translateApiError,
@@ -87,6 +88,39 @@ describe("uiErrorMessage", () => {
     const local = { messageKey: "knowledge.loadFailed" } as const;
     expect(uiErrorMessage(t, local)).toBe(dictionaries.es["knowledge.loadFailed"]);
     expect(uiErrorMessage(en, local)).toBe(dictionaries.en["knowledge.loadFailed"]);
+  });
+});
+
+describe("fetchJson", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("treats an error code in a 200 body as a failure, not a success payload", async () => {
+    // `not_configured` (and any other apiError code) can come back with a 2xx
+    // status — see lib/api-error.ts. A route whose success shape has none of
+    // the error body's fields (e.g. drive-sync's `imported`/`skipped`/`errors`
+    // vs. `{code, error, message}`) must not be handed to the caller as `ok:
+    // true`, or it reads undefined fields off an error payload and throws.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => json({ code: "not_configured", error: "not set up" }, 200)),
+    );
+    const result = await fetchJson<{ imported: number }>("/api/knowledge/drive-sync", t, {
+      method: "POST",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toEqual(
+        expect.objectContaining({ code: "not_configured" }),
+      );
+    }
+  });
+
+  it("passes through a real success payload", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ imported: 3 }, 200)));
+    const result = await fetchJson<{ imported: number }>("/api/knowledge/drive-sync", t);
+    expect(result).toEqual({ ok: true, data: { imported: 3 } });
   });
 });
 

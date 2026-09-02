@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   CheckIcon,
@@ -23,7 +23,7 @@ import type { ChannelId } from "@/lib/types";
 import { AppChrome, HeaderAction } from "./screen-chrome";
 
 /**
- * The inbox, as `app/inbox/page.tsx` renders it: the two header actions, the
+ * The inbox, as `app/(app)/inbox/page.tsx` renders it: the two header actions, the
  * search field, and one `Card` per contact — not rows inside a single divided
  * list. Lucía Romero starts expanded by default.
  *
@@ -83,12 +83,12 @@ function useContacts(t: (key: string) => string): readonly Contact[] {
       when: "11m",
     },
     {
-      channel: "messenger",
+      channel: "instagram",
       lastMessage: t("landing.demo.msg.diego"),
       name: "Diego Salas",
       notes: t("landing.demo.note.diego"),
       phone: "+54 9 11 2277-6630",
-      source: "messenger",
+      source: "instagram",
       status: "followup_due",
       when: "24m",
     },

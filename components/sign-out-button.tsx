@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Logout01Icon } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -44,6 +44,9 @@ export function SignOutButton({
             !showLabel && "px-1.5 py-1",
             className,
           )}
+          // A departure, not a switch: `droplet` is the cue that glides down
+          // and away, which is what leaving the app sounds like.
+          data-cuelume-toggle="droplet"
           disabled={busy}
           onClick={signOut}
           type="button"

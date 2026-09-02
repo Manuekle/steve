@@ -28,6 +28,16 @@ export type ChannelBreakdown = {
   readonly calls: number;
 };
 
+/** One day of spend. `day` is a `YYYY-MM-DD` calendar date in UTC, not a
+ *  timestamp — the series is a set of buckets, and a bucket with no calls is
+ *  still a day that happened, so the gaps are filled rather than dropped. */
+export type DailyUsage = {
+  readonly day: string;
+  readonly credits: number;
+  readonly providerCost: number;
+  readonly calls: number;
+};
+
 export type UsageSummary = {
   readonly totalCredits: number;
   readonly totalProviderCost: number;
@@ -36,17 +46,31 @@ export type UsageSummary = {
   readonly byProvider: readonly ProviderBreakdown[];
   readonly byAgent: readonly AgentBreakdown[];
   readonly byChannel: readonly ChannelBreakdown[];
+  /** The trailing `DAILY_WINDOW_DAYS` ending at `until`, oldest first. Bounded
+   *  independently of the summary's own range: the breakdowns want everything
+   *  ever, the trend wants a period a reader can actually compare across. */
+  readonly byDay: readonly DailyUsage[];
 };
+
+/** Two weeks: long enough to show a working rhythm, short enough that each day
+ *  is still a legible bar on a phone. */
+const DAILY_WINDOW_DAYS = 14;
 
 type Row = {
   readonly provider?: string;
   readonly agent_id?: string | null;
   readonly channel?: string | null;
   readonly billing_source?: string;
+  readonly day?: string;
   readonly credits: string;
   readonly provider_cost: string | null;
   readonly calls: string;
 };
+
+/** `YYYY-MM-DD` in UTC, matching what `date_trunc('day', …)` buckets by. */
+function dayKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
 
 function num(value: string | null | undefined): number {
   const parsed = Number(value ?? 0);
@@ -63,7 +87,13 @@ export async function getUsageSummary(
   const since = range.since ?? new Date(0);
   const until = range.until ?? new Date();
 
-  const [totals, byProvider, byAgent, byChannel] = await Promise.all([
+  // The trend's own window, floored to midnight so the oldest bucket is a
+  // whole day rather than a partial one that reads as a slow start.
+  const dailySince = new Date(until);
+  dailySince.setUTCHours(0, 0, 0, 0);
+  dailySince.setUTCDate(dailySince.getUTCDate() - (DAILY_WINDOW_DAYS - 1));
+
+  const [totals, byProvider, byAgent, byChannel, byDay] = await Promise.all([
     creditsQuery<{ credits: string; provider_cost: string | null; included_cost: string | null; byok_cost: string | null }>(
       `SELECT
          COALESCE(SUM(credits_used), 0) AS credits,
@@ -101,7 +131,33 @@ export async function getUsageSummary(
         ORDER BY provider_cost DESC`,
       [organizationId, since, until],
     ),
+    creditsQuery<Row>(
+      `SELECT to_char(date_trunc('day', created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
+              COALESCE(SUM(credits_used), 0) AS credits,
+              COALESCE(SUM(provider_cost), 0) AS provider_cost, COUNT(*) AS calls
+         FROM credits.ai_usage
+        WHERE organization_id = $1 AND created_at >= $2 AND created_at < $3
+        GROUP BY 1
+        ORDER BY 1`,
+      [organizationId, dailySince, until],
+    ),
   ]);
+
+  // Days the ledger has nothing for are absent from the result, not zero. A
+  // chart that drops them would compress a quiet week into a dense one.
+  const spendByDay = new Map(byDay.map((r) => [r.day ?? "", r]));
+  const days: DailyUsage[] = Array.from({ length: DAILY_WINDOW_DAYS }, (_, i) => {
+    const date = new Date(dailySince);
+    date.setUTCDate(date.getUTCDate() + i);
+    const key = dayKey(date);
+    const row = spendByDay.get(key);
+    return {
+      day: key,
+      credits: num(row?.credits),
+      providerCost: num(row?.provider_cost),
+      calls: num(row?.calls),
+    };
+  });
 
   const total = totals[0];
   return {
@@ -127,6 +183,7 @@ export async function getUsageSummary(
       providerCost: num(r.provider_cost),
       calls: num(r.calls),
     })),
+    byDay: days,
   };
 }
 

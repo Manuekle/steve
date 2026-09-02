@@ -8,7 +8,7 @@
 // need the exact same pill — a second hand-rolled version is how a design
 // system drifts.
 
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   TriangleAlertIcon,
   Loading03Icon,

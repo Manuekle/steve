@@ -103,3 +103,72 @@ export function featuresLost(from: CurrentPlan, to: PlanId): readonly string[] {
   const target = new Set(getPlan(to).featureKeys);
   return getPlan(from).featureKeys.filter((key) => !target.has(key));
 }
+
+// ── The marketing side of the same three plans ──────────────────────
+//
+// `/pricing` and the landing's pricing band quote figures, and until now each
+// held its own copy of them. Two hardcoded "$79"s is the pair that drifts:
+// one gets updated, the visitor reads the other, and the site contradicts
+// itself before anyone notices. Both read what follows, which in turn derives
+// from `PLANS` above — so the price a visitor is quoted and the price the
+// billing dialog charges cannot disagree either.
+
+/**
+ * The marketing pages key their cards by the i18n key of the plan's name on
+ * `/pricing`, which is a different string from the `plan.<id>.name` the
+ * in-app billing UI uses. This is the bridge between the two.
+ */
+export const PLAN_BY_PRICING_KEY: Record<string, PlanId> = {
+  "pricing.pro.name": "pro",
+  "pricing.managed.name": "managed",
+  "pricing.enterprise.name": "enterprise",
+};
+
+export type BillingPeriod = "monthly" | "annual";
+
+/** Paying for the year costs ten months, i.e. two months free. The same ratio
+ *  on both subscriptions — a different discount per plan is a number nobody
+ *  can hold in their head while comparing two cards side by side. */
+export const ANNUAL_MONTHS_CHARGED = 10;
+
+/** `$79`, `$2,490`. Whole dollars stay whole: every figure here is an integer,
+ *  and `$79.00` on a marketing page reads as a form field, not as a price. */
+export function formatUSD(amount: number): string {
+  const formatted = Number.isInteger(amount)
+    ? amount.toLocaleString("en-US")
+    : amount.toFixed(2);
+  return `$${formatted}`;
+}
+
+/**
+ * What a plan costs under the selected billing cycle, keyed by the pricing
+ * page's name key, plus the i18n key for the period label that goes under the
+ * figure. A one-time plan (Enterprise) ignores `billing` entirely — there is
+ * no cycle to toggle, and showing it a discount would be a lie about a
+ * purchase that happens once.
+ *
+ * `null` for a key no plan answers to, which is the caller's cue to render its
+ * "price to be decided" placeholder rather than a plausible-looking figure.
+ */
+export function priceFor(
+  pricingNameKey: string,
+  billing: BillingPeriod,
+): { readonly amount: number; readonly periodKey: string } | null {
+  const id = PLAN_BY_PRICING_KEY[pricingNameKey];
+  if (!id) return null;
+
+  const plan = getPlan(id);
+  if (plan.interval === "once") return { amount: plan.amount, periodKey: "pricing.oneTime" };
+
+  return billing === "annual"
+    ? { amount: plan.amount * ANNUAL_MONTHS_CHARGED, periodKey: "pricing.perYear" }
+    : { amount: plan.amount, periodKey: "pricing.perMonth" };
+}
+
+/** The "works out at $X a month" line under an annual figure. */
+export function monthlyEquivalent(pricingNameKey: string): number | null {
+  const id = PLAN_BY_PRICING_KEY[pricingNameKey];
+  if (!id) return null;
+  const plan = getPlan(id);
+  return plan.interval === "once" ? null : Math.round((plan.amount * ANNUAL_MONTHS_CHARGED) / 12);
+}

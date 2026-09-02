@@ -50,6 +50,17 @@ function defineThemes(monaco: Monaco): void {
       "editor.selectionBackground": "#7c5cff26",
       "editorCursor.foreground": "#7c5cff",
       "editorIndentGuide.background1": "#00000010",
+      // Left undefined, these fall back to Monaco's stock "vs" blue — a
+      // solid blue box around the word wherever it's clicked, clashing with
+      // the rest of the theme's violet accent.
+      "editor.wordHighlightBackground": "#7c5cff1a",
+      "editor.wordHighlightBorder": "#7c5cff4d",
+      "editor.wordHighlightStrongBackground": "#7c5cff26",
+      "editor.wordHighlightStrongBorder": "#7c5cff66",
+      "editor.selectionHighlightBackground": "#7c5cff1a",
+      "editor.selectionHighlightBorder": "#7c5cff4d",
+      "editorBracketMatch.background": "#7c5cff1a",
+      "editorBracketMatch.border": "#7c5cff4d",
     },
   });
 
@@ -74,6 +85,14 @@ function defineThemes(monaco: Monaco): void {
       "editor.selectionBackground": "#b3a0ff33",
       "editorCursor.foreground": "#b3a0ff",
       "editorIndentGuide.background1": "#ffffff12",
+      "editor.wordHighlightBackground": "#b3a0ff22",
+      "editor.wordHighlightBorder": "#b3a0ff59",
+      "editor.wordHighlightStrongBackground": "#b3a0ff33",
+      "editor.wordHighlightStrongBorder": "#b3a0ff73",
+      "editor.selectionHighlightBackground": "#b3a0ff22",
+      "editor.selectionHighlightBorder": "#b3a0ff59",
+      "editorBracketMatch.background": "#b3a0ff22",
+      "editorBracketMatch.border": "#b3a0ff59",
     },
   });
 }

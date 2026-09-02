@@ -17,7 +17,9 @@ import { billingSourceForProvider, checkCreditGate } from "../lib/credit-gate";
 //
 // Resolution happens at discovery time (synchronously, from the credential
 // cache) and also mirrors the stored keys into process.env, since Eve and the
-// AI SDK read process.env and know nothing about the credential store.
+// AI SDK read process.env and know nothing about the credential store. It is
+// then redone per turn in the `step.started` resolver below, so a key saved in
+// the web process takes effect without restarting this one.
 // Runs before the Postgres world is constructed, so a connection string saved
 // in Settings takes effect on the next boot instead of needing a .env edit.
 applyStoredEnv();
@@ -79,8 +81,15 @@ const model = defineDynamic({
       const gate = await checkCreditGate(billingSource);
       if (!gate.allowed) return creditsExhaustedModel(gate.reason);
 
+      // Always resolve here, even with no per-chat pick: `fallback` was built
+      // once at boot, so returning `null` would pin every unpicked turn to the
+      // provider and key this process started with. Rotating a key or
+      // switching providers in Settings has to land on the next turn, not the
+      // next restart — `resolveLanguageModel` re-reads the credential store
+      // (which re-reads the file when the web process has written to it) and
+      // mirrors the keys into process.env on the way through.
       const chosen = claimChatModelSync(ctx.session.id);
-      return chosen ? resolveLanguageModel(chosen) : null;
+      return resolveLanguageModel(chosen);
     },
   },
 });

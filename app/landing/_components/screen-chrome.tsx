@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   BellIcon,
@@ -11,7 +11,7 @@ import {
   SearchIcon,
   VolumeOffIcon,
 } from "@hugeicons/core-free-icons";
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { NotificationBadge } from "@/components/ai-elements/notification-badge";
 import { NAV_GROUPS } from "@/lib/nav-items";
 import { useT } from "@/lib/i18n/provider";
@@ -56,7 +56,7 @@ const NAV_BADGES: Record<string, number> = { "/history": 18, "/inbox": 3 };
  * Below `md` it is dropped rather than squeezed, which is what the real shell
  * does at the same breakpoint.
  */
-export function MockSidebar({ active }: { readonly active: string }) {
+export const MockSidebar = memo(function MockSidebar({ active }: { readonly active: string }) {
   const t = useT();
 
   return (
@@ -130,12 +130,19 @@ export function MockSidebar({ active }: { readonly active: string }) {
           ))}
         </div>
 
-        {/* The halo is the tell that the instance is answering — `SidebarStatus`
-            only paints it while health reads `ok`, so leaving it off here made
-            every screen look like a box that had stopped reporting. */}
+        {/* The dot is the tell that the instance is answering — `SidebarStatus`
+            only paints it while health reads `ok`, so leaving it off made every
+            screen look like a box that had stopped reporting.
+
+            It used to pulse, and the pulse cost the page half its frame rate.
+            This row sits at the foot of the sidebar, which is under the frame's
+            veil — five stacked `backdrop-filter` layers. A backdrop blur
+            re-computes whenever anything behind it changes, so a 6px halo
+            animating forever re-blurred the whole veil every frame: 60fps at
+            rest became 20, on a dot the blur had already smeared into nothing.
+            An invisible animation is not worth a third of the budget. */}
         <div className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-muted-foreground text-xs">
           <span className="relative flex size-1.5 shrink-0">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60 motion-reduce:hidden" />
             <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
           </span>
           {/* `environmentLabel` in the real sidebar is `process.env`'s own
@@ -147,7 +154,7 @@ export function MockSidebar({ active }: { readonly active: string }) {
       </div>
     </aside>
   );
-}
+});
 
 // ── Page chrome ─────────────────────────────────────────────────────
 
@@ -163,6 +170,7 @@ export function AppChrome({
   actions,
   active,
   children,
+  overlay,
   pattern = false,
   subtitle,
   title,
@@ -170,6 +178,13 @@ export function AppChrome({
   readonly actions?: ReactNode;
   readonly active: string;
   readonly children: ReactNode;
+  /**
+   * Anything that covers the whole window in the app rather than the page
+   * body: a dialog and its scrim. It goes here and not inside `children`
+   * because a scrim that stops at the sidebar is the giveaway that a mockup's
+   * dialog is a drawing of a dialog — the app dims the shell too.
+   */
+  readonly overlay?: ReactNode;
   /**
    * The hairline grid `PageContainer` paints behind a page body. Off by
    * default: on the landing it only earns its keep once, in the hero, where
@@ -183,7 +198,13 @@ export function AppChrome({
   readonly title?: string;
 }) {
   return (
-    <div className="flex min-h-[600px] bg-background text-foreground">
+    /* A window, not a document. Left to grow, the shell took the height of
+       its own sidebar: 1263px of app inside a 1162px-wide frame, a portrait
+       rectangle that reads as a long page rather than as a screen. So the
+       height is fixed and the frame clips, sidebar included — a window shows
+       what fits and the rest is below its fold, and the veil under every
+       frame already washes the cut. */
+    <div className="relative flex h-[38rem] overflow-hidden bg-background text-foreground lg:h-[42rem]">
       <MockSidebar active={active} />
 
       {/* The pattern gets its own layer, as it does in PageContainer:
@@ -200,7 +221,14 @@ export function AppChrome({
           <div className="relative mx-auto w-full max-w-6xl px-5 py-8 sm:px-6 sm:py-10">
             <header className="mb-8 flex items-center justify-between gap-4">
               <div>
-                <h1 className="font-semibold text-2xl">{title}</h1>
+                {/* A <p>, not an <h1>. This frame is a product mockup that
+                    the landing renders three times, so it contributed three
+                    page-level headings to the real document outline — a screen
+                    reader navigating by heading found six <h1> on one page.
+                    aria-hidden was not an option: these mockups are deliberately
+                    interactive, and hiding focusable content from the
+                    accessibility tree is worse than the heading noise. */}
+                <p className="font-semibold text-2xl">{title}</p>
                 {subtitle ? <p className="mt-1 text-muted-foreground text-sm">{subtitle}</p> : null}
               </div>
               {actions}
@@ -211,6 +239,8 @@ export function AppChrome({
           <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
         )}
       </div>
+
+      {overlay}
     </div>
   );
 }

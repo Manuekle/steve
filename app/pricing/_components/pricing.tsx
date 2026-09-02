@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { CheckIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
-import { Disclosure, Reveal, Shell } from "@/app/landing/_components/primitives";
+import { DigitPop, Disclosure, Reveal, Shell } from "@/app/landing/_components/primitives";
+import { formatUSD, monthlyEquivalent, priceFor, type BillingPeriod } from "@/lib/plans";
 import { ENTITY } from "@/app/landing/_components/legal-page";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
 import { useT } from "@/lib/i18n/provider";
@@ -30,8 +31,6 @@ import { useT } from "@/lib/i18n/provider";
    hay checkout real todavía, así que "suscribirse" hoy es entrar a la cuenta
    que ya se creó al instalar la instancia. Enterprise abre un modal de
    contacto en vez de navegar: no es una compra de autoservicio. */
-
-type BillingPeriod = "monthly" | "annual";
 
 type Price = { readonly amountKey: string; readonly periodKey: string } | null;
 type Cta = { readonly href: string; readonly labelKey: string } | null;
@@ -112,54 +111,9 @@ const PLANS: readonly Plan[] = [
   },
 ] as const;
 
-/**
- * The literal dollar figures — not translated, they're numbers. Pro and
- * Managed are subscriptions: annual is priced at ten times the monthly rate,
- * two months free against paying month to month, the same ratio on both.
- * Enterprise has no billing cycle to toggle — `oneTime` instead of
- * `monthly`/`annual` marks a plan the toggle leaves untouched.
- */
-const PLAN_AMOUNTS: Record<
-  string,
-  { readonly monthly: number; readonly annual: number } | { readonly oneTime: number }
-> = {
-  "pricing.pro.name": { monthly: 79, annual: 790 },
-  "pricing.managed.name": { monthly: 249, annual: 2490 },
-  "pricing.enterprise.name": { oneTime: 9990 },
-};
-
-function formatUSD(amount: number): string {
-  const formatted = Number.isInteger(amount)
-    ? amount.toLocaleString("en-US")
-    : amount.toFixed(2);
-  return `$${formatted}`;
-}
-
-/**
- * transitions.dev "Number pop-in" (`.t-digit-group` / `.t-digit` in
- * globals.css), one character per span. `groupKey` remounts the whole group
- * — a fresh DOM node plays `.is-animating`'s entrance on its own, no manual
- * class-toggle-and-reflow dance needed. The two `data-stagger` steps that
- * ship with the effect only cover a two-character run, so longer figures
- * ($1990) get their delay from an inline `animationDelay` instead, at the
- * same `--digit-stagger` step.
- */
-function DigitPop({ groupKey, text }: { readonly groupKey: string; readonly text: string }) {
-  return (
-    <span className="t-digit-group is-animating" key={groupKey}>
-      {[...text].map((char, index) => (
-        <span
-          // biome-ignore lint/suspicious/noArrayIndexKey: the run is static per render, only `groupKey` ever changes
-          key={index}
-          className="t-digit"
-          style={{ animationDelay: `calc(var(--digit-stagger) * ${index})` }}
-        >
-          {char}
-        </span>
-      ))}
-    </span>
-  );
-}
+/* The figures themselves, and the annual ratio behind them, live in
+   `lib/plans.ts` — the landing's pricing band quotes the same numbers, and
+   two hardcoded copies of "$79" is the pair that silently drifts apart. */
 
 /**
  * The price slot. A plan whose number has not been decided renders a dashed
@@ -187,7 +141,7 @@ function PlanPrice({
     );
   }
 
-  const billed = PLAN_AMOUNTS[nameKey];
+  const billed = priceFor(nameKey, billing);
 
   if (!billed) {
     return (
@@ -200,31 +154,20 @@ function PlanPrice({
     );
   }
 
-  // Enterprise (a one-time purchase) ignores the monthly/annual toggle: it
-  // keeps its own fixed figure and label regardless of `billing`.
-  if ("oneTime" in billed) {
-    return (
-      <div className="mt-6">
-        <p className="font-heading font-semibold font-cooper text-3xl tracking-[-0.03em]">
-          {formatUSD(billed.oneTime)}
-        </p>
-        <p className="mt-1 text-[13px] text-muted-foreground">{t("pricing.oneTime")}</p>
-      </div>
-    );
-  }
-
-  const amount = billing === "annual" ? billed.annual : billed.monthly;
-  const periodKey = billing === "annual" ? "pricing.perYear" : "pricing.perMonth";
+  // Enterprise, a one-time purchase, comes back from `priceFor` with the
+  // `oneTime` label whatever the toggle says — there is no cycle to toggle and
+  // no annual note to put under it.
+  const perMonth = billing === "annual" ? monthlyEquivalent(nameKey) : null;
 
   return (
     <div className="mt-6">
       <p className="font-heading font-semibold font-cooper text-3xl tracking-[-0.03em]">
-        <DigitPop groupKey={`${nameKey}-${billing}`} text={formatUSD(amount)} />
+        <DigitPop groupKey={`${nameKey}-${billed.periodKey}`} text={formatUSD(billed.amount)} />
       </p>
-      <p className="mt-1 text-[13px] text-muted-foreground">{t(periodKey)}</p>
-      {billing === "annual" ? (
+      <p className="mt-1 text-[13px] text-muted-foreground">{t(billed.periodKey)}</p>
+      {perMonth !== null ? (
         <p className="mt-1 text-[12px] text-muted-foreground/70">
-          {t("pricing.annualNote", { amount: formatUSD(Math.round(billed.annual / 12)) })}
+          {t("pricing.annualNote", { amount: formatUSD(perMonth) })}
         </p>
       ) : null}
     </div>

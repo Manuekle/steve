@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { VolumeHighIcon } from "@hugeicons/core-free-icons";
 import { Switch } from "@/components/ui/switch";
 import { LiquidSlider } from "@/components/ui/liquid-slider";

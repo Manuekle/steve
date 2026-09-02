@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Add01Icon, ArrowRight02Icon, CursorPointer01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { TextReveal } from "@/components/motion/text-reveal";
@@ -13,6 +13,39 @@ import { BrowserChrome } from "./browser-chrome";
  * "figure 02, this heading, this body, this mockup" and nothing about how far
  * anything travels on the way in.
  */
+
+/**
+ * The progressive blur along one edge of a moving surface.
+ *
+ * Used by the testimonial wall (top and bottom) and the self-hosted rail (left
+ * and right); `.lp-wall-haze` decides which side the band sits on and which
+ * way its ramps run, from `edge`.
+ *
+ * Two layers, not five, and the number is a measurement rather than a taste:
+ * a `backdrop-filter` over a surface that is moving re-blurs every frame, so
+ * the cost is one full pass per layer per frame. Five layers on the wall ran
+ * at 43fps, three at 51, two at 59 — and dropping the blur radii instead of
+ * the layer count did nothing, which is what says it is the passes and not the
+ * pixels. Two masked layers still read as progressive: each ramp is a
+ * gradient, so the blur arrives gradually rather than in steps, which was
+ * always the point of masking them.
+ *
+ * Same construction as `.lp-veil` under the screenshots and for the same build
+ * reason: the pipeline strips a hand-written `backdrop-filter`, so the blur is
+ * carried on spans with utility classes.
+ *
+ * Order matters: the spans are read by `:nth-child`, which masks each one to
+ * its own ramp — the first covers nearly the whole band, the second only the
+ * outer part, so the blur piles up towards the edge things disappear over.
+ */
+export function Haze({ edge }: { readonly edge: "top" | "bottom" | "left" | "right" }) {
+  return (
+    <div aria-hidden="true" className="lp-wall-haze" data-edge={edge}>
+      <span className="backdrop-blur-[3px]" />
+      <span className="backdrop-blur-[10px]" />
+    </div>
+  );
+}
 
 /**
  * Marks a subtree to fade, rise and sharpen into place when it scrolls into
@@ -197,6 +230,36 @@ export function TextSwap({
 }
 
 /**
+ * transitions.dev "Number pop-in" (`.t-digit-group` / `.t-digit` in
+ * globals.css), one character per span. `groupKey` remounts the whole group —
+ * a fresh DOM node plays `.is-animating`'s entrance on its own, no manual
+ * class-toggle-and-reflow dance needed. The two `data-stagger` steps that ship
+ * with the effect only cover a two-character run, so longer figures ($2,490)
+ * get their delay from an inline `animationDelay` instead, at the same
+ * `--digit-stagger` step.
+ *
+ * Shared rather than local to the pricing page: the landing's pricing band
+ * quotes the same figures under the same billing toggle, and two copies of the
+ * same twelve lines is how the two stop matching.
+ */
+export function DigitPop({ groupKey, text }: { readonly groupKey: string; readonly text: string }) {
+  return (
+    <span className="t-digit-group is-animating" key={groupKey}>
+      {[...text].map((char, index) => (
+        <span
+          // biome-ignore lint/suspicious/noArrayIndexKey: the run is static per render, only `groupKey` ever changes
+          key={index}
+          className="t-digit"
+          style={{ animationDelay: `calc(var(--digit-stagger) * ${index})` }}
+        >
+          {char}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
  * The expandable one-liners that close a feature section, and the FAQ rows.
  * A CSS-grid accordion (grid-template-rows 0fr ↔ 1fr) so the panel height
  * animates with no JS measuring; the chevron flips and the body blurs in.
@@ -297,19 +360,21 @@ export function ScreenFrame({
         </div>
       </div>
 
-      {/* Progressive blur, then the wash onto the page. Six layers, all
+      {/* Progressive blur, then the wash onto the page. Three layers, all
           pointer-transparent; `.lp-veil` in globals.css carries the ramp each
           one is masked by.
+
+          Two blurs, not five, and the number came off a profiler: a backdrop
+          blur re-computes whenever its backdrop moves, so every frame of a
+          scroll re-blurred five stacked layers under every mockup on the page.
+          Five cost 47ms a frame while scrolling, two cost 32.
 
           The blur is a utility class rather than a `backdrop-filter` in that
           stylesheet because the build strips hand-written `backdrop-filter`
           declarations — the note over `.lp-overlay` has the detail. */}
       <div aria-hidden="true" className="lp-veil">
-        <span className="backdrop-blur-[1px]" />
-        <span className="backdrop-blur-[2px]" />
-        <span className="backdrop-blur-[5px]" />
-        <span className="backdrop-blur-[11px]" />
-        <span className="backdrop-blur-[24px]" />
+        <span className="backdrop-blur-[3px]" />
+        <span className="backdrop-blur-[14px]" />
         <span />
       </div>
 

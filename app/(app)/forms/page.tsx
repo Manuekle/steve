@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   CheckIcon,
@@ -15,7 +15,7 @@ import { PageContainer } from "../../_components/page-container";
 import { Card } from "../../_components/dashboard-card";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Skeleton } from "@/components/ai-elements/skeleton";
+import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
@@ -25,6 +25,42 @@ import { relativeTime } from "@/lib/format";
 import type { Form } from "@/lib/types";
 
 type FormRow = Form & { readonly responseCount: number; readonly completedCount: number };
+
+/** Skeleton for the Forms list — header + button, then a table of rows. */
+function FormsSkeleton() {
+  return (
+    <div className="space-y-8">
+      <header className="flex items-center justify-between gap-4">
+        <div className="space-y-2">
+          <SkeletonBar className="h-7 w-32" />
+          <SkeletonBar className="h-4 w-56" />
+        </div>
+        <SkeletonBar className="h-9 w-28 rounded-lg" />
+      </header>
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-4 border-b border-border px-4 py-2.5">
+          <SkeletonBar className="h-3 w-32" />
+          <SkeletonBar className="h-3 w-16" />
+          <SkeletonBar className="h-3 w-20" />
+          <SkeletonBar className="h-3 w-20" />
+          <SkeletonBar className="ml-auto h-3 w-16" />
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 border-b border-border/50 px-4 py-3 last:border-0">
+            <div className="flex-[2] space-y-1.5">
+              <SkeletonBar className="h-3.5 w-32" />
+              <SkeletonBar className="h-3 w-20" />
+            </div>
+            <SkeletonBar className="h-5 w-16 rounded-full" />
+            <SkeletonBar className="h-3 w-14" />
+            <SkeletonBar className="h-3 w-16" />
+            <SkeletonBar className="ml-auto h-3 w-12" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function FormsPage() {
   const { locale, t } = useI18n();
@@ -94,7 +130,7 @@ export default function FormsPage() {
       <Skeleton
         className="min-h-[400px]"
         isLoading={isLoading}
-        skeleton={<div className="h-64 rounded-xl bg-muted" />}
+        skeleton={<FormsSkeleton />}
       >
         <div className="content-enter">
           <ErrorBanner className="mb-6" error={error} onDismiss={() => setError(null)} />

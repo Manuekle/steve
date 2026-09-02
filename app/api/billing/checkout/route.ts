@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, apiFailure, missingField, withApiErrors } from "@/lib/api-error";
-import { getCredential } from "@/lib/credentials";
-import { createCheckoutSession } from "@/lib/stripe";
+import { createCheckoutSession, getPlatformStripeKey } from "@/lib/stripe";
 import { getPlan, isPlanId } from "@/lib/plans";
 
 // POST /api/billing/checkout — a Stripe-hosted page to finish on.
@@ -12,10 +11,12 @@ import { getPlan, isPlanId } from "@/lib/plans";
 // open and complete themselves.
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
-  const secretKey = await getCredential("STRIPE_SECRET_KEY");
+  // The vendor's account, not the operator's — see getPlatformStripeKey.
+  const secretKey = getPlatformStripeKey();
   if (!secretKey) {
     return apiError("not_configured", {
-      message: "Add a Stripe secret key in Settings before setting up billing.",
+      message:
+        "Subscription billing is not enabled on this installation (STRIPE_PLATFORM_SECRET_KEY is unset).",
     });
   }
 

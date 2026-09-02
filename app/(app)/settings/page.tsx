@@ -2,19 +2,19 @@
 
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   CheckIcon,
   KeyRoundIcon,
-  MessageCircleIcon,
+  WhatsappIcon,
   ArtificialIntelligence08Icon,
-  MessengerIcon,
   InstagramIcon,
   Loading03Icon,
   AlertCircleIcon,
   Cancel01Icon,
   GoogleSheetIcon,
   Calendar03Icon,
+  GoogleDriveIcon,
   Mail01Icon,
   MetaIcon,
   StripeIcon,
@@ -23,7 +23,6 @@ import {
   VolumeHighIcon,
   CallIcon,
   DatabaseIcon,
-  PlugSocketIcon,
   SquareLock02Icon,
   Coins01Icon,
   ArrowRight01Icon,
@@ -36,28 +35,27 @@ import { type CredentialGroup } from "@/lib/credentials";
 import { VALIDATION_ERROR_KEYS } from "@/lib/settings-i18n";
 import { CredentialField } from "@/app/_components/credential-field";
 import { describePostgresTarget, type PostgresKind } from "@/lib/postgres-target";
-import { WhatsAppMark, InstagramMark, StripeMark, MetaMark, GoogleMark } from "@/app/landing/_components/brand-marks";
+import { WhatsAppMark, InstagramMark, StripeMark, MetaMark } from "@/app/landing/_components/brand-marks";
 import { ElevenLabsLogo } from "@/components/provider-logo";
 import {
   TwilioBrandIcon,
   PostgresqlBrandIcon,
   GoogleCalendarBrandIcon,
   GoogleSheetsBrandIcon,
-  MessengerBrandIcon,
+  GoogleDriveBrandIcon,
   MercadoPagoBrandIcon,
   ShopifyBrandIcon,
   ResendBrandIcon,
-  HubspotBrandIcon,
-  CalendlyBrandIcon,
-  SlackBrandIcon,
-  NotionBrandIcon,
-  AirtableBrandIcon,
   DockerBrandIcon,
   SupabaseBrandIcon,
 } from "@/components/icons/connection-icons";
 import { ModelHealthCard } from "@/components/ai-elements/model-health-card";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
+import { notifyCredentialsChanged } from "@/lib/credentials-changed";
+import { TutorialTrigger } from "../../_components/tutorial-video-dialog";
+import { WebhookUrlNote, type WebhookChannel } from "../../_components/webhook-url-note";
+import { TelegramWebhookNote } from "../../_components/telegram-webhook-note";
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { useEnterpriseAllowed } from "@/components/enterprise-gate";
@@ -70,12 +68,10 @@ const GROUP_I18N: Record<string, { label?: string; desc?: string }> = {
   "ai-provider": { label: "settings.group.aiProvider", desc: "settings.group.aiProviderDesc" },
   "database": { label: "settings.group.database", desc: "settings.group.databaseDesc" },
   "whatsapp": { label: "settings.group.whatsapp", desc: "settings.group.whatsappDesc" },
-  "messenger": { label: "settings.group.messenger", desc: "settings.group.messengerDesc" },
   "instagram": { label: "settings.group.instagram", desc: "settings.group.instagramDesc" },
-  "integrations": { label: "settings.group.integrations", desc: "settings.group.integrationsDesc" },
-  "oauth-apps": { label: "settings.group.oauthApps", desc: "settings.group.oauthAppsDesc" },
   "google-sheets": { label: "settings.group.googleSheets", desc: "settings.group.googleSheetsDesc" },
   "google-calendar": { label: "settings.group.googleCalendar", desc: "settings.group.googleCalendarDesc" },
+  "google-drive": { label: "settings.group.googleDrive", desc: "settings.group.googleDriveDesc" },
   "stripe": { label: "settings.group.stripe", desc: "settings.group.stripeDesc" },
   "mercadopago": { label: "settings.group.mercadopago", desc: "settings.group.mercadopagoDesc" },
   "shopify": { label: "settings.group.shopify", desc: "settings.group.shopifyDesc" },
@@ -86,16 +82,21 @@ const GROUP_I18N: Record<string, { label?: string; desc?: string }> = {
   "meta-ads": { label: "settings.group.metaAds", desc: "settings.group.metaAdsDesc" },
 };
 
+/** Groups whose card should show the callback URL for their Eve webhook. */
+const WEBHOOK_CHANNELS: readonly WebhookChannel[] = ["whatsapp", "instagram"];
+
+function isWebhookChannel(id: string): id is WebhookChannel {
+  return (WEBHOOK_CHANNELS as readonly string[]).includes(id);
+}
+
 const GROUP_ICONS: Record<string, IconSvgElement> = {
   "ai-provider": ArtificialIntelligence08Icon,
   database: DatabaseIcon,
-  whatsapp: MessageCircleIcon,
-  messenger: MessengerIcon,
+  whatsapp: WhatsappIcon,
   instagram: InstagramIcon,
-  integrations: KeyRoundIcon,
-  "oauth-apps": PlugSocketIcon,
   "google-sheets": GoogleSheetIcon,
   "google-calendar": Calendar03Icon,
+  "google-drive": GoogleDriveIcon,
   stripe: StripeIcon,
   mercadopago: CreditCardIcon,
   shopify: Store01Icon,
@@ -107,12 +108,10 @@ const GROUP_ICONS: Record<string, IconSvgElement> = {
 };
 
 /** Groups with a real brand mark on hand — everything else falls back to the
- *  generic Hugeicons glyph in `GROUP_ICONS`. `ai-provider` and `oauth-apps`
- *  stay generic on purpose: each bundles several vendors, so no single mark
- *  fits the card. */
+ *  generic Hugeicons glyph in `GROUP_ICONS`. `ai-provider` stays generic on
+ *  purpose: it bundles several vendors, so no single mark fits the card. */
 const GROUP_BRAND_ICONS: Record<string, (props: { size: number }) => React.JSX.Element> = {
   whatsapp: WhatsAppMark,
-  messenger: MessengerBrandIcon,
   instagram: InstagramMark,
   stripe: StripeMark,
   mercadopago: MercadoPagoBrandIcon,
@@ -122,6 +121,7 @@ const GROUP_BRAND_ICONS: Record<string, (props: { size: number }) => React.JSX.E
   "meta-ads": MetaMark,
   "google-sheets": GoogleSheetsBrandIcon,
   "google-calendar": GoogleCalendarBrandIcon,
+  "google-drive": GoogleDriveBrandIcon,
   resend: ResendBrandIcon,
   database: PostgresqlBrandIcon,
 };
@@ -144,27 +144,6 @@ function GroupIcon({
   if (Brand) return <Brand size={size} />;
   return <HugeiconsIcon icon={GROUP_ICONS[groupId] ?? KeyRoundIcon} size={size} strokeWidth={1.75} />;
 }
-
-/**
- * The vendors inside the `oauth-apps` group, and the mark each one wears.
- *
- * The group holds a client id and secret per vendor — twelve fields that, in
- * one card, read as an undifferentiated stack. Splitting on these prefixes
- * turns it into six cards you can recognise at a glance.
- */
-const OAUTH_PROVIDERS: ReadonlyArray<{
-  readonly id: string;
-  readonly prefix: string;
-  readonly label: string;
-  readonly Icon: (props: { size: number }) => React.JSX.Element;
-}> = [
-  { id: "google", prefix: "GOOGLE_OAUTH_", label: "Google", Icon: GoogleMark },
-  { id: "hubspot", prefix: "HUBSPOT_", label: "HubSpot", Icon: HubspotBrandIcon },
-  { id: "calendly", prefix: "CALENDLY_", label: "Calendly", Icon: CalendlyBrandIcon },
-  { id: "slack", prefix: "SLACK_", label: "Slack", Icon: SlackBrandIcon },
-  { id: "notion", prefix: "NOTION_", label: "Notion", Icon: NotionBrandIcon },
-  { id: "airtable", prefix: "AIRTABLE_", label: "Airtable", Icon: AirtableBrandIcon },
-];
 
 /**
  * The bento's sections, in reading order.
@@ -195,7 +174,7 @@ const SECTIONS: readonly SettingsSection[] = [
   {
     id: "channels",
     labelKey: "settings.section.channels",
-    groups: ["whatsapp", "messenger", "instagram", "twilio", "elevenlabs"],
+    groups: ["whatsapp", "instagram", "telegram", "twilio", "elevenlabs"],
     extras: [],
   },
   {
@@ -213,16 +192,7 @@ const SECTIONS: readonly SettingsSection[] = [
   {
     id: "data",
     labelKey: "settings.section.data",
-    groups: ["google-sheets", "google-calendar", "meta-ads", "integrations"],
-    extras: [],
-  },
-  {
-    id: "oauth",
-    labelKey: "settings.section.oauth",
-    // The one thing true of all six cards, and the thing people get wrong:
-    // these are the *app's* credentials, not the operator's account.
-    descriptionKey: "settings.group.oauthAppsDesc",
-    groups: ["oauth-apps"],
+    groups: ["google-sheets", "google-calendar", "google-drive", "meta-ads"],
     extras: [],
   },
   {
@@ -248,14 +218,14 @@ function sectionOf(groupId: string): string {
 }
 
 /**
- * The two groups that only make sense for a self-hosted install: the local
- * Postgres connection, and the OAuth apps a self-hoster registers so
- * Connections has something to redirect to (a managed install gets those
- * from the environment, and never sees this page render them). Every other
- * group — the AI provider keys most of all — is the account's own
- * configuration and stays open regardless of license.
+ * The one group that only makes sense for a self-hosted install: the local
+ * Postgres connection. Every other group — the AI provider keys most of
+ * all — is the account's own configuration and stays open regardless of
+ * license. The OAuth app credentials (Google, HubSpot, Slack, Notion) are
+ * registered from Conexiones instead — see the "Configurar app" dialog
+ * there — so they no longer have a card on this page at all.
  */
-const ENTERPRISE_ONLY_GROUPS = new Set(["database", "oauth-apps"]);
+const ENTERPRISE_ONLY_GROUPS = new Set(["database"]);
 
 /** What GET and POST /api/settings both answer with. */
 type SettingsResponse = {
@@ -296,25 +266,51 @@ export default function SettingsPage() {
   const [shakingFields, setShakingFields] = useState<Set<string>>(new Set());
   const shakeTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  const loadSettings = useCallback(() => {
-    return fetchJson<SettingsResponse>("/api/settings", t)
-      .then((result) => {
-        if (!result.ok) {
-          setError(result.error);
-          return;
-        }
-        const data = result.data;
-        setGroups(data.groups ?? []);
-        setStatus(data.credentials ?? {});
-        setConfigured(data.configured ?? {});
-        setSources(data.sources ?? {});
-        const stored = data.values ?? {};
-        setValues((prev) => ({ ...stored, ...prev }));
-        setSavedValues((prev) => ({ ...stored, ...prev }));
-        setPreviews(data.previews ?? {});
-        setError(null);
-      })
-      .finally(() => setLoading(false));
+  const loadSettings = useCallback(async () => {
+    // Whether Google is connected decides whether the service-account
+    // fallback card even applies — see the HIDDEN_GROUPS comment below —
+    // so this has to land before groups are filtered, not after.
+    const googleConnected = await fetch("/api/connections")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { connections?: Array<{ id: string; status: string }> } | null) =>
+        data?.connections?.some((c) => c.id === "google" && c.status === "connected") ?? false,
+      )
+      .catch(() => false);
+
+    const result = await fetchJson<SettingsResponse>("/api/settings", t);
+    if (!result.ok) {
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
+    const data = result.data;
+    const HIDDEN_GROUPS = new Set([
+      // The OAuth app credentials (Google, HubSpot, Slack, Notion) live
+      // only in Conexiones now — see the "Configurar app" dialog there —
+      // so this page never renders a second card for the same values.
+      "oauth-apps",
+      // HTTP_ALLOWLIST and LEAD_WEBHOOK_SECRET stay real and enforced —
+      // the SSRF gate and the /api/leads auth don't move — this only
+      // drops their card from Settings. Still settable via env var.
+      "integrations",
+      // A connected account always wins over the service account (see
+      // getGoogleToken in lib/google-auth.ts) — with no way to prefer the
+      // service account instead. Filling this in while Google is connected
+      // can never take effect, so the card would be a lie. `google-calendar`
+      // stays regardless: its calendar id still overrides even when
+      // connected, pointing at a shared calendar instead of "primary".
+      ...(googleConnected ? ["google-sheets"] : []),
+    ]);
+    setGroups((data.groups ?? []).filter((group) => !HIDDEN_GROUPS.has(group.id)));
+    setStatus(data.credentials ?? {});
+    setConfigured(data.configured ?? {});
+    setSources(data.sources ?? {});
+    const stored = data.values ?? {};
+    setValues((prev) => ({ ...stored, ...prev }));
+    setSavedValues((prev) => ({ ...stored, ...prev }));
+    setPreviews(data.previews ?? {});
+    setError(null);
+    setLoading(false);
   }, [t]);
 
   useEffect(() => {
@@ -322,11 +318,15 @@ export default function SettingsPage() {
   }, [loadSettings]);
 
   const validateField = useCallback((key: string, value: string, pattern?: string): string | null => {
-    if (!value) return null;
+    // Keys get pasted, and a paste carries whatever whitespace came with it —
+    // a trailing newline from a terminal, a leading space from a doc. The
+    // value is trimmed on save, so validate what will actually be stored.
+    const trimmed = value.trim();
+    if (!trimmed) return null;
     if (pattern) {
       try {
         const regex = new RegExp(pattern);
-        if (!regex.test(value)) {
+        if (!regex.test(trimmed)) {
           return t(VALIDATION_ERROR_KEYS[key] ?? "settings.validate.generic");
         }
       } catch { /* skip */ }
@@ -371,7 +371,12 @@ export default function SettingsPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const payload = values;
+    // Trim on the way out: a pasted key drags whitespace with it and a stored
+    // "re_abc\n" fails at the vendor with an opaque 401 nobody traces back
+    // here. An empty string still means "clear this field".
+    const payload = Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [key, value.trim()]),
+    );
     if (Object.keys(payload).length === 0) return;
     if (!validateAll()) return;
 
@@ -385,10 +390,34 @@ export default function SettingsPage() {
       body: JSON.stringify(payload),
     });
     if (result.ok) {
-      setStatus(result.data.credentials ?? {});
-      setSavedValues((prev) => ({ ...prev, ...payload }));
+      // POST answers with the same shape GET does, so the form repaints from
+      // the server's own view: the "Configurado" badge, the "from env" hint
+      // and — the one you actually notice — the masked preview standing in as
+      // each secret's placeholder. Without this the page looked unchanged
+      // until a reload, which reads as "it didn't save".
+      const data = result.data;
+      setStatus(data.credentials ?? {});
+      setConfigured(data.configured ?? {});
+      setSources(data.sources ?? {});
+      setPreviews(data.previews ?? {});
+      // A cleared field has to come back empty rather than keep the value the
+      // operator just deleted, so the server's view wins for anything it
+      // returns and the typed value stands only where it doesn't.
+      const stored = data.values ?? {};
+      setValues((prev) => {
+        const next = { ...prev, ...stored };
+        for (const key of Object.keys(payload)) {
+          if (payload[key] === "" && !(key in stored)) next[key] = "";
+        }
+        return next;
+      });
+      setSavedValues((prev) => ({ ...prev, ...payload, ...stored }));
       setFieldErrors({});
       setSaved(true);
+      // The model picker, the health dot and the provider badge all read a
+      // credential they did not save. Tell them, instead of waiting for the
+      // next poll or the next reload.
+      notifyCredentialsChanged();
       setTimeout(() => setSaved(false), 3000);
     } else {
       // Says which credential the server rejected, instead of one flat
@@ -544,32 +573,11 @@ export default function SettingsPage() {
     setValues(clears);
   };
 
-  /** A group's cards. One, except for `oauth-apps` — see below. */
+  /** A group's card. */
   const renderGroupCards = (group: CredentialGroup): React.ReactNode[] => {
     const gi = GROUP_I18N[group.id];
     const locked = isLocked(group.id);
     const fields = visibleFields(group);
-
-    // Locked groups keep one card whatever the group is: the point is the
-    // notice, and six copies of it would say the same thing six times.
-    if (group.id === "oauth-apps" && !locked) {
-      return OAUTH_PROVIDERS.flatMap(({ id, prefix, label, Icon }) => {
-        const own = fields.filter((field) => field.key.startsWith(prefix));
-        // A vendor whose fields aren't in this build gets no empty card.
-        if (own.length === 0) return [];
-        return renderCredentialCard({
-          id: `oauth-${id}`,
-          label,
-          // Each vendor's own `help` already names where to register the app
-          // and what redirect URI to give it, so the card needs no blurb of
-          // its own beyond what it is.
-          description: t("settings.oauthCardDesc", { provider: label }),
-          fields: own,
-          icon: <Icon size={16} />,
-          locked: false,
-        });
-      });
-    }
 
     return [
       renderCredentialCard({
@@ -579,8 +587,15 @@ export default function SettingsPage() {
         fields,
         icon: <GroupIcon groupId={group.id} size={16} databaseKind={databaseKind} />,
         locked,
-        note:
-          group.id !== "database" ? null : (databaseKind ?? "local") === "local" ? (
+        note: isWebhookChannel(group.id) ? (
+          // The one value on this card that is derived, not typed: where the
+          // provider has to send its webhook. See WebhookUrlNote.
+          <WebhookUrlNote channel={group.id} />
+        ) : group.id === "telegram" ? (
+          // Telegram has no dashboard to paste that URL into — its webhook is
+          // registered through the Bot API. See TelegramWebhookNote.
+          <TelegramWebhookNote />
+        ) : group.id !== "database" ? null : (databaseKind ?? "local") === "local" ? (
             // Docker itself has nothing to type, so it has no group here — but
             // it is what serves this database, and /setup is where you can see
             // whether its daemon and container are actually up.
@@ -605,13 +620,7 @@ export default function SettingsPage() {
     ];
   };
 
-  /**
-   * One credential card. Usually a whole group, but not always: `oauth-apps`
-   * holds six vendors' worth of fields, and as a single card that was twelve
-   * inputs in one stack with nothing but the label text separating Google's
-   * pair from Slack's. It renders as one card per vendor instead, each
-   * wearing that vendor's own mark.
-   */
+  /** One credential card, for one group. */
   const renderCredentialCard = (card: {
     id: string;
     label: string;
@@ -647,6 +656,10 @@ export default function SettingsPage() {
             </div>
             <CardDescription>{card.description}</CardDescription>
           </div>
+          {/* The walkthrough for this credential. Sits in the header rather
+              than next to a field: what people get stuck on is which console
+              to open, not which of the two inputs to fill. */}
+          {locked ? null : <TutorialTrigger id={card.id} name={card.label} />}
         </CardHeader>
 
         <CardSeparator />

@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { checkCalendarSlots, bookCalendarEvent } from "../../lib/calendar";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 // Eve tool for checking calendar availability and booking events.
 
@@ -17,15 +18,21 @@ export default defineTool({
     summary: z.string().optional().describe("Event title for booking"),
     description: z.string().optional().describe("Event description for booking"),
     contact_email: z.string().optional().describe("Attendee email for booking"),
+    with_meet: z
+      .boolean()
+      .optional()
+      .describe("Attach a Google Meet video link to the booking. Defaults to true."),
   }),
   outputSchema: z.object({
     success: z.boolean(),
     slots: z.array(z.object({ start: z.string(), end: z.string() })).optional(),
     event_id: z.string().optional(),
     link: z.string().optional(),
+    meet_link: z.string().optional(),
     message: z.string(),
   }),
-  async execute(input) {
+  async execute(input, ctx) {
+    await assertToolAllowed(ctx.session.id, "calendar");
     if (input.action === "check_slots") {
       if (!input.start || !input.end) {
         return { success: false, message: "start and end are required for checking slots." };
@@ -52,12 +59,16 @@ export default defineTool({
         summary: input.summary,
         description: input.description,
         contactEmail: input.contact_email,
+        withMeet: input.with_meet,
       });
       return {
         success: true,
         event_id: result.event_id,
         link: result.link,
-        message: `Event booked successfully.`,
+        meet_link: result.meetLink,
+        message: result.meetLink
+          ? `Event booked successfully, with a Google Meet link.`
+          : `Event booked successfully.`,
       };
     }
 

@@ -34,7 +34,7 @@ import { Beam } from "@/components/ui/beam";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowUp02Icon, Image01Icon, MonitorIcon, Add01Icon, StopIcon, Cancel01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { nanoid } from "nanoid";
 import type {

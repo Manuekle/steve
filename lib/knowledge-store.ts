@@ -33,6 +33,10 @@ export type KnowledgeDocument = {
   preview: string;
   embedding_model: string;
   created_at: string;
+  /** Set when this document was imported from Google Drive rather than
+   *  uploaded by hand — the source file's id, so a re-sync can tell it was
+   *  already brought in. See lib/drive-import.ts. */
+  drive_source_id?: string;
 };
 
 export type KnowledgeChunk = {
@@ -132,6 +136,7 @@ export async function addDocument(input: {
   embedding_model: string;
   folderId?: string | null;
   chunks: ReadonlyArray<{ text: string; embedding: number[] }>;
+  driveSourceId?: string;
 }): Promise<KnowledgeDocument> {
   return enqueue(async () => {
     const store = await readStore();
@@ -147,6 +152,7 @@ export async function addDocument(input: {
       preview: input.chunks[0]?.text.slice(0, 180).replace(/\s+/g, " ").trim() ?? "",
       embedding_model: input.embedding_model,
       created_at: new Date().toISOString(),
+      ...(input.driveSourceId ? { drive_source_id: input.driveSourceId } : {}),
     };
     store.documents.push(document);
     input.chunks.forEach((chunk, index) => {

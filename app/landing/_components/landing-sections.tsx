@@ -1,19 +1,15 @@
 "use client";
 
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   LibraryIcon,
-  Database01Icon,
   Layers01Icon,
-  LockKeyIcon,
-  ServerStack01Icon,
   Shield01Icon,
   WebhookIcon,
-  SourceCodeIcon,
   ZapIcon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ChromaticTextReveal } from "@/components/motion/chromatic-text-reveal";
 import { TextReveal } from "@/components/motion/text-reveal";
 import { AnthropicLogo, GeminiLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
@@ -32,7 +28,16 @@ import {
 } from "./brand-marks";
 import { MercadoPagoBrandIcon } from "@/components/icons/connection-icons";
 import { AgentOverlay, ConversationOverlay } from "./overlays";
-import { Disclosure, FigureLabel, Reveal, ScreenFrame, SectionIntro, Shell } from "./primitives";
+import { SECURITY_ART } from "./security-art";
+import {
+  Disclosure,
+  FigureLabel,
+  Haze,
+  Reveal,
+  ScreenFrame,
+  SectionIntro,
+  Shell,
+} from "./primitives";
 
 // ── Channel band ────────────────────────────────────────────────────
 
@@ -46,8 +51,7 @@ import { Disclosure, FigureLabel, Reveal, ScreenFrame, SectionIntro, Shell } fro
  * watching, and "Chat web" alongside three product names is a feature standing
  * in a line of brands.
  *
- * Meta covers the two channels that arrive through one Meta account —
- * Messenger, and the leads a Meta Ads form collects — which is what the line
+ * Meta stands for the leads a Meta Ads form collects, which is what the line
  * underneath says instead of the old sentence about webhooks. A webhook is an
  * automation trigger; it was never somewhere a customer writes to you, which
  * is the claim this section makes.
@@ -190,13 +194,14 @@ export function Principles() {
             and it is the one surface treatment the product never uses: the app
             has cards — `--card`, a hairline, `--shadow-soft` and the inset
             bevel — and this section was the only place on the page pretending
-            it had something else. `lp-tile` is that card, the same one the
-            self-hosted section already uses. */}
+            it had something else. `lp-cap` is that card, the same one the
+            capability grid and the self-hosted section use, so all three grids
+            answer the cursor the same way. */}
         <div className="mt-14 grid gap-4 sm:grid-cols-3">
           {PRINCIPLES.map((principle, index) => (
             <Reveal key={principle.titleKey} delay={index * 70}>
-              <div className="lp-tile h-full p-6 sm:p-7">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+              <div className="lp-cap group h-full flex-col p-6 sm:p-7">
+                <div className="lp-plate flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
                   <HugeiconsIcon icon={principle.icon} size={16} strokeWidth={1.75} />
                 </div>
                 <FigureLabel>
@@ -516,7 +521,7 @@ export function AdsSection() {
   return (
     <FeatureSection
       id="ads"
-      figure="Fig 04"
+      figure="Fig 05"
       url="localhost:3000/ads"
       label={t("nav.ads")}
       hint={t("landing.features.ads.hint")}
@@ -556,28 +561,130 @@ export function AdsSection() {
 
 // ── Autoalojado ─────────────────────────────────────────────────────
 
-const STACK: readonly { readonly bodyKey: string; readonly icon: IconSvgElement; readonly titleKey: string }[] = [
+/**
+ * The six guarantees, each one a file.
+ *
+ * This section used to be four tiles with a static icon and a sentence. That
+ * was fine while it was the page's only card grid; it stopped being fine when
+ * the capability grid learned to answer the cursor, because a security section
+ * that is quieter than the feature section reads as the part nobody worked on
+ * — and it is the part a buyer's technical person actually stops at.
+ *
+ * The two entries that are new here were already true and simply never said:
+ * every inbound webhook is verified by an HMAC over the raw body before it is
+ * parsed, and every outbound call the agent makes is bounded by an allowlist
+ * that also refuses loopback, private ranges and raw IPs. Both matter more to
+ * the person reviewing this than three of the four that were here.
+ */
+const STACK: readonly {
+  readonly bodyKey: string;
+  /** Keys the scene in `SECURITY_ART`. */
+  readonly id: string;
+  readonly titleKey: string;
+}[] = [
   {
+    id: "database",
     bodyKey: "landing.selfHosted.database.body",
-    icon: Database01Icon,
     titleKey: "landing.selfHosted.database.title",
   },
   {
+    id: "sandbox",
     bodyKey: "landing.selfHosted.sandbox.body",
-    icon: LockKeyIcon,
     titleKey: "landing.selfHosted.sandbox.title",
   },
   {
+    id: "webhooks",
+    bodyKey: "landing.selfHosted.webhooks.body",
+    titleKey: "landing.selfHosted.webhooks.title",
+  },
+  {
+    id: "keys",
     bodyKey: "landing.selfHosted.keys.body",
-    icon: ServerStack01Icon,
     titleKey: "landing.selfHosted.keys.title",
   },
   {
+    id: "allowlist",
+    bodyKey: "landing.selfHosted.allowlist.body",
+    titleKey: "landing.selfHosted.allowlist.title",
+  },
+  {
+    id: "traces",
     bodyKey: "landing.selfHosted.traces.body",
-    icon: SourceCodeIcon,
     titleKey: "landing.selfHosted.traces.title",
   },
 ];
+
+/**
+ * One guarantee, sized for a rail rather than for a grid cell.
+ *
+ * The width is fixed because the row is a flex line: left to itself a flex
+ * line divides the rail between its cards, and twelve cards in a 1120px rail
+ * is twelve slivers. `.lp-rail-card` is what the spotlight rule reads — the
+ * hover styling lives in the stylesheet so a paused row and a lit card are one
+ * decision rather than one per card.
+ */
+function StackCard({
+  body,
+  echo,
+  scene,
+  title,
+}: {
+  readonly body: string;
+  /** The duplicated pass, heard once by a screen reader and read twice by the
+   *  loop. */
+  readonly echo?: boolean;
+  readonly scene: ReactNode;
+  readonly title: string;
+}) {
+  return (
+    <div aria-hidden={echo ? "true" : undefined} className="lp-rail-card w-[19rem] sm:w-[21rem]">
+      <div className="lp-cap group h-full flex-col">
+        <div className="relative z-20 order-last flex-none px-7 pt-1 pb-7">
+          <h3 className="font-medium text-[15px] tracking-tight text-foreground">{title}</h3>
+          <p className="mt-2.5 text-[14px] leading-relaxed text-muted-foreground">{body}</p>
+        </div>
+        <div className="lp-scene pt-7 pb-3">{scene}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One travelling row. `items` is rendered twice — the animation covers exactly
+ * half the track, so the second copy lands where the first began and the loop
+ * has no seam.
+ */
+function StackRow({
+  dir,
+  duration,
+  items,
+}: {
+  readonly dir: "left" | "right";
+  readonly duration: string;
+  readonly items: readonly (typeof STACK)[number][];
+}) {
+  const t = useT();
+
+  const card = (item: (typeof STACK)[number], echo: boolean) => {
+    const Art = SECURITY_ART[item.id];
+    return (
+      <StackCard
+        body={t(item.bodyKey)}
+        echo={echo}
+        key={echo ? `${item.id}-echo` : item.id}
+        scene={Art ? <Art /> : null}
+        title={t(item.titleKey)}
+      />
+    );
+  };
+
+  return (
+    <div className="lp-rail-track" data-dir={dir} style={{ "--lp-drift": duration } as CSSProperties}>
+      {items.map((item) => card(item, false))}
+      {items.map((item) => card(item, true))}
+    </div>
+  );
+}
 
 export function SelfHostedSection() {
   const t = useT();
@@ -586,24 +693,30 @@ export function SelfHostedSection() {
     <section id="autoalojado" className="scroll-mt-20 border-border border-t py-24 sm:py-32">
       <Shell>
         <SectionIntro
-          figure="Fig 05"
+          figure="Fig 06"
           title={[t("landing.selfHosted.titleLine1"), t("landing.selfHosted.titleLine2")]}
           body={t("landing.selfHosted.body")}
         />
 
-        <div className="mt-14 grid gap-4 sm:grid-cols-2">
-          {STACK.map((item, index) => (
-            <Reveal key={item.titleKey} delay={index * 70}>
-              <div className="lp-tile h-full p-6">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                  <HugeiconsIcon icon={item.icon} size={16} strokeWidth={1.75} />
-                </div>
-                <h3 className="mt-5 font-medium text-base tracking-tight">{t(item.titleKey)}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{t(item.bodyKey)}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        {/* Two rows travelling against each other. Six guarantees are a list of
+            equals — nothing here is wider or taller than its neighbour — so the
+            asymmetry is in the movement instead: the rows run opposite ways and
+            at different speeds, which is what keeps them from reading as one
+            block sliding.
+
+            Three guarantees to a row, and the rows do not share any: both
+            rows carrying all six put the same card on screen twice at once,
+            in two places, which reads as a rendering fault rather than as a
+            loop. Three cards is 1068px against a 1056px rail, so a card is
+            never on screen beside its own second copy either. */}
+        <Reveal delay={60} lift={false}>
+          <div className="lp-rail mt-9 flex flex-col gap-5">
+            <Haze edge="left" />
+            <StackRow dir="right" duration="72s" items={STACK.slice(0, 3)} />
+            <StackRow dir="left" duration="88s" items={STACK.slice(3)} />
+            <Haze edge="right" />
+          </div>
+        </Reveal>
       </Shell>
     </section>
   );

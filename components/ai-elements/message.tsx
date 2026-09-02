@@ -9,7 +9,7 @@ import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import type { UIMessage } from "ai";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ChevronLeftIcon, ChevronRightIcon } from "@hugeicons/core-free-icons";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";

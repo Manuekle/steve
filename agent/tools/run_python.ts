@@ -1,5 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 const PYTHON_TIMEOUT_MS = 15_000;
 const MAX_OUTPUT_BYTES = 256 * 1024;
@@ -23,6 +24,7 @@ export default defineTool({
     exitCode: z.number(),
   }),
   async execute({ code }, ctx) {
+    await assertToolAllowed(ctx.session.id, "run_python");
     const sandbox = await ctx.getSandbox();
     const timeoutSignal = AbortSignal.timeout(PYTHON_TIMEOUT_MS);
     const executionSignal = AbortSignal.any([ctx.abortSignal, timeoutSignal]);

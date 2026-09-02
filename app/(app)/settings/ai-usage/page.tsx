@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowLeft02Icon,
   Coins01Icon,
@@ -11,6 +11,7 @@ import {
   MessageMultiple01Icon,
   Wallet01Icon,
   Loading03Icon,
+  ChartLineData01Icon,
 } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../../_components/page-container";
 import { Card, CardBody, CardHeader, CardSeparator, CardTitle, CardDescription } from "../../../_components/dashboard-card";
@@ -22,6 +23,8 @@ import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { useI18n } from "@/lib/i18n/provider";
 import { ProviderLogo } from "@/components/provider-logo";
 import { CHANNEL_LABELS } from "@/app/_components/channel-badge";
+import { RankedBars, TimeSeries, type RankedBar } from "@/app/_components/chart";
+import { formatDayTick } from "@/lib/chart-data";
 import type { ChannelId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +61,12 @@ type Breakdown = { readonly credits: number; readonly providerCost: number; read
 type ProviderBreakdown = Breakdown & { readonly provider: string };
 type AgentBreakdown = Breakdown & { readonly agentId: string | null };
 type ChannelBreakdown = Breakdown & { readonly channel: string | null };
+type DailyUsage = {
+  readonly day: string;
+  readonly credits: number;
+  readonly providerCost: number;
+  readonly calls: number;
+};
 
 type SummaryResponse = {
   readonly totalCredits: number;
@@ -67,6 +76,7 @@ type SummaryResponse = {
   readonly byProvider: readonly ProviderBreakdown[];
   readonly byAgent: readonly AgentBreakdown[];
   readonly byChannel: readonly ChannelBreakdown[];
+  readonly byDay: readonly DailyUsage[];
 };
 
 type DetailRow = {
@@ -163,6 +173,35 @@ export default function AiUsagePage() {
       month: "long",
     });
   }, [balance, locale]);
+
+  /**
+   * Whether this account has any cost to show at all.
+   *
+   * A BYOK-only install records every call but no price — the provider bills
+   * the account directly and never tells us the amount. Charting cost there
+   * draws a flat empty week over sixteen real calls, which reads as "nothing
+   * happened". When there is no cost anywhere the whole card switches to call
+   * volume and says so, rather than showing a truthful zero that misleads.
+   */
+  const hasCost = (summary?.totalProviderCost ?? 0) > 0;
+
+  /**
+   * The trend's marks. Cost, not credits: the question this card answers is
+   * "what is this costing", and credits only mean something against a plan.
+   *
+   * The bucket key stays the raw `YYYY-MM-DD` so the tooltip can find its row;
+   * only the axis tick is localised, and it drops the year — fourteen bars are
+   * obviously the last fortnight, and repeating 2026 on each one is noise.
+   */
+  const dailySpend = useMemo(
+    () =>
+      (summary?.byDay ?? []).map((day) => ({
+        key: day.day,
+        label: formatDayTick(day.day, locale),
+        value: hasCost ? day.providerCost : day.calls,
+      })),
+    [summary, locale, hasCost],
+  );
 
   const availableProviders = useMemo(
     () => Array.from(new Set(summary?.byProvider.map((p) => p.provider) ?? [])),
@@ -269,6 +308,39 @@ export default function AiUsagePage() {
             </CardBody>
           </Card>
 
+          {/* ── Trend ── */}
+          <Card className="mb-4">
+            <CardHeader>
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                <HugeiconsIcon icon={ChartLineData01Icon} size={14} strokeWidth={1.75} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <CardTitle>{t(hasCost ? "aiUsage.trendTitle" : "aiUsage.trendCallsTitle")}</CardTitle>
+                <CardDescription>
+                  {t(hasCost ? "aiUsage.trendDescription" : "aiUsage.trendCallsDescription")}
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardSeparator />
+            <CardBody>
+              <TimeSeries
+                data={dailySpend}
+                emptyLabel={t("aiUsage.trendEmpty")}
+                formatValue={(point) => {
+                  const day = summary?.byDay.find((d) => d.day === point.key);
+                  return (
+                    <span className="tabular-nums">
+                      {point.label} ·{" "}
+                      {hasCost
+                        ? t("aiUsage.trendTooltip", { cost: formatUsd(point.value), calls: day?.calls ?? 0 })
+                        : t("aiUsage.trendCallsTooltip", { calls: day?.calls ?? 0 })}
+                    </span>
+                  );
+                }}
+              />
+            </CardBody>
+          </Card>
+
           {/* ── Breakdowns ── */}
           <div className="mb-4 grid gap-4 sm:grid-cols-3">
             <BreakdownCard
@@ -277,8 +349,8 @@ export default function AiUsagePage() {
               rows={(summary?.byProvider ?? []).map((p) => ({
                 key: p.provider,
                 label: <span className="flex items-center gap-1.5"><ProviderLogo vendor={p.provider} size={13} />{p.provider}</span>,
-                credits: p.credits,
-                cost: p.providerCost,
+                formatted: hasCost ? formatUsd(p.providerCost) : t("aiUsage.callsCount", { calls: p.calls }),
+                value: hasCost ? p.providerCost : p.calls,
               }))}
               emptyLabel={t("aiUsage.noData")}
             />
@@ -288,8 +360,8 @@ export default function AiUsagePage() {
               rows={(summary?.byAgent ?? []).map((a) => ({
                 key: a.agentId ?? "none",
                 label: a.agentId ?? t("aiUsage.unassignedAgent"),
-                credits: a.credits,
-                cost: a.providerCost,
+                formatted: hasCost ? formatUsd(a.providerCost) : t("aiUsage.callsCount", { calls: a.calls }),
+                value: hasCost ? a.providerCost : a.calls,
               }))}
               emptyLabel={t("aiUsage.noData")}
             />
@@ -299,8 +371,8 @@ export default function AiUsagePage() {
               rows={(summary?.byChannel ?? []).map((c) => ({
                 key: c.channel ?? "none",
                 label: channelLabel(c.channel, t("aiUsage.unknownChannel")),
-                credits: c.credits,
-                cost: c.providerCost,
+                formatted: hasCost ? formatUsd(c.providerCost) : t("aiUsage.callsCount", { calls: c.calls }),
+                value: hasCost ? c.providerCost : c.calls,
               }))}
               emptyLabel={t("aiUsage.noData")}
             />
@@ -321,7 +393,7 @@ export default function AiUsagePage() {
                     setPage(0);
                   }}
                 >
-                  <SelectTrigger size="sm" className="w-auto text-xs">
+                  <SelectTrigger aria-label={t("common.filterByProvider")} size="sm" className="w-auto text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -340,7 +412,7 @@ export default function AiUsagePage() {
                     setPage(0);
                   }}
                 >
-                  <SelectTrigger size="sm" className="w-auto text-xs">
+                  <SelectTrigger aria-label={t("common.filterBySource")} size="sm" className="w-auto text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -463,10 +535,9 @@ function BreakdownCard({
 }: {
   readonly icon: Parameters<typeof HugeiconsIcon>[0]["icon"];
   readonly title: string;
-  readonly rows: readonly { readonly key: string; readonly label: React.ReactNode; readonly credits: number; readonly cost: number }[];
+  readonly rows: readonly RankedBar[];
   readonly emptyLabel: string;
 }) {
-  const max = Math.max(1, ...rows.map((r) => r.cost));
   return (
     <Card>
       <CardHeader>
@@ -476,22 +547,8 @@ function BreakdownCard({
         <CardTitle className="text-xs">{title}</CardTitle>
       </CardHeader>
       <CardSeparator />
-      <CardBody className="space-y-2.5">
-        {rows.length === 0 ? (
-          <p className="text-xs text-muted-foreground">{emptyLabel}</p>
-        ) : (
-          rows.slice(0, 6).map((row) => (
-            <div key={row.key}>
-              <div className="mb-1 flex items-center justify-between gap-2 text-xs">
-                <span className="min-w-0 truncate font-medium">{row.label}</span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">{formatUsd(row.cost)}</span>
-              </div>
-              <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary/70" style={{ width: `${(row.cost / max) * 100}%` }} />
-              </div>
-            </div>
-          ))
-        )}
+      <CardBody>
+        <RankedBars bars={rows} emptyLabel={emptyLabel} />
       </CardBody>
     </Card>
   );
@@ -499,7 +556,7 @@ function BreakdownCard({
 
 function AiUsageSkeleton() {
   return (
-    <div className="animate-pulse">
+    <div>
       <div className="mb-8 space-y-2">
         <div className="h-4 w-16 rounded bg-muted/60" />
         <div className="h-7 w-48 rounded-lg bg-muted" />

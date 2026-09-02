@@ -23,6 +23,20 @@ const COLUMNS: readonly {
       { href: "/inbox", labelKey: "nav.inbox" },
       { href: "/history", labelKey: "nav.chats" },
       { href: "/automations", labelKey: "nav.automations" },
+      { href: "/calendar", labelKey: "nav.calendar" },
+    ],
+  },
+  /* The CRM group as the sidebar has it, plus Meta Ads — which is where the
+     leads in it come from, and which had a column of its own with one link in
+     it. `nav.groupCrm` is the sidebar's own heading for these, so the footer
+     and the product call the same set of pages the same thing. */
+  {
+    titleKey: "nav.groupCrm",
+    links: [
+      { href: "/crm", labelKey: "nav.crm" },
+      { href: "/leads", labelKey: "nav.leads" },
+      { href: "/forms", labelKey: "nav.forms" },
+      { href: "/ads", labelKey: "nav.ads" },
     ],
   },
   {
@@ -31,18 +45,17 @@ const COLUMNS: readonly {
       { href: "/chat", labelKey: "nav.chat" },
       { href: "/agents", labelKey: "nav.agents" },
       { href: "/knowledge", labelKey: "nav.knowledge" },
+      { href: "/email-templates", labelKey: "nav.emailTemplates" },
       { href: "/reminders", labelKey: "nav.reminders" },
     ],
   },
   {
-    titleKey: "landing.footer.colCampaigns",
-    links: [{ href: "/ads", labelKey: "nav.ads" }],
-  },
-  {
     titleKey: "landing.footer.colSystem",
     links: [
-      { href: "/setup", labelKey: "nav.setup" },
+      { href: "/connections", labelKey: "nav.connections" },
+      { href: "/account", labelKey: "nav.account" },
       { href: "/settings", labelKey: "nav.settings" },
+      { href: "/setup", labelKey: "nav.setup" },
       { href: "/guide", labelKey: "landing.footer.linkGuide" },
     ],
   },

@@ -1,8 +1,9 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
+import { useSound } from "@/components/sound-provider";
 import { useT } from "@/lib/i18n/provider";
 import { pageItems } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function Pagination({
   pageSizeOptions = [5, 10, 20],
 }: PaginationProps) {
   const t = useT();
+  const { cue } = useSound();
 
   // One page is not a choice — but the rows control still is, so the bar goes
   // and the size tabs stay.
@@ -45,7 +47,12 @@ export function Pagination({
 
   const goTo = (next: number) => {
     const clamped = Math.min(Math.max(next, 1), pageCount);
-    if (clamped !== page) onPageChange(clamped);
+    // Inside the guard, so Next on the last page — a button that is disabled
+    // but still reachable by a stray click — stays as silent as it is inert.
+    if (clamped !== page) {
+      cue("page");
+      onPageChange(clamped);
+    }
   };
 
   return (

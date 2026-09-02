@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@hugeicons/core-free-icons";
 import { Select as SelectPrimitive } from "radix-ui";
 
@@ -31,6 +31,9 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
+      // `scan` is cuelume's cue for menus — a list opening is not the same
+      // gesture as a button being pushed.
+      data-cuelume-press="scan"
       className={cn(
         "flex w-fit items-center justify-between gap-2 rounded-lg border border-input bg-muted px-3.5 py-2 text-sm whitespace-nowrap shadow-[var(--shadow-inset)] transition-[background-color,border-color,box-shadow] duration-150 ease-out outline-none focus-visible:border-ring/50 focus-visible:bg-card focus-visible:shadow-[var(--shadow-inset),0_0_0_3px_oklch(0.5_0_0/0.1)] focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-[placeholder]:text-muted-foreground/60 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:hover:bg-secondary/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
         className,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { RotateCwIcon, ArrowLeft02Icon } from "@hugeicons/core-free-icons";
 import { useT } from "@/lib/i18n/provider";
 

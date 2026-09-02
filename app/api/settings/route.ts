@@ -10,6 +10,8 @@ import {
 } from "@/lib/credentials";
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, withApiErrors } from "@/lib/api-error";
+import { invalidateProviderReports } from "@/lib/provider-catalog";
+import { PROVIDER_CREDENTIAL_KEY } from "@/lib/model-catalog";
 
 // GET /api/settings — which credentials are configured (masked), the real
 // value for every non-secret field (a phone number id, a hostname — nothing
@@ -18,9 +20,20 @@ import { apiError, withApiErrors } from "@/lib/api-error";
 // sent back once saved: the form shows what was typed this session, or
 // nothing, never what the server holds — see lib/credentials.ts's
 // `isPasswordCredential`/`getCredentialPreviews`.
-// POST /api/settings — saves credential values to the local store.
+// POST /api/settings — saves credential values to the local store, and
+// answers with the same shape GET does so the form can repaint from the
+// server's own view instead of asking the operator to reload the page.
 
-export const GET = withApiErrors(async function GET() {
+/** Every key whose value decides which model answers, and with whose key. */
+const MODEL_KEYS: ReadonlySet<string> = new Set<string>([
+  "AI_PROVIDER",
+  "AI_MODEL",
+  ...Object.values(PROVIDER_CREDENTIAL_KEY),
+]);
+
+/** The one payload both verbs return: what is set, where it came from, the
+ *  non-secret values, and a masked preview for every secret. */
+async function settingsPayload() {
   const [masked, stored, previews, sources] = await Promise.all([
     getMaskedCredentials(),
     getStoredCredentials(),
@@ -40,7 +53,7 @@ export const GET = withApiErrors(async function GET() {
     }
   }
 
-  return NextResponse.json({
+  return {
     credentials: masked,
     // Only values explicitly saved through the UI count as "configured" for the
     // badge — environment-provided secrets are real and working, but the badge
@@ -55,7 +68,11 @@ export const GET = withApiErrors(async function GET() {
     values,
     previews,
     groups: CREDENTIAL_GROUPS,
-  });
+  };
+}
+
+export const GET = withApiErrors(async function GET() {
+  return NextResponse.json(await settingsPayload());
 });
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
@@ -81,6 +98,13 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
 
   await saveCredentials(updates);
 
-  const masked = await getMaskedCredentials();
-  return NextResponse.json({ ok: true, credentials: masked });
+  // A model key that just changed has to be re-checked against the provider on
+  // the very next read: the catalog is cached for a minute, and a stale
+  // "missing" right after a save is indistinguishable from a key that never
+  // saved at all.
+  if (Object.keys(updates).some((key) => MODEL_KEYS.has(key))) {
+    invalidateProviderReports();
+  }
+
+  return NextResponse.json({ ok: true, ...(await settingsPayload()) });
 });

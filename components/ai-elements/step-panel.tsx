@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowUp02Icon, ArrowDown02Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { StepEditor } from "./step-editor";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

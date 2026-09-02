@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { CodeIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -94,6 +94,7 @@ function JsonField({
   return (
     <>
       <Textarea
+        aria-label="Variables de la plantilla (JSON)"
         value={text}
         rows={Math.min(10, text.split("\n").length)}
         onChange={(event) => {

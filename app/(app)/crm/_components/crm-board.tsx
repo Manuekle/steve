@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useRef, useState, type ReactNode, type Ref } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import {
   AnimatePresence,
   motion,
@@ -11,7 +11,7 @@ import {
   useVelocity,
   type PanInfo,
 } from "motion/react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowRight01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useI18n } from "@/lib/i18n/provider";
@@ -136,7 +136,10 @@ function scrollParentOf(el: HTMLElement | null): HTMLElement | null {
 }
 
 /** Pulls the board along when a dragged card reaches the top or bottom edge,
- *  so a long column can be crossed without letting go. */
+ *  so a long column can be crossed without letting go. Driven from a frame
+ *  loop, not from pointer events: a pointer parked at the edge fires no
+ *  further moves, and event-driven auto-scroll simply stops until it is
+ *  jiggled. */
 function autoScroll(scroller: HTMLElement | null, pointerY: number) {
   if (!scroller) return;
   const rect = scroller.getBoundingClientRect();
@@ -191,17 +194,33 @@ export function CrmBoard({
   const boardRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLElement | null>(null);
   const zones = useRef(new Map<ContactStatus, HTMLElement>());
+  const zoneRefs = useRef(new Map<ContactStatus, (el: HTMLElement | null) => void>());
   const dropRef = useRef<{ status: ContactStatus; index: number } | null>(null);
   const droppedAt = useRef(0);
   const isDraggingRef = useRef(false);
+  /** The live pointer and the card it is carrying, so the frame loop can keep
+   *  scrolling and re-hit-testing while the pointer itself is held still. */
+  const pointer = useRef({ x: 0, y: 0 });
+  const dragIdRef = useRef<string | null>(null);
+  const rafRef = useRef(0);
   const [drop, setDrop] = useState<{ status: ContactStatus; index: number } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragHeight, setDragHeight] = useState(0);
   const [landedId, setLandedId] = useState<string | null>(null);
 
-  const registerZone = useCallback((status: ContactStatus, el: HTMLElement | null) => {
-    if (el) zones.current.set(status, el);
-    else zones.current.delete(status);
+  /** One stable ref callback per column. An inline `(el) => …` is a fresh
+   *  function every render, and this board re-renders on every pointer move of
+   *  a drag — React would detach and re-attach all four zones per frame. */
+  const zoneRef = useCallback((status: ContactStatus) => {
+    let fn = zoneRefs.current.get(status);
+    if (!fn) {
+      fn = (el: HTMLElement | null) => {
+        if (el) zones.current.set(status, el);
+        else zones.current.delete(status);
+      };
+      zoneRefs.current.set(status, fn);
+    }
+    return fn;
   }, []);
 
   /** Live hit test: which column, and which slot inside it, is under the
@@ -233,14 +252,45 @@ export function CrmBoard({
     setDrop(next);
   }, []);
 
-  const handleDragStart = useCallback((id: string, height: number) => {
+  /** The auto-scroll frame. The hit test re-runs on any frame that actually
+   *  scrolled, because the columns move under a pointer that has not itself
+   *  moved — without it the open slot belongs to wherever the board was when
+   *  the pointer last budged. */
+  const step = useCallback(() => {
+    rafRef.current = requestAnimationFrame(step);
+    const scroller = scrollerRef.current;
+    const id = dragIdRef.current;
+    if (!scroller || !id) return;
+    const before = scroller.scrollTop;
+    autoScroll(scroller, pointer.current.y);
+    if (scroller.scrollTop !== before) {
+      setDropIfChanged(slotAt(pointer.current.x, pointer.current.y, id));
+    }
+  }, [slotAt, setDropIfChanged]);
+
+  const stopFrames = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
+  }, []);
+
+  useEffect(() => stopFrames, [stopFrames]);
+
+  const handleDragStart = useCallback((
+    id: string,
+    height: number,
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => {
     scrollerRef.current = scrollParentOf(boardRef.current);
+    pointer.current = clientPoint(event, info);
     isDraggingRef.current = true;
+    dragIdRef.current = id;
     setDragHeight(height);
     setDraggingId(id);
     setLandedId(null);
     onDragActiveChange?.(true);
-  }, [onDragActiveChange]);
+    if (!rafRef.current) rafRef.current = requestAnimationFrame(step);
+  }, [onDragActiveChange, step]);
 
   const handleDrag = useCallback((
     id: string,
@@ -248,27 +298,47 @@ export function CrmBoard({
     info: PanInfo,
   ) => {
     const p = clientPoint(event, info);
-    autoScroll(scrollerRef.current, p.y);
+    pointer.current = p;
     setDropIfChanged(slotAt(p.x, p.y, id));
   }, [slotAt, setDropIfChanged]);
 
+  /** Reports back whether the card found a home. The card uses that to drop its
+   *  drag offset outright instead of springing back to where it was picked up:
+   *  the copy left behind in the old column is still on screen for its exit,
+   *  and letting it fly home flashed the same card twice on every move. */
   const handleDragEnd = useCallback((
     contact: Contact,
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo,
-  ) => {
+  ): boolean => {
     const p = clientPoint(event, info);
     const target = slotAt(p.x, p.y, contact.id);
     droppedAt.current = Date.now();
     isDraggingRef.current = false;
+    dragIdRef.current = null;
+    stopFrames();
     setDraggingId(null);
     setDropIfChanged(null);
     onDragActiveChange?.(false);
-    if (target) {
-      setLandedId(contact.id);
-      onMove(contact.id, target.status, target.index);
-    }
-  }, [slotAt, onMove, setDropIfChanged, onDragActiveChange]);
+    if (!target) return false;
+    // Let go over the slot it was already in: nothing moved, so nothing is
+    // written and the card is spared the landing bounce.
+    const home = grouped[contact.status].findIndex((c) => c.id === contact.id);
+    if (target.status === contact.status && target.index === home) return true;
+    setLandedId(contact.id);
+    onMove(contact.id, target.status, target.index);
+    return true;
+  }, [slotAt, onMove, setDropIfChanged, onDragActiveChange, stopFrames, grouped]);
+
+  /** The landing bounce is a one-off. Left set, `justLanded` kept feeding the
+   *  under-damped landing spring to every later layout move of that one card,
+   *  so the first card you dragged wobbled differently from its neighbours for
+   *  the rest of the session. */
+  useEffect(() => {
+    if (!landedId) return;
+    const timer = setTimeout(() => setLandedId(null), 700);
+    return () => clearTimeout(timer);
+  }, [landedId]);
 
   /** Was the click that just fired the tail of a drag?
    *
@@ -293,7 +363,10 @@ export function CrmBoard({
         e.preventDefault();
         e.stopPropagation();
       }}
-      className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+      // A drag that starts on bare board — between cards, past the end of a
+      // column — is a drag, not a text selection. Without this the pointer
+      // painted a selection across every column header it crossed.
+      className="grid select-none gap-4 md:grid-cols-2 xl:grid-cols-4"
     >
       {CRM_COLUMNS.map((status) => {
         const theme = STATUS_THEME[status];
@@ -307,7 +380,7 @@ export function CrmBoard({
         let slotPlaced = false;
         for (const contact of cards) {
           if (isTarget && drop.index === placed && !slotPlaced) {
-            rows.push(<DropSlot key={`drop-slot-${placed}`} height={dragHeight} t={t} />);
+            rows.push(<DropSlot key="drop-slot" height={dragHeight} t={t} />);
             slotPlaced = true;
           }
           rows.push(
@@ -328,12 +401,13 @@ export function CrmBoard({
           if (contact.id !== draggingId) placed++;
         }
         if (isTarget && drop.index >= placed && !slotPlaced) {
-          rows.push(<DropSlot key={`drop-slot-${placed}`} height={dragHeight} t={t} />);
+          rows.push(<DropSlot key="drop-slot" height={dragHeight} t={t} />);
         }
 
         return (
           <section
             key={status}
+            ref={zoneRef(status)}
             className={cn(
               "relative flex flex-col rounded-2xl border transition-[border-color,box-shadow] duration-200",
               PLATE,
@@ -360,9 +434,10 @@ export function CrmBoard({
             </header>
 
             <div
-              ref={(el) => registerZone(status, el)}
               className={cn(
-                "min-h-[300px] flex-1 space-y-2 rounded-b-2xl p-3 transition-colors duration-200",
+                // `relative` so a card that is lifted out of the flow pins
+                // itself against this box rather than against the section.
+                "relative min-h-[300px] flex-1 space-y-2 rounded-b-2xl p-3 transition-colors duration-200",
                 isTarget ? "bg-muted/40" : "bg-muted/25",
               )}
             >
@@ -410,9 +485,15 @@ const ContactCard = memo(function ContactCard({
   readonly isDragging: boolean;
   readonly justLanded: boolean;
   readonly isDropClick: () => boolean;
-  readonly onDragStart: (id: string, height: number) => void;
+  readonly onDragStart: (
+    id: string,
+    height: number,
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => void;
   readonly onDrag: (id: string, event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => void;
-  readonly onDragEnd: (contact: Contact, event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => void;
+  /** Returns whether the drop landed on a slot. */
+  readonly onDragEnd: (contact: Contact, event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => boolean;
   readonly onEdit: (contact: Contact) => void;
   readonly onDelete: (id: string) => void;
   readonly onMove: (id: string, status: ContactStatus, index?: number) => void;
@@ -421,6 +502,19 @@ const ContactCard = memo(function ContactCard({
   const reduce = useReducedMotion();
   const hasContactLine = Boolean(contact.phone || contact.email);
   const node = useRef<HTMLElement | null>(null);
+  /** The box the card is lifted out of. A dragged card used to stay in its
+   *  column's flow, which meant the drop slot — inserted at the pointer, often
+   *  above the card's own place — shoved the card it was opening room for: the
+   *  card lurched a full card-height away from the cursor and only caught up
+   *  once the slot had travelled past it. Pinned to the box it was grabbed
+   *  from, its layout no longer answers to anything the board does around it,
+   *  and the hole it leaves closes up so the slot is the only gap on screen. */
+  const [pin, setPin] = useState<{
+    readonly top: number;
+    readonly left: number;
+    readonly width: number;
+    readonly height: number;
+  } | null>(null);
 
   /** Keeps our own handle on the node while still handing it to whoever asked
    *  for it — `AnimatePresence` needs the same ref for its exit measurement. */
@@ -448,16 +542,47 @@ const ContactCard = memo(function ContactCard({
     <motion.article
       ref={setRefs}
       data-card-id={contact.id}
-      layout={isDragging ? false : "position"}
+      // No layout animation while pinned: the box is fixed for the length of
+      // the gesture, so there is nothing to chase. On release the pin drops in
+      // the same commit that puts the card in its new slot, and `layout`
+      // carries it there from wherever it was let go.
+      layout={pin ? false : "position"}
       drag
       dragSnapToOrigin
       dragElastic={0.14}
       dragMomentum={false}
       dragTransition={DRAG_RETURN}
       whileDrag={reduce ? undefined : { scale: 1.045 }}
-      onDragStart={() => onDragStart(contact.id, node.current?.offsetHeight ?? 0)}
+      onDragStart={(event, info) => {
+        const el = node.current;
+        // Measure the card as it will land, not as it looks under the cursor.
+        // Picking a card up means hovering it, which opens its action row —
+        // and that open row was being baked into both the carried card and the
+        // slot measured from it, so every drop opened a gap 65px taller than
+        // the card that settled into it and then closed again by itself.
+        const actions = el?.querySelector<HTMLElement>("[data-card-actions]");
+        const open = actions
+          ? actions.offsetHeight + (parseFloat(getComputedStyle(actions).marginTop) || 0)
+          : 0;
+        const height = Math.max(0, (el?.offsetHeight ?? 0) - open);
+        if (el) {
+          setPin({ top: el.offsetTop, left: el.offsetLeft, width: el.offsetWidth, height });
+        }
+        onDragStart(contact.id, height, event, info);
+      }}
       onDrag={(event, info) => onDrag(contact.id, event, info)}
-      onDragEnd={(event, info) => onDragEnd(contact, event, info)}
+      onDragEnd={(event, info) => {
+        // A card that found a slot is already being redrawn there, so its drag
+        // offset is spent: drop it outright rather than letting `dragSnapToOrigin`
+        // fly the outgoing copy back across the board while its replacement pops
+        // in. `jump` also clears the tracked velocity, so zeroing the offset
+        // doesn't read as a throw and kick the tilt and squash springs.
+        const landed = onDragEnd(contact, event, info);
+        setPin(null);
+        if (!landed) return;
+        x.jump(0);
+        y.jump(0);
+      }}
       initial={justLanded ? { scale: 1.14, opacity: 0.7 } : { scale: 0.97, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.94, opacity: 0, transition: { duration: 0.14 } }}
@@ -469,7 +594,11 @@ const ContactCard = memo(function ContactCard({
         scaleX: reduce ? 1 : squash,
         scaleY: reduce ? 1 : stretch,
         zIndex: isDragging ? 40 : 1,
-        position: "relative",
+        position: pin ? "absolute" : "relative",
+        top: pin?.top,
+        left: pin?.left,
+        width: pin?.width,
+        height: pin?.height,
       }}
       onClick={() => {
         // The click a drop leaves behind is the drop, not a tap on the card.
@@ -486,7 +615,7 @@ const ContactCard = memo(function ContactCard({
       tabIndex={0}
       aria-label={contact.name}
       className={cn(
-        "kpi-card group touch-none rounded-xl border p-3 text-left outline-none",
+        "kpi-card group touch-none select-none rounded-xl border p-3 text-left outline-none",
         "transition-[border-color,box-shadow] duration-200",
         "focus-visible:ring-[3px] focus-visible:ring-[var(--btn-focus-ring)]",
         PLATE,
@@ -545,13 +674,18 @@ const ContactCard = memo(function ContactCard({
 
         {/* Keyboard- and touch-reachable equivalent of the drag. Collapsed to
             zero height until the card is hovered or focused, so a resting
-            column is a stack of facts rather than a stack of controls. */}
+            column is a stack of facts rather than a stack of controls. Stays
+            shut for the length of a drag: a card in the air is the size it
+            will land at, and these are the drag's own alternative anyway. */}
         <div
+          data-card-actions
           className={cn(
             "grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity,margin] duration-200 ease-[var(--btn-easing)]",
-            "group-hover:mt-2 group-hover:grid-rows-[1fr] group-hover:opacity-100",
-            "group-focus-within:mt-2 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100",
-            "[@media(hover:none)]:mt-2 [@media(hover:none)]:grid-rows-[1fr] [@media(hover:none)]:opacity-100",
+            !pin && [
+              "group-hover:mt-2 group-hover:grid-rows-[1fr] group-hover:opacity-100",
+              "group-focus-within:mt-2 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100",
+              "[@media(hover:none)]:mt-2 [@media(hover:none)]:grid-rows-[1fr] [@media(hover:none)]:opacity-100",
+            ],
           )}
         >
           <div className="flex flex-wrap gap-1 overflow-hidden">

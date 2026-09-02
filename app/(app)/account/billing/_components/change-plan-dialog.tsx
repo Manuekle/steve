@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowLeft02Icon,
   ArrowUp01Icon,
@@ -266,7 +266,8 @@ export function ChangePlanDialog({
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="font-medium">{t("billing.downgradeReasonLabel")}</span>
               <Select value={reason} onValueChange={setReason}>
-                <SelectTrigger>
+                <SelectTrigger
+                  aria-label={t("billing.downgradeReasonLabel")}>
                   <SelectValue placeholder={t("billing.downgradeReasonPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArtificialIntelligence08Icon, EyeIcon, EyeOffIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +34,20 @@ type CredentialFieldSpec = CredentialGroup["fields"][number];
 /** Sentinel for "no explicit model": an empty string is not a legal Radix
  *  Select value, so the auto option needs an id of its own. */
 export const AUTO_MODEL = "__auto__";
+
+/**
+ * A secret for the fields nobody copies from a vendor — the webhook verify
+ * tokens. 24 random bytes as base64url: 32 characters, URL-safe, and safe to
+ * paste into a provider dashboard that may not accept punctuation.
+ */
+function generateSecret(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
 
 export function CredentialField({
   field,
@@ -94,7 +108,23 @@ export function CredentialField({
           {label}
           {field.required ? <span className="text-destructive">*</span> : null}
         </label>
-        {headerExtra}
+        <div className="flex items-center gap-2">
+          {field.generate ? (
+            <button
+              type="button"
+              onClick={() => {
+                onChange(field.key, generateSecret(), field.pattern);
+                // Reveal it: the whole point of this value is being copied
+                // into the provider's dashboard, and a masked field cannot be.
+                if (!show) onToggleShow?.(field.key);
+              }}
+              className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("settings.generate")}
+            </button>
+          ) : null}
+          {headerExtra}
+        </div>
       </div>
 
       {isModel ? (
@@ -102,7 +132,7 @@ export function CredentialField({
           value={value || AUTO_MODEL}
           onValueChange={(next) => onChange(field.key, next === AUTO_MODEL ? "" : next)}
         >
-          <SelectTrigger id={field.key} className="w-full">
+          <SelectTrigger aria-label={label} id={field.key} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -134,7 +164,7 @@ export function CredentialField({
             if (field.key === "AI_PROVIDER") onChange("AI_MODEL", "");
           }}
         >
-          <SelectTrigger id={field.key} className="w-full">
+          <SelectTrigger aria-label={label} id={field.key} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

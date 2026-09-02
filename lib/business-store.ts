@@ -4,7 +4,10 @@ import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import type {
   Agent,
+  AgentChatSession,
+  AgentChatTurn,
   AgentStatus,
+  ChannelConversation,
   Automation,
   ChannelId,
   ChatSummary,
@@ -13,10 +16,13 @@ import type {
   Form,
   FormResponse,
   LeadInput,
+  LeadResearch,
+  ProspectAssessment,
   Reminder,
   ReminderStatus,
   VoiceCall,
   VoiceCallSource,
+  VoiceCallStatus,
   VoiceCallTurn,
 } from "./types";
 import { moveContactTo } from "./contact-order";
@@ -35,6 +41,10 @@ type BusinessStore = {
   forms: Form[];
   formResponses: FormResponse[];
   voiceCalls: VoiceCall[];
+  agentChats: AgentChatSession[];
+  channelConversations: ChannelConversation[];
+  /** Which agent answers each customer channel. See `getChannelAgentId`. */
+  channelAgents?: Partial<Record<ChannelId, string>>;
 };
 
 function emptyStore(): BusinessStore {
@@ -47,6 +57,9 @@ function emptyStore(): BusinessStore {
     forms: [],
     formResponses: [],
     voiceCalls: [],
+    agentChats: [],
+    channelConversations: [],
+    channelAgents: {},
   };
 }
 
@@ -74,6 +87,9 @@ async function readStore(): Promise<BusinessStore> {
       forms: parsed.forms ?? [],
       formResponses: parsed.formResponses ?? [],
       voiceCalls: parsed.voiceCalls ?? [],
+      agentChats: parsed.agentChats ?? [],
+      channelConversations: parsed.channelConversations ?? [],
+      channelAgents: parsed.channelAgents ?? {},
     };
   } catch {
     return emptyStore();
@@ -93,6 +109,9 @@ function readStoreSync(): BusinessStore {
       forms: parsed.forms ?? [],
       formResponses: parsed.formResponses ?? [],
       voiceCalls: parsed.voiceCalls ?? [],
+      agentChats: parsed.agentChats ?? [],
+      channelConversations: parsed.channelConversations ?? [],
+      channelAgents: parsed.channelAgents ?? {},
     };
   } catch {
     return emptyStore();
@@ -271,6 +290,13 @@ export async function setContactStatus(id: string, status: ContactStatus): Promi
   });
 }
 
+export async function setContactResearch(id: string, research: LeadResearch): Promise<Contact | undefined> {
+  return updateStore((store) => {
+    store.contacts = store.contacts.map((c) => (c.id === id ? { ...c, research } : c));
+    return store.contacts.find((c) => c.id === id);
+  });
+}
+
 /**
  * Status change plus placement: the CRM board lets a card be dropped between
  * two others, and the slot it lands in is the order it keeps. Order lives in
@@ -356,10 +382,23 @@ export async function toggleChatPin(key: string): Promise<ChatSummary[]> {
   });
 }
 
+/**
+ * The customer channel a turn arrived on, from Eve's channel kind.
+ *
+ * Eve reports an authored channel as `channel:<file stem>`, so
+ * agent/channels/whatsapp.ts arrives as "channel:whatsapp" — never the bare
+ * "whatsapp" this used to compare against. Everything therefore fell through
+ * to "web": WhatsApp conversations were filed as web chat, and because
+ * agent/hooks/persist.ts only captures a sender's identity on a *customer*
+ * channel, the phone number the sender had already given us by messaging was
+ * dropped on every turn. The bare names are still accepted so a caller that
+ * passes an already-normalized id keeps working.
+ */
 export function channelFromKind(kind: string | undefined): ChannelId {
-  if (kind === "whatsapp") return "whatsapp";
-  if (kind === "messenger") return "messenger";
-  if (kind === "instagram") return "instagram";
+  const name = kind?.startsWith("channel:") ? kind.slice("channel:".length) : kind;
+  if (name === "whatsapp") return "whatsapp";
+  if (name === "instagram") return "instagram";
+  if (name === "telegram") return "telegram";
   return "web";
 }
 
@@ -416,6 +455,41 @@ export function deleteReminder(id: string): boolean {
 }
 
 // ── Agents ──────────────────────────────────────────────────────
+
+// ── Which agent answers a channel ──────────────────────────────────
+//
+// A message arriving on WhatsApp has to be answered by *some* agent's rules,
+// and until this existed there was no answer to "which one": the runtime had
+// one prompt and every tool, and the agents in the app were configuration
+// nobody's inbound message ever read.
+//
+// Assignment is per channel rather than per contact so that a working
+// installation needs one decision, not one per conversation, and pointing
+// all three channels at the same agent is how you say "one agent for
+// everything".
+
+export async function getChannelAgents(): Promise<Partial<Record<ChannelId, string>>> {
+  return (await readStore()).channelAgents ?? {};
+}
+
+export function getChannelAgentIdSync(channel: ChannelId): string | undefined {
+  return readStoreSync().channelAgents?.[channel];
+}
+
+/** `null` clears the assignment, which is how a channel goes back to the
+ *  unrestricted default rather than being pinned to a deleted agent. */
+export async function setChannelAgent(
+  channel: ChannelId,
+  agentId: string | null,
+): Promise<Partial<Record<ChannelId, string>>> {
+  return updateStore((store) => {
+    const next = { ...(store.channelAgents ?? {}) };
+    if (agentId) next[channel] = agentId;
+    else delete next[channel];
+    store.channelAgents = next;
+    return next;
+  });
+}
 
 export async function listAgents(): Promise<Agent[]> {
   return (await readStore()).agents;
@@ -532,6 +606,9 @@ export async function recordVoiceCallTranscript(input: {
     if (existing) {
       const updated: VoiceCall = {
         ...existing,
+        // post_call_transcription only fires once a call has ended, so a row
+        // it touches is finished by definition.
+        status: "done",
         transcript: input.transcript,
         durationSecs: input.durationSecs ?? existing.durationSecs,
         startedAt: input.startedAt ?? existing.startedAt,
@@ -548,6 +625,7 @@ export async function recordVoiceCallTranscript(input: {
       agentId: input.agentId,
       conversationId: input.conversationId,
       source: "real",
+      status: "done",
       transcript: input.transcript,
       durationSecs: input.durationSecs,
       startedAt: input.startedAt ?? nowIso(),
@@ -556,6 +634,246 @@ export async function recordVoiceCallTranscript(input: {
     store.voiceCalls = [created, ...store.voiceCalls];
     return created;
   });
+}
+
+/**
+ * The pull path's writer: what a poll of ElevenLabs learned about a call.
+ *
+ * Deliberately not the same function as `recordVoiceCallTranscript`. A poll
+ * can land while the call is still going, and an in-progress conversation
+ * answers with an empty transcript — writing that over a transcript already
+ * saved would erase the call to show a fresher nothing. So the transcript is
+ * only ever replaced by a longer one.
+ */
+export async function updateVoiceCallState(input: {
+  agentId: string;
+  conversationId: string;
+  status: VoiceCallStatus;
+  transcript: readonly VoiceCallTurn[];
+  durationSecs?: number;
+  startedAt?: string;
+  terminationReason?: string;
+}): Promise<VoiceCall> {
+  return updateStore((store) => {
+    const existing = store.voiceCalls.find((c) => c.conversationId === input.conversationId);
+    const transcript =
+      input.transcript.length >= (existing?.transcript.length ?? 0)
+        ? input.transcript
+        : (existing?.transcript ?? []);
+
+    if (existing) {
+      const updated: VoiceCall = {
+        ...existing,
+        status: input.status,
+        transcript,
+        durationSecs: input.durationSecs ?? existing.durationSecs,
+        startedAt: input.startedAt ?? existing.startedAt,
+        ...(input.terminationReason ? { terminationReason: input.terminationReason } : {}),
+      };
+      store.voiceCalls = store.voiceCalls.map((c) =>
+        c.conversationId === input.conversationId ? updated : c,
+      );
+      return updated;
+    }
+
+    const created: VoiceCall = {
+      id: newId("call"),
+      agentId: input.agentId,
+      conversationId: input.conversationId,
+      source: "real",
+      status: input.status,
+      transcript,
+      durationSecs: input.durationSecs,
+      startedAt: input.startedAt ?? nowIso(),
+      createdAt: nowIso(),
+      ...(input.terminationReason ? { terminationReason: input.terminationReason } : {}),
+    };
+    store.voiceCalls = [created, ...store.voiceCalls];
+    return created;
+  });
+}
+
+// ── Agent playground chats ─────────────────────────────────────────
+//
+// The text half of the agent playground keeps its transcripts here, next to
+// the call transcripts, for the same reason: what the agent answered in
+// rehearsal is what you compare against after editing the prompt, and a
+// browser tab is not a place to keep that. Nothing in here ever reached a
+// customer — a playground chat runs no tools and touches no channel.
+
+/** Kept per agent. Old rehearsals stop being interesting long before they
+ *  stop taking up room in the store, so the tail is dropped on write. */
+const MAX_CHATS_PER_AGENT = 30;
+
+/** How much of the opening line becomes the session's name in the list. */
+const CHAT_TITLE_LENGTH = 60;
+
+function chatTitle(turns: readonly AgentChatTurn[]): string {
+  const first = turns.find((turn) => turn.role === "user")?.content.trim() ?? "";
+  if (!first) return "";
+  return first.length > CHAT_TITLE_LENGTH ? `${first.slice(0, CHAT_TITLE_LENGTH)}…` : first;
+}
+
+export async function listAgentChats(agentId: string): Promise<AgentChatSession[]> {
+  const chats = (await readStore()).agentChats.filter((c) => c.agentId === agentId);
+  return chats.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+/**
+ * Write a conversation, creating it on the first save and replacing its turns
+ * on every save after that.
+ *
+ * The browser owns the transcript while the chat is open and sends the whole
+ * thing each time, so this is a replace rather than an append: a retried or
+ * out-of-order save can't interleave two copies of the same answer.
+ */
+export async function saveAgentChat(input: {
+  sessionId?: string;
+  agentId: string;
+  turns: readonly AgentChatTurn[];
+}): Promise<AgentChatSession> {
+  return updateStore((store) => {
+    const existing = input.sessionId
+      ? store.agentChats.find((c) => c.id === input.sessionId && c.agentId === input.agentId)
+      : undefined;
+
+    const saved: AgentChatSession = {
+      id: existing?.id ?? newId("chat"),
+      agentId: input.agentId,
+      // The title comes from the opening line, which never changes once the
+      // session exists — so an existing one keeps the name it was listed by.
+      title: existing?.title || chatTitle(input.turns),
+      turns: input.turns,
+      startedAt: existing?.startedAt ?? nowIso(),
+      updatedAt: nowIso(),
+    };
+
+    const others = store.agentChats.filter((c) => c.id !== saved.id);
+    const mine = others.filter((c) => c.agentId === input.agentId);
+    const dropped = new Set(
+      mine
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(MAX_CHATS_PER_AGENT - 1)
+        .map((c) => c.id),
+    );
+    store.agentChats = [saved, ...others.filter((c) => !dropped.has(c.id))];
+    return saved;
+  });
+}
+
+export async function deleteAgentChat(agentId: string, sessionId: string): Promise<boolean> {
+  return updateStore((store) => {
+    const before = store.agentChats.length;
+    store.agentChats = store.agentChats.filter(
+      (c) => !(c.id === sessionId && c.agentId === agentId),
+    );
+    return store.agentChats.length < before;
+  });
+}
+
+// ── Channel conversations ──────────────────────────────────────────
+//
+// What the agent actually said to customers on WhatsApp and Instagram,
+// mirrored here turn by turn from agent/hooks/persist.ts.
+//
+// Eve owns the durable session and is the system of record for the model; the
+// copy here is what the operator's screens read, because showing a transcript
+// should not mean holding an Eve session open, and because the prospect
+// assessment needs somewhere to live that is not the model's own history.
+
+/** Turns kept per conversation. A long-running WhatsApp thread is a year of
+ *  chatter; what an operator reads is the recent end of it. */
+const MAX_CONVERSATION_TURNS = 200;
+
+/** Conversations kept in total, newest first. */
+const MAX_CONVERSATIONS = 300;
+
+export async function listChannelConversations(): Promise<ChannelConversation[]> {
+  const conversations = [...(await readStore()).channelConversations];
+  return conversations.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function getChannelConversation(
+  id: string,
+): Promise<ChannelConversation | undefined> {
+  return (await readStore()).channelConversations.find((c) => c.id === id);
+}
+
+/**
+ * Append one turn to a channel conversation, creating it on the first turn.
+ *
+ * Keyed by Eve session id, so the two halves of a turn — the customer's
+ * message and the agent's reply, which arrive as separate stream events —
+ * land in the same record.
+ */
+export async function appendConversationTurn(input: {
+  sessionId: string;
+  channel: ChannelId;
+  role: AgentChatTurn["role"];
+  content: string;
+  contactId?: string;
+  title?: string;
+}): Promise<ChannelConversation | undefined> {
+  const content = input.content.trim();
+  if (!content) return undefined;
+
+  return updateStore((store) => {
+    const existing = store.channelConversations.find((c) => c.sessionId === input.sessionId);
+    const turn: AgentChatTurn = { role: input.role, content };
+
+    const updated: ChannelConversation = {
+      id: existing?.id ?? newId("conv"),
+      sessionId: input.sessionId,
+      channel: input.channel,
+      contactId: input.contactId ?? existing?.contactId,
+      // A conversation is named after whoever is on the other end, and that
+      // name usually arrives a few turns in — so a real one always wins over
+      // the placeholder the first turn had to use.
+      title: input.title?.trim() || existing?.title || "",
+      turns: [...(existing?.turns ?? []), turn].slice(-MAX_CONVERSATION_TURNS),
+      startedAt: existing?.startedAt ?? nowIso(),
+      updatedAt: nowIso(),
+      prospect: existing?.prospect,
+    };
+
+    const others = store.channelConversations.filter((c) => c.sessionId !== input.sessionId);
+    store.channelConversations = [updated, ...others].slice(0, MAX_CONVERSATIONS);
+    return updated;
+  });
+}
+
+export async function setConversationProspect(
+  id: string,
+  prospect: ProspectAssessment,
+): Promise<ChannelConversation | undefined> {
+  return updateStore((store) => {
+    const existing = store.channelConversations.find((c) => c.id === id);
+    if (!existing) return undefined;
+    const updated: ChannelConversation = { ...existing, prospect };
+    store.channelConversations = store.channelConversations.map((c) =>
+      c.id === id ? updated : c,
+    );
+    return updated;
+  });
+}
+
+export async function setVoiceCallProspect(
+  callId: string,
+  prospect: ProspectAssessment,
+): Promise<VoiceCall | undefined> {
+  return updateStore((store) => {
+    const existing = store.voiceCalls.find((c) => c.id === callId);
+    if (!existing) return undefined;
+    const updated: VoiceCall = { ...existing, prospect };
+    store.voiceCalls = store.voiceCalls.map((c) => (c.id === callId ? updated : c));
+    return updated;
+  });
+}
+
+/** Every voice call, newest first — what the assessment schedule walks. */
+export async function listAllVoiceCalls(): Promise<VoiceCall[]> {
+  const calls = [...(await readStore()).voiceCalls];
+  return calls.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
 // ── Forms ──────────────────────────────────────────────────────────

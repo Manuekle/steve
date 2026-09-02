@@ -1,6 +1,6 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,6 +23,7 @@ const LINKS = [
   { id: "bandeja", labelKey: "nav.inbox" },
   { id: "automatizaciones", labelKey: "nav.automations" },
   { id: "agentes", labelKey: "landing.header.linkAgents" },
+  { id: "capacidades", labelKey: "landing.header.linkCapabilities" },
   { id: "ads", labelKey: "nav.ads" },
   { id: "autoalojado", labelKey: "landing.header.linkSelfHosted" },
   { id: "preguntas", labelKey: "landing.header.linkFaq" },
@@ -81,7 +82,7 @@ export function LandingHeader() {
    * there points at nothing.
    */
   const onLanding = pathname === "/";
-  const sectionHref = (id: string) => (onLanding ? `#${id}` : `/landing#${id}`);
+  const sectionHref = (id: string) => (onLanding ? `#${id}` : `/#${id}`);
 
   useStuckHeader(headerRef);
 
@@ -112,7 +113,7 @@ export function LandingHeader() {
       <div aria-hidden="true" className="lp-header-blur backdrop-blur-xl backdrop-saturate-150" />
       <Shell className="relative flex h-16 items-center justify-between gap-6">
         <Link
-          href="/landing"
+          href="/"
           aria-label={t("landing.header.homeAria")}
           className="lp-focus shrink-0 rounded-md transition-opacity duration-150 hover:opacity-80"
         >

@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowUp02Icon, Delete02Icon } from "@hugeicons/core-free-icons";
 import { useFitsLines } from "@/lib/hooks/use-line-count";
 import { TodoList, type TodoItem } from "@/components/agents/todo-list";

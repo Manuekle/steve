@@ -7,6 +7,7 @@ import {
   ArtificialIntelligence08Icon,
   InboxIcon,
   Timer01Icon,
+  Calendar03Icon,
   MetaIcon,
   AiImagineIcon,
   LibraryIcon,
@@ -68,6 +69,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     labelKey: "nav.groupAutomation",
     items: [
       { href: "/automations", labelKey: "nav.automations", icon: ZapIcon },
+      { href: "/calendar", labelKey: "nav.calendar", icon: Calendar03Icon },
       { href: "/agents", labelKey: "nav.agents", icon: AiImagineIcon },
       { href: "/email-templates", labelKey: "nav.emailTemplates", icon: Mail01Icon },
       { href: "/reminders", labelKey: "nav.reminders", icon: Timer01Icon },

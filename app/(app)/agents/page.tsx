@@ -3,7 +3,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AiImagineIcon,
   Add01Icon,
@@ -16,16 +16,21 @@ import {
   PlayIcon,
   InformationCircleIcon,
   ArtificialIntelligence08Icon,
-  VolumeHighIcon,
+  BubbleChatIcon,
+  Call02Icon,
 } from "@hugeicons/core-free-icons";
 import {
   ModelPicker,
   ProviderStatusBadge,
   useModelCatalog,
 } from "@/components/ai-elements/model-picker";
+import { AgentTemplates } from "./_components/agent-templates";
+import { CapabilityPicker, type CapabilityOption } from "./_components/capability-picker";
+import { ChannelRouting } from "./_components/channel-routing";
+import { PageSlide } from "../../_components/page-slide";
 import { PageContainer } from "../../_components/page-container";
 import { Card } from "../../_components/dashboard-card";
-import { Skeleton } from "@/components/ai-elements/skeleton";
+import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,15 +39,63 @@ import { Beam } from "@/components/ui/beam";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useT } from "@/lib/i18n/provider";
 import { useToast } from "@/components/toast-provider";
+import { useCelebrate } from "@/components/use-celebrate";
 import { fetchJson, networkUiError, readApiError, uiErrorMessage, type UiError } from "@/lib/api-error-message";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Agent } from "@/lib/types";
+import { toCapabilityIds } from "@/lib/agent-capabilities";
+
+/** Skeleton for the Agents page — header + search, routing bar, then agent rows. */
+function AgentsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <header className="flex items-center justify-between gap-4">
+        <div className="space-y-2">
+          <SkeletonBar className="h-7 w-28" />
+          <SkeletonBar className="h-4 w-56" />
+        </div>
+        <div className="flex items-center gap-2">
+          <SkeletonBar className="h-6 w-24 rounded-full" />
+          <SkeletonBar className="h-9 w-9 rounded-lg sm:w-28" />
+        </div>
+      </header>
+      <SkeletonBar className="h-9 w-full rounded-lg" />
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+        <SkeletonBar className="mb-3 h-3.5 w-40" />
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonBar key={i} className="h-7 w-28 rounded-full" />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 shadow-[var(--shadow-soft)]"
+          >
+            <SkeletonBar className="size-10 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkeletonBar className="h-4 w-32" />
+              <SkeletonBar className="h-3 w-56" />
+            </div>
+            <SkeletonBar className="hidden h-3 w-12 sm:block" />
+            <SkeletonBar className="size-7 rounded-lg" />
+            <SkeletonBar className="size-7 rounded-lg" />
+            <SkeletonBar className="size-7 rounded-lg" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AgentsPage() {
   const t = useT();
   const { toast } = useToast();
+  const celebrate = useCelebrate();
   const reduce = useReducedMotion();
   // Only models the configured provider actually serves can be assigned;
   // the server rejects anything else on save.
@@ -57,7 +110,7 @@ export default function AgentsPage() {
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newSystemPrompt, setNewSystemPrompt] = useState("");
-  const [newTools, setNewTools] = useState("");
+  const [newTools, setNewTools] = useState<string[]>([]);
   const [newModel, setNewModel] = useState<string | null>(null);
 
   // AI optimization state
@@ -70,7 +123,7 @@ export default function AgentsPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editSystemPrompt, setEditSystemPrompt] = useState("");
-  const [editTools, setEditTools] = useState("");
+  const [editTools, setEditTools] = useState<string[]>([]);
   const [editModel, setEditModel] = useState<string | null>(null);
 
   // Delete confirm
@@ -138,7 +191,7 @@ export default function AgentsPage() {
       setNewName(cfg.name);
       setNewDescription(cfg.description);
       setNewSystemPrompt(cfg.systemPrompt);
-      setNewTools(cfg.tools.join(", "));
+      setNewTools(toCapabilityIds(cfg.tools));
     } catch (err) {
       setAiError(networkUiError(err));
     } finally {
@@ -157,13 +210,32 @@ export default function AgentsPage() {
     );
   }, [agents, search]);
 
+  // Lowercased so a template counts as hired however the name was cased when
+  // it was saved or edited.
+  const hiredNames = useMemo(
+    () => new Set(agents.map((agent) => agent.name.trim().toLowerCase())),
+    [agents],
+  );
+
+  const [capabilities, setCapabilities] = useState<CapabilityOption[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchJson<{ capabilities: CapabilityOption[] }>(
+        "/api/agents/capabilities",
+        t,
+      );
+      if (!cancelled && result.ok) setCapabilities(result.data.capabilities);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
+
   const createAgent = (e: FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    const tools = newTools
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const tools = newTools;
     void send({
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -179,7 +251,7 @@ export default function AgentsPage() {
       setNewName("");
       setNewDescription("");
       setNewSystemPrompt("");
-      setNewTools("");
+      setNewTools([]);
       setNewModel(null);
       setShowCreate(false);
     });
@@ -190,15 +262,12 @@ export default function AgentsPage() {
     setEditName(agent.name);
     setEditDescription(agent.description);
     setEditSystemPrompt(agent.systemPrompt);
-    setEditTools(agent.tools.join(", "));
+    setEditTools(toCapabilityIds(agent.tools));
     setEditModel(agent.model ?? null);
   };
 
   const saveEdit = (id: string) => {
-    const tools = editTools
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const tools = editTools;
     void send({
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -237,7 +306,7 @@ export default function AgentsPage() {
 
   return (
     <PageContainer maxWidth="max-w-6xl" pattern="grid">
-      <Skeleton className="min-h-[400px]" isLoading={isLoading} skeleton={<div className="h-64 rounded-xl bg-muted" />}>
+      <Skeleton className="min-h-[400px]" isLoading={isLoading} skeleton={<AgentsSkeleton />}>
         <div className="content-enter">
           <ErrorBanner
             className="mb-6"
@@ -267,6 +336,7 @@ export default function AgentsPage() {
             <div className="relative mb-4">
               <HugeiconsIcon icon={SearchIcon} size={16} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
+                aria-label={t("agents.search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("agents.search")}
@@ -296,6 +366,7 @@ export default function AgentsPage() {
                     <p className="text-xs text-muted-foreground">{t("agents.aiDescription")}</p>
                     <div className="flex gap-2">
                       <Input
+                        aria-label={t("agents.aiPlaceholder")}
                         value={aiDescription}
                         onChange={(e) => setAiDescription(e.target.value)}
                         placeholder={t("agents.aiPlaceholder")}
@@ -360,16 +431,14 @@ export default function AgentsPage() {
                       className="resize-y"
                     />
                   </label>
-                  <label className="block space-y-1.5 text-sm">
+                  <div className="block space-y-1.5 text-sm">
                     <span className="font-medium">{t("agents.tools")}</span>
-                    <Input
+                    <CapabilityPicker
+                      options={capabilities}
                       value={newTools}
-                      onChange={(e) => setNewTools(e.target.value)}
-                      placeholder={t("agents.toolsPlaceholder")}
-                      autoComplete="off"
+                      onChange={setNewTools}
                     />
-                    <p className="text-xs text-muted-foreground">{t("agents.toolsHelp")}</p>
-                  </label>
+                  </div>
                   <div className="block space-y-1.5 text-sm">
                     <span className="font-medium">{t("agents.model")}</span>
                     <div>
@@ -392,6 +461,14 @@ export default function AgentsPage() {
               </Card>
             </motion.div>
           </motion.div>
+
+          {/* Which agent answers what. Above the list because it is the
+              decision that gives every agent's capability list its meaning. */}
+          {agents.length > 0 ? (
+            <div className="mb-6">
+              <ChannelRouting agents={agents} />
+            </div>
+          ) : null}
 
           {/* Agent list */}
           {filtered.length === 0 ? (
@@ -425,7 +502,11 @@ export default function AgentsPage() {
                           <StatusBadge status={isActive ? "active" : "paused"} />
                         </div>
                         <p className="truncate text-xs text-muted-foreground">
-                          {agent.description || agent.tools.join(", ") || t("agents.createdAt") + " " + relativeTime(agent.createdAt)}
+                          {agent.description ||
+                            toCapabilityIds(agent.tools)
+                              .map((id) => t(`capability.${id}`))
+                              .join(", ") ||
+                            t("agents.createdAt") + " " + relativeTime(agent.createdAt)}
                         </p>
                       </div>
                       <span className="hidden text-xs text-muted-foreground sm:block">
@@ -433,7 +514,28 @@ export default function AgentsPage() {
                       </span>
                       <Tooltip>
                         <TooltipTrigger asChild>
+                          <Button asChild aria-label={t("agents.chatAction")} size="icon-sm" variant="ghost">
+                            <Link href={`/agents/${agent.id}/chat`}>
+                              <HugeiconsIcon icon={BubbleChatIcon} size={14} strokeWidth={1.75} />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("agents.chatAction")}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button asChild aria-label={t("agents.callAction")} size="icon-sm" variant="ghost">
+                            <Link href={`/agents/${agent.id}/voice`}>
+                              <HugeiconsIcon icon={Call02Icon} size={14} strokeWidth={1.75} />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("agents.callAction")}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <Button
+                            aria-label={isActive ? t("agents.deactivate") : t("agents.activate")}
                             size="icon-sm"
                             variant="ghost"
                             onClick={() => toggleStatus(agent.id)}
@@ -444,6 +546,8 @@ export default function AgentsPage() {
                         <TooltipContent>{isActive ? t("agents.deactivate") : t("agents.activate")}</TooltipContent>
                       </Tooltip>
                       <Button
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded ? t("agents.hideDetails") : t("agents.showDetails")}
                         size="icon-sm"
                         variant="ghost"
                         onClick={() => setExpandedId(isExpanded ? null : agent.id)}
@@ -470,129 +574,149 @@ export default function AgentsPage() {
                           style={{ overflow: "hidden" }}
                         >
                           <div className="border-t border-border px-5 py-4 text-xs text-muted-foreground space-y-3">
-                            {isEditing ? (
-                              <div className="space-y-3">
-                                <label className="block space-y-1">
-                                  <span className="font-medium text-foreground">{t("agents.name")}</span>
-                                  <Input
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    className="h-8 text-xs"
-                                  />
-                                </label>
-                                <label className="block space-y-1">
-                                  <span className="font-medium text-foreground">{t("agents.description")}</span>
-                                  <Input
-                                    value={editDescription}
-                                    onChange={(e) => setEditDescription(e.target.value)}
-                                    className="h-8 text-xs"
-                                  />
-                                </label>
-                                <label className="block space-y-1">
-                                  <span className="font-medium text-foreground">{t("agents.systemPrompt")}</span>
-                                  <Textarea
-                                    value={editSystemPrompt}
-                                    onChange={(e) => setEditSystemPrompt(e.target.value)}
-                                    className="text-xs resize-y"
-                                    rows={4}
-                                  />
-                                </label>
-                                <label className="block space-y-1">
-                                  <span className="font-medium text-foreground">{t("agents.tools")}</span>
-                                  <Input
-                                    value={editTools}
-                                    onChange={(e) => setEditTools(e.target.value)}
-                                    className="h-8 text-xs"
-                                  />
-                                </label>
-                                <div className="block space-y-1">
-                                  <span className="font-medium text-foreground">{t("agents.model")}</span>
-                                  <div>
-                                    <ModelPicker
-                                      models={catalog?.models ?? []}
-                                      value={editModel}
-                                      onChange={setEditModel}
-                                      autoLabel={catalog?.tasks?.chat}
-                                      loading={catalogLoading}
-                                    />
+                            {/* Read ↔ edit, side by side: the read view leaves to the left and
+                                the form arrives from the right, so the direction says which way
+                                you moved. Cancel plays it in reverse. */}
+                            <PageSlide
+                              page={isEditing ? 2 : 1}
+                              first={
+                                // The vertical rhythm has to live inside the
+                                // page now: the parent's space-y only reaches
+                                // its own direct children, and that is the
+                                // slider.
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <HugeiconsIcon icon={InformationCircleIcon} size={12} strokeWidth={1.75} />
+                                    <span className="font-medium text-foreground">{t("agents.description")}:</span>
+                                    <span>{agent.description || "—"}</span>
                                   </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button size="sm" onClick={() => saveEdit(agent.id)}>
-                                    {t("agents.save")}
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                                    {t("agents.cancel")}
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-1.5">
-                                  <HugeiconsIcon icon={InformationCircleIcon} size={12} strokeWidth={1.75} />
-                                  <span className="font-medium text-foreground">{t("agents.description")}:</span>
-                                  <span>{agent.description || "—"}</span>
-                                </div>
-                                {agent.systemPrompt && (
-                                  <div>
-                                    <p className="font-medium text-foreground mb-1">{t("agents.systemPrompt")}:</p>
-                                    <pre className="whitespace-pre-wrap rounded-lg bg-muted p-3 text-[11px] leading-relaxed">{agent.systemPrompt}</pre>
-                                  </div>
-                                )}
-                                {agent.tools.length > 0 && (
-                                  <div>
-                                    <p className="font-medium text-foreground">{t("agents.tools")}:</p>
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                      {agent.tools.map((tool) => (
-                                        <span key={tool} className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium">
-                                          {tool}
-                                        </span>
-                                      ))}
+                                  {agent.systemPrompt && (
+                                    <div>
+                                      <p className="font-medium text-foreground mb-1">{t("agents.systemPrompt")}:</p>
+                                      <pre className="whitespace-pre-wrap rounded-lg bg-muted p-3 text-[11px] leading-relaxed">{agent.systemPrompt}</pre>
                                     </div>
-                                  </div>
-                                )}
-                                <div className="flex gap-2 pt-2 border-t border-border">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => startEdit(agent)}
-                                  >
-                                    <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
-                                    {t("agents.edit")}
-                                  </Button>
-                                  {/* Voice is its own screen: a call has a
-                                      playground, a phone number and a
-                                      transcript, none of which fit in a
-                                      row of buttons. */}
-                                  <Button asChild size="sm" variant="outline">
-                                    <Link href={`/agents/${agent.id}/voice`}>
-                                      <HugeiconsIcon icon={VolumeHighIcon} size={14} strokeWidth={1.75} />
-                                      {t("voice.agentsCardAction")}
-                                    </Link>
-                                  </Button>
-                                  {deletingId === agent.id ? (
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs text-destructive">{t("agents.deleteConfirm")}</span>
-                                      <Button size="sm" variant="destructive" onClick={() => remove(agent.id)}>
-                                        {t("agents.delete")}
-                                      </Button>
-                                      <Button size="sm" variant="ghost" onClick={() => setDeletingId(null)}>
-                                        {t("agents.cancel")}
-                                      </Button>
+                                  )}
+                                  {toCapabilityIds(agent.tools).length > 0 && (
+                                    <div>
+                                      <p className="font-medium text-foreground">{t("agents.tools")}:</p>
+                                      <div className="mt-1 flex flex-wrap gap-1">
+                                        {/* Capability labels, not the raw ids the
+                                            field used to hold. */}
+                                        {toCapabilityIds(agent.tools).map((id) => (
+                                          <span key={id} className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+                                            {t(`capability.${id}`)}
+                                          </span>
+                                        ))}
+                                      </div>
                                     </div>
-                                  ) : (
+                                  )}
+                                  <div className="flex gap-2 pt-2 border-t border-border">
                                     <Button
                                       size="sm"
-                                      variant="destructive"
-                                      onClick={() => setDeletingId(agent.id)}
+                                      variant="outline"
+                                      onClick={() => startEdit(agent)}
                                     >
-                                      <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={1.75} />
-                                      {t("agents.delete")}
+                                      <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
+                                      {t("agents.edit")}
                                     </Button>
-                                  )}
+                                    {/* Voice is its own screen: a call has a
+                                        playground, a phone number and a
+                                        transcript, none of which fit in a
+                                        row of buttons. */}
+                                    <Button asChild size="sm" variant="outline">
+                                      <Link href={`/agents/${agent.id}/chat`}>
+                                        <HugeiconsIcon icon={BubbleChatIcon} size={14} strokeWidth={1.75} />
+                                        {t("agents.chatAction")}
+                                      </Link>
+                                    </Button>
+                                    <Button asChild size="sm" variant="outline">
+                                      <Link href={`/agents/${agent.id}/voice`}>
+                                        <HugeiconsIcon icon={Call02Icon} size={14} strokeWidth={1.75} />
+                                        {t("agents.callAction")}
+                                      </Link>
+                                    </Button>
+                                    {deletingId === agent.id ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-destructive">{t("agents.deleteConfirm")}</span>
+                                        <Button size="sm" variant="destructive" onClick={() => remove(agent.id)}>
+                                          {t("agents.delete")}
+                                        </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setDeletingId(null)}>
+                                          {t("agents.cancel")}
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => setDeletingId(agent.id)}
+                                      >
+                                        <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={1.75} />
+                                        {t("agents.delete")}
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
-                              </>
-                            )}
+                              }
+                              second={
+                                <div className="space-y-3">
+                                  <label className="block space-y-1">
+                                    <span className="font-medium text-foreground">{t("agents.name")}</span>
+                                    <Input
+                                      value={editName}
+                                      onChange={(e) => setEditName(e.target.value)}
+                                      className="h-8 text-xs"
+                                    />
+                                  </label>
+                                  <label className="block space-y-1">
+                                    <span className="font-medium text-foreground">{t("agents.description")}</span>
+                                    <Input
+                                      value={editDescription}
+                                      onChange={(e) => setEditDescription(e.target.value)}
+                                      className="h-8 text-xs"
+                                    />
+                                  </label>
+                                  <label className="block space-y-1">
+                                    <span className="font-medium text-foreground">{t("agents.systemPrompt")}</span>
+                                    <Textarea
+                                      value={editSystemPrompt}
+                                      onChange={(e) => setEditSystemPrompt(e.target.value)}
+                                      className="text-xs resize-y"
+                                      rows={4}
+                                    />
+                                  </label>
+                                  <div className="block space-y-1">
+                                    <span className="font-medium text-foreground">{t("agents.tools")}</span>
+                                    <CapabilityPicker
+                                      compact
+                                      options={capabilities}
+                                      value={editTools}
+                                      onChange={setEditTools}
+                                    />
+                                  </div>
+                                  <div className="block space-y-1">
+                                    <span className="font-medium text-foreground">{t("agents.model")}</span>
+                                    <div>
+                                      <ModelPicker
+                                        models={catalog?.models ?? []}
+                                        value={editModel}
+                                        onChange={setEditModel}
+                                        autoLabel={catalog?.tasks?.chat}
+                                        loading={catalogLoading}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" onClick={() => saveEdit(agent.id)}>
+                                      {t("agents.save")}
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                                      {t("agents.cancel")}
+                                    </Button>
+                                  </div>
+                                </div>
+                              }
+                            />
                           </div>
                         </motion.div>
                       )}
@@ -602,6 +726,27 @@ export default function AgentsPage() {
               })}
             </div>
           )}
+
+          <AgentTemplates
+            hiredNames={hiredNames}
+            onError={setError}
+            onCustom={() => {
+              setShowCreate(true);
+              window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+            }}
+            onHired={(name) => {
+              void load();
+              // The first agent is the moment the product starts working for
+              // you. The fourth is staffing, and staffing does not need
+              // confetti — after this the toast carries it alone.
+              celebrate({ once: "agent-hired" });
+              toast({
+                title: t("agents.templatesHiredToast", { name }),
+                description: t("agents.templatesHiredToastDesc"),
+                status: "success",
+              });
+            }}
+          />
         </div>
       </Skeleton>
     </PageContainer>

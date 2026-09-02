@@ -10,12 +10,14 @@ import {
   useConversationMode,
   useConversationStatus,
 } from "@elevenlabs/react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AlertCircleIcon,
   ArrowLeft02Icon,
+  ArrowRight01Icon,
   CallOutgoing01Icon,
   Loading03Icon,
+  TelephoneIcon,
   VolumeHighIcon,
 } from "@hugeicons/core-free-icons";
 import { ConversationBar } from "@/components/elevenlabs/conversation-bar";
@@ -37,7 +39,8 @@ import { useI18n, useT } from "@/lib/i18n/provider";
 import { countryOptions } from "@/lib/countries";
 import { fetchJson, isApiError, type UiError } from "@/lib/api-error-message";
 import { cn } from "@/lib/utils";
-import type { Agent, AgentVoice } from "@/lib/types";
+import type { Agent, AgentVoice, ProspectAssessment } from "@/lib/types";
+import { ProspectBadge } from "../../../../_components/prospect-badge";
 import { PageContainer } from "../../../../_components/page-container";
 import {
   Card,
@@ -65,16 +68,6 @@ type PhoneNumber = {
   readonly assignedAgentId?: string;
 };
 type TranscriptLine = { readonly id: number; readonly source: "user" | "ai"; readonly text: string };
-type SavedCallTurn = { readonly role: "agent" | "user"; readonly message: string; readonly timeInCallSecs: number };
-type SavedCall = {
-  readonly id: string;
-  readonly conversationId: string;
-  readonly source: "test" | "real";
-  readonly transcript: readonly SavedCallTurn[];
-  readonly durationSecs?: number;
-  readonly startedAt: string;
-};
-
 const LANGUAGES = ["es", "en", "pt", "fr", "it", "de"] as const;
 
 export default function AgentVoicePage() {
@@ -211,7 +204,7 @@ export default function AgentVoicePage() {
           <div className="flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-t border-border bg-muted/20 p-4 lg:w-[440px] lg:border-t-0 lg:border-l">
             <VoiceSettings agent={agent} onSaved={setAgent} onError={setError} />
             <PhonePanel agent={agent} onSaved={setAgent} onError={setError} />
-            <SavedCalls agent={agent} />
+            <SavedCallsLink agentId={agent.id} />
           </div>
         </div>
       </ConversationProvider>
@@ -599,7 +592,8 @@ function VoiceSettings({
         <label className="flex flex-col gap-1.5">
           <span className="font-medium text-[13px]">{t("voice.fieldVoice")}</span>
           <Select onValueChange={setVoiceId} value={voiceId} disabled={!!voicesPermissionError}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger
+              aria-label={t("voice.fieldVoice")} className="w-full">
               <SelectValue placeholder={t("voice.fieldVoicePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
@@ -631,7 +625,8 @@ function VoiceSettings({
         <label className="flex flex-col gap-1.5">
           <span className="font-medium text-[13px]">{t("voice.fieldLanguage")}</span>
           <Select onValueChange={setLanguage} value={language}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger
+              aria-label={t("voice.fieldLanguage")} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -841,7 +836,7 @@ function PhonePanel({
           <p className="mb-2 font-medium text-[13px]">{t("voice.callTitle")}</p>
           <div className="flex gap-2">
             <Select value={countryIso} onValueChange={setCountryIso}>
-              <SelectTrigger className="w-[4.5rem] shrink-0 justify-center px-2">
+              <SelectTrigger aria-label={t("common.country")} className="w-[4.5rem] shrink-0 justify-center px-2">
                 <span className="flex items-center gap-2">
                   {(() => {
                     const selected = countries.find((c) => c.iso2 === countryIso) ?? countries[0];
@@ -877,6 +872,7 @@ function PhonePanel({
               </SelectContent>
             </Select>
             <Input
+              aria-label={t("common.phoneNumber")}
               onChange={(event) => setToNumber(event.target.value)}
               placeholder="11 5555 0000"
               value={toNumber}
@@ -906,95 +902,55 @@ function PhonePanel({
   );
 }
 
-/** Every call the agent's ElevenLabs mirror handled — test button, in-browser
- *  Orb call, or a real inbound call — recorded server-side by the post-call
- *  webhook (see app/api/webhooks/elevenlabs). Polls lightly since the
- *  transcript can land a few seconds after a call ends. */
-function SavedCalls({ agent }: { readonly agent: Agent }) {
+/**
+ * The way into the call history, which lives on its own page now.
+ *
+ * The config column is where someone sets the agent up; a scrolling list of
+ * every call it ever handled competed with that for the same narrow space and
+ * won, pushing the settings out of view. One line that says how many calls
+ * there are, and a page to read them on, serves both.
+ */
+function SavedCallsLink({ agentId }: { readonly agentId: string }) {
   const t = useT();
-  const [calls, setCalls] = useState<SavedCall[]>([]);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    const result = await fetchJson<{ calls: SavedCall[] }>(`/api/agents/${agent.id}/voice/calls`, t);
-    if (result.ok) setCalls(result.data.calls);
-  }, [agent.id, t]);
+  const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    void load();
-    const interval = setInterval(() => void load(), 6000);
-    return () => clearInterval(interval);
-  }, [load]);
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchJson<{ calls: unknown[] }>(`/api/agents/${agentId}/voice/calls`, t);
+      if (!cancelled && result.ok) setCount(result.data.calls.length);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [agentId, t]);
 
   return (
     <Card>
-      <CardHeader className="flex-col gap-1">
-        <CardTitle>{t("voice.savedCallsTitle")}</CardTitle>
-        <CardDescription>{t("voice.savedCallsDesc")}</CardDescription>
-      </CardHeader>
-
-      <div className="flex flex-col gap-2 p-5 pt-0">
-        {calls.length === 0 ? (
-          <p className="text-muted-foreground text-[13px]">{t("voice.savedCallsEmpty")}</p>
-        ) : (
-          calls.map((call) => {
-            const expanded = expandedId === call.id;
-            const pending = call.transcript.length === 0;
-            return (
-              <div className="rounded-lg border border-border" key={call.id}>
-                <button
-                  className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
-                  onClick={() => setExpandedId(expanded ? null : call.id)}
-                  type="button"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <StatusBadge
-                      status={call.source === "test" ? "paused" : "success"}
-                      label={call.source === "test" ? t("voice.callSourceTest") : t("voice.callSourceReal")}
-                    />
-                    <span className="truncate text-[13px] text-muted-foreground">
-                      {new Date(call.startedAt).toLocaleString()}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-[12px] text-muted-foreground">
-                    {pending ? t("voice.callPending") : `${Math.round(call.durationSecs ?? 0)}s`}
-                  </span>
-                </button>
-                {expanded ? (
-                  <div className="flex flex-col gap-3 border-t border-border px-3 py-3">
-                    {pending ? (
-                      <p className="text-[12px] text-muted-foreground">{t("voice.callPending")}</p>
-                    ) : (
-                      call.transcript.map((turn, index) => (
-                        <div className="flex flex-col gap-1" key={index}>
-                          <span className="font-mono text-[10px] tracking-wide text-muted-foreground/70">
-                            {turn.role === "user" ? "Tú" : agent.name}
-                          </span>
-                          {turn.role === "user" ? (
-                            <span className="max-w-[85%] self-end rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-[13px] leading-relaxed text-primary-foreground shadow-sm">
-                              {turn.message}
-                            </span>
-                          ) : (
-                            <StreamingResponse
-                              status="complete"
-                              showActions={false}
-                              announce={false}
-                              className="max-w-[85%]"
-                              contentClassName="text-[13px] leading-relaxed"
-                            >
-                              {turn.message}
-                            </StreamingResponse>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })
-        )}
-      </div>
+      <Link
+        className="flex items-center gap-3 p-5 transition-colors hover:bg-accent/40"
+        href={`/agents/${agentId}/voice/history`}
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <HugeiconsIcon icon={TelephoneIcon} size={18} strokeWidth={1.75} />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-[14px] font-medium">{t("voice.savedCallsTitle")}</span>
+          <span className="text-muted-foreground truncate text-[12px]">
+            {count === null
+              ? t("voice.savedCallsDesc")
+              : count === 0
+                ? t("voice.savedCallsEmpty")
+                : t("voice.savedCallsCount").replace("{count}", String(count))}
+          </span>
+        </span>
+        <HugeiconsIcon
+          className="text-muted-foreground shrink-0"
+          icon={ArrowRight01Icon}
+          size={16}
+          strokeWidth={1.75}
+        />
+      </Link>
     </Card>
   );
 }

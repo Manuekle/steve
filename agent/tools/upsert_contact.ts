@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { upsertContact } from "../../lib/business-store";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
@@ -23,6 +24,7 @@ export default defineTool({
     status: z.string(),
   }),
   async execute(input, ctx) {
+    await assertToolAllowed(ctx.session.id, "upsert_contact");
     const contact = await upsertContact({
       name: input.name,
       phone: input.phone,

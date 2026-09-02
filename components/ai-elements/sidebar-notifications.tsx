@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   BellIcon,
   UserIcon,

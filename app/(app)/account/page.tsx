@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   KeyRoundIcon,
   Loading03Icon,
@@ -290,14 +290,65 @@ export default function AccountPage() {
 
 function AccountSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
+    <div className="space-y-4">
+      <div className="mb-4 space-y-2">
         <SkeletonBar className="h-7 w-40" />
         <SkeletonBar className="h-4 w-full max-w-sm" />
       </div>
-      <SkeletonBar className="h-24 w-full rounded-2xl" />
-      <SkeletonBar className="h-72 w-full rounded-2xl" />
-      <SkeletonBar className="h-24 w-full rounded-2xl" />
+
+      {/* Email + plan cards */}
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+          <div className="flex items-center gap-3 p-5">
+            <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkeletonBar className="h-4 w-28" />
+              <SkeletonBar className="h-3 w-48" />
+            </div>
+          </div>
+          <div className="h-px bg-border" />
+          <div className="p-5">
+            <SkeletonBar className="h-5 w-40" />
+          </div>
+        </div>
+      ))}
+
+      {/* License card + sound settings */}
+      <SkeletonBar className="h-32 w-full rounded-2xl" />
+      <SkeletonBar className="h-20 w-full rounded-2xl" />
+
+      {/* Change password form */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-4 w-40" />
+            <SkeletonBar className="h-3 w-56" />
+          </div>
+        </div>
+        <div className="h-px bg-border" />
+        <div className="space-y-3 p-5">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonBar key={i} className="h-9 w-full" />
+          ))}
+          <SkeletonBar className="h-9 w-28 rounded-lg" />
+        </div>
+      </div>
+
+      {/* Sign out */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-4 w-28" />
+            <SkeletonBar className="h-3 w-48" />
+          </div>
+        </div>
+        <div className="h-px bg-border" />
+        <div className="p-5">
+          <SkeletonBar className="h-9 w-32 rounded-lg" />
+        </div>
+      </div>
     </div>
   );
 }

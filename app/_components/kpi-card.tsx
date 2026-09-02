@@ -1,12 +1,13 @@
 "use client";
 
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   ArrowDownRight01Icon,
   ArrowUpRight01Icon,
   MinusSignIcon,
 } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
+import { CHART_TONE_FILL, CHART_TONE_STROKE, type ChartTone } from "./chart";
 import { Card } from "./dashboard-card";
 import { cn } from "@/lib/utils";
 
@@ -28,21 +29,13 @@ import { cn } from "@/lib/utils";
  * four times.
  */
 
-type Tone = "critical" | "neutral" | "positive" | "warning";
+/* One set of colour roles for every mark in the product — a tile's meter and a
+   card's chart have to mean the same thing by "warning". They live with the
+   charts because that is where the roles are documented. */
+type Tone = ChartTone;
 
-const TONE_FILL: Readonly<Record<Tone, string>> = {
-  critical: "bg-rose-500/70",
-  neutral: "bg-foreground/45",
-  positive: "bg-emerald-500/70",
-  warning: "bg-amber-500/70",
-};
-
-const TONE_STROKE: Readonly<Record<Tone, string>> = {
-  critical: "text-rose-500",
-  neutral: "text-foreground/45",
-  positive: "text-emerald-500",
-  warning: "text-amber-500",
-};
+const TONE_FILL = CHART_TONE_FILL;
+const TONE_STROKE = CHART_TONE_STROKE;
 
 // ── Delta ───────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   ZapIcon,
   Add01Icon,
@@ -36,7 +36,7 @@ import { useToast } from "@/components/toast-provider";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { STEP_ICONS, STEP_LABEL_KEYS } from "@/lib/workflow-step-meta";
-import { fireConfetti } from "@/lib/confetti";
+import { useCelebrate } from "@/components/use-celebrate";
 import type { Automation, AutomationTrigger } from "@/lib/types";
 
 const TRIGGER_ICONS: Record<AutomationTrigger, IconSvgElement> = {
@@ -58,6 +58,7 @@ const TRIGGER_LABELS: Record<AutomationTrigger, string> = {
 export default function AutomationsPage() {
   const t = useT();
   const { cue } = useSound();
+  const celebrate = useCelebrate();
   const router = useRouter();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { toast } = useToast();
@@ -118,8 +119,9 @@ export default function AutomationsPage() {
     cue("toggle");
     void mutate(jsonInit("PUT", { id, status })).then((list) => {
       // Same rule as the flow page: the burst is for going live, and only
-      // for going live.
-      if (list && status === "active") fireConfetti();
+      // for going live. No `once` key — an automation going live is a win
+      // every time it happens, not a first-run novelty.
+      if (list && status === "active") celebrate();
     });
   };
   const handleDelete = async (id: string) => {
@@ -130,7 +132,6 @@ export default function AutomationsPage() {
     if (list) toast({ title: t("common.deleted"), description: t("common.deletedDescription"), status: "success" });
   };
   const handleDuplicate = (auto: Automation) => {
-    cue("success");
     void mutate(
       jsonInit("POST", {
         name: `${auto.name} (copia)`,
@@ -140,7 +141,11 @@ export default function AutomationsPage() {
         channel: auto.channel,
         steps: auto.steps ?? [],
       }),
-    );
+      // The copy is confirmed once it exists, not once it was asked for — the
+      // cue used to fire ahead of the POST and sounded the same when it failed.
+    ).then((list) => {
+      if (list) cue("success");
+    });
   };
   // Creating only captures the basics — the workflow itself is built on its
   // own page (app/automations/[id]/page.tsx), not in this dialog.

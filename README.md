@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>the service system for your business and your agents</strong><br/>
-  WhatsApp, Instagram, Messenger and Meta Ads in one inbox. Self-hosted, with your own keys and database.
+  WhatsApp, Instagram and Meta Ads in one inbox. Self-hosted, with your own keys and database.
 </p>
 
 <p align="center">
@@ -97,14 +97,14 @@ cp .env.example .env
 
 Edit `.env` before continuing:
 
-1. Set the model credentials: `AI_GATEWAY_API_KEY` for the Vercel AI Gateway
-   (the default route), or `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` for a direct
-   provider. `AI_PROVIDER` picks between them; left unset it is inferred from
-   whichever key is present. All four are also editable at runtime in
-   **Configuración → Modelo de IA**, which persists them to
-   `~/.steve/credentials.json`.
-2. Replace both example passwords.
-3. Keep `POSTGRES_PASSWORD` and the password inside `WORKFLOW_POSTGRES_URL` identical.
+1. Replace both example passwords.
+2. Keep `POSTGRES_PASSWORD` and the password inside `WORKFLOW_POSTGRES_URL` identical.
+
+No API key goes in `.env`. The model provider (Vercel AI Gateway, OpenAI,
+Anthropic, Google Gemini) and every integration key are set from the running
+app — **Configuración → Modelo de IA** and **Conexiones** — and persisted to
+`~/.steve/credentials.json`, where they can be rotated and cleared without a
+restart. `.env` holds only what has to exist before the app boots.
 
 Start and migrate PostgreSQL:
 

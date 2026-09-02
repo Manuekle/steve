@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { SlackIcon, DiscordIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,7 +190,8 @@ export function StepEditor({
               value={step.config.method ?? "POST"}
               onValueChange={(value) => onConfigChange(step.id, "method", value)}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                aria-label={t("automations.methodLabel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -247,7 +248,8 @@ export function StepEditor({
               value={step.config.service ?? "slack"}
               onValueChange={(value) => onConfigChange(step.id, "service", value)}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                aria-label={t("automations.serviceLabel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -297,7 +299,8 @@ export function StepEditor({
               value={step.config.contactStatus ?? "open"}
               onValueChange={(value) => onConfigChange(step.id, "contactStatus", value)}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                aria-label={t("automations.contactStatusLabel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -370,7 +373,8 @@ export function StepEditor({
                 }
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                aria-label={t("automations.paymentProviderLabel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -398,7 +402,8 @@ export function StepEditor({
                 value={step.config.currency ?? "usd"}
                 onValueChange={(value) => onConfigChange(step.id, "currency", value)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  aria-label={t("automations.currencyLabel")} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -425,6 +430,38 @@ export function StepEditor({
             />
           </label>
           <p className="text-xs leading-relaxed text-muted-foreground">{t("automations.paymentMessageHelp")}</p>
+        </div>
+      ) : null}
+
+      {step.type === "book_meeting" ? (
+        <div className="space-y-2">
+          <label className="block space-y-1 text-sm">
+            <span className="text-[13px] font-medium text-muted-foreground">{t("automations.meetingSummaryLabel")}</span>
+            <Input
+              onChange={(e) => onConfigChange(step.id, "meetingSummary", e.target.value)}
+              placeholder={t("automations.meetingSummaryPlaceholder")}
+              value={step.config.meetingSummary ?? ""}
+            />
+          </label>
+          <label className="block space-y-1 text-sm">
+            <span className="text-[13px] font-medium text-muted-foreground">{t("automations.meetingDurationLabel")}</span>
+            <Input
+              inputMode="numeric"
+              onChange={(e) => onConfigChange(step.id, "meetingDurationMin", e.target.value)}
+              placeholder="30"
+              value={step.config.meetingDurationMin ?? ""}
+            />
+          </label>
+          <label className="block space-y-1 text-sm">
+            <span className="text-[13px] font-medium text-muted-foreground">{t("automations.meetingMessageLabel")}</span>
+            <Textarea
+              onChange={(e) => onConfigChange(step.id, "message", e.target.value)}
+              placeholder="Tu reunión quedó agendada para {{start}}. Unite acá: {{meetLink}}"
+              rows={2}
+              value={step.config.message ?? ""}
+            />
+          </label>
+          <p className="text-xs leading-relaxed text-muted-foreground">{t("automations.meetingHelp")}</p>
         </div>
       ) : null}
 
@@ -529,7 +566,8 @@ function NotifyEmailFields({
             onConfigChange(step.id, "emailTemplate", value === PLAIN_TEXT_TEMPLATE ? "" : value)
           }
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger
+            aria-label={t("automations.emailTemplateLabel")} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
