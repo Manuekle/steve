@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { WhatsappIcon, InstagramIcon, Globe02Icon, TelegramIcon } from "@hugeicons/core-free-icons";
+import { WhatsappIcon, InstagramIcon, Globe02Icon } from "@hugeicons/core-free-icons";
 import {
   Select,
   SelectContent,
@@ -28,14 +28,12 @@ const UNASSIGNED = "__none__";
 const CHANNEL_ICONS = {
   whatsapp: WhatsappIcon,
   instagram: InstagramIcon,
-  telegram: TelegramIcon,
   web: Globe02Icon,
 } as const;
 
 const CHANNEL_LABELS: Record<ChannelId, string> = {
   whatsapp: "WhatsApp",
   instagram: "Instagram",
-  telegram: "Telegram",
   web: "Web",
 };
 

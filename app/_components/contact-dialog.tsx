@@ -167,46 +167,6 @@ export function ContactDialog({
           />
         </label>
 
-        {editing?.research ? (
-          // Read-only: this comes from the research_lead tool, run by the
-          // agent mid-conversation — there is nothing here to edit by hand.
-          <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3 text-sm">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-medium">{t("contactDialog.research")}</span>
-              <span className="text-xs text-muted-foreground">
-                {t("contactDialog.researchedAt", { when: relativeTime(editing.research.researchedAt, locale) })}
-              </span>
-            </div>
-            <p className="text-muted-foreground">{editing.research.summary}</p>
-            {editing.research.companyName ? (
-              <p>
-                <span className="font-medium">{t("contactDialog.researchCompany")}: </span>
-                {editing.research.companyName}
-              </p>
-            ) : null}
-            {editing.research.signals.length > 0 ? (
-              <ul className="list-inside list-disc text-muted-foreground">
-                {editing.research.signals.map((signal) => (
-                  <li key={signal}>{signal}</li>
-                ))}
-              </ul>
-            ) : null}
-            {editing.research.sources.length > 0 ? (
-              <p className="truncate text-xs text-muted-foreground">
-                {t("contactDialog.researchSources")}:{" "}
-                {editing.research.sources.map((url, i) => (
-                  <span key={url}>
-                    {i > 0 ? ", " : ""}
-                    <a href={url} target="_blank" rel="noreferrer" className="underline">
-                      {new URL(url).hostname}
-                    </a>
-                  </span>
-                ))}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-
         {fieldError ? <p className="text-xs text-destructive">{fieldError}</p> : null}
         <ErrorBanner error={saveError} onDismiss={() => setSaveError(null)} />
 

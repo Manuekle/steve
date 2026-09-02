@@ -9,12 +9,10 @@ export default defineTool({
   description:
     "Call an allowlisted HTTPS API (CRM, calendar, webhook). " +
     "Hosts must be configured in Settings as HTTP_ALLOWLIST. " +
-    "The API of any account connected on the Connections page — whether it " +
-    "was connected by signing in (Google, HubSpot, Slack, Notion, " +
-    "Salesforce, Jira, ClickUp, monday) or by saving a key (Zendesk, " +
-    "Chargebee, MailerLite) — is reachable without being listed, and is " +
-    "authenticated automatically: do not send an Authorization header for " +
-    "those. " +
+    "The API of any account connected on the Connections page (Google, " +
+    "HubSpot, Slack, Notion, Salesforce) is reachable without being " +
+    "listed, and is authenticated automatically — do not send an " +
+    "Authorization header for those. " +
     "Never use this for arbitrary web browsing.",
   inputSchema: z.object({
     method: z.enum(["GET", "POST", "PUT", "PATCH"]),

@@ -21,7 +21,7 @@ export default defineTool({
       .describe(
         "keyword: comma-separated keywords. schedule: 5-field cron (UTC). no_reply: duration like '30min'. Unused for new_chat.",
       ),
-    channel: z.enum(["web", "whatsapp", "instagram", "telegram", "all"]).default("all"),
+    channel: z.enum(["web", "whatsapp", "instagram", "all"]).default("all"),
     steps: z
       .array(workflowStepSchema)
       .default([])

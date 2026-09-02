@@ -36,7 +36,6 @@ export type CapabilityId =
   | "shopify"
   | "http"
   | "automations"
-  | "research"
   | "code";
 
 export type Capability = {
@@ -144,17 +143,6 @@ export const CAPABILITIES: readonly Capability[] = [
     labelKey: "capability.automations",
     descriptionKey: "capability.automationsDesc",
     tools: ["list_automations", "propose_automation", "propose_automation_update"],
-  },
-  {
-    id: "research",
-    labelKey: "capability.research",
-    descriptionKey: "capability.researchDesc",
-    tools: ["web_search_lite", "research_lead"],
-    // Web results are optional, not required: research_lead still composes
-    // whatever the knowledge base has without it — see lib/lead-research.ts.
-    // Listed here so the picker greys in "web search" as unlocked once a key
-    // is set, the same way calendar's card responds to a connected account.
-    credentials: ["TAVILY_API_KEY"],
   },
   {
     id: "code",

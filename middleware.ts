@@ -50,10 +50,8 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/store";
  *
  *   `/eve`, because those are Eve's own routes and Eve does its own auth.
  *   Meta posts to `/eve/v1/whatsapp` and `/eve/v1/instagram` with no
- *   session cookie, and Telegram to `/eve/v1/telegram`; each channel verifies
- *   the delivery itself — an HMAC over the raw body with the App Secret for
- *   Meta's two, the secret-token header for Telegram — before parsing
- *   anything. The browser
+ *   session cookie; each channel verifies an HMAC over the raw body with its
+ *   App Secret before parsing anything. The browser
  *   chat protocol on `/eve/v1` carries the Basic auth in agent/channels/eve.ts,
  *   waived only on loopback. This also matches production, which runs with
  *   EVE_SELF_HOSTED=1: there Next never serves `/eve` at all and Caddy routes

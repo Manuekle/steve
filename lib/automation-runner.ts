@@ -12,7 +12,6 @@ import {
   sendWhatsAppText,
 } from "./whatsapp-send";
 import { sendInstagramText } from "./instagram-send";
-import { sendTelegramText } from "./telegram-send";
 import { sendAppEmail, sendTemplateEmail } from "./email-send";
 import type { Contact, ContactStatus, WorkflowStep } from "./types";
 
@@ -126,19 +125,6 @@ async function sendInstagram(recipientId: string, text: string): Promise<Deliver
   };
 }
 
-/** Send a Telegram message. Neither a window nor a template applies here: a
- *  bot may message any chat that has started it, and stays able to until the
- *  user blocks it. */
-async function sendTelegram(chatId: string, text: string): Promise<Delivery> {
-  const result = await sendTelegramText(chatId, text);
-  return {
-    ok: result.ok,
-    detail: result.ok
-      ? `Sent to ${chatId} as a Telegram message.`
-      : `Telegram message to ${chatId} refused — ${refusal(result)}`,
-  };
-}
-
 /**
  * Reply to a contact on the channel they actually wrote from.
  *
@@ -148,9 +134,9 @@ async function sendTelegram(chatId: string, text: string): Promise<Delivery> {
  *
  * Exported because every place that messages a contact off its own back — the
  * lead webhook's welcome, the no-reply follow-up schedule — has to make the
- * same WhatsApp-window, Instagram-IGSID and Telegram-chat-id decisions. They
- * used to each carry their own WhatsApp-only copy, so an Instagram lead was
- * silently never answered by any of them.
+ * same WhatsApp-window and Instagram-IGSID decisions. They used to each carry
+ * their own WhatsApp-only copy, so an Instagram lead was silently never
+ * answered by any of them.
  */
 export async function replyToContact(contact: Contact | undefined, text: string): Promise<Delivery | null> {
   if (contact?.channel === "whatsapp" && contact.phone) {
@@ -158,9 +144,6 @@ export async function replyToContact(contact: Contact | undefined, text: string)
   }
   if (contact?.channel === "instagram" && contact.externalId) {
     return sendInstagram(contact.externalId, text);
-  }
-  if (contact?.channel === "telegram" && contact.externalId) {
-    return sendTelegram(contact.externalId, text);
   }
   return null;
 }
@@ -171,9 +154,6 @@ function unreachable(contact: Contact | undefined): string {
   if (contact.channel === "whatsapp") return "This WhatsApp contact has no phone number.";
   if (contact.channel === "instagram") {
     return "This Instagram contact has no IGSID — it was saved before their first DM.";
-  }
-  if (contact.channel === "telegram") {
-    return "This Telegram contact has no chat id — it was saved before their first message.";
   }
   return `No outbound transport for a ${contact.channel} contact.`;
 }

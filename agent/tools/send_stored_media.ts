@@ -4,7 +4,6 @@ import { getContactBySession } from "../../lib/business-store";
 import { getAsset, readAssetBytes } from "../../lib/media-store";
 import { sendWhatsAppMediaBytes } from "../../lib/whatsapp-send";
 import { sendInstagramMediaBytes } from "../../lib/instagram-send";
-import { sendTelegramMediaBytes } from "../../lib/telegram-send";
 import { assertToolAllowed } from "../../lib/agent-scope";
 
 // The sending half of the media library. The bytes go straight from
@@ -16,7 +15,7 @@ export default defineTool({
   description:
     "Send a file from the business's saved media library to the current contact, by the " +
     "asset_id returned from find_media. Call find_media first — never guess an id. Works on " +
-    "WhatsApp, Instagram and Telegram; not on the web chat widget.",
+    "WhatsApp and Instagram; not on the web chat widget.",
   inputSchema: z.object({
     asset_id: z.string().describe("The asset_id from find_media."),
     caption: z
@@ -74,25 +73,11 @@ export default defineTool({
       });
     }
 
-    if (channel === "telegram") {
-      if (!contact?.externalId) {
-        return { ok: false, status: 0, body: "No Telegram chat id on this contact yet." };
-      }
-      return sendTelegramMediaBytes({
-        chatId: contact.externalId,
-        type: asset.kind,
-        data,
-        mimeType: asset.mime,
-        filename: asset.name,
-        caption,
-      });
-    }
-
     if (channel === "web") {
       return {
         ok: false,
         status: 0,
-        body: "The web chat has no proactive send channel — describe the file instead, or tell the user this needs WhatsApp, Instagram or Telegram.",
+        body: "The web chat has no proactive send channel — describe the file instead, or tell the user this needs WhatsApp or Instagram.",
       };
     }
 

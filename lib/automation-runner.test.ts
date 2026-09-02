@@ -7,7 +7,6 @@ import type { Contact, WorkflowStep } from "./types";
 const sendWhatsAppText = vi.fn(async () => ({ ok: true, status: 200, body: "{}" }));
 const sendWhatsAppTemplate = vi.fn(async () => ({ ok: true, status: 200, body: "{}" }));
 const sendInstagramText = vi.fn(async () => ({ ok: true, status: 200, body: "{}" }));
-const sendTelegramText = vi.fn(async () => ({ ok: true, status: 200, body: "{}" }));
 
 let credentials: Record<string, string | undefined> = {};
 
@@ -19,9 +18,6 @@ vi.mock("./whatsapp-send", () => ({
 }));
 vi.mock("./instagram-send", () => ({
   sendInstagramText: (...args: unknown[]) => sendInstagramText(...(args as [])),
-}));
-vi.mock("./telegram-send", () => ({
-  sendTelegramText: (...args: unknown[]) => sendTelegramText(...(args as [])),
 }));
 vi.mock("./credentials", () => ({
   getCredential: async (key: string) => credentials[key],
@@ -59,7 +55,6 @@ beforeEach(() => {
   sendWhatsAppText.mockClear().mockResolvedValue({ ok: true, status: 200, body: "{}" });
   sendWhatsAppTemplate.mockClear().mockResolvedValue({ ok: true, status: 200, body: "{}" });
   sendInstagramText.mockClear().mockResolvedValue({ ok: true, status: 200, body: "{}" });
-  sendTelegramText.mockClear().mockResolvedValue({ ok: true, status: 200, body: "{}" });
 });
 
 afterEach(() => {
@@ -173,36 +168,5 @@ describe("replyToContact", () => {
   it("has nothing to send to a web-chat contact", async () => {
     const { replyToContact } = await import("./automation-runner");
     expect(await replyToContact(contactOn("web"), "hola")).toBeNull();
-  });
-
-  // Telegram used to fall through to the same `null` as web chat, so every
-  // follow-up, welcome and automation message to a Telegram lead was silently
-  // skipped rather than sent.
-  it("sends to a Telegram contact on its chat id", async () => {
-    const { replyToContact } = await import("./automation-runner");
-
-    const delivery = await replyToContact(contactOn("telegram", { externalId: "998877" }), "hola");
-
-    expect(sendTelegramText).toHaveBeenCalledWith("998877", "hola");
-    expect(delivery).toEqual({ ok: true, detail: "Sent to 998877 as a Telegram message." });
-  });
-
-  it("reports a refused Telegram send rather than claiming it went out", async () => {
-    const { replyToContact } = await import("./automation-runner");
-    sendTelegramText.mockResolvedValue({
-      ok: false,
-      status: 200,
-      body: '{"ok":false,"description":"bot was blocked by the user"}',
-    });
-
-    const delivery = await replyToContact(contactOn("telegram", { externalId: "998877" }), "hola");
-
-    expect(delivery?.ok).toBe(false);
-    expect(delivery?.detail).toContain("blocked");
-  });
-
-  it("skips a Telegram contact saved before its first message", async () => {
-    const { replyToContact } = await import("./automation-runner");
-    expect(await replyToContact(contactOn("telegram"), "hola")).toBeNull();
   });
 });

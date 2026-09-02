@@ -244,7 +244,6 @@ describe("channelFromKind", () => {
   it("sends the web console's own channel to web", () =>
     expect(channelFromKind("channel:eve")).toBe("web"));
   it("maps whatsapp", () => expect(channelFromKind("whatsapp")).toBe("whatsapp"));
-  it("maps telegram", () => expect(channelFromKind("telegram")).toBe("telegram"));
   it("defaults to web", () => expect(channelFromKind("web")).toBe("web"));
   it("defaults to web for unknown", () => expect(channelFromKind("carrier-pigeon")).toBe("web"));
   it("defaults to web for undefined", () => expect(channelFromKind(undefined)).toBe("web"));

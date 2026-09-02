@@ -16,7 +16,7 @@ export default defineTool({
     description: z.string().optional(),
     trigger: z.enum(["keyword", "schedule", "new_chat", "no_reply"]).optional(),
     triggerValue: z.string().optional(),
-    channel: z.enum(["web", "whatsapp", "instagram", "telegram", "all"]).optional(),
+    channel: z.enum(["web", "whatsapp", "instagram", "all"]).optional(),
     steps: z.array(workflowStepSchema).optional().describe("Replaces the entire step list when provided."),
   }),
   outputSchema: z.object({

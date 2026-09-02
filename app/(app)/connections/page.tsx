@@ -5,10 +5,6 @@ import Link from "next/link";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   Mail01Icon,
-  CustomerSupportIcon,
-  Invoice01Icon,
-  MailSend01Icon,
-  GlobalSearchIcon,
   WebhookIcon,
   PlugSocketIcon,
   KeyRoundIcon,
@@ -98,12 +94,6 @@ type FormRow = Form & { readonly responseCount?: number };
 
 const ICONS: Record<string, IconSvgElement> = {
   smtp: Mail01Icon,
-  // Vendors with no brand mark to hand. A glyph for what the card *does*
-  // reads better than the generic plug socket every unlisted id falls back to.
-  zendesk: CustomerSupportIcon,
-  chargebee: Invoice01Icon,
-  mailerlite: MailSend01Icon,
-  tavily: GlobalSearchIcon,
 };
 
 /** The vendors with a real brand mark on hand — everything else falls back

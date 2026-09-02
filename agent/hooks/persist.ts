@@ -23,7 +23,7 @@ function fullText(value: unknown): string {
  *  it would fill the conversation viewer with the operator talking to
  *  themselves. */
 function isCustomerChannel(channel: ChannelId): boolean {
-  return channel === "whatsapp" || channel === "instagram" || channel === "telegram";
+  return channel === "whatsapp" || channel === "instagram";
 }
 
 /**
@@ -67,25 +67,11 @@ function preview(value: unknown): string {
  * agent/channels/{whatsapp,instagram}.ts). WhatsApp's principalId is a phone
  * number; Instagram's is a platform-scoped id (IGSID) that send_media needs to
  * message the contact proactively.
- *
- * Telegram is the odd one out: its auth comes from eve's own default mapper,
- * not a custom one in agent/channels/telegram.ts, and its principalId is a
- * `telegram:<userId>` (or `telegram:<chatId>:<userId>` in a group) composite
- * that no Bot API call accepts. What an outbound send needs is the *chat* id,
- * which the same mapper puts on `attributes.chat_id` — so that is what lands
- * on externalId, in the shape lib/telegram-send.ts can use directly.
  */
 function identityFromAuth(
   channel: ReturnType<typeof channelFromKind>,
-  auth: { principalId?: string; attributes?: Readonly<Record<string, unknown>> } | null | undefined,
+  principalId: string | undefined,
 ): { phone?: string; externalId?: string } {
-  if (channel === "telegram") {
-    const chatId = auth?.attributes?.chat_id;
-    return typeof chatId === "string" || typeof chatId === "number"
-      ? { externalId: String(chatId) }
-      : {};
-  }
-  const principalId = auth?.principalId;
   if (!principalId) return {};
   if (channel === "whatsapp") return { phone: principalId };
   if (channel === "instagram") return { externalId: principalId };
@@ -101,7 +87,7 @@ export default defineHook({
           sessionId: ctx.session.id,
           channel,
           source: channel,
-          ...identityFromAuth(channel, ctx.session.auth.current),
+          ...identityFromAuth(channel, ctx.session.auth.current?.principalId),
         });
         await upsertChat({
           title: "Conversation",

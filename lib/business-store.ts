@@ -16,7 +16,6 @@ import type {
   Form,
   FormResponse,
   LeadInput,
-  LeadResearch,
   ProspectAssessment,
   Reminder,
   ReminderStatus,
@@ -290,13 +289,6 @@ export async function setContactStatus(id: string, status: ContactStatus): Promi
   });
 }
 
-export async function setContactResearch(id: string, research: LeadResearch): Promise<Contact | undefined> {
-  return updateStore((store) => {
-    store.contacts = store.contacts.map((c) => (c.id === id ? { ...c, research } : c));
-    return store.contacts.find((c) => c.id === id);
-  });
-}
-
 /**
  * Status change plus placement: the CRM board lets a card be dropped between
  * two others, and the slot it lands in is the order it keeps. Order lives in
@@ -398,7 +390,6 @@ export function channelFromKind(kind: string | undefined): ChannelId {
   const name = kind?.startsWith("channel:") ? kind.slice("channel:".length) : kind;
   if (name === "whatsapp") return "whatsapp";
   if (name === "instagram") return "instagram";
-  if (name === "telegram") return "telegram";
   return "web";
 }
 

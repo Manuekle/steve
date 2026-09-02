@@ -143,21 +143,6 @@ export type CredentialKey =
   // Resend (transactional email)
   | "RESEND_API_KEY"
   | "RESEND_FROM_EMAIL"
-  // Zendesk (support ticket lookup)
-  | "ZENDESK_SUBDOMAIN"
-  | "ZENDESK_EMAIL"
-  | "ZENDESK_API_TOKEN"
-  // Chargebee (subscriptions and invoices)
-  | "CHARGEBEE_SITE"
-  | "CHARGEBEE_API_KEY"
-  // MailerLite (email marketing)
-  | "MAILERLITE_API_KEY"
-  // Tavily (web_search_lite, research_lead tools)
-  | "TAVILY_API_KEY"
-  // Telegram bot channel
-  | "TELEGRAM_BOT_TOKEN"
-  | "TELEGRAM_WEBHOOK_SECRET_TOKEN"
-  | "TELEGRAM_BOT_USERNAME"
   // Meta Ads
   | "META_ACCESS_TOKEN"
   | "META_AD_ACCOUNT_ID"
@@ -385,44 +370,6 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         help: "Your custom secret string for webhook verification.",
         pattern: "^.{8,}$",
         title: "Mínimo 8 caracteres",
-      },
-    ],
-  },
-  {
-    id: "telegram",
-    label: "Telegram",
-    description:
-      "Bot de Telegram para atender clientes 24/7. Creá el bot hablándole a @BotFather en Telegram (/newbot) y pegá el token acá.",
-    fields: [
-      {
-        key: "TELEGRAM_BOT_TOKEN",
-        label: "Bot Token",
-        type: "password",
-        required: true,
-        placeholder: "123456789:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        help: "Te lo da @BotFather al crear el bot con /newbot.",
-        pattern: "^[0-9]+:[A-Za-z0-9_-]{30,}$",
-        title: "Formato: números, dos puntos, y el resto del token",
-      },
-      {
-        key: "TELEGRAM_WEBHOOK_SECRET_TOKEN",
-        label: "Webhook Secret Token",
-        type: "password",
-        required: true,
-        generate: true,
-        placeholder: "my_secret_token_123",
-        help: "Inventalo vos — tiene que coincidir con el secret_token que registrás al configurar el webhook del bot.",
-        pattern: "^.{8,}$",
-        title: "Mínimo 8 caracteres",
-      },
-      {
-        key: "TELEGRAM_BOT_USERNAME",
-        label: "Username del bot",
-        required: false,
-        placeholder: "mi_negocio_bot",
-        help: "Sin la @. Se usa para detectar menciones en grupos (@mi_negocio_bot).",
-        pattern: "^[A-Za-z0-9_]{5,}$",
-        title: "Solo letras, números y guiones bajos",
       },
     ],
   },
@@ -838,105 +785,6 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         help: "Email que aparece como 'de' en los correos. Debe estar en un dominio verificado en Resend.",
         pattern: "^.+@.+\\..+$",
         title: "Email válido",
-      },
-    ],
-  },
-  {
-    id: "zendesk",
-    label: "Zendesk",
-    description:
-      "Consultá tickets de soporte del cliente desde la conversación. Creá un token en tu admin de Zendesk: Configuración de la cuenta > Apps e integraciones > APIs > Tokens de API.",
-    fields: [
-      {
-        key: "ZENDESK_SUBDOMAIN",
-        label: "Subdominio",
-        required: true,
-        placeholder: "mi-empresa",
-        help: "La parte de tu URL antes de .zendesk.com (mi-empresa.zendesk.com).",
-        pattern: "^[a-zA-Z0-9-]+$",
-        title: "Solo letras, números y guiones",
-      },
-      {
-        key: "ZENDESK_EMAIL",
-        label: "Email del agente",
-        required: true,
-        placeholder: "vos@tuempresa.com",
-        help: "El email de la cuenta que generó el token.",
-        pattern: "^.+@.+\\..+$",
-        title: "Email válido",
-      },
-      {
-        key: "ZENDESK_API_TOKEN",
-        label: "API Token",
-        type: "password",
-        required: true,
-        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        help: "Se muestra una sola vez al generarlo — guardalo apenas lo veas.",
-        pattern: "^.{10,}$",
-        title: "Mínimo 10 caracteres",
-      },
-    ],
-  },
-  {
-    id: "chargebee",
-    label: "Chargebee",
-    description:
-      "Consultá suscripciones y facturas del cliente. Sacá la key en tu sitio de Chargebee: Configuración > Configuración de API > API Keys.",
-    fields: [
-      {
-        key: "CHARGEBEE_SITE",
-        label: "Sitio",
-        required: true,
-        placeholder: "mi-empresa",
-        help: "La parte de tu URL antes de .chargebee.com (mi-empresa.chargebee.com).",
-        pattern: "^[a-zA-Z0-9-]+$",
-        title: "Solo letras, números y guiones",
-      },
-      {
-        key: "CHARGEBEE_API_KEY",
-        label: "API Key",
-        type: "password",
-        required: true,
-        placeholder: "live_xxxxxxxxxxxxxxxxxxxxxxxx",
-        help: "Empieza con test_ (sandbox) o live_ (producción).",
-        pattern: "^(test|live)_.+$",
-        title: "Debe empezar con test_ o live_",
-      },
-    ],
-  },
-  {
-    id: "mailerlite",
-    label: "MailerLite",
-    description:
-      "Suscribí contactos a tus listas de email marketing. Generá la key en tu cuenta de MailerLite: Integrations > API.",
-    fields: [
-      {
-        key: "MAILERLITE_API_KEY",
-        label: "API Key",
-        type: "password",
-        required: true,
-        placeholder: "eyJxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        help: "app.mailerlite.com/integrations/api — creá una key nueva.",
-        pattern: "^.{20,}$",
-        title: "Mínimo 20 caracteres",
-      },
-    ],
-  },
-  {
-    id: "tavily",
-    label: "Búsqueda web (Tavily)",
-    description:
-      "Permite a los tools web_search_lite y research_lead buscar en la web en vivo. Sacá la key en tavily.com > API Keys — tiene un plan gratis.",
-    fields: [
-      {
-        key: "TAVILY_API_KEY",
-        label: "API Key",
-        type: "password",
-        required: true,
-        placeholder: "tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        help: "tavily.com/#pricing — el plan gratis alcanza para uso liviano.",
-        pattern: "^tvly-.+$",
-        title: "Debe empezar con tvly-",
       },
     ],
   },

@@ -23,7 +23,6 @@ const GROUPS_WITHOUT_CARD = new Set([
   "integrations",
   "instagram",
   "oauth-apps",
-  "telegram",
   "whatsapp",
 ]);
 

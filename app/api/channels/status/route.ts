@@ -8,7 +8,7 @@ import { withApiErrors } from "@/lib/api-error";
 // instead of hardcoding everything as "connected".
 
 type ChannelStatus = {
-  id: "web" | "whatsapp" | "instagram" | "telegram";
+  id: "web" | "whatsapp" | "instagram";
   label: string;
   connected: boolean;
   missing: string[];
@@ -28,14 +28,11 @@ const INSTAGRAM_KEYS = [
   "INSTAGRAM_VERIFY_TOKEN",
 ] as const;
 
-const TELEGRAM_KEYS = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET_TOKEN"] as const;
-
 export const GET = withApiErrors(async function GET() {
   const masked = await getMaskedCredentials();
 
   const whatsappMissing = WHATSAPP_KEYS.filter((k) => !masked[k]);
   const instagramMissing = INSTAGRAM_KEYS.filter((k) => !masked[k]);
-  const telegramMissing = TELEGRAM_KEYS.filter((k) => !masked[k]);
 
   const channels: ChannelStatus[] = [
     {
@@ -55,12 +52,6 @@ export const GET = withApiErrors(async function GET() {
       label: "Instagram",
       connected: instagramMissing.length === 0,
       missing: instagramMissing,
-    },
-    {
-      id: "telegram",
-      label: "Telegram",
-      connected: telegramMissing.length === 0,
-      missing: telegramMissing,
     },
   ];
 

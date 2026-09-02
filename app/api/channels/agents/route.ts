@@ -10,7 +10,7 @@ import type { ChannelId } from "@/lib/types";
 // lib/agent-scope.ts. A channel with nobody assigned keeps the old behaviour:
 // every tool available, no scoping.
 
-const CHANNELS: readonly ChannelId[] = ["whatsapp", "instagram", "telegram"];
+const CHANNELS: readonly ChannelId[] = ["whatsapp", "instagram"];
 
 function isChannel(value: unknown): value is ChannelId {
   return typeof value === "string" && CHANNELS.includes(value as ChannelId);

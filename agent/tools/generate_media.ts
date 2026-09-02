@@ -5,7 +5,6 @@ import { getContactBySession } from "../../lib/business-store";
 import { generateElevenLabsSpeech, hasElevenLabsKey } from "../../lib/elevenlabs";
 import { sendWhatsAppMediaBytes } from "../../lib/whatsapp-send";
 import { sendInstagramMediaBytes } from "../../lib/instagram-send";
-import { sendTelegramMediaBytes } from "../../lib/telegram-send";
 import { getInstallationId } from "../../lib/license/installation";
 import { billingSourceForElevenLabs, billingSourceForProvider, type BillingSource } from "../../lib/credit-gate";
 import { recordUsage, type UsageType } from "../../lib/ai-usage";
@@ -81,14 +80,14 @@ async function trackMediaUsage(opts: {
 export default defineTool({
   description:
     "Generate an image, a short spoken-audio clip, or a short video from a text prompt, and send " +
-    "it to the current contact on whichever channel they're messaging from (WhatsApp, " +
-    "Instagram or Telegram). Nothing is uploaded anywhere public — the file is generated, uploaded straight " +
+    "it to the current contact on whichever channel they're messaging from (WhatsApp " +
+    "or Instagram). Nothing is uploaded anywhere public — the file is generated, uploaded straight " +
     "to that platform's own media API, and sent. Video generation can take a while; say so before " +
     "calling this for a video. Not available on the web chat widget.",
   inputSchema: z.object({
     type: z.enum(["image", "audio", "video"]),
     prompt: z.string().min(1).describe("What to generate. For image and video, be descriptive — this is the only guidance the model gets. For audio, this is the exact script that gets spoken, word for word."),
-    caption: z.string().optional().describe("Shown with the media on WhatsApp and Telegram. Ignored on Instagram — that platform does not support attachment captions."),
+    caption: z.string().optional().describe("Shown with the media on WhatsApp. Ignored on Instagram — that platform does not support attachment captions."),
     voice: z.string().optional().describe("Voice for audio, if the user asked for a specific one — an ElevenLabs voice id or one of george, sarah, daniel, charlotte. Defaults to the voice configured in Settings."),
   }),
   outputSchema: z.object({
@@ -101,13 +100,13 @@ export default defineTool({
     const contact = await getContactBySession(ctx.session.id);
     const channel = contact?.channel;
 
-    if (channel !== "whatsapp" && channel !== "instagram" && channel !== "telegram") {
+    if (channel !== "whatsapp" && channel !== "instagram") {
       return {
         ok: false,
         status: 0,
         body:
           channel === "web"
-            ? "The web chat has no proactive send channel yet — describe the media instead, or tell the user this needs WhatsApp, Instagram or Telegram."
+            ? "The web chat has no proactive send channel yet — describe the media instead, or tell the user this needs WhatsApp or Instagram."
             : "This contact has no messaging channel yet — nothing to send to.",
       };
     }
@@ -200,9 +199,6 @@ export default defineTool({
 
     if (channel === "whatsapp") {
       return sendWhatsAppMediaBytes({ to: contact!.phone!, type, data, mimeType, filename, caption });
-    }
-    if (channel === "telegram") {
-      return sendTelegramMediaBytes({ chatId: contact!.externalId!, type, data, mimeType, filename, caption });
     }
     return sendInstagramMediaBytes({ recipientId: contact!.externalId!, type, data, mimeType, filename });
   },

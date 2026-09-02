@@ -5,7 +5,6 @@ import {
   Globe02Icon,
   WhatsappIcon,
   InstagramIcon,
-  TelegramIcon,
   FileEditIcon,
 } from "@hugeicons/core-free-icons";
 import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
@@ -17,7 +16,6 @@ const CHANNEL_ICONS: Record<ContactChannel, IconSvgElement> = {
   web: Globe02Icon,
   whatsapp: WhatsappIcon,
   instagram: InstagramIcon,
-  telegram: TelegramIcon,
   // Not a place you can reply, so it has no entry in CHANNEL_LABELS with the
   // messaging products — but contacts do arrive this way and have to be drawn.
   form: FileEditIcon,
@@ -34,7 +32,6 @@ export const CHANNEL_LABELS: Record<ChannelId, string> = {
   web: "Web",
   whatsapp: "WhatsApp",
   instagram: "Instagram",
-  telegram: "Telegram",
 };
 
 export function ChannelIcon({ channel, className }: {

@@ -161,7 +161,6 @@ export function getChannels(
     { id: "web", label: "Web Chat", status: "connected", messageCount: 0, lastEvent: undefined },
     { id: "whatsapp", label: "WhatsApp", status: credentialStatus?.whatsapp ? "connected" : "disconnected", messageCount: 0, lastEvent: undefined },
     { id: "instagram", label: "Instagram", status: credentialStatus?.instagram ? "connected" : "disconnected", messageCount: 0, lastEvent: undefined },
-    { id: "telegram", label: "Telegram", status: credentialStatus?.telegram ? "connected" : "disconnected", messageCount: 0, lastEvent: undefined },
   ];
   const byId = new Map(channels.map((c) => [c.id, c]));
 

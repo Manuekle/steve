@@ -3,7 +3,7 @@
 // lib/dashboard-store.ts. The Eve runtime owns the real session state;
 // these types model the app-level metadata we layer on top.
 
-export type ChannelId = "web" | "whatsapp" | "instagram" | "telegram";
+export type ChannelId = "web" | "whatsapp" | "instagram";
 
 /**
  * Where a contact came from. A superset of the messaging channels: a lead can
@@ -57,8 +57,6 @@ export type Contact = {
   readonly lastMessageAt: string;
   readonly createdAt: string;
   readonly notes?: string;
-  /** What the agent found researching this lead. Absent until asked for. */
-  readonly research?: LeadResearch;
 };
 
 export type LeadInput = {
@@ -447,23 +445,6 @@ export type ProspectAssessment = {
   readonly turnCount: number;
   /** "ai" — the model read the transcript. "manual" — a person overrode it. */
   readonly source: "ai" | "manual";
-};
-
-// ── Lead research ──────────────────────────────────────────────────
-//
-// What the agent found composing internal knowledge with a live web search —
-// on demand, when a conversation calls for it, not on a schedule like the
-// prospect assessment above.
-
-export type LeadResearch = {
-  /** 2-4 sentences, in the conversation's own language. */
-  readonly summary: string;
-  readonly companyName?: string;
-  /** Notable facts found — budget signals, company size, public presence. */
-  readonly signals: readonly string[];
-  /** URLs actually consulted, so a person reading this can verify it. */
-  readonly sources: readonly string[];
-  readonly researchedAt: string;
 };
 
 /** One turn of a saved playground conversation. */

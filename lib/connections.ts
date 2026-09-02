@@ -37,11 +37,7 @@ export type ManualConnectionId =
   | "anthropic"
   | "openai"
   | "gemini"
-  | "ai-gateway"
-  | "zendesk"
-  | "chargebee"
-  | "mailerlite"
-  | "tavily";
+  | "ai-gateway";
 
 export type TokenAuthStyle = "body" | "basic";
 export type TokenBodyStyle = "form" | "json";
@@ -378,46 +374,6 @@ export const MANUAL_CONNECTIONS: readonly ManualConnection[] = [
     settingsGroup: "resend",
     credentialKeys: ["RESEND_API_KEY", "RESEND_FROM_EMAIL"],
     previewKey: "RESEND_API_KEY",
-  },
-  {
-    id: "zendesk",
-    kind: "api_key",
-    label: "Zendesk",
-    descriptionKey: "connections.zendesk.description",
-    reasonKey: "connections.zendesk.reason",
-    settingsGroup: "zendesk",
-    credentialKeys: ["ZENDESK_SUBDOMAIN", "ZENDESK_EMAIL", "ZENDESK_API_TOKEN"],
-    previewKey: "ZENDESK_API_TOKEN",
-  },
-  {
-    id: "chargebee",
-    kind: "api_key",
-    label: "Chargebee",
-    descriptionKey: "connections.chargebee.description",
-    reasonKey: "connections.chargebee.reason",
-    settingsGroup: "chargebee",
-    credentialKeys: ["CHARGEBEE_SITE", "CHARGEBEE_API_KEY"],
-    previewKey: "CHARGEBEE_API_KEY",
-  },
-  {
-    id: "mailerlite",
-    kind: "api_key",
-    label: "MailerLite",
-    descriptionKey: "connections.mailerlite.description",
-    reasonKey: "connections.mailerlite.reason",
-    settingsGroup: "mailerlite",
-    credentialKeys: ["MAILERLITE_API_KEY"],
-    previewKey: "MAILERLITE_API_KEY",
-  },
-  {
-    id: "tavily",
-    kind: "api_key",
-    label: "Tavily",
-    descriptionKey: "connections.tavily.description",
-    reasonKey: "connections.tavily.reason",
-    settingsGroup: "tavily",
-    credentialKeys: ["TAVILY_API_KEY"],
-    previewKey: "TAVILY_API_KEY",
   },
 ];
 

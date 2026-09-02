@@ -9,7 +9,6 @@ import {
   WhatsappIcon,
   ArtificialIntelligence08Icon,
   InstagramIcon,
-  TelegramIcon,
   Loading03Icon,
   AlertCircleIcon,
   Cancel01Icon,
@@ -26,10 +25,6 @@ import {
   DatabaseIcon,
   SquareLock02Icon,
   Coins01Icon,
-  CustomerSupportIcon,
-  Invoice01Icon,
-  MailSend01Icon,
-  GlobalSearchIcon,
   PlugSocketIcon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
@@ -61,7 +56,6 @@ import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { notifyCredentialsChanged } from "@/lib/credentials-changed";
 import { TutorialTrigger } from "../../_components/tutorial-video-dialog";
 import { WebhookUrlNote, type WebhookChannel } from "../../_components/webhook-url-note";
-import { TelegramWebhookNote } from "../../_components/telegram-webhook-note";
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { useEnterpriseAllowed } from "@/components/enterprise-gate";
@@ -100,7 +94,6 @@ const GROUP_ICONS: Record<string, IconSvgElement> = {
   database: DatabaseIcon,
   whatsapp: WhatsappIcon,
   instagram: InstagramIcon,
-  telegram: TelegramIcon,
   "google-sheets": GoogleSheetIcon,
   "google-calendar": Calendar03Icon,
   "google-drive": GoogleDriveIcon,
@@ -112,13 +105,6 @@ const GROUP_ICONS: Record<string, IconSvgElement> = {
   smtp: Mail01Icon,
   resend: Mail01Icon,
   "meta-ads": MetaIcon,
-  // The four vendors with no brand mark to hand: a glyph for what the card
-  // *does* beats a plug socket that says nothing, and matches how Shopify and
-  // Twilio read here before their marks arrived.
-  zendesk: CustomerSupportIcon,
-  chargebee: Invoice01Icon,
-  mailerlite: MailSend01Icon,
-  tavily: GlobalSearchIcon,
   integrations: PlugSocketIcon,
   "oauth-apps": KeyRoundIcon,
 };
@@ -190,7 +176,7 @@ const SECTIONS: readonly SettingsSection[] = [
   {
     id: "channels",
     labelKey: "settings.section.channels",
-    groups: ["whatsapp", "instagram", "telegram", "twilio", "elevenlabs"],
+    groups: ["whatsapp", "instagram", "twilio", "elevenlabs"],
     extras: [],
   },
   {
@@ -607,10 +593,6 @@ export default function SettingsPage() {
           // The one value on this card that is derived, not typed: where the
           // provider has to send its webhook. See WebhookUrlNote.
           <WebhookUrlNote channel={group.id} />
-        ) : group.id === "telegram" ? (
-          // Telegram has no dashboard to paste that URL into — its webhook is
-          // registered through the Bot API. See TelegramWebhookNote.
-          <TelegramWebhookNote />
         ) : group.id !== "database" ? null : (databaseKind ?? "local") === "local" ? (
             // Docker itself has nothing to type, so it has no group here — but
             // it is what serves this database, and /setup is where you can see
