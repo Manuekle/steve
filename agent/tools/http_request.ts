@@ -1,12 +1,20 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { getCredential } from "../../lib/credentials";
+import { connectedApiHosts, connectionAuthHeaders } from "../../lib/connection-http";
 import { assertSafeUrl, parseAllowlist } from "../../lib/http-guard";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
     "Call an allowlisted HTTPS API (CRM, calendar, webhook). " +
     "Hosts must be configured in Settings as HTTP_ALLOWLIST. " +
+    "The API of any account connected on the Connections page — whether it " +
+    "was connected by signing in (Google, HubSpot, Slack, Notion, " +
+    "Salesforce, Jira, ClickUp, monday) or by saving a key (Zendesk, " +
+    "Chargebee, MailerLite) — is reachable without being listed, and is " +
+    "authenticated automatically: do not send an Authorization header for " +
+    "those. " +
     "Never use this for arbitrary web browsing.",
   inputSchema: z.object({
     method: z.enum(["GET", "POST", "PUT", "PATCH"]),
@@ -22,8 +30,16 @@ export default defineTool({
     status: z.number(),
     body: z.string(),
   }),
-  async execute({ method, url: rawUrl, body, headers }) {
-    const allowlist = parseAllowlist(await getCredential("HTTP_ALLOWLIST"));
+  async execute({ method, url: rawUrl, body, headers }, ctx) {
+    await assertToolAllowed(ctx.session.id, "http_request");
+    // A connected account's API host is reachable on the strength of the
+    // connection itself: having signed into HubSpot on the Connections page
+    // and then having to also type its hostname into a text field is a step
+    // that only ever produces support threads.
+    const allowlist = [
+      ...parseAllowlist(await getCredential("HTTP_ALLOWLIST")),
+      ...(await connectedApiHosts()),
+    ];
     const url = assertSafeUrl(rawUrl, allowlist);
 
     const requestHeaders = new Headers();
@@ -34,6 +50,13 @@ export default defineTool({
     for (const [key, value] of Object.entries(headers ?? {})) {
       const lower = key.toLowerCase();
       if (lower === "host" || lower === "cookie" || lower === "set-cookie") continue;
+      requestHeaders.set(key, value);
+    }
+
+    // Set last, so the connection's own credential wins over anything the
+    // model decided to put in `headers` for the same host.
+    const auth = await connectionAuthHeaders(url.host);
+    for (const [key, value] of Object.entries(auth ?? {})) {
       requestHeaders.set(key, value);
     }
 

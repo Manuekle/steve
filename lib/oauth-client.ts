@@ -2,8 +2,7 @@
 // connections catalog.
 //
 // Providers agree on the shape of the flow and disagree on every detail of
-// it: Notion wants a JSON body behind HTTP Basic, Airtable wants a form body
-// behind Basic *and* refuses a request without PKCE, Slack answers 200 with
+// it: Notion wants a JSON body behind HTTP Basic, Slack answers 200 with
 // `ok: false` instead of an error status, and HubSpot names the account in a
 // path segment rather than a header. Those differences live in the catalog as
 // data; this file is the one code path that reads them.
@@ -152,7 +151,7 @@ function readPath(source: unknown, path: string): string | undefined {
 
 /**
  * The human-readable name of the account that just granted access — an email
- * for Google and Calendly, a workspace for Slack and Notion, a portal domain
+ * for Google, a workspace for Slack and Notion, a portal domain
  * for HubSpot. Best-effort by design: a connection that works but cannot say
  * whose it is still beats a failed connect.
  */

@@ -20,10 +20,12 @@ import type { CredentialKey } from "./credentials";
 export type ConnectionId =
   | "google"
   | "hubspot"
-  | "calendly"
   | "slack"
   | "notion"
-  | "airtable";
+  | "salesforce"
+  | "jira"
+  | "clickup"
+  | "monday";
 
 /** Vendors that appear on the page but are wired through Settings instead. */
 export type ManualConnectionId =
@@ -37,7 +39,12 @@ export type ManualConnectionId =
   | "resend"
   | "anthropic"
   | "openai"
-  | "ai-gateway";
+  | "gemini"
+  | "ai-gateway"
+  | "zendesk"
+  | "chargebee"
+  | "mailerlite"
+  | "tavily";
 
 export type TokenAuthStyle = "body" | "basic";
 export type TokenBodyStyle = "form" | "json";
@@ -50,7 +57,7 @@ export type OAuthConfig = {
   readonly scopeSeparator: string;
   /** Extra query params on the authorize URL (Google's offline access, etc). */
   readonly authParams?: Readonly<Record<string, string>>;
-  /** Airtable requires PKCE; the others accept it, so it is always on. */
+  /** Google requires PKCE; the others accept it too, so it is per-connection. */
   readonly pkce: boolean;
   /** Where the client credentials ride on the token request. */
   readonly tokenAuth: TokenAuthStyle;
@@ -81,6 +88,16 @@ export type OAuthConnection = {
   readonly unlockKeys: readonly string[];
   /** Where a self-hoster registers the OAuth app. */
   readonly appDocsUrl: string;
+  /**
+   * The vendor's API hosts. A connected account's token is attached to
+   * `http_request` calls that land on these hosts and nowhere else, which is
+   * what makes connecting an account do something rather than only store a
+   * token — see lib/connection-http.ts. Subdomains count, so
+   * "googleapis.com" covers sheets.googleapis.com.
+   */
+  readonly apiHosts: readonly string[];
+  /** Headers the vendor's API requires beyond Authorization. */
+  readonly apiHeaders?: Readonly<Record<string, string>>;
   readonly oauth: OAuthConfig;
 };
 
@@ -113,6 +130,7 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
       "connections.google.unlockGmail",
     ],
     appDocsUrl: "https://console.cloud.google.com/apis/credentials",
+    apiHosts: ["googleapis.com"],
     oauth: {
       authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
       tokenUrl: "https://oauth2.googleapis.com/token",
@@ -122,6 +140,7 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive.readonly",
         "https://www.googleapis.com/auth/gmail.send",
       ],
       scopeSeparator: " ",
@@ -149,6 +168,7 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
       "connections.hubspot.unlockSync",
     ],
     appDocsUrl: "https://developers.hubspot.com/docs/api/working-with-oauth",
+    apiHosts: ["api.hubapi.com"],
     oauth: {
       authorizeUrl: "https://app.hubspot.com/oauth/authorize",
       tokenUrl: "https://api.hubapi.com/oauth/v1/token",
@@ -165,37 +185,13 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
     },
   },
   {
-    id: "calendly",
-    kind: "oauth",
-    label: "Calendly",
-    descriptionKey: "connections.calendly.description",
-    unlockKeys: [
-      "connections.calendly.unlockBooking",
-      "connections.calendly.unlockEvents",
-    ],
-    appDocsUrl: "https://developer.calendly.com/how-to-authenticate-with-oauth",
-    oauth: {
-      authorizeUrl: "https://auth.calendly.com/oauth/authorize",
-      tokenUrl: "https://auth.calendly.com/oauth/token",
-      scopes: [],
-      scopeSeparator: " ",
-      pkce: true,
-      tokenAuth: "basic",
-      tokenBody: "form",
-      refreshable: true,
-      clientIdKey: "CALENDLY_CLIENT_ID",
-      clientSecretKey: "CALENDLY_CLIENT_SECRET",
-      identityUrl: "https://api.calendly.com/users/me",
-      identityPath: "resource.email",
-    },
-  },
-  {
     id: "slack",
     kind: "oauth",
     label: "Slack",
     descriptionKey: "connections.slack.description",
     unlockKeys: ["connections.slack.unlockNotify", "connections.slack.unlockHandoff"],
     appDocsUrl: "https://api.slack.com/apps",
+    apiHosts: ["slack.com"],
     oauth: {
       authorizeUrl: "https://slack.com/oauth/v2/authorize",
       tokenUrl: "https://slack.com/api/oauth.v2.access",
@@ -219,6 +215,9 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
     descriptionKey: "connections.notion.description",
     unlockKeys: ["connections.notion.unlockDatabase", "connections.notion.unlockNotes"],
     appDocsUrl: "https://www.notion.so/my-integrations",
+    apiHosts: ["api.notion.com"],
+    // Notion refuses any request that does not pin an API version.
+    apiHeaders: { "Notion-Version": "2022-06-28" },
     oauth: {
       authorizeUrl: "https://api.notion.com/v1/oauth/authorize",
       tokenUrl: "https://api.notion.com/v1/oauth/token",
@@ -235,31 +234,93 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
     },
   },
   {
-    id: "airtable",
+    id: "salesforce",
     kind: "oauth",
-    label: "Airtable",
-    descriptionKey: "connections.airtable.description",
-    unlockKeys: ["connections.airtable.unlockRows", "connections.airtable.unlockBases"],
-    appDocsUrl: "https://airtable.com/create/oauth",
+    label: "Salesforce",
+    descriptionKey: "connections.salesforce.description",
+    unlockKeys: ["connections.salesforce.unlockLeads", "connections.salesforce.unlockContacts"],
+    appDocsUrl: "https://help.salesforce.com/s/articleView?id=sf.connected_app_create.htm",
+    // Each org's API lives on its own instance/My Domain host, always a
+    // subdomain of one of these two — there is no single fixed API host.
+    apiHosts: ["salesforce.com", "force.com"],
     oauth: {
-      authorizeUrl: "https://airtable.com/oauth2/v1/authorize",
-      tokenUrl: "https://airtable.com/oauth2/v1/token",
-      scopes: [
-        "data.records:read",
-        "data.records:write",
-        "schema.bases:read",
-        "user.email:read",
-      ],
+      authorizeUrl: "https://login.salesforce.com/services/oauth2/authorize",
+      tokenUrl: "https://login.salesforce.com/services/oauth2/token",
+      scopes: ["api", "refresh_token", "offline_access"],
       scopeSeparator: " ",
-      // Airtable rejects an authorization request without PKCE outright.
       pkce: true,
-      tokenAuth: "basic",
+      tokenAuth: "body",
       tokenBody: "form",
       refreshable: true,
-      clientIdKey: "AIRTABLE_CLIENT_ID",
-      clientSecretKey: "AIRTABLE_CLIENT_SECRET",
-      identityUrl: "https://api.airtable.com/v0/meta/whoami",
-      identityPath: "email",
+      clientIdKey: "SALESFORCE_CLIENT_ID",
+      clientSecretKey: "SALESFORCE_CLIENT_SECRET",
+    },
+  },
+  {
+    id: "jira",
+    kind: "oauth",
+    label: "Jira",
+    descriptionKey: "connections.jira.description",
+    unlockKeys: ["connections.jira.unlockIssues", "connections.jira.unlockProjects"],
+    appDocsUrl: "https://developer.atlassian.com/console/myapps/",
+    apiHosts: ["api.atlassian.com"],
+    oauth: {
+      authorizeUrl: "https://auth.atlassian.com/authorize",
+      tokenUrl: "https://auth.atlassian.com/oauth/token",
+      scopes: ["read:jira-work", "write:jira-work", "offline_access"],
+      scopeSeparator: " ",
+      // Atlassian requires this fixed audience plus a forced consent screen.
+      authParams: { audience: "api.atlassian.com", prompt: "consent" },
+      pkce: false,
+      tokenAuth: "body",
+      tokenBody: "json",
+      refreshable: true,
+      clientIdKey: "JIRA_CLIENT_ID",
+      clientSecretKey: "JIRA_CLIENT_SECRET",
+    },
+  },
+  {
+    id: "clickup",
+    kind: "oauth",
+    label: "ClickUp",
+    descriptionKey: "connections.clickup.description",
+    unlockKeys: ["connections.clickup.unlockTasks"],
+    appDocsUrl: "https://help.clickup.com/hc/en-us/articles/6303422883095-Create-your-own-app-with-the-ClickUp-API",
+    apiHosts: ["api.clickup.com"],
+    oauth: {
+      authorizeUrl: "https://app.clickup.com/api",
+      tokenUrl: "https://api.clickup.com/api/v2/oauth/token",
+      // ClickUp grants whole-workspace access; there is no scope concept.
+      scopes: [],
+      scopeSeparator: " ",
+      pkce: false,
+      tokenAuth: "body",
+      tokenBody: "form",
+      // ClickUp access tokens do not expire.
+      refreshable: false,
+      clientIdKey: "CLICKUP_CLIENT_ID",
+      clientSecretKey: "CLICKUP_CLIENT_SECRET",
+    },
+  },
+  {
+    id: "monday",
+    kind: "oauth",
+    label: "monday.com",
+    descriptionKey: "connections.monday.description",
+    unlockKeys: ["connections.monday.unlockBoards"],
+    appDocsUrl: "https://developer.monday.com/apps/docs/oauth",
+    apiHosts: ["monday.com"],
+    oauth: {
+      authorizeUrl: "https://auth.monday.com/oauth2/authorize",
+      tokenUrl: "https://auth.monday.com/oauth2/token",
+      scopes: ["boards:read", "boards:write"],
+      scopeSeparator: " ",
+      pkce: false,
+      tokenAuth: "body",
+      tokenBody: "form",
+      refreshable: true,
+      clientIdKey: "MONDAY_CLIENT_ID",
+      clientSecretKey: "MONDAY_CLIENT_SECRET",
     },
   },
 ];
@@ -317,11 +378,13 @@ export const MANUAL_CONNECTIONS: readonly ManualConnection[] = [
   },
   // BYOK — bring your own AI provider key. Connecting one of these switches
   // that provider's calls to billing_source "BYOK" (see lib/credit-gate.ts):
-  // Steve stops paying for them, the customer's own account does. All three
+  // Steve stops paying for them, the customer's own account does. All four
   // share the "ai-provider" Settings group, the same one that already picks
   // which provider is active — a key can be saved here even for a provider
   // that isn't the active one, so switching providers later doesn't mean
-  // retyping a key that was already given once.
+  // retyping a key that was already given once. Every provider the AI group
+  // offers has a card here: Gemini was selectable in Settings but had none,
+  // so the one place that lists "what am I paying for myself" was missing it.
   {
     id: "anthropic",
     kind: "api_key",
@@ -339,6 +402,15 @@ export const MANUAL_CONNECTIONS: readonly ManualConnection[] = [
     reasonKey: "connections.openai.reason",
     settingsGroup: "ai-provider",
     credentialKeys: ["OPENAI_API_KEY"],
+  },
+  {
+    id: "gemini",
+    kind: "api_key",
+    label: "Google Gemini",
+    descriptionKey: "connections.gemini.description",
+    reasonKey: "connections.gemini.reason",
+    settingsGroup: "ai-provider",
+    credentialKeys: ["GOOGLE_GENERATIVE_AI_API_KEY"],
   },
   {
     id: "ai-gateway",
@@ -376,6 +448,46 @@ export const MANUAL_CONNECTIONS: readonly ManualConnection[] = [
     settingsGroup: "resend",
     credentialKeys: ["RESEND_API_KEY", "RESEND_FROM_EMAIL"],
     previewKey: "RESEND_API_KEY",
+  },
+  {
+    id: "zendesk",
+    kind: "api_key",
+    label: "Zendesk",
+    descriptionKey: "connections.zendesk.description",
+    reasonKey: "connections.zendesk.reason",
+    settingsGroup: "zendesk",
+    credentialKeys: ["ZENDESK_SUBDOMAIN", "ZENDESK_EMAIL", "ZENDESK_API_TOKEN"],
+    previewKey: "ZENDESK_API_TOKEN",
+  },
+  {
+    id: "chargebee",
+    kind: "api_key",
+    label: "Chargebee",
+    descriptionKey: "connections.chargebee.description",
+    reasonKey: "connections.chargebee.reason",
+    settingsGroup: "chargebee",
+    credentialKeys: ["CHARGEBEE_SITE", "CHARGEBEE_API_KEY"],
+    previewKey: "CHARGEBEE_API_KEY",
+  },
+  {
+    id: "mailerlite",
+    kind: "api_key",
+    label: "MailerLite",
+    descriptionKey: "connections.mailerlite.description",
+    reasonKey: "connections.mailerlite.reason",
+    settingsGroup: "mailerlite",
+    credentialKeys: ["MAILERLITE_API_KEY"],
+    previewKey: "MAILERLITE_API_KEY",
+  },
+  {
+    id: "tavily",
+    kind: "api_key",
+    label: "Tavily",
+    descriptionKey: "connections.tavily.description",
+    reasonKey: "connections.tavily.reason",
+    settingsGroup: "tavily",
+    credentialKeys: ["TAVILY_API_KEY"],
+    previewKey: "TAVILY_API_KEY",
   },
 ];
 

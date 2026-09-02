@@ -191,9 +191,12 @@ export type ManualConnectionSummary = {
    *  the inline dialog renders exactly these instead of the whole group. */
   readonly credentialKeys: readonly string[];
   readonly configured: boolean;
-  /** Masked preview of the primary key ("sk-ant-…wXyz") when one was saved
-   *  through the UI — never the full value. See lib/credentials.ts's
-   *  getCredentialPreviews. */
+  /** Where the active value came from. "env" is configured and working but
+   *  cannot be cleared from this app, so the page offers no Remove button for
+   *  it — the same distinction Settings draws with its "from env" hint. */
+  readonly source?: "store" | "env";
+  /** Masked preview of the primary key ("sk-ant-…wXyz") — never the full
+   *  value. See lib/credentials.ts's getCredentialPreviews. */
   readonly keyPreview?: string;
 };
 
@@ -238,7 +241,15 @@ export async function getConnectionSummaries(): Promise<{
   const stored = await getStoredCredentials();
   const manual = await Promise.all(
     MANUAL_CONNECTIONS.map(async (definition): Promise<ManualConnectionSummary> => {
-      const configured = definition.credentialKeys.every((key) => Boolean(stored[key]));
+      // A key that only exists in the environment is just as connected as one
+      // typed here: the calls it authorises succeed either way. Counting only
+      // the store made every env-configured vendor read "not connected" next
+      // to an integration that was demonstrably working, which is the one
+      // thing this page must never say.
+      const configured = definition.credentialKeys.every(
+        (key) => Boolean(stored[key]) || Boolean(process.env[key]),
+      );
+      const fromStore = definition.credentialKeys.some((key) => Boolean(stored[key]));
       return {
         id: definition.id,
         label: definition.label,
@@ -247,6 +258,7 @@ export async function getConnectionSummaries(): Promise<{
         settingsGroup: definition.settingsGroup,
         credentialKeys: [...definition.credentialKeys],
         configured,
+        source: configured ? (fromStore ? "store" : "env") : undefined,
         keyPreview: previews[definition.previewKey ?? definition.credentialKeys[0]],
       };
     }),

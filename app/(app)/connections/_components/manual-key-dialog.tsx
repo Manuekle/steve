@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import { CheckIcon, Loading03Icon } from "@hugeicons/core-free-icons";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
+import { notifyCredentialsChanged } from "@/lib/credentials-changed";
 import { useT } from "@/lib/i18n/provider";
 import { VALIDATION_ERROR_KEYS } from "@/lib/settings-i18n";
 import { CredentialField } from "@/app/_components/credential-field";
@@ -145,7 +146,10 @@ export function ManualKeyDialog({
     if (!group) return;
     const errors: Record<string, string> = {};
     for (const field of fields) {
-      const value = values[field.key];
+      // Validate (and later store) the trimmed value: a pasted key carries
+      // whatever whitespace came with it, and "re_abc\n" fails the prefix
+      // pattern for a reason that is invisible in a password field.
+      const value = values[field.key]?.trim();
       if (value && field.pattern) {
         try {
           if (!new RegExp(field.pattern).test(value)) {
@@ -163,7 +167,7 @@ export function ManualKeyDialog({
 
     const payload: Record<string, string> = {};
     for (const field of fields) {
-      if (values[field.key] !== undefined) payload[field.key] = values[field.key];
+      if (values[field.key] !== undefined) payload[field.key] = values[field.key].trim();
     }
     if (Object.keys(payload).length === 0) {
       onOpenChange(false);
@@ -182,6 +186,14 @@ export function ManualKeyDialog({
       setError(result.error);
       return;
     }
+    // Repaint from what the server now holds before the dialog closes, so
+    // reopening it shows the new masked preview and the "Configurado" pill
+    // rather than the state from before the save.
+    setStatus(result.data.configured ?? result.data.credentials ?? {});
+    setSources(result.data.sources ?? {});
+    setPreviews(result.data.previews ?? {});
+    // The model picker and the health dot read these keys too.
+    notifyCredentialsChanged();
     onSaved();
     onOpenChange(false);
   };

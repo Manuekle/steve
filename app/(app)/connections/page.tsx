@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   Mail01Icon,
   WebhookIcon,
@@ -17,24 +17,24 @@ import {
 } from "@hugeicons/core-free-icons";
 import {
   HubspotBrandIcon,
-  CalendlyBrandIcon,
   SlackBrandIcon,
   TwilioBrandIcon,
   MercadoPagoBrandIcon,
   ShopifyBrandIcon,
   NotionBrandIcon,
-  AirtableBrandIcon,
   ResendBrandIcon,
 } from "@/components/icons/connection-icons";
-import { AnthropicLogo, ElevenLabsLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
+import { AnthropicLogo, ElevenLabsLogo, GeminiLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
 import { GoogleMark, StripeMark, MetaMark } from "@/app/landing/_components/brand-marks";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEnterpriseAllowed } from "@/components/enterprise-gate";
-import { Skeleton } from "@/components/ai-elements/skeleton";
+import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
+import { notifyCredentialsChanged } from "@/lib/credentials-changed";
 import { useT } from "@/lib/i18n/provider";
+import { useCelebrate } from "@/components/use-celebrate";
 import { cn } from "@/lib/utils";
 import type { Form } from "@/lib/types";
 import { PageContainer } from "../../_components/page-container";
@@ -84,6 +84,8 @@ type ManualSummary = {
   readonly settingsGroup: string;
   readonly credentialKeys?: readonly string[];
   readonly configured: boolean;
+  /** "env" is configured but not ours to clear — see lib/connection-store. */
+  readonly source?: "store" | "env";
   readonly keyPreview?: string;
 };
 
@@ -98,10 +100,8 @@ const ICONS: Record<string, IconSvgElement> = {
 const BRAND_ICONS: Record<string, (props: { size: number }) => React.JSX.Element> = {
   google: GoogleMark,
   hubspot: HubspotBrandIcon,
-  calendly: CalendlyBrandIcon,
   slack: SlackBrandIcon,
   notion: NotionBrandIcon,
-  airtable: AirtableBrandIcon,
   stripe: StripeMark,
   mercadopago: MercadoPagoBrandIcon,
   shopify: ShopifyBrandIcon,
@@ -111,6 +111,7 @@ const BRAND_ICONS: Record<string, (props: { size: number }) => React.JSX.Element
   meta: MetaMark,
   anthropic: AnthropicLogo,
   openai: OpenAiLogo,
+  gemini: GeminiLogo,
   "ai-gateway": VercelLogo,
 };
 
@@ -132,6 +133,7 @@ function hostOf(url: string): string {
 
 export default function ConnectionsPage() {
   const t = useT();
+  const celebrate = useCelebrate();
   // Registering the OAuth *app* is a self-host concern, and Settings already
   // locks the `oauth-apps` group to an Enterprise licence. A managed install
   // gets those client credentials from the environment, so its cards never
@@ -176,8 +178,14 @@ export default function ConnectionsPage() {
     const params = new URLSearchParams(window.location.search);
     const connected = params.get("connected");
     const failed = params.get("failed");
-    if (connected) setOutcome({ kind: "connected", provider: connected });
-    else if (failed) {
+    if (connected) {
+      setOutcome({ kind: "connected", provider: connected });
+      // Linking a channel is the milestone the whole product sits on top of —
+      // nothing else can run until one exists. Keyed per provider, so adding
+      // Instagram after WhatsApp gets its own moment while a reconnect months
+      // later stays quiet.
+      celebrate({ once: `connection:${connected}` });
+    } else if (failed) {
       setOutcome({ kind: "failed", provider: failed, reason: params.get("reason") ?? "exchange" });
     }
     if (connected || failed) {
@@ -200,7 +208,10 @@ export default function ConnectionsPage() {
       }
       setLoading(false);
     })();
-  }, [load]);
+    // `celebrate` is listed for the linter's sake, not because a re-run could
+    // fire twice: the query string is cleared above, so a second pass finds
+    // nothing to celebrate.
+  }, [load, celebrate]);
 
   useEffect(() => {
     return () => {
@@ -225,7 +236,12 @@ export default function ConnectionsPage() {
     setBusy(id);
     const result = await fetchJson<{ ok: boolean }>(`/api/connections/${id}`, t, { method: "DELETE" });
     if (!result.ok) setError(result.error);
-    else await load();
+    else {
+      await load();
+      // Removing a model key is a credential change like any other: the model
+      // picker and the health dot read it from elsewhere in the app.
+      notifyCredentialsChanged();
+    }
     setBusy(null);
   };
 
@@ -239,7 +255,7 @@ export default function ConnectionsPage() {
     : "";
 
   return (
-    <PageContainer maxWidth="max-w-5xl" pattern="grid">
+    <PageContainer maxWidth="max-w-6xl" pattern="grid">
       <Skeleton className="min-h-[500px]" isLoading={loading} skeleton={<ConnectionsSkeleton />}>
         <div className="content-enter">
           <header className="mb-8">
@@ -334,7 +350,9 @@ export default function ConnectionsPage() {
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {integration.configured && integration.keyPreview
-                          ? integration.keyPreview
+                          ? integration.source === "env"
+                            ? `${integration.keyPreview} · ${t("connections.fromEnv")}`
+                            : integration.keyPreview
                           : t(integration.reasonKey)}
                       </p>
                     </div>
@@ -358,11 +376,13 @@ export default function ConnectionsPage() {
                             : t("connections.addKeyHint", { provider: integration.label })}
                         </TooltipContent>
                       </Tooltip>
-                      {integration.configured ? (
+                      {integration.configured && integration.source !== "env" ? (
                         // Icon-only until it is armed, so it says what it does
                         // on hover and to a screen reader — the label is not
                         // optional just because the glyph is unambiguous to
-                        // whoever drew it.
+                        // whoever drew it. Hidden for an env-provided key:
+                        // clearing the store would not remove it, so the
+                        // button would promise something it cannot do.
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -639,15 +659,69 @@ function ConnectionCard({
 
 function ConnectionsSkeleton() {
   return (
-    <div className="animate-pulse">
+    <div>
       <div className="mb-8 space-y-2">
-        <div className="h-7 w-40 rounded-lg bg-muted" />
-        <div className="h-4 w-96 max-w-full rounded bg-muted/60" />
+        <SkeletonBar className="h-7 w-40" />
+        <SkeletonBar className="h-4 w-96 max-w-full" />
+      </div>
+
+      {/* OAuth cards */}
+      <div className="mb-4 flex items-start gap-3">
+        <SkeletonBar className="size-8 shrink-0 rounded-lg" />
+        <div className="space-y-2">
+          <SkeletonBar className="h-3.5 w-32" />
+          <SkeletonBar className="h-3 w-56" />
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="h-44 rounded-2xl border border-border bg-card" />
+          <div key={index} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center gap-3">
+              <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <SkeletonBar className="h-4 w-24" />
+                <SkeletonBar className="h-3 w-32" />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-between">
+              <SkeletonBar className="h-3 w-20" />
+              <SkeletonBar className="h-8 w-20 rounded-lg" />
+            </div>
+          </div>
         ))}
+      </div>
+
+      {/* Manual keys */}
+      <div className="mt-10 mb-4 flex items-start gap-3">
+        <SkeletonBar className="size-8 shrink-0 rounded-lg" />
+        <div className="space-y-2">
+          <SkeletonBar className="h-3.5 w-28" />
+          <SkeletonBar className="h-3 w-64" />
+        </div>
+      </div>
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className={cn("flex items-center gap-3 px-5 py-4", i > 0 && "border-t border-border")}>
+            <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkeletonBar className="h-3.5 w-24" />
+              <SkeletonBar className="h-3 w-40" />
+            </div>
+            <SkeletonBar className="h-3 w-16" />
+          </div>
+        ))}
+      </div>
+
+      {/* Webhooks */}
+      <div className="mt-10 mb-4 flex items-start gap-3">
+        <SkeletonBar className="size-8 shrink-0 rounded-lg" />
+        <div className="space-y-2">
+          <SkeletonBar className="h-3.5 w-24" />
+          <SkeletonBar className="h-3 w-56" />
+        </div>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
+        <SkeletonBar className="mx-auto h-3 w-48" />
       </div>
     </div>
   );
