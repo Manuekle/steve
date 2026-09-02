@@ -23,6 +23,8 @@ import {
   ShopifyBrandIcon,
   NotionBrandIcon,
   ResendBrandIcon,
+  SalesforceBrandIcon,
+  ClickUpBrandIcon,
 } from "@/components/icons/connection-icons";
 import { AnthropicLogo, ElevenLabsLogo, GeminiLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
 import { GoogleMark, StripeMark, MetaMark } from "@/app/landing/_components/brand-marks";
@@ -102,6 +104,8 @@ const BRAND_ICONS: Record<string, (props: { size: number }) => React.JSX.Element
   hubspot: HubspotBrandIcon,
   slack: SlackBrandIcon,
   notion: NotionBrandIcon,
+  salesforce: SalesforceBrandIcon,
+  clickup: ClickUpBrandIcon,
   stripe: StripeMark,
   mercadopago: MercadoPagoBrandIcon,
   shopify: ShopifyBrandIcon,
