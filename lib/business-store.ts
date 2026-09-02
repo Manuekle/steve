@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
@@ -25,9 +24,25 @@ import type {
   VoiceCallTurn,
 } from "./types";
 import { moveContactTo } from "./contact-order";
+import {
+  hasDocument as dbHasDocument,
+  migrateFromFileStore as dbMigrateFromFile,
+  readDocument as dbReadDocument,
+  updateDocument as dbUpdateDocument,
+} from "./business-db-store";
 
 // Shared by the Eve agent (tools/hooks/schedules) and Next.js API routes.
-// Same-host deploy: both processes read ~/.steve/business.json.
+//
+// Two backends, chosen once per process. With WORKFLOW_POSTGRES_URL set the
+// store lives in Postgres (`steve.business_store`), which is what a deploy
+// with no writable filesystem — Vercel, or any container with a read-only
+// root — requires, and what lets more than one process write safely. Without
+// it, ~/.steve/business.json, unchanged: a single-host install should not
+// have to run a database to try the app.
+//
+// Same routing as lib/auth/store.ts, including the one-time migration: the
+// first DB access on an install that already has a file imports it, and after
+// that the database is the source of truth.
 
 const STORE_FILE = join(homedir(), ".steve", "business.json");
 
@@ -62,6 +77,34 @@ function emptyStore(): BusinessStore {
   };
 }
 
+// ── Backend selection (resolved once, lazily) ─────────────────────
+
+let dbMode: boolean | null = null;
+
+async function useDb(): Promise<boolean> {
+  if (dbMode !== null) return dbMode;
+
+  if (!process.env.WORKFLOW_POSTGRES_URL) {
+    dbMode = false;
+    return false;
+  }
+
+  try {
+    if (!(await dbHasDocument())) {
+      // Reachable but empty. An install that has been running on the file
+      // store keeps its data; a fresh one just starts empty.
+      const file = await readFileStore();
+      if (file !== null) await dbMigrateFromFile(file);
+    }
+    dbMode = true;
+  } catch {
+    // Database unreachable — keep serving from the file rather than failing
+    // every read. Retried on the next call, since dbMode stays unset.
+    return false;
+  }
+  return dbMode;
+}
+
 let writeQueue: Promise<void> = Promise.resolve();
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
@@ -73,48 +116,40 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function readStore(): Promise<BusinessStore> {
+/** The file's contents, or `null` when there is no readable file — which is
+ *  what tells the migration there is nothing to import. */
+async function readFileStore(): Promise<BusinessStore | null> {
   try {
     const raw = await readFile(STORE_FILE, "utf-8");
     const parsed = JSON.parse(raw) as Partial<BusinessStore>;
-    return {
-      automations: parsed.automations ?? [],
-      contacts: parsed.contacts ?? [],
-      chats: parsed.chats ?? [],
-      reminders: parsed.reminders ?? [],
-      agents: parsed.agents ?? [],
-      forms: parsed.forms ?? [],
-      formResponses: parsed.formResponses ?? [],
-      voiceCalls: parsed.voiceCalls ?? [],
-      agentChats: parsed.agentChats ?? [],
-      channelConversations: parsed.channelConversations ?? [],
-      channelAgents: parsed.channelAgents ?? {},
-    };
+    return normalize(parsed);
   } catch {
-    return emptyStore();
+    return null;
   }
 }
 
-function readStoreSync(): BusinessStore {
-  try {
-    if (!existsSync(STORE_FILE)) return emptyStore();
-    const parsed = JSON.parse(readFileSync(STORE_FILE, "utf-8")) as Partial<BusinessStore>;
-    return {
-      automations: parsed.automations ?? [],
-      contacts: parsed.contacts ?? [],
-      chats: parsed.chats ?? [],
-      reminders: parsed.reminders ?? [],
-      agents: parsed.agents ?? [],
-      forms: parsed.forms ?? [],
-      formResponses: parsed.formResponses ?? [],
-      voiceCalls: parsed.voiceCalls ?? [],
-      agentChats: parsed.agentChats ?? [],
-      channelConversations: parsed.channelConversations ?? [],
-      channelAgents: parsed.channelAgents ?? {},
-    };
-  } catch {
-    return emptyStore();
+function normalize(parsed: Partial<BusinessStore>): BusinessStore {
+  return {
+    automations: parsed.automations ?? [],
+    contacts: parsed.contacts ?? [],
+    chats: parsed.chats ?? [],
+    reminders: parsed.reminders ?? [],
+    agents: parsed.agents ?? [],
+    forms: parsed.forms ?? [],
+    formResponses: parsed.formResponses ?? [],
+    voiceCalls: parsed.voiceCalls ?? [],
+    agentChats: parsed.agentChats ?? [],
+    channelConversations: parsed.channelConversations ?? [],
+    channelAgents: parsed.channelAgents ?? {},
+  };
+}
+
+async function readStore(): Promise<BusinessStore> {
+  if (await useDb()) {
+    const document = await dbReadDocument<Partial<BusinessStore>>();
+    return document ? normalize(document) : emptyStore();
   }
+  return (await readFileStore()) ?? emptyStore();
 }
 
 async function writeStore(store: BusinessStore): Promise<void> {
@@ -125,6 +160,11 @@ async function writeStore(store: BusinessStore): Promise<void> {
 }
 
 async function updateStore<T>(fn: (store: BusinessStore) => T): Promise<T> {
+  if (await useDb()) {
+    // No queue: the row lock inside the transaction is the serialisation, and
+    // it holds across processes, which the in-process queue never did.
+    return dbUpdateDocument(emptyStore, fn);
+  }
   return enqueue(async () => {
     const store = await readStore();
     const result = fn(store);
@@ -153,9 +193,6 @@ export async function listAutomations(): Promise<Automation[]> {
   return (await readStore()).automations;
 }
 
-export function listAutomationsSync(): Automation[] {
-  return readStoreSync().automations;
-}
 
 export async function createAutomation(
   input: Omit<Automation, "id" | "status" | "responseCount" | "createdAt">,
@@ -209,9 +246,6 @@ export async function listContacts(): Promise<Contact[]> {
   return (await readStore()).contacts;
 }
 
-export function listContactsSync(): Contact[] {
-  return readStoreSync().contacts;
-}
 
 export async function getContactBySession(sessionId: string): Promise<Contact | undefined> {
   return (await readStore()).contacts.find((c) => c.sessionId === sessionId);
@@ -395,54 +429,54 @@ export function channelFromKind(kind: string | undefined): ChannelId {
 
 // ── Reminders ─────────────────────────────────────────────────────
 
-export function listReminders(contactId?: string): Reminder[] {
-  const store = readStoreSync();
+export async function listReminders(contactId?: string): Promise<Reminder[]> {
+  const store = await readStore();
   if (contactId) {
     return store.reminders.filter((r) => r.contact_id === contactId);
   }
   return store.reminders;
 }
 
-export function listRemindersSync(): Reminder[] {
-  return readStoreSync().reminders;
-}
 
-export function createReminder(input: {
+export async function createReminder(input: {
   contact_id: string;
   datetime: string;
   message: string;
   status: ReminderStatus;
-}): Reminder {
-  const store = readStoreSync();
-  const reminder: Reminder = {
-    id: newId("rem"),
-    contact_id: input.contact_id,
-    datetime: input.datetime,
-    message: input.message,
-    status: input.status,
-    created_at: nowIso(),
-  };
-  store.reminders = [reminder, ...store.reminders];
-  writeStore(store);
-  return reminder;
+}): Promise<Reminder> {
+  return updateStore((store) => {
+    const reminder: Reminder = {
+      id: newId("rem"),
+      contact_id: input.contact_id,
+      datetime: input.datetime,
+      message: input.message,
+      status: input.status,
+      created_at: nowIso(),
+    };
+    store.reminders = [reminder, ...store.reminders];
+    return reminder;
+  });
 }
 
-export function updateReminder(id: string, updates: Partial<Omit<Reminder, "id" | "created_at">>): Reminder | undefined {
-  const store = readStoreSync();
-  const existing = store.reminders.find((r) => r.id === id);
-  if (!existing) return undefined;
-  const updated: Reminder = { ...existing, ...updates };
-  store.reminders = store.reminders.map((r) => (r.id === id ? updated : r));
-  writeStore(store);
-  return updated;
+export async function updateReminder(
+  id: string,
+  updates: Partial<Omit<Reminder, "id" | "created_at">>,
+): Promise<Reminder | undefined> {
+  return updateStore((store) => {
+    const existing = store.reminders.find((r) => r.id === id);
+    if (!existing) return undefined;
+    const updated: Reminder = { ...existing, ...updates };
+    store.reminders = store.reminders.map((r) => (r.id === id ? updated : r));
+    return updated;
+  });
 }
 
-export function deleteReminder(id: string): boolean {
-  const store = readStoreSync();
-  const initialLength = store.reminders.length;
-  store.reminders = store.reminders.filter((r) => r.id !== id);
-  writeStore(store);
-  return store.reminders.length < initialLength;
+export async function deleteReminder(id: string): Promise<boolean> {
+  return updateStore((store) => {
+    const before = store.reminders.length;
+    store.reminders = store.reminders.filter((r) => r.id !== id);
+    return store.reminders.length < before;
+  });
 }
 
 // ── Agents ──────────────────────────────────────────────────────
@@ -463,9 +497,6 @@ export async function getChannelAgents(): Promise<Partial<Record<ChannelId, stri
   return (await readStore()).channelAgents ?? {};
 }
 
-export function getChannelAgentIdSync(channel: ChannelId): string | undefined {
-  return readStoreSync().channelAgents?.[channel];
-}
 
 /** `null` clears the assignment, which is how a channel goes back to the
  *  unrestricted default rather than being pinned to a deleted agent. */
@@ -903,9 +934,6 @@ export async function listForms(): Promise<Form[]> {
   return (await readStore()).forms;
 }
 
-export function listFormsSync(): Form[] {
-  return readStoreSync().forms;
-}
 
 export async function getForm(id: string): Promise<Form | undefined> {
   return (await readStore()).forms.find((f) => f.id === id);

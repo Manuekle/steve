@@ -26,7 +26,7 @@ export async function setReminder(opts: {
     throw new Error("Reminder datetime must be in the future.");
   }
 
-  const reminder = createReminder({
+  const reminder = await createReminder({
     contact_id: opts.contact_id,
     datetime: opts.datetime,
     message: opts.message,
@@ -50,7 +50,7 @@ export type ListRemindersResult = {
 export async function listRemindersForContact(opts: {
   readonly contact_id?: string;
 }): Promise<ListRemindersResult> {
-  const reminders = listReminders(opts.contact_id);
+  const reminders = await listReminders(opts.contact_id);
   return {
     reminders,
     count: reminders.length,
@@ -67,7 +67,7 @@ export type DeleteReminderResult = {
 export async function deleteReminderById(opts: {
   readonly reminder_id: string;
 }): Promise<DeleteReminderResult> {
-  const deleted = deleteReminderFromStore(opts.reminder_id);
+  const deleted = await deleteReminderFromStore(opts.reminder_id);
   if (!deleted) {
     throw new Error(`Reminder ${opts.reminder_id} not found.`);
   }

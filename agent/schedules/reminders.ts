@@ -1,5 +1,5 @@
 import { defineSchedule } from "eve/schedules";
-import { listReminders, updateReminder, listContactsSync } from "../../lib/business-store";
+import { listReminders, updateReminder, listContacts } from "../../lib/business-store";
 import {
   isWithin24hWindow,
   sendWhatsAppText,
@@ -16,7 +16,7 @@ export default defineSchedule({
     waitUntil(
       (async () => {
         const now = new Date();
-        const reminders = listReminders();
+        const reminders = await listReminders();
         const due = reminders.filter(
           (r) =>
             r.status === "pending" &&
@@ -25,7 +25,7 @@ export default defineSchedule({
 
         if (due.length === 0) return;
 
-        const contacts = listContactsSync();
+        const contacts = await listContacts();
         const templateName = await getCredential("WHATSAPP_TEMPLATE_NAME");
         const templateLang = (await getCredential("WHATSAPP_TEMPLATE_LANG")) || "es";
 
@@ -33,7 +33,7 @@ export default defineSchedule({
           const contact = contacts.find((c) => c.id === reminder.contact_id);
           if (!contact) {
             // Contact not found — mark as sent (orphaned reminder)
-            updateReminder(reminder.id, { status: "sent" });
+            await updateReminder(reminder.id, { status: "sent" });
             continue;
           }
 
@@ -57,7 +57,7 @@ export default defineSchedule({
           // (web chat shows in inbox)
 
           // Mark as sent
-          updateReminder(reminder.id, { status: "sent" });
+          await updateReminder(reminder.id, { status: "sent" });
         }
       })(),
     );

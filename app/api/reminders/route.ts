@@ -6,7 +6,7 @@ import { apiError, missingField, withApiErrors } from "@/lib/api-error";
 // DELETE /api/reminders?id=xxx — delete a reminder
 
 export const GET = withApiErrors(async function GET() {
-  const reminders = listReminders();
+  const reminders = await listReminders();
   // Keyed like every sibling route (`{ automations }`, `{ agents }`, …) so
   // clients can read them all the same way.
   return NextResponse.json({ reminders });
@@ -18,7 +18,7 @@ export const DELETE = withApiErrors(async function DELETE(request: Request) {
   if (!id) {
     return missingField("id");
   }
-  const deleted = deleteReminder(id);
+  const deleted = await deleteReminder(id);
   if (!deleted) {
     return apiError("not_found");
   }
