@@ -116,12 +116,6 @@ export type CredentialKey =
   | "META_APP_SECRET"
   | "SALESFORCE_CLIENT_ID"
   | "SALESFORCE_CLIENT_SECRET"
-  | "JIRA_CLIENT_ID"
-  | "JIRA_CLIENT_SECRET"
-  | "CLICKUP_CLIENT_ID"
-  | "CLICKUP_CLIENT_SECRET"
-  | "MONDAY_CLIENT_ID"
-  | "MONDAY_CLIENT_SECRET"
   // Stripe (send_payment_link step)
   | "STRIPE_SECRET_KEY"
   | "STRIPE_MERCHANT_WEBHOOK_SECRET"
@@ -595,48 +589,6 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         required: false,
         placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         help: "Consumer Secret de la misma Connected App.",
-      },
-      {
-        key: "JIRA_CLIENT_ID",
-        label: "Jira client ID",
-        required: false,
-        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        help: "De developer.atlassian.com/console/myapps, app con OAuth 2.0 (3LO). Redirect URI: <tu-dominio>/api/connections/jira/callback",
-      },
-      {
-        key: "JIRA_CLIENT_SECRET",
-        label: "Jira client secret",
-        type: "password",
-        required: false,
-        placeholder: "ATOAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-      },
-      {
-        key: "CLICKUP_CLIENT_ID",
-        label: "ClickUp client ID",
-        required: false,
-        placeholder: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        help: "De tu app en clickup.com/api. Redirect URI: <tu-dominio>/api/connections/clickup/callback",
-      },
-      {
-        key: "CLICKUP_CLIENT_SECRET",
-        label: "ClickUp client secret",
-        type: "password",
-        required: false,
-        placeholder: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-      },
-      {
-        key: "MONDAY_CLIENT_ID",
-        label: "monday.com client ID",
-        required: false,
-        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        help: "De tu app en developer.monday.com. Redirect URI: <tu-dominio>/api/connections/monday/callback",
-      },
-      {
-        key: "MONDAY_CLIENT_SECRET",
-        label: "monday.com client secret",
-        type: "password",
-        required: false,
-        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
       },
     ],
   },

@@ -22,10 +22,7 @@ export type ConnectionId =
   | "hubspot"
   | "slack"
   | "notion"
-  | "salesforce"
-  | "jira"
-  | "clickup"
-  | "monday";
+  | "salesforce";
 
 /** Vendors that appear on the page but are wired through Settings instead. */
 export type ManualConnectionId =
@@ -254,73 +251,6 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
       refreshable: true,
       clientIdKey: "SALESFORCE_CLIENT_ID",
       clientSecretKey: "SALESFORCE_CLIENT_SECRET",
-    },
-  },
-  {
-    id: "jira",
-    kind: "oauth",
-    label: "Jira",
-    descriptionKey: "connections.jira.description",
-    unlockKeys: ["connections.jira.unlockIssues", "connections.jira.unlockProjects"],
-    appDocsUrl: "https://developer.atlassian.com/console/myapps/",
-    apiHosts: ["api.atlassian.com"],
-    oauth: {
-      authorizeUrl: "https://auth.atlassian.com/authorize",
-      tokenUrl: "https://auth.atlassian.com/oauth/token",
-      scopes: ["read:jira-work", "write:jira-work", "offline_access"],
-      scopeSeparator: " ",
-      // Atlassian requires this fixed audience plus a forced consent screen.
-      authParams: { audience: "api.atlassian.com", prompt: "consent" },
-      pkce: false,
-      tokenAuth: "body",
-      tokenBody: "json",
-      refreshable: true,
-      clientIdKey: "JIRA_CLIENT_ID",
-      clientSecretKey: "JIRA_CLIENT_SECRET",
-    },
-  },
-  {
-    id: "clickup",
-    kind: "oauth",
-    label: "ClickUp",
-    descriptionKey: "connections.clickup.description",
-    unlockKeys: ["connections.clickup.unlockTasks"],
-    appDocsUrl: "https://help.clickup.com/hc/en-us/articles/6303422883095-Create-your-own-app-with-the-ClickUp-API",
-    apiHosts: ["api.clickup.com"],
-    oauth: {
-      authorizeUrl: "https://app.clickup.com/api",
-      tokenUrl: "https://api.clickup.com/api/v2/oauth/token",
-      // ClickUp grants whole-workspace access; there is no scope concept.
-      scopes: [],
-      scopeSeparator: " ",
-      pkce: false,
-      tokenAuth: "body",
-      tokenBody: "form",
-      // ClickUp access tokens do not expire.
-      refreshable: false,
-      clientIdKey: "CLICKUP_CLIENT_ID",
-      clientSecretKey: "CLICKUP_CLIENT_SECRET",
-    },
-  },
-  {
-    id: "monday",
-    kind: "oauth",
-    label: "monday.com",
-    descriptionKey: "connections.monday.description",
-    unlockKeys: ["connections.monday.unlockBoards"],
-    appDocsUrl: "https://developer.monday.com/apps/docs/oauth",
-    apiHosts: ["monday.com"],
-    oauth: {
-      authorizeUrl: "https://auth.monday.com/oauth2/authorize",
-      tokenUrl: "https://auth.monday.com/oauth2/token",
-      scopes: ["boards:read", "boards:write"],
-      scopeSeparator: " ",
-      pkce: false,
-      tokenAuth: "body",
-      tokenBody: "form",
-      refreshable: true,
-      clientIdKey: "MONDAY_CLIENT_ID",
-      clientSecretKey: "MONDAY_CLIENT_SECRET",
     },
   },
 ];

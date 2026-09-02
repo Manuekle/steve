@@ -9,6 +9,7 @@ import {
   WhatsappIcon,
   ArtificialIntelligence08Icon,
   InstagramIcon,
+  TelegramIcon,
   Loading03Icon,
   AlertCircleIcon,
   Cancel01Icon,
@@ -25,6 +26,11 @@ import {
   DatabaseIcon,
   SquareLock02Icon,
   Coins01Icon,
+  CustomerSupportIcon,
+  Invoice01Icon,
+  MailSend01Icon,
+  GlobalSearchIcon,
+  PlugSocketIcon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -94,6 +100,7 @@ const GROUP_ICONS: Record<string, IconSvgElement> = {
   database: DatabaseIcon,
   whatsapp: WhatsappIcon,
   instagram: InstagramIcon,
+  telegram: TelegramIcon,
   "google-sheets": GoogleSheetIcon,
   "google-calendar": Calendar03Icon,
   "google-drive": GoogleDriveIcon,
@@ -105,6 +112,15 @@ const GROUP_ICONS: Record<string, IconSvgElement> = {
   smtp: Mail01Icon,
   resend: Mail01Icon,
   "meta-ads": MetaIcon,
+  // The four vendors with no brand mark to hand: a glyph for what the card
+  // *does* beats a plug socket that says nothing, and matches how Shopify and
+  // Twilio read here before their marks arrived.
+  zendesk: CustomerSupportIcon,
+  chargebee: Invoice01Icon,
+  mailerlite: MailSend01Icon,
+  tavily: GlobalSearchIcon,
+  integrations: PlugSocketIcon,
+  "oauth-apps": KeyRoundIcon,
 };
 
 /** Groups with a real brand mark on hand — everything else falls back to the
