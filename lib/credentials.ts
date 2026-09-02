@@ -2,27 +2,44 @@ import { readFileSync, statSync } from "node:fs";
 import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
+import {
+  hasDocument as dbHasDocument,
+  migrateFromFileStore as dbMigrateFromFile,
+  readDocument as dbReadDocument,
+  updateDocument as dbUpdateDocument,
+} from "./doc-store";
 
-// Local credential store for Steve.
+// Credential store for Steve.
 //
-// Credentials are persisted to ~/.steve/credentials.json so they survive
-// restarts without being baked into the .env file. Every read falls back to
-// the matching environment variable, so env vars still work as before.
+// Two backends: Postgres when WORKFLOW_POSTGRES_URL is set — which a deploy
+// with no writable filesystem requires — and ~/.steve/credentials.json
+// otherwise, so a single-host install still needs nothing but a directory.
+// Every read falls back to the matching environment variable in both, so env
+// vars keep working exactly as before, and on a platform where they are the
+// natural place to put secrets they remain the whole answer.
 //
-// The sync reader (`getCredentialSync`) uses an in-memory cache re-read
-// whenever the file changes, so it is safe to call from channel modules that
-// run during Eve's discovery phase (which is synchronous) and still reflects
-// a key the web process saved a second ago. The async API (`getCredential`,
-// `getAllCredentials`) reads fresh from disk for the settings UI.
+// The sync reader (`getCredentialSync`) exists because Eve's discovery phase
+// is synchronous: the channel modules decide whether they have credentials at
+// import time. In file mode it reads an in-memory cache re-read whenever the
+// file changes, so it reflects a key the web process saved a second ago. In DB
+// mode there is no file to watch, so the cache is whatever the last async read
+// left — which is why anything reading synchronously before the first async
+// read must `await warmCredentialCache()` first, or accept the environment
+// alone.
 
 const CREDENTIALS_DIR = join(homedir(), ".steve");
 const CREDENTIALS_FILE = join(CREDENTIALS_DIR, "credentials.json");
 
-// In-memory cache for sync reads. Loaded lazily, and re-loaded whenever the
-// file's stamp below says another process has rewritten it.
+// In-memory cache for sync reads. In file mode it is loaded lazily and
+// re-loaded whenever the file's stamp below says another process has rewritten
+// it. In DB mode there is no file to stamp, so the cache is whatever the last
+// async read put there — see `getCredentialSync`.
 let cachedStore: CredentialStore | null = null;
 /** File identity the cache was built from. */
 let cachedStamp: string | null = null;
+/** True once an async DB read filled the cache: the file is not the source of
+ *  truth any more, so `loadCacheSync` must stop consulting it. */
+let cacheFromDb = false;
 
 /** Cheap "did the file change" fingerprint. Empty means there is no file. */
 function stampSync(): string {
@@ -44,6 +61,9 @@ function stampSync(): string {
  * key take effect on the next turn instead of the next boot.
  */
 function loadCacheSync(): CredentialStore {
+  // In DB mode the file is stale by definition — usually absent entirely, and
+  // an absent file stamps as "", which would blank a warmed cache.
+  if (cacheFromDb) return cachedStore ?? {};
   const stamp = stampSync();
   if (cachedStore && stamp === cachedStamp) return cachedStore;
   try {
@@ -60,6 +80,7 @@ function loadCacheSync(): CredentialStore {
 export function invalidateCredentialCache(): void {
   cachedStore = null;
   cachedStamp = null;
+  cacheFromDb = false;
 }
 
 export type CredentialKey =
@@ -884,13 +905,72 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
   },
 ];
 
-async function readStore(): Promise<CredentialStore> {
+// ── Backend selection (resolved once, lazily) ─────────────────────
+//
+// Same routing as lib/business-store.ts and lib/connection-store.ts: Postgres
+// when WORKFLOW_POSTGRES_URL is set, the file otherwise, with a one-time
+// import of an existing file on the first DB access.
+//
+// The connection string is the one credential that cannot live in the store it
+// selects, so it is always read from the environment.
+
+let dbMode: boolean | null = null;
+
+async function useDb(): Promise<boolean> {
+  if (dbMode !== null) return dbMode;
+
+  if (!process.env.WORKFLOW_POSTGRES_URL) {
+    dbMode = false;
+    return false;
+  }
+
+  try {
+    if (!(await dbHasDocument("credentials"))) {
+      const file = await readFileStore();
+      if (file !== null) await dbMigrateFromFile("credentials", file);
+    }
+    dbMode = true;
+  } catch {
+    // Unreachable database: keep reading the file (and the environment) rather
+    // than reporting every integration as unconfigured. Retried next call.
+    return false;
+  }
+  return dbMode;
+}
+
+/** The file's contents, or `null` when there is none — which is what tells the
+ *  migration there is nothing to import. */
+async function readFileStore(): Promise<CredentialStore | null> {
   try {
     const raw = await readFile(CREDENTIALS_FILE, "utf-8");
     return JSON.parse(raw) as CredentialStore;
   } catch {
-    return {};
+    return null;
   }
+}
+
+async function readStore(): Promise<CredentialStore> {
+  if (await useDb()) {
+    const document = (await dbReadDocument<CredentialStore>("credentials")) ?? {};
+    // Every async read doubles as a cache warm, which is the only way sync
+    // readers ever see a value that lives in the database.
+    cachedStore = document;
+    cacheFromDb = true;
+    return document;
+  }
+  return (await readFileStore()) ?? {};
+}
+
+/**
+ * Fill the sync cache from whichever backend is active.
+ *
+ * Only needed in DB mode, and only by code that reads synchronously before
+ * anything else has read asynchronously — a module that gates itself on
+ * credentials at import time, like the channel files. Cheap and idempotent in
+ * file mode.
+ */
+export async function warmCredentialCache(): Promise<void> {
+  await readStore();
 }
 
 async function writeStore(store: CredentialStore): Promise<void> {
@@ -902,6 +982,24 @@ async function writeStore(store: CredentialStore): Promise<void> {
   // re-parse what we just wrote. Other processes notice via the stamp.
   cachedStore = store;
   cachedStamp = stampSync();
+}
+
+/** Read, mutate and write, on whichever backend is active. */
+async function updateStore<T>(fn: (store: CredentialStore) => T): Promise<T> {
+  if (await useDb()) {
+    return dbUpdateDocument("credentials", (): CredentialStore => ({}), (store) => {
+      const result = fn(store);
+      cachedStore = store;
+      cacheFromDb = true;
+      return result;
+    });
+  }
+  return enqueue(async () => {
+    const store = (await readFileStore()) ?? {};
+    const result = fn(store);
+    await writeStore(store);
+    return result;
+  });
 }
 
 // Serializes read-modify-write cycles so two concurrent saveCredentials()
@@ -920,9 +1018,14 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Synchronous credential reader for channel modules. Uses the in-memory
- * cache loaded from disk on first access, then falls back to env vars.
- * Safe to call during Eve's synchronous discovery phase.
+ * Synchronous credential reader for channel modules, safe to call during Eve's
+ * synchronous discovery phase.
+ *
+ * Reads the in-memory cache, then falls back to the environment. In file mode
+ * the cache loads itself from disk on first access. In DB mode nothing can
+ * load synchronously, so the cache is only as warm as the last async read left
+ * it — call `warmCredentialCache()` first if this is the first read in the
+ * process, or the environment is all this will see.
  */
 export function getCredentialSync(key: CredentialKey): string | undefined {
   const store = loadCacheSync();
@@ -957,8 +1060,7 @@ export async function getAllCredentials(): Promise<CredentialStore> {
  * Only non-empty values are written; empty strings remove the key.
  */
 export async function saveCredentials(updates: CredentialStore): Promise<void> {
-  await enqueue(async () => {
-    const store = await readStore();
+  await updateStore((store) => {
     for (const [key, value] of Object.entries(updates)) {
       if (value === undefined || value === "") {
         delete store[key as CredentialKey];
@@ -966,7 +1068,6 @@ export async function saveCredentials(updates: CredentialStore): Promise<void> {
         store[key as CredentialKey] = value;
       }
     }
-    await writeStore(store);
   });
 }
 

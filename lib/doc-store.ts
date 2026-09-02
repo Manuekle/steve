@@ -1,41 +1,44 @@
 import { Pool } from "pg";
 
 /**
- * PostgreSQL backing for the business store.
+ * PostgreSQL backing for the app's JSON stores.
  *
- * The document, not a schema. Every function in lib/business-store.ts reads
- * the whole store, mutates it in memory, and writes it back — that is what the
- * JSON file made natural, and forty call sites are written that way. Keeping
- * one `jsonb` document preserves all of them unchanged; normalising contacts,
- * chats, automations and the rest into tables would be a rewrite of the entire
- * module, and the shapes are still moving.
+ * Documents, not schemas. Every one of these stores was a JSON file that its
+ * module read whole, mutated in memory, and wrote back — business.json,
+ * connections.json, credentials.json — and their call sites are written that
+ * way throughout. Keeping one `jsonb` document per store preserves all of them
+ * unchanged; normalising contacts, chats, automations, tokens and keys into
+ * tables would be a rewrite of every module at once, and the shapes are still
+ * moving.
  *
- * What it does buy, beyond surviving a read-only filesystem: `updateStore`
+ * What it does buy, beyond surviving a read-only filesystem: `updateDocument`
  * takes a row lock, so two processes can no longer read the same document,
  * mutate their own copies, and have the second write erase the first. The file
- * mode's `writeQueue` only ever serialised writes inside one process — the Eve
- * runtime and Next.js each had their own.
+ * mode's per-module `writeQueue` only ever serialised writes inside one
+ * process — the Eve runtime and Next.js each had their own.
  *
- * Sized for the workload it actually has: one business, and a store of
+ * Sized for the workload it actually has: one business, and stores of
  * kilobytes. If a single install ever grows past what is reasonable to read
  * and write whole, that is the signal to normalise, not this file's job to
  * pre-empt.
+ *
+ * Documents hold live secrets (OAuth tokens, API keys), exactly as the 0600
+ * files they replace did. The database is the trust boundary: give this
+ * connection string the access you would give that file.
  */
+
+/** One row per store. Add a member when a module moves off its JSON file. */
+export type DocumentId = "business" | "connections" | "credentials";
 
 let pool: Pool | undefined;
 let schemaReady: Promise<void> | undefined;
-
-/** Every install keeps exactly one document. The column exists so a future
- *  workspace id has somewhere to go without a migration — see
- *  lib/credit-account.ts, which anticipates the same thing. */
-const DOCUMENT_ID = "default";
 
 function getPool(): Pool {
   if (!pool) {
     const connectionString = process.env.WORKFLOW_POSTGRES_URL;
     if (!connectionString) {
       throw new Error(
-        "WORKFLOW_POSTGRES_URL is not set. The business DB store needs the same Postgres connection.",
+        "WORKFLOW_POSTGRES_URL is not set. The document store needs the same Postgres connection.",
       );
     }
     pool = new Pool({ connectionString, max: 5 });
@@ -46,7 +49,7 @@ function getPool(): Pool {
 const SCHEMA_SQL = `
 CREATE SCHEMA IF NOT EXISTS steve;
 
-CREATE TABLE IF NOT EXISTS steve.business_store (
+CREATE TABLE IF NOT EXISTS steve.documents (
   id text PRIMARY KEY,
   data jsonb NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -70,20 +73,18 @@ async function ensureSchema(): Promise<void> {
 
 /** Whether this database already holds the document. Used to decide between
  *  DB and file mode, and to decide whether a file needs migrating in. */
-export async function hasDocument(): Promise<boolean> {
+export async function hasDocument(id: DocumentId): Promise<boolean> {
   await ensureSchema();
-  const result = await getPool().query("SELECT 1 FROM steve.business_store WHERE id = $1", [
-    DOCUMENT_ID,
-  ]);
+  const result = await getPool().query("SELECT 1 FROM steve.documents WHERE id = $1", [id]);
   return (result.rowCount ?? 0) > 0;
 }
 
 /** The stored document, or `null` when this install has never written one. */
-export async function readDocument<T>(): Promise<T | null> {
+export async function readDocument<T>(id: DocumentId): Promise<T | null> {
   await ensureSchema();
   const result = await getPool().query<{ data: T }>(
-    "SELECT data FROM steve.business_store WHERE id = $1",
-    [DOCUMENT_ID],
+    "SELECT data FROM steve.documents WHERE id = $1",
+    [id],
   );
   return result.rows[0]?.data ?? null;
 }
@@ -97,6 +98,7 @@ export async function readDocument<T>(): Promise<T | null> {
  * does in memory.
  */
 export async function updateDocument<TStore, TResult>(
+  id: DocumentId,
   empty: () => TStore,
   fn: (store: TStore) => TResult,
 ): Promise<TResult> {
@@ -107,18 +109,18 @@ export async function updateDocument<TStore, TResult>(
     // The insert makes the row exist so `FOR UPDATE` has something to lock;
     // ON CONFLICT DO NOTHING keeps a concurrent first write from failing here.
     await client.query(
-      "INSERT INTO steve.business_store (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
-      [DOCUMENT_ID, JSON.stringify(empty())],
+      "INSERT INTO steve.documents (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
+      [id, JSON.stringify(empty())],
     );
     const locked = await client.query<{ data: TStore }>(
-      "SELECT data FROM steve.business_store WHERE id = $1 FOR UPDATE",
-      [DOCUMENT_ID],
+      "SELECT data FROM steve.documents WHERE id = $1 FOR UPDATE",
+      [id],
     );
     const store = locked.rows[0]?.data ?? empty();
     const result = fn(store);
     await client.query(
-      "UPDATE steve.business_store SET data = $2::jsonb, updated_at = now() WHERE id = $1",
-      [DOCUMENT_ID, JSON.stringify(store)],
+      "UPDATE steve.documents SET data = $2::jsonb, updated_at = now() WHERE id = $1",
+      [id, JSON.stringify(store)],
     );
     await client.query("COMMIT");
     return result;
@@ -137,10 +139,10 @@ export async function updateDocument<TStore, TResult>(
  * truth from that point on, and re-importing a stale file would silently undo
  * everything written since.
  */
-export async function migrateFromFileStore<T>(store: T): Promise<void> {
+export async function migrateFromFileStore<T>(id: DocumentId, store: T): Promise<void> {
   await ensureSchema();
   await getPool().query(
-    "INSERT INTO steve.business_store (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
-    [DOCUMENT_ID, JSON.stringify(store)],
+    "INSERT INTO steve.documents (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
+    [id, JSON.stringify(store)],
   );
 }

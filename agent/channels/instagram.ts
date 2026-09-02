@@ -3,7 +3,7 @@ import { createInstagramAdapter } from "@chat-adapter/instagram";
 import type { Message, Thread } from "chat";
 import { chatSdkChannel } from "eve/channels/chat-sdk";
 import { defineChannel } from "eve/channels";
-import { getCredentialSync } from "../../lib/credentials";
+import { getCredentialSync, warmCredentialCache } from "../../lib/credentials";
 import { messageToAgentContent } from "../../lib/chat-media";
 
 // Instagram Direct Messages channel.
@@ -19,6 +19,12 @@ import { messageToAgentContent } from "../../lib/chat-media";
 // When credentials are missing the channel degrades to a no-op (no routes),
 // so the app starts fine without Instagram configured. Configure them in
 // /settings and restart.
+
+// Discovery is synchronous, so the credentials have to be in memory before the
+// reads below. In file mode they load themselves; with a Postgres-backed
+// store nothing can, and without this the channel would decide it has no
+// credentials and mount no routes. See lib/credentials.ts.
+await warmCredentialCache();
 
 const appSecret = getCredentialSync("INSTAGRAM_APP_SECRET");
 const accessToken = getCredentialSync("INSTAGRAM_ACCESS_TOKEN");

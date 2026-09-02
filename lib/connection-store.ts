@@ -1,9 +1,14 @@
 // Tokens for the accounts connected from the Connections page.
 //
-// Kept in ~/.steve/connections.json, next to credentials.json and billing.json,
-// with the same 0600 file mode: these are live access tokens to someone's CRM
-// and calendar, so they never go in .env, never reach the client, and are
-// never echoed back by an API route.
+// Two backends, chosen the same way lib/business-store.ts chooses: Postgres
+// when WORKFLOW_POSTGRES_URL is set (which a deploy with no writable
+// filesystem requires), otherwise ~/.steve/connections.json with a 0600 file
+// mode. The first DB access imports an existing file once.
+//
+// Either way these are live access tokens to someone's CRM and calendar: they
+// never go in .env, never reach the client, and are never echoed back by an
+// API route. What the 0600 bits guard in file mode, the connection string
+// guards in DB mode — give it the access you would give that file.
 //
 // A connection is refreshed lazily. Nothing runs on a timer — the first call
 // that needs a token past its expiry trades the refresh token for a new one
@@ -29,6 +34,12 @@ import {
   type ManualConnectionId,
 } from "./connections";
 import { refreshTokens, type TokenSet } from "./oauth-client";
+import {
+  hasDocument as dbHasDocument,
+  migrateFromFileStore as dbMigrateFromFile,
+  readDocument as dbReadDocument,
+  updateDocument as dbUpdateDocument,
+} from "./doc-store";
 
 const STORE_FILE = join(homedir(), ".steve", "connections.json");
 
@@ -46,6 +57,32 @@ export type StoredConnection = {
 
 type ConnectionStore = Partial<Record<ConnectionId, StoredConnection>>;
 
+// ── Backend selection (resolved once, lazily) ─────────────────────
+
+let dbMode: boolean | null = null;
+
+async function useDb(): Promise<boolean> {
+  if (dbMode !== null) return dbMode;
+
+  if (!process.env.WORKFLOW_POSTGRES_URL) {
+    dbMode = false;
+    return false;
+  }
+
+  try {
+    if (!(await dbHasDocument("connections"))) {
+      const file = await readFileStore();
+      if (file !== null) await dbMigrateFromFile("connections", file);
+    }
+    dbMode = true;
+  } catch {
+    // Unreachable database: keep serving from the file rather than reporting
+    // every connected account as disconnected. Retried on the next call.
+    return false;
+  }
+  return dbMode;
+}
+
 let writeQueue: Promise<unknown> = Promise.resolve();
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
@@ -57,14 +94,43 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function readStore(): Promise<ConnectionStore> {
+/** The file's contents, or `null` when there is none to read — which is what
+ *  tells the migration there is nothing to import. */
+async function readFileStore(): Promise<ConnectionStore | null> {
   try {
     const raw = await readFile(STORE_FILE, "utf-8");
     const parsed = JSON.parse(raw) as ConnectionStore;
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
-    return {};
+    return null;
   }
+}
+
+async function readStore(): Promise<ConnectionStore> {
+  if (await useDb()) {
+    return (await dbReadDocument<ConnectionStore>("connections")) ?? {};
+  }
+  return (await readFileStore()) ?? {};
+}
+
+/**
+ * Read, mutate and write the store.
+ *
+ * On Postgres the row lock inside the transaction is the serialisation, and it
+ * holds across processes. On the file the in-process queue is all there is —
+ * which is exactly the gap that makes two Steve processes racing over one
+ * token file worth moving off.
+ */
+async function updateStore<T>(fn: (store: ConnectionStore) => T): Promise<T> {
+  if (await useDb()) {
+    return dbUpdateDocument("connections", () => ({}) as ConnectionStore, fn);
+  }
+  return enqueue(async () => {
+    const store = await readStore();
+    const result = fn(store);
+    await writeStore(store);
+    return result;
+  });
 }
 
 async function writeStore(store: ConnectionStore): Promise<void> {
@@ -79,8 +145,7 @@ export async function getStoredConnection(id: ConnectionId): Promise<StoredConne
 }
 
 export async function saveConnection(id: ConnectionId, tokens: TokenSet): Promise<void> {
-  await enqueue(async () => {
-    const store = await readStore();
+  await updateStore((store) => {
     store[id] = {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
@@ -89,25 +154,20 @@ export async function saveConnection(id: ConnectionId, tokens: TokenSet): Promis
       accountLabel: tokens.accountLabel,
       connectedAt: new Date().toISOString(),
     };
-    await writeStore(store);
   });
 }
 
 export async function removeConnection(id: ConnectionId): Promise<void> {
-  await enqueue(async () => {
-    const store = await readStore();
+  await updateStore((store) => {
     delete store[id];
-    await writeStore(store);
   });
 }
 
 async function patchConnection(id: ConnectionId, patch: Partial<StoredConnection>): Promise<void> {
-  await enqueue(async () => {
-    const store = await readStore();
+  await updateStore((store) => {
     const current = store[id];
     if (!current) return;
     store[id] = { ...current, ...patch };
-    await writeStore(store);
   });
 }
 

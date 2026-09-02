@@ -29,7 +29,7 @@ import {
   migrateFromFileStore as dbMigrateFromFile,
   readDocument as dbReadDocument,
   updateDocument as dbUpdateDocument,
-} from "./business-db-store";
+} from "./doc-store";
 
 // Shared by the Eve agent (tools/hooks/schedules) and Next.js API routes.
 //
@@ -90,11 +90,11 @@ async function useDb(): Promise<boolean> {
   }
 
   try {
-    if (!(await dbHasDocument())) {
+    if (!(await dbHasDocument("business"))) {
       // Reachable but empty. An install that has been running on the file
       // store keeps its data; a fresh one just starts empty.
       const file = await readFileStore();
-      if (file !== null) await dbMigrateFromFile(file);
+      if (file !== null) await dbMigrateFromFile("business", file);
     }
     dbMode = true;
   } catch {
@@ -146,7 +146,7 @@ function normalize(parsed: Partial<BusinessStore>): BusinessStore {
 
 async function readStore(): Promise<BusinessStore> {
   if (await useDb()) {
-    const document = await dbReadDocument<Partial<BusinessStore>>();
+    const document = await dbReadDocument<Partial<BusinessStore>>("business");
     return document ? normalize(document) : emptyStore();
   }
   return (await readFileStore()) ?? emptyStore();
@@ -163,7 +163,7 @@ async function updateStore<T>(fn: (store: BusinessStore) => T): Promise<T> {
   if (await useDb()) {
     // No queue: the row lock inside the transaction is the serialisation, and
     // it holds across processes, which the in-process queue never did.
-    return dbUpdateDocument(emptyStore, fn);
+    return dbUpdateDocument("business", emptyStore, fn);
   }
   return enqueue(async () => {
     const store = await readStore();

@@ -17,7 +17,7 @@ const readDocument = vi.fn();
 const updateDocument = vi.fn();
 const migrateFromFileStore = vi.fn();
 
-vi.mock("./business-db-store", () => ({
+vi.mock("./doc-store", () => ({
   hasDocument: (...a: unknown[]) => hasDocument(...(a as [])),
   readDocument: (...a: unknown[]) => readDocument(...(a as [])),
   updateDocument: (...a: unknown[]) => updateDocument(...(a as [])),
@@ -82,8 +82,8 @@ describe("backend selection", () => {
 
   it("writes through the database's own locking, not the in-process queue", async () => {
     process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
-    updateDocument.mockImplementation(async (empty: () => unknown, fn: (s: unknown) => unknown) =>
-      fn(empty()),
+    updateDocument.mockImplementation(
+      async (_id: string, empty: () => unknown, fn: (s: unknown) => unknown) => fn(empty()),
     );
     const store = await loadStore();
 
@@ -106,7 +106,7 @@ describe("backend selection", () => {
     await dbStore.listContacts();
 
     expect(migrateFromFileStore).toHaveBeenCalledTimes(1);
-    const imported = migrateFromFileStore.mock.calls[0][0] as { contacts: { name: string }[] };
+    const imported = migrateFromFileStore.mock.calls[0][1] as { contacts: { name: string }[] };
     expect(imported.contacts[0].name).toBe("Ana");
   });
 
