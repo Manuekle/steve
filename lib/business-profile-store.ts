@@ -1,13 +1,7 @@
 import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import {
-  blobsInDatabase,
-  createDocumentStore,
-  deleteBlob,
-  listBlobIds,
-  readBlob,
-  writeBlob,
-} from "./doc-store";
+import { createDocumentStore } from "./doc-store";
+import { getBlob, listBlobs, putBlob, removeBlob } from "./blob-store";
 import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 
@@ -227,12 +221,7 @@ export async function saveBusinessLogo(input: {
   extension: string;
 }): Promise<BusinessLogo> {
   const file = `logo-${randomUUID()}${input.extension}`;
-  if (await blobsInDatabase()) {
-    await writeBlob(`profile/${file}`, input.bytes);
-  } else {
-    await mkdir(BLOB_DIR, { recursive: true });
-    await writeFile(join(BLOB_DIR, file), input.bytes);
-  }
+  await putBlob(`profile/${file}`, input.bytes, input.mime);
 
   const { logo, previous } = await mutate((store) => {
     const previous = store.identity.logo;
@@ -249,8 +238,7 @@ export async function saveBusinessLogo(input: {
   // Outside the mutation: deleting the file the pointer no longer names is
   // cleanup, and holding a row lock across it would buy nothing.
   if (previous && previous.file !== file) {
-    await deleteBlob(`profile/${previous.file}`).catch(() => undefined);
-    await rm(join(BLOB_DIR, previous.file), { force: true }).catch(() => undefined);
+    await removeBlob(`profile/${previous.file}`);
   }
   return logo;
 }
@@ -259,10 +247,8 @@ export async function readBusinessLogo(): Promise<{ bytes: Uint8Array; logo: Bus
   const { identity } = await read();
   if (!identity.logo) return null;
   try {
-    if (await blobsInDatabase()) {
-      const stored = await readBlob(`profile/${identity.logo.file}`);
-      if (stored) return { bytes: stored, logo: identity.logo };
-    }
+    const stored = await getBlob(`profile/${identity.logo.file}`);
+    if (stored) return { bytes: stored, logo: identity.logo };
     const bytes = new Uint8Array(await readFile(join(BLOB_DIR, identity.logo.file)));
     return { bytes, logo: identity.logo };
   } catch {
@@ -278,10 +264,7 @@ export async function deleteBusinessLogo(): Promise<void> {
     store.identity = { ...store.identity, logo: null, updatedAt: new Date().toISOString() };
     return previous;
   });
-  if (removed) {
-    await deleteBlob(`profile/${removed.file}`).catch(() => undefined);
-    await rm(join(BLOB_DIR, removed.file), { force: true }).catch(() => undefined);
-  }
+  if (removed) await removeBlob(`profile/${removed.file}`);
 }
 
 /** Deletes logo files no longer pointed at — the orphans a crashed replace
@@ -291,16 +274,8 @@ export async function pruneBusinessLogos(): Promise<void> {
     const { identity } = await read();
     const keep = identity.logo?.file;
 
-    if (await blobsInDatabase()) {
-      for (const id of await listBlobIds("profile/logo-")) {
-        if (id !== `profile/${keep}`) await deleteBlob(id);
-      }
-    }
-
-    for (const name of await readdir(BLOB_DIR)) {
-      if (name.startsWith("logo-") && name !== keep) {
-        await rm(join(BLOB_DIR, name), { force: true });
-      }
+    for (const id of await listBlobs("profile/logo-")) {
+      if (id !== `profile/${keep}`) await removeBlob(id);
     }
   } catch {
     /* nothing to prune */

@@ -164,6 +164,12 @@ export type CredentialKey =
   // Resend (transactional email)
   | "RESEND_API_KEY"
   | "RESEND_FROM_EMAIL"
+  // S3-compatible object storage (media assets, business logo)
+  | "S3_ENDPOINT"
+  | "S3_REGION"
+  | "S3_BUCKET"
+  | "S3_ACCESS_KEY_ID"
+  | "S3_SECRET_ACCESS_KEY"
   // Meta Ads
   | "META_ACCESS_TOKEN"
   | "META_AD_ACCOUNT_ID"
@@ -806,6 +812,51 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         help: "Email que aparece como 'de' en los correos. Debe estar en un dominio verificado en Resend.",
         pattern: "^.+@.+\\..+$",
         title: "Email válido",
+      },
+    ],
+  },
+  {
+    id: "storage",
+    label: "Almacenamiento de archivos (S3)",
+    description:
+      "Dónde viven los archivos de la biblioteca de medios y el logo del negocio. Sirve cualquier bucket compatible con S3: Supabase Storage, Cloudflare R2, MinIO o AWS. Sin esto los archivos van a la base de datos, o al disco si tampoco hay base — lo cual no funciona en un hosting sin disco de escritura.",
+    fields: [
+      {
+        key: "S3_ENDPOINT",
+        label: "Endpoint",
+        required: false,
+        placeholder: "https://<proyecto>.storage.supabase.co/storage/v1/s3",
+        help: "En Supabase: Storage > S3 Connection. Sin el nombre del bucket al final.",
+      },
+      {
+        key: "S3_BUCKET",
+        label: "Bucket",
+        required: false,
+        placeholder: "steve",
+        help: "El bucket donde se guardan los archivos. Tiene que existir ya.",
+        pattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$",
+        title: "Minúsculas, números, guiones y puntos",
+      },
+      {
+        key: "S3_REGION",
+        label: "Región",
+        required: false,
+        placeholder: "us-east-1",
+        help: "La que muestre el panel del proveedor. Si se deja vacía se usa us-east-1.",
+      },
+      {
+        key: "S3_ACCESS_KEY_ID",
+        label: "Access key ID",
+        required: false,
+        placeholder: "d17cf8260e86684035b28ec0aa06535a",
+      },
+      {
+        key: "S3_SECRET_ACCESS_KEY",
+        label: "Secret access key",
+        type: "password",
+        required: false,
+        placeholder: "••••••••••••••••••••••••••••••••",
+        help: "Se muestra una sola vez al crear la access key. Si se perdió, generá una nueva.",
       },
     ],
   },

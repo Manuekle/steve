@@ -69,6 +69,7 @@ const GROUP_I18N: Record<string, { label?: string; desc?: string }> = {
   "database": { label: "settings.group.database", desc: "settings.group.databaseDesc" },
   "whatsapp": { label: "settings.group.whatsapp", desc: "settings.group.whatsappDesc" },
   "instagram": { label: "settings.group.instagram", desc: "settings.group.instagramDesc" },
+  storage: { label: "settings.group.storage", desc: "settings.group.storageDesc" },
   "google-sheets": { label: "settings.group.googleSheets", desc: "settings.group.googleSheetsDesc" },
   "google-calendar": { label: "settings.group.googleCalendar", desc: "settings.group.googleCalendarDesc" },
   "google-drive": { label: "settings.group.googleDrive", desc: "settings.group.googleDriveDesc" },
@@ -106,6 +107,7 @@ const GROUP_ICONS: Record<string, IconSvgElement> = {
   resend: Mail01Icon,
   "meta-ads": MetaIcon,
   integrations: PlugSocketIcon,
+  storage: DatabaseIcon,
   "oauth-apps": KeyRoundIcon,
 };
 
@@ -201,7 +203,7 @@ const SECTIONS: readonly SettingsSection[] = [
     id: "system",
     labelKey: "settings.section.system",
     // Last, and it's where a group this list forgot lands — see `sectionOf`.
-    groups: ["database"],
+    groups: ["database", "storage"],
     // The license and the interaction sounds used to sit here. Neither is a
     // credential this install runs on — one is the plan, the other a personal
     // preference — so both moved to Account.

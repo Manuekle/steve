@@ -121,6 +121,9 @@ importers:
       ai:
         specifier: 7.0.31
         version: 7.0.31(zod@4.4.3)
+      aws4fetch:
+        specifier: ^1.0.20
+        version: 1.0.20
       border-beam:
         specifier: ^1.3.0
         version: 1.3.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -141,7 +144,7 @@ importers:
         version: 0.2.2
       eve:
         specifier: 0.25.2
-        version: 0.25.2(@opentelemetry/api@1.9.1)(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(ai@7.0.31(zod@4.4.3))(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+        version: 0.25.2(@opentelemetry/api@1.9.1)(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(ai@7.0.31(zod@4.4.3))(aws4fetch@1.0.20)(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       gsap:
         specifier: ^3.15.0
         version: 3.15.0
@@ -3437,6 +3440,9 @@ packages:
 
   atomically@2.1.1:
     resolution: {integrity: sha512-P4w9o2dqARji6P7MHprklbfiArZAWvo07yW7qs3pdljb3BWr12FIB7W+p0zJiuiVsUpRO0iZn1kFFcpPegg0tQ==}
+
+  aws4fetch@1.0.20:
+    resolution: {integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==}
 
   b4a@1.8.1:
     resolution: {integrity: sha512-aiqre1Nr0B/6DgE2N5vwTc+2/oQZ4Wh1t4NznYY4E00y8LCt6NqdRv81so00oo27D8MVKTpUa/MwUUtBLXCoDw==}
@@ -10445,6 +10451,8 @@ snapshots:
       stubborn-fs: 2.0.0
       when-exit: 2.1.5
 
+  aws4fetch@1.0.20: {}
+
   b4a@1.8.1: {}
 
   bail@2.0.2: {}
@@ -11227,10 +11235,10 @@ snapshots:
 
   etag@1.8.1: {}
 
-  eve@0.25.2(@opentelemetry/api@1.9.1)(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(ai@7.0.31(zod@4.4.3))(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
+  eve@0.25.2(@opentelemetry/api@1.9.1)(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(ai@7.0.31(zod@4.4.3))(aws4fetch@1.0.20)(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       ai: 7.0.31(zod@4.4.3)
-      nitro: 3.0.260610-beta(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      nitro: 3.0.260610-beta(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(aws4fetch@1.0.20)(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
     transitivePeerDependencies:
@@ -12696,7 +12704,7 @@ snapshots:
 
   nf3@0.3.17: {}
 
-  nitro@3.0.260610-beta(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
+  nitro@3.0.260610-beta(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(aws4fetch@1.0.20)(chokidar@5.0.0)(dotenv@17.3.1)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))(giget@3.3.0)(jiti@2.7.0)(lru-cache@11.5.2)(vite@8.2.2(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       consola: 3.4.2
       crossws: 0.4.6(srvx@0.11.17)
@@ -12711,7 +12719,7 @@ snapshots:
       rolldown: 1.1.2
       srvx: 0.11.17
       unenv: 2.0.0-rc.24
-      unstorage: 2.0.0-alpha.7(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)))(lru-cache@11.5.2)(ofetch@2.0.0-alpha.3)
+      unstorage: 2.0.0-alpha.7(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(aws4fetch@1.0.20)(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)))(lru-cache@11.5.2)(ofetch@2.0.0-alpha.3)
     optionalDependencies:
       dotenv: 17.3.1
       giget: 3.3.0
@@ -14023,9 +14031,10 @@ snapshots:
       picomatch: 4.0.4
       webpack-virtual-modules: 0.6.2
 
-  unstorage@2.0.0-alpha.7(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)))(lru-cache@11.5.2)(ofetch@2.0.0-alpha.3):
+  unstorage@2.0.0-alpha.7(@vercel/functions@3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3))(aws4fetch@1.0.20)(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)))(lru-cache@11.5.2)(ofetch@2.0.0-alpha.3):
     optionalDependencies:
       '@vercel/functions': 3.7.3(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.3)
+      aws4fetch: 1.0.20
       chokidar: 5.0.0
       db0: 0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0))
       lru-cache: 11.5.2

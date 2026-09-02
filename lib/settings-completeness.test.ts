@@ -23,6 +23,9 @@ const GROUPS_WITHOUT_CARD = new Set([
   "integrations",
   "instagram",
   "oauth-apps",
+  // Infrastructure, like the database: a bucket is where this install keeps
+  // its own files, not an account someone connects it to.
+  "storage",
   "whatsapp",
 ]);
 

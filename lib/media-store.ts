@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { blobsInDatabase, deleteBlob, readBlob, writeBlob, createDocumentStore } from "./doc-store";
+import { createDocumentStore } from "./doc-store";
+import { getBlob, putBlob, removeBlob } from "./blob-store";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { deleteFromDrive, downloadFromDrive, isDriveConfigured, uploadToDrive } from "./google-drive";
@@ -195,12 +196,10 @@ export async function readAssetBytes(
   asset: Pick<MediaAsset, "file" | "drive_file_id">,
 ): Promise<Uint8Array> {
   if (asset.drive_file_id) return downloadFromDrive(asset.drive_file_id);
-  if (await blobsInDatabase()) {
-    const bytes = await readBlob(`media/${asset.file}`);
-    if (bytes) return bytes;
-    // Fall through: an asset added before the database existed is still on
-    // disk, and this install may still be able to read it.
-  }
+  const bytes = await getBlob(`media/${asset.file}`);
+  if (bytes) return bytes;
+  // An asset stored before this install had its current backend is still
+  // wherever it was put; the disk is the only place left to look.
   return new Uint8Array(await readFile(blobPath(asset)));
 }
 
@@ -237,12 +236,7 @@ export async function addAsset(input: {
   }
 
   if (!driveFileId) {
-    if (await blobsInDatabase()) {
-      await writeBlob(`media/${file}`, input.bytes);
-    } else {
-      await mkdir(BLOB_DIR, { recursive: true });
-      await writeFile(join(BLOB_DIR, file), input.bytes);
-    }
+    await putBlob(`media/${file}`, input.bytes, input.mime);
   }
 
   return mediaStore.update((store) => {
@@ -349,8 +343,7 @@ export async function deleteAsset(id: string): Promise<boolean> {
   if (removed.drive_file_id) {
     await deleteFromDrive(removed.drive_file_id).catch(() => undefined);
   } else {
-    await deleteBlob(`media/${removed.file}`).catch(() => undefined);
-    await rm(join(BLOB_DIR, removed.file), { force: true }).catch(() => undefined);
+    await removeBlob(`media/${removed.file}`);
   }
   return true;
 }
