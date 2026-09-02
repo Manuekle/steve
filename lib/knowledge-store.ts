@@ -1,7 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { homedir } from "node:os";
+import { createDocumentStore } from "./doc-store";
 
 // Knowledge base for retrieval-augmented generation.
 //
@@ -73,59 +72,27 @@ function normalize(parsed: Partial<KnowledgeStore>): KnowledgeStore {
   };
 }
 
-let writeQueue: Promise<void> = Promise.resolve();
-
-// Serializes read-modify-write cycles: two uploads finishing at once would
-// otherwise both read the pre-update store and the second write would drop
-// the first document entirely.
-function enqueue<T>(fn: () => Promise<T>): Promise<T> {
-  const run = writeQueue.then(fn, fn);
-  writeQueue = run.then(
-    () => undefined,
-    () => undefined,
-  );
-  return run;
-}
-
-async function readStore(): Promise<KnowledgeStore> {
-  try {
-    return normalize(JSON.parse(await readFile(STORE_FILE, "utf-8")) as Partial<KnowledgeStore>);
-  } catch {
-    return emptyStore();
-  }
-}
-
-function readStoreSync(): KnowledgeStore {
-  try {
-    if (!existsSync(STORE_FILE)) return emptyStore();
-    return normalize(JSON.parse(readFileSync(STORE_FILE, "utf-8")) as Partial<KnowledgeStore>);
-  } catch {
-    return emptyStore();
-  }
-}
-
-async function writeStore(store: KnowledgeStore): Promise<void> {
-  await mkdir(dirname(STORE_FILE), { recursive: true });
-  const tmp = `${STORE_FILE}.tmp`;
-  await writeFile(tmp, JSON.stringify(store), "utf-8");
-  await rename(tmp, STORE_FILE);
-}
+// Postgres when one is configured, ~/.steve/knowledge.json otherwise. The
+// factory owns the routing, the one-time file import, and the locking that
+// the hand-rolled queue here used to approximate for one process only.
+const knowledgeStore = createDocumentStore<KnowledgeStore>({
+  id: "knowledge",
+  file: STORE_FILE,
+  empty: emptyStore,
+  normalize,
+});
 
 function newId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export async function listDocuments(): Promise<KnowledgeDocument[]> {
-  const store = await readStore();
+  const store = await knowledgeStore.read();
   return [...store.documents].sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
-export function listDocumentsSync(): KnowledgeDocument[] {
-  return [...readStoreSync().documents].sort((a, b) => b.created_at.localeCompare(a.created_at));
-}
-
 export async function countChunks(): Promise<number> {
-  return (await readStore()).chunks.length;
+  return (await knowledgeStore.read()).chunks.length;
 }
 
 export async function addDocument(input: {
@@ -138,8 +105,7 @@ export async function addDocument(input: {
   chunks: ReadonlyArray<{ text: string; embedding: number[] }>;
   driveSourceId?: string;
 }): Promise<KnowledgeDocument> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return knowledgeStore.update((store) => {
     const id = newId("doc");
     const document: KnowledgeDocument = {
       id,
@@ -164,7 +130,6 @@ export async function addDocument(input: {
         embedding: chunk.embedding,
       });
     });
-    await writeStore(store);
     return document;
   });
 }
@@ -174,24 +139,20 @@ export async function setDocumentFolder(
   id: string,
   folderId: string | null,
 ): Promise<KnowledgeDocument | null> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return knowledgeStore.update((store) => {
     const document = store.documents.find((d) => d.id === id);
     if (!document) return null;
     document.folder_id = folderId;
-    await writeStore(store);
     return document;
   });
 }
 
 export async function deleteDocument(id: string): Promise<boolean> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return knowledgeStore.update((store) => {
     const before = store.documents.length;
     store.documents = store.documents.filter((d) => d.id !== id);
     if (store.documents.length === before) return false;
     store.chunks = store.chunks.filter((c) => c.doc_id !== id);
-    await writeStore(store);
     return true;
   });
 }
@@ -225,7 +186,7 @@ export async function searchChunks(
   options: { limit?: number; minScore?: number; docIds?: readonly string[] } = {},
 ): Promise<KnowledgeMatch[]> {
   const { limit = 5, minScore = 0.1, docIds } = options;
-  const store = await readStore();
+  const store = await knowledgeStore.read();
   const names = new Map(store.documents.map((d) => [d.id, d.name]));
 
   const scored: KnowledgeMatch[] = [];

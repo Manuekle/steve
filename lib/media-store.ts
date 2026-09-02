@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { blobsInDatabase, deleteBlob, readBlob, writeBlob, createDocumentStore } from "./doc-store";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { deleteFromDrive, downloadFromDrive, isDriveConfigured, uploadToDrive } from "./google-drive";
@@ -85,43 +85,15 @@ function normalize(parsed: Partial<MediaStore>): MediaStore {
   };
 }
 
-let writeQueue: Promise<void> = Promise.resolve();
-
-// Same reason knowledge-store serializes: two uploads landing together would
-// otherwise both read the pre-update store and the second write would drop
-// the first asset.
-function enqueue<T>(fn: () => Promise<T>): Promise<T> {
-  const run = writeQueue.then(fn, fn);
-  writeQueue = run.then(
-    () => undefined,
-    () => undefined,
-  );
-  return run;
-}
-
-async function readStore(): Promise<MediaStore> {
-  try {
-    return normalize(JSON.parse(await readFile(STORE_FILE, "utf-8")) as Partial<MediaStore>);
-  } catch {
-    return emptyStore();
-  }
-}
-
-function readStoreSync(): MediaStore {
-  try {
-    if (!existsSync(STORE_FILE)) return emptyStore();
-    return normalize(JSON.parse(readFileSync(STORE_FILE, "utf-8")) as Partial<MediaStore>);
-  } catch {
-    return emptyStore();
-  }
-}
-
-async function writeStore(store: MediaStore): Promise<void> {
-  await mkdir(dirname(STORE_FILE), { recursive: true });
-  const tmp = `${STORE_FILE}.tmp`;
-  await writeFile(tmp, JSON.stringify(store), "utf-8");
-  await rename(tmp, STORE_FILE);
-}
+// Postgres when one is configured, ~/.steve/media.json otherwise. Only the
+// catalogue lives here; the bytes are handled separately below, because a
+// blob is not something to keep in a document that is read whole.
+const mediaStore = createDocumentStore<MediaStore>({
+  id: "media",
+  file: STORE_FILE,
+  empty: emptyStore,
+  normalize,
+});
 
 function newId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -141,20 +113,15 @@ export function kindForMime(mime: string, name = ""): MediaKind {
 // ── Folders ─────────────────────────────────────────────────────────
 
 export async function listFolders(): Promise<MediaFolder[]> {
-  const store = await readStore();
+  const store = await mediaStore.read();
   return [...store.folders].sort((a, b) => a.name.localeCompare(b.name));
-}
-
-export function listFoldersSync(): MediaFolder[] {
-  return [...readStoreSync().folders].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function createFolder(input: {
   name: string;
   description?: string;
 }): Promise<MediaFolder> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return mediaStore.update((store) => {
     const folder: MediaFolder = {
       id: newId("fld"),
       name: input.name.trim(),
@@ -162,7 +129,6 @@ export async function createFolder(input: {
       created_at: new Date().toISOString(),
     };
     store.folders.push(folder);
-    await writeStore(store);
     return folder;
   });
 }
@@ -171,13 +137,11 @@ export async function updateFolder(
   id: string,
   patch: { name?: string; description?: string },
 ): Promise<MediaFolder | null> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return mediaStore.update((store) => {
     const folder = store.folders.find((f) => f.id === id);
     if (!folder) return null;
     if (patch.name !== undefined) folder.name = patch.name.trim();
     if (patch.description !== undefined) folder.description = patch.description.trim();
-    await writeStore(store);
     return folder;
   });
 }
@@ -190,15 +154,13 @@ export async function updateFolder(
  * `folder_id` as root.
  */
 export async function deleteFolder(id: string): Promise<boolean> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return mediaStore.update((store) => {
     const before = store.folders.length;
     store.folders = store.folders.filter((f) => f.id !== id);
     if (store.folders.length === before) return false;
     for (const asset of store.assets) {
       if (asset.folder_id === id) asset.folder_id = null;
     }
-    await writeStore(store);
     return true;
   });
 }
@@ -208,7 +170,7 @@ export async function deleteFolder(id: string): Promise<boolean> {
 export async function listAssets(
   options: { folderId?: string | null; kind?: MediaKind } = {},
 ): Promise<MediaAsset[]> {
-  const store = await readStore();
+  const store = await mediaStore.read();
   const known = new Set(store.folders.map((f) => f.id));
   return store.assets
     .filter((asset) => {
@@ -222,7 +184,7 @@ export async function listAssets(
 }
 
 export async function getAsset(id: string): Promise<MediaAsset | null> {
-  return (await readStore()).assets.find((a) => a.id === id) ?? null;
+  return (await mediaStore.read()).assets.find((a) => a.id === id) ?? null;
 }
 
 export function blobPath(asset: Pick<MediaAsset, "file">): string {
@@ -233,6 +195,12 @@ export async function readAssetBytes(
   asset: Pick<MediaAsset, "file" | "drive_file_id">,
 ): Promise<Uint8Array> {
   if (asset.drive_file_id) return downloadFromDrive(asset.drive_file_id);
+  if (await blobsInDatabase()) {
+    const bytes = await readBlob(`media/${asset.file}`);
+    if (bytes) return bytes;
+    // Fall through: an asset added before the database existed is still on
+    // disk, and this install may still be able to read it.
+  }
   return new Uint8Array(await readFile(blobPath(asset)));
 }
 
@@ -269,12 +237,15 @@ export async function addAsset(input: {
   }
 
   if (!driveFileId) {
-    await mkdir(BLOB_DIR, { recursive: true });
-    await writeFile(join(BLOB_DIR, file), input.bytes);
+    if (await blobsInDatabase()) {
+      await writeBlob(`media/${file}`, input.bytes);
+    } else {
+      await mkdir(BLOB_DIR, { recursive: true });
+      await writeFile(join(BLOB_DIR, file), input.bytes);
+    }
   }
 
-  return enqueue(async () => {
-    const store = await readStore();
+  return mediaStore.update((store) => {
     const asset: MediaAsset = {
       id,
       folder_id: input.folderId ?? null,
@@ -293,7 +264,6 @@ export async function addAsset(input: {
     if (input.embedding) {
       store.embeddings.push({ asset_id: id, vector: [...input.embedding] });
     }
-    await writeStore(store);
     return asset;
   });
 }
@@ -312,8 +282,7 @@ export async function addAssetFromDrive(input: {
   folderId?: string | null;
   description?: string;
 }): Promise<MediaAsset> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return mediaStore.update((store) => {
     const asset: MediaAsset = {
       id: newId("med"),
       folder_id: input.folderId ?? null,
@@ -331,7 +300,6 @@ export async function addAssetFromDrive(input: {
       created_at: new Date().toISOString(),
     };
     store.assets.push(asset);
-    await writeStore(store);
     return asset;
   });
 }
@@ -347,8 +315,7 @@ export async function updateAsset(
     embeddingModel?: string;
   },
 ): Promise<MediaAsset | null> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return mediaStore.update((store) => {
     const asset = store.assets.find((a) => a.id === id);
     if (!asset) return null;
     if (patch.name !== undefined) asset.name = patch.name.trim() || asset.name;
@@ -364,19 +331,16 @@ export async function updateAsset(
         asset.embedding_model = "";
       }
     }
-    await writeStore(store);
     return asset;
   });
 }
 
 export async function deleteAsset(id: string): Promise<boolean> {
-  const removed = await enqueue(async () => {
-    const store = await readStore();
+  const removed = await mediaStore.update((store) => {
     const asset = store.assets.find((a) => a.id === id);
     if (!asset) return null;
     store.assets = store.assets.filter((a) => a.id !== id);
     store.embeddings = store.embeddings.filter((e) => e.asset_id !== id);
-    await writeStore(store);
     return asset;
   });
   if (!removed) return false;
@@ -385,6 +349,7 @@ export async function deleteAsset(id: string): Promise<boolean> {
   if (removed.drive_file_id) {
     await deleteFromDrive(removed.drive_file_id).catch(() => undefined);
   } else {
+    await deleteBlob(`media/${removed.file}`).catch(() => undefined);
     await rm(join(BLOB_DIR, removed.file), { force: true }).catch(() => undefined);
   }
   return true;
@@ -453,7 +418,7 @@ export async function searchAssets(
   } = {},
 ): Promise<MediaAssetMatch[]> {
   const { limit = 5, minScore = 0.15, kind, folderId, embedding } = options;
-  const store = await readStore();
+  const store = await mediaStore.read();
   const folders = new Map(store.folders.map((f) => [f.id, f.name]));
   const vectors = new Map(store.embeddings.map((e) => [e.asset_id, e.vector]));
 
@@ -476,5 +441,5 @@ export async function searchAssets(
 }
 
 export async function countAssets(): Promise<number> {
-  return (await readStore()).assets.length;
+  return (await mediaStore.read()).assets.length;
 }

@@ -1,7 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { homedir } from "node:os";
+import { createDocumentStore } from "./doc-store";
 
 // Which models this account is actually allowed to call.
 //
@@ -31,35 +30,25 @@ function normalize(parsed: Partial<ModelAccessStore>): ModelAccessStore {
   return { restricted: parsed.restricted ?? {}, checkedAt: parsed.checkedAt };
 }
 
-export function readAccessSync(): ModelAccessStore {
-  try {
-    if (!existsSync(STORE_FILE)) return empty();
-    return normalize(JSON.parse(readFileSync(STORE_FILE, "utf-8")) as Partial<ModelAccessStore>);
-  } catch {
-    return empty();
-  }
-}
+// Postgres when one is configured, ~/.steve/model-access.json otherwise.
+const accessStore = createDocumentStore<ModelAccessStore>({
+  id: "model-access",
+  file: STORE_FILE,
+  empty,
+  normalize,
+});
 
 export async function readAccess(): Promise<ModelAccessStore> {
-  try {
-    return normalize(JSON.parse(await readFile(STORE_FILE, "utf-8")) as Partial<ModelAccessStore>);
-  } catch {
-    return empty();
-  }
+  return accessStore.read();
 }
 
 /** Replace what we know. The probe always reports on the same set of models,
  *  so a full replace is right: a model that stops being refused should stop
  *  being marked, not linger from an older run. */
 export async function writeAccess(restricted: Record<string, string>): Promise<void> {
-  await mkdir(dirname(STORE_FILE), { recursive: true });
-  const tmp = `${STORE_FILE}.tmp`;
-  const store: ModelAccessStore = { restricted, checkedAt: new Date().toISOString() };
-  await writeFile(tmp, JSON.stringify(store, null, 2) + "\n", "utf-8");
-  await rename(tmp, STORE_FILE);
+  await accessStore.update((store) => {
+    store.restricted = restricted;
+    store.checkedAt = new Date().toISOString();
+  });
 }
 
-/** True when the provider told us this exact model is off limits. */
-export function isRestricted(modelId: string, store = readAccessSync()): boolean {
-  return modelId in store.restricted;
-}

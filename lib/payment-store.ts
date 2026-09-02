@@ -21,10 +21,10 @@
 // the other stores here. It holds amounts and payer emails, not card data —
 // no processor ever hands that to an integrator, and this app never asks.
 
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { homedir } from "node:os";
 import { randomBytes } from "node:crypto";
+import { createDocumentStore } from "./doc-store";
 
 const STORE_FILE = join(homedir(), ".steve", "payments.json");
 
@@ -52,34 +52,16 @@ export type PaymentRecord = {
   readonly providerPaymentId?: string;
 };
 
-type PaymentStore = { readonly payments: PaymentRecord[] };
+type PaymentStore = { payments: PaymentRecord[] };
 
-let writeQueue: Promise<unknown> = Promise.resolve();
-
-function enqueue<T>(fn: () => Promise<T>): Promise<T> {
-  const run = writeQueue.then(fn, fn);
-  writeQueue = run.then(
-    () => undefined,
-    () => undefined,
-  );
-  return run;
-}
-
-async function readStore(): Promise<PaymentStore> {
-  try {
-    const parsed = JSON.parse(await readFile(STORE_FILE, "utf-8")) as PaymentStore;
-    return Array.isArray(parsed?.payments) ? parsed : { payments: [] };
-  } catch {
-    return { payments: [] };
-  }
-}
-
-async function writeStore(store: PaymentStore): Promise<void> {
-  await mkdir(dirname(STORE_FILE), { recursive: true });
-  const tmp = `${STORE_FILE}.tmp`;
-  await writeFile(tmp, JSON.stringify(store, null, 2) + "\n", { encoding: "utf-8", mode: 0o600 });
-  await rename(tmp, STORE_FILE);
-}
+// Postgres when one is configured, ~/.steve/payments.json (0600) otherwise.
+const paymentStore = createDocumentStore<PaymentStore>({
+  id: "payments",
+  file: STORE_FILE,
+  empty: () => ({ payments: [] }),
+  normalize: (parsed) => (Array.isArray(parsed?.payments) ? (parsed as PaymentStore) : { payments: [] }),
+  fileMode: 0o600,
+});
 
 /** An opaque reference for providers that let us choose one. */
 export function newPaymentReference(): string {
@@ -87,7 +69,7 @@ export function newPaymentReference(): string {
 }
 
 export async function listPayments(): Promise<PaymentRecord[]> {
-  return (await readStore()).payments;
+  return (await paymentStore.read()).payments;
 }
 
 export async function recordPendingPayment(input: {
@@ -99,15 +81,14 @@ export async function recordPendingPayment(input: {
   readonly productName: string;
   readonly checkoutUrl?: string;
 }): Promise<PaymentRecord> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return paymentStore.update((store) => {
     const record: PaymentRecord = {
       id: `pay_${randomBytes(8).toString("hex")}`,
       createdAt: new Date().toISOString(),
       status: "pending",
       ...input,
     };
-    await writeStore({ payments: [record, ...store.payments].slice(0, 5_000) });
+    store.payments = [record, ...store.payments].slice(0, 5_000);
     return record;
   });
 }
@@ -128,8 +109,7 @@ export async function settlePayment(input: {
   readonly payerEmail?: string;
   readonly providerPaymentId?: string;
 }): Promise<{ readonly record: PaymentRecord; readonly alreadyPaid: boolean } | undefined> {
-  return enqueue(async () => {
-    const store = await readStore();
+  return paymentStore.update((store) => {
     const index = store.payments.findIndex(
       (payment) => payment.provider === input.provider && payment.reference === input.reference,
     );
@@ -146,9 +126,8 @@ export async function settlePayment(input: {
       ...(input.payerEmail ? { payerEmail: input.payerEmail } : {}),
       ...(input.providerPaymentId ? { providerPaymentId: input.providerPaymentId } : {}),
     };
-    const payments = [...store.payments];
-    payments[index] = settled;
-    await writeStore({ payments });
+    store.payments = [...store.payments];
+    store.payments[index] = settled;
     return { record: settled, alreadyPaid: false };
   });
 }

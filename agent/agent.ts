@@ -2,7 +2,8 @@ import type { LanguageModel } from "ai";
 import { defineAgent, defineDynamic } from "eve";
 import { resolveLanguageModel, resolveProvider, resolveModelId } from "../lib/ai-provider";
 import { applyStoredEnv } from "../lib/runtime-env";
-import { claimChatModelSync } from "../lib/chat-model-store";
+import { warmCredentialCache } from "../lib/credentials";
+import { claimChatModelSync, warmChatModelCache } from "../lib/chat-model-store";
 import { billingSourceForProvider, checkCreditGate } from "../lib/credit-gate";
 
 // The model comes from Settings → Modelo de IA, which persists to
@@ -23,6 +24,13 @@ import { billingSourceForProvider, checkCreditGate } from "../lib/credit-gate";
 // Runs before the Postgres world is constructed, so a connection string saved
 // in Settings takes effect on the next boot instead of needing a .env edit.
 applyStoredEnv();
+
+// The credential and chat-model stores both have a synchronous reader that
+// Eve's resolvers use, and neither can load itself synchronously from
+// Postgres. Warming them here is what makes a database-backed install behave
+// like the file-backed one: without it the first turn would fall back to the
+// environment and to no chat-model claim. Cheap no-ops in file mode.
+await Promise.all([warmCredentialCache(), warmChatModelCache()]);
 
 const fallbackModel = resolveLanguageModel();
 

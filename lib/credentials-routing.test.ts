@@ -38,7 +38,8 @@ beforeEach(() => {
   updateDocument
     .mockReset()
     .mockImplementation(
-      async (_id: string, empty: () => unknown, fn: (s: unknown) => unknown) => fn(empty()),
+      async (_id: string, load: (raw: unknown) => unknown, fn: (s: unknown) => unknown) =>
+        fn(load(null)),
     );
   migrateFromFileStore.mockReset().mockResolvedValue(undefined);
 });

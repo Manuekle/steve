@@ -987,7 +987,7 @@ async function writeStore(store: CredentialStore): Promise<void> {
 /** Read, mutate and write, on whichever backend is active. */
 async function updateStore<T>(fn: (store: CredentialStore) => T): Promise<T> {
   if (await useDb()) {
-    return dbUpdateDocument("credentials", (): CredentialStore => ({}), (store) => {
+    return dbUpdateDocument("credentials", (raw): CredentialStore => raw ?? {}, (store) => {
       const result = fn(store);
       cachedStore = store;
       cacheFromDb = true;

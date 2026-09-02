@@ -1,4 +1,5 @@
-import { readFile, writeFile, mkdir, readdir, unlink } from "node:fs/promises";
+import { readFile, readdir, unlink } from "node:fs/promises";
+import { createDocumentStore } from "./doc-store";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { BUILTIN_TEMPLATES } from "@/components/email-templates";
@@ -71,10 +72,6 @@ async function builtinSource(id: string): Promise<string | null> {
 
 // ── Custom templates ────────────────────────────────────────────────
 
-async function ensureCustomDir(): Promise<void> {
-  await mkdir(CUSTOM_DIR, { recursive: true });
-}
-
 /** Ids reach here from a URL segment, so they never get to shape a path:
  *  anything outside `[A-Za-z0-9_-]` — a dot, a slash — becomes an underscore. */
 function safeId(id: string): string {
@@ -110,33 +107,69 @@ function normalizeCustomMeta(id: string, raw: unknown): EmailTemplateMeta {
   };
 }
 
-async function listCustom(): Promise<EmailTemplateMeta[]> {
-  await ensureCustomDir();
+// Custom templates were a directory: a `.tsx` and a `.meta.json` per
+// template, listed with readdir. That has no equivalent on a read-only
+// filesystem, and the pair could half-write. One document holds both halves
+// per id, so a save is one atomic write and a list is one read.
+type CustomTemplate = { readonly source: string; readonly meta: unknown };
+
+type EmailTemplateStore = { custom: Record<string, CustomTemplate> };
+
+const templateStore = createDocumentStore<EmailTemplateStore>({
+  id: "email-templates",
+  file: join(CUSTOM_DIR, "custom-templates.json"),
+  empty: () => ({ custom: {} }),
+  normalize: (parsed) => ({ custom: parsed.custom ?? {} }),
+});
+
+/**
+ * Templates written by the directory layout this replaced.
+ *
+ * Read on every list rather than migrated once: the document store's own
+ * import only moves the JSON file it is pointed at, and these are a directory
+ * of pairs. A template saved from here on lands in the document, and one
+ * saved under the same id shadows the file — so an install upgrades by
+ * editing, and nothing disappears in the meantime.
+ */
+async function listLegacyCustom(): Promise<Record<string, CustomTemplate>> {
   let files: string[];
   try {
     files = await readdir(CUSTOM_DIR);
   } catch {
-    return [];
+    return {};
   }
-  const results: EmailTemplateMeta[] = [];
+  const found: Record<string, CustomTemplate> = {};
   for (const file of files) {
     if (!file.endsWith(".meta.json")) continue;
+    const id = file.slice(0, -".meta.json".length);
     try {
-      const raw = await readFile(join(CUSTOM_DIR, file), "utf-8");
-      results.push(normalizeCustomMeta(file.slice(0, -".meta.json".length), JSON.parse(raw)));
+      const [meta, source] = await Promise.all([
+        readFile(join(CUSTOM_DIR, file), "utf-8"),
+        readFile(customPath(id), "utf-8").catch(() => ""),
+      ]);
+      found[id] = { source, meta: JSON.parse(meta) };
     } catch {
       // A corrupted meta file hides one template rather than emptying the list.
     }
   }
+  return found;
+}
+
+async function allCustom(): Promise<Record<string, CustomTemplate>> {
+  const [legacy, stored] = await Promise.all([listLegacyCustom(), templateStore.read()]);
+  return { ...legacy, ...stored.custom };
+}
+
+async function listCustom(): Promise<EmailTemplateMeta[]> {
+  const custom = await allCustom();
+  const results = Object.entries(custom).map(([id, template]) =>
+    normalizeCustomMeta(id, template.meta),
+  );
   return results.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 async function customSource(id: string): Promise<string | null> {
-  try {
-    return await readFile(customPath(id), "utf-8");
-  } catch {
-    return null;
-  }
+  return (await allCustom())[safeId(id)]?.source ?? null;
 }
 
 // ── Public API ──────────────────────────────────────────────────────
@@ -152,12 +185,8 @@ export async function getTemplateSource(id: string): Promise<string | null> {
 export async function getTemplateMeta(id: string): Promise<EmailTemplateMeta | null> {
   const builtin = builtinMeta().find((t) => t.id === id);
   if (builtin) return builtin;
-  try {
-    const raw = await readFile(customMetaPath(id), "utf-8");
-    return normalizeCustomMeta(safeId(id), JSON.parse(raw));
-  } catch {
-    return null;
-  }
+  const template = (await allCustom())[safeId(id)];
+  return template ? normalizeCustomMeta(safeId(id), template.meta) : null;
 }
 
 /** Create or update a custom template. Built-ins never reach here — the
@@ -167,26 +196,34 @@ export async function saveCustomTemplate(
   source: string,
   meta: CustomTemplateMeta,
 ): Promise<EmailTemplateMeta> {
-  await ensureCustomDir();
   const stored: EmailTemplateMeta = { id: safeId(id), ...meta, source: "custom" };
-  await writeFile(customPath(id), source, "utf-8");
-  await writeFile(customMetaPath(id), `${JSON.stringify(stored, null, 2)}\n`, "utf-8");
+  await templateStore.update((store) => {
+    store.custom[safeId(id)] = { source, meta: stored };
+  });
   return stored;
 }
 
 /** Delete a custom template. Built-in templates cannot be deleted. */
 export async function deleteCustomTemplate(id: string): Promise<boolean> {
-  let deleted = false;
+  const removed = await templateStore.update((store) => {
+    if (!(safeId(id) in store.custom)) return false;
+    delete store.custom[safeId(id)];
+    return true;
+  });
+
+  // Also remove the directory pair, when this install still has one — a
+  // delete that left the legacy files behind would have the template
+  // reappear on the next list.
+  let unlinked = false;
   for (const path of [customPath(id), customMetaPath(id)]) {
     try {
       await unlink(path);
-      deleted = true;
+      unlinked = true;
     } catch {
-      // Already gone — a half-written template still counts as deleted if its
-      // other half went.
+      // Already gone.
     }
   }
-  return deleted;
+  return removed || unlinked;
 }
 
 export function isBuiltinTemplate(id: string): boolean {

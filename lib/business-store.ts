@@ -163,7 +163,9 @@ async function updateStore<T>(fn: (store: BusinessStore) => T): Promise<T> {
   if (await useDb()) {
     // No queue: the row lock inside the transaction is the serialisation, and
     // it holds across processes, which the in-process queue never did.
-    return dbUpdateDocument("business", emptyStore, fn);
+    // Normalized on the way in, so a mutator can push onto a collection the
+    // stored document predates.
+    return dbUpdateDocument("business", (raw) => (raw ? normalize(raw) : emptyStore()), fn);
   }
   return enqueue(async () => {
     const store = await readStore();

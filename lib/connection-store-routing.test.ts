@@ -43,7 +43,8 @@ beforeEach(() => {
   updateDocument
     .mockReset()
     .mockImplementation(
-      async (_id: string, empty: () => unknown, fn: (s: unknown) => unknown) => fn(empty()),
+      async (_id: string, load: (raw: unknown) => unknown, fn: (s: unknown) => unknown) =>
+        fn(load(null)),
     );
   migrateFromFileStore.mockReset().mockResolvedValue(undefined);
 });
@@ -114,7 +115,7 @@ describe("backend selection", () => {
     const state: Record<string, unknown> = { google: { ...tokens, connectedAt: "x" } };
     readDocument.mockImplementation(async () => state);
     updateDocument.mockImplementation(
-      async (_id: string, _empty: () => unknown, fn: (s: unknown) => unknown) => fn(state),
+      async (_id: string, _load: (raw: unknown) => unknown, fn: (s: unknown) => unknown) => fn(state),
     );
     const store = await loadStore();
 

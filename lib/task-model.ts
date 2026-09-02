@@ -2,7 +2,7 @@ import type { LanguageModel } from "ai";
 import { resolveLanguageModel, resolveProvider, type AiProvider } from "./ai-provider";
 import { FALLBACK_MODEL, pickForTask, type ModelTask } from "./model-catalog";
 import { listModels } from "./provider-catalog";
-import { readAccessSync } from "./model-access";
+import { readAccess } from "./model-access";
 
 // "Use the right model for this job" in one call.
 //
@@ -16,7 +16,7 @@ export async function modelIdForTask(
   provider: AiProvider = resolveProvider(),
 ): Promise<string> {
   try {
-    const restricted = readAccessSync().restricted;
+    const restricted = (await readAccess()).restricted;
     // A model the account is not allowed to call is not a candidate, however
     // well it ranks — picking it would fail the request it was chosen for.
     const usable = (await listModels(provider)).filter((model) => !(model.id in restricted));

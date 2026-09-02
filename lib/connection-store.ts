@@ -123,7 +123,7 @@ async function readStore(): Promise<ConnectionStore> {
  */
 async function updateStore<T>(fn: (store: ConnectionStore) => T): Promise<T> {
   if (await useDb()) {
-    return dbUpdateDocument("connections", () => ({}) as ConnectionStore, fn);
+    return dbUpdateDocument("connections", (raw) => raw ?? {}, fn);
   }
   return enqueue(async () => {
     const store = await readStore();

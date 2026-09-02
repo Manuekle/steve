@@ -83,7 +83,8 @@ describe("backend selection", () => {
   it("writes through the database's own locking, not the in-process queue", async () => {
     process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
     updateDocument.mockImplementation(
-      async (_id: string, empty: () => unknown, fn: (s: unknown) => unknown) => fn(empty()),
+      async (_id: string, load: (raw: unknown) => unknown, fn: (s: unknown) => unknown) =>
+        fn(load(null)),
     );
     const store = await loadStore();
 

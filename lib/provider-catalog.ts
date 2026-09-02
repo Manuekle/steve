@@ -1,7 +1,7 @@
 import { getCredentialSync } from "./credentials";
 import { resolveProvider, type AiProvider } from "./ai-provider";
 import { FALLBACK_MODEL, MODEL_TASKS, preferencesFor, type CatalogModel } from "./model-catalog";
-import { readAccessSync, writeAccess } from "./model-access";
+import { readAccess, writeAccess } from "./model-access";
 
 // Live model catalog and key health, straight from each provider.
 //
@@ -269,7 +269,7 @@ async function reportGateway(key: string, probe: boolean): Promise<Omit<Provider
   // Without a probe, report what the balance alone can support and reuse
   // whatever an earlier probe already learned about restricted models.
   if (!probe) {
-    const known = readAccessSync().restricted;
+    const known = (await readAccess()).restricted;
     return {
       status: Object.keys(known).length > 0 ? "free_tier" : "ok",
       models: list,

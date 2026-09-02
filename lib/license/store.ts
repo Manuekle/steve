@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { homedir } from "node:os";
+import { createDocumentStore } from "../doc-store";
 import { deriveLicenseInfo } from "./verify";
 import { getInstallationId } from "./installation";
 import type { LicenseInfo } from "./types";
@@ -13,31 +13,32 @@ import type { LicenseInfo } from "./types";
 // with an env var fallback (STEVE_LICENSE_KEY) for deployments that inject
 // config through their process manager instead of the Settings UI.
 
-const LICENSE_FILE = join(homedir(), ".steve", "license.key");
+const LICENSE_FILE = join(homedir(), ".steve", "license.json");
 
-let cachedToken: string | null | undefined; // undefined = not loaded yet
+type LicenseStore = { token: string | null };
 
-function loadCacheSync(): string | null {
-  if (cachedToken !== undefined) return cachedToken;
-  try {
-    cachedToken = existsSync(LICENSE_FILE) ? readFileSync(LICENSE_FILE, "utf-8").trim() : null;
-  } catch {
-    cachedToken = null;
-  }
-  return cachedToken;
-}
+// Postgres when one is configured, ~/.steve/license.json otherwise. The old
+// plain-text ~/.steve/license.key is still read once, below, so an install
+// that predates this keeps its license without anyone re-pasting it.
+const licenseStore = createDocumentStore<LicenseStore>({
+  id: "license",
+  file: LICENSE_FILE,
+  empty: () => ({ token: null }),
+  normalize: (parsed) => ({ token: parsed.token ?? null }),
+  fileMode: 0o600,
+});
+
+const LEGACY_FILE = join(homedir(), ".steve", "license.key");
 
 async function readToken(): Promise<string | null> {
+  const stored = (await licenseStore.read()).token;
+  if (stored) return stored;
   try {
-    return (await readFile(LICENSE_FILE, "utf-8")).trim();
+    const legacy = (await readFile(LEGACY_FILE, "utf-8")).trim();
+    return legacy || null;
   } catch {
     return null;
   }
-}
-
-/** Synchronous read for code that can't await — falls back to the env var. */
-export function getLicenseTokenSync(): string | undefined {
-  return loadCacheSync() ?? process.env.STEVE_LICENSE_KEY ?? undefined;
 }
 
 export async function getLicenseToken(): Promise<string | undefined> {
@@ -52,11 +53,9 @@ export async function saveLicenseToken(
   const info = deriveLicenseInfo(token, await getInstallationId());
   if (info.status !== "valid") return { ok: false, info };
 
-  await mkdir(dirname(LICENSE_FILE), { recursive: true });
-  const tmp = `${LICENSE_FILE}.tmp`;
-  await writeFile(tmp, `${token.trim()}\n`, "utf-8");
-  await rename(tmp, LICENSE_FILE);
-  cachedToken = token.trim();
+  await licenseStore.update((store) => {
+    store.token = token.trim();
+  });
   return { ok: true, info };
 }
 

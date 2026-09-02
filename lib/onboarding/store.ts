@@ -1,6 +1,6 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+import { createDocumentStore } from "../doc-store";
 
 /**
  * What the owner told us on the way in.
@@ -45,25 +45,19 @@ function empty(): Store {
   return { completedAt: null, profile: null, skippedAt: null };
 }
 
-async function read(): Promise<Store> {
-  try {
-    const parsed = JSON.parse(await readFile(FILE, "utf-8")) as Partial<Store>;
-    return {
-      completedAt: parsed.completedAt ?? null,
-      profile: parsed.profile ?? null,
-      skippedAt: parsed.skippedAt ?? null,
-    };
-  } catch {
-    return empty();
-  }
-}
+// Postgres when one is configured, ~/.steve/onboarding.json otherwise.
+const onboardingStore = createDocumentStore<Store>({
+  id: "onboarding",
+  file: FILE,
+  empty,
+  normalize: (parsed: Partial<Store>) => ({
+    completedAt: parsed.completedAt ?? null,
+    profile: parsed.profile ?? null,
+    skippedAt: parsed.skippedAt ?? null,
+  }),
+});
 
-async function write(store: Store): Promise<void> {
-  await mkdir(dirname(FILE), { recursive: true });
-  const tmp = `${FILE}.${process.pid}.tmp`;
-  await writeFile(tmp, JSON.stringify(store, null, 2) + "\n", "utf-8");
-  await rename(tmp, FILE);
-}
+const read = (): Promise<Store> => onboardingStore.read();
 
 /** True once it has been completed or skipped — either way, do not ask again. */
 export async function isSettled(): Promise<boolean> {
@@ -76,10 +70,15 @@ export async function getProfile(): Promise<OnboardingProfile | null> {
 }
 
 export async function saveProfile(profile: OnboardingProfile): Promise<void> {
-  await write({ completedAt: new Date().toISOString(), profile, skippedAt: null });
+  await onboardingStore.update((store: Store) => {
+    store.completedAt = new Date().toISOString();
+    store.profile = profile;
+    store.skippedAt = null;
+  });
 }
 
 export async function skip(): Promise<void> {
-  const store = await read();
-  await write({ ...store, skippedAt: new Date().toISOString() });
+  await onboardingStore.update((store: Store) => {
+    store.skippedAt = new Date().toISOString();
+  });
 }
