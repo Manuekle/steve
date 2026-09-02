@@ -21,7 +21,10 @@ const proposeAutomation = (await import("../../../agent/tools/propose_automation
 const proposeAutomationUpdate = (await import("../../../agent/tools/propose_automation_update")).default;
 const listAutomationsTool = (await import("../../../agent/tools/list_automations")).default;
 
-const fakeCtx = {} as unknown as ToolContext;
+// The tools read `ctx.session.id` for the per-agent capability check (see
+// lib/agent-scope.ts). No contact exists for this id, so no agent is assigned
+// to it and every capability is allowed — which is the path these tests want.
+const fakeCtx = { session: { id: "test-session" } } as unknown as ToolContext;
 
 beforeEach(() => {
   mkdirSync(TEST_DIR, { recursive: true });
