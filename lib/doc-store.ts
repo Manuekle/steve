@@ -55,6 +55,15 @@ function getPool(): Pool {
       );
     }
     pool = new Pool({ connectionString, max: 5 });
+    // Without this the process dies. `pg` emits `error` on the pool when an
+    // idle client's connection drops or was never established, and an
+    // unhandled `error` event on an EventEmitter is an uncaught exception —
+    // not a rejected promise the callers' try/catch can see. A database that
+    // is unreachable has to degrade to the file backend, which is what every
+    // `useDb()` already does; it must not take the server down first.
+    pool.on("error", (error) => {
+      console.error("[doc-store] postgres pool error", error);
+    });
   }
   return pool;
 }

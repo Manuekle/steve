@@ -1,4 +1,5 @@
 import { defineSchedule } from "eve/schedules";
+import { scheduleCron } from "../../lib/schedule-cron";
 import { automationMatchesChannel, parseDurationMs } from "../../lib/automation-engine";
 import {
   listAutomations,
@@ -13,7 +14,7 @@ function followupText(autoName: string, stepsMessage: string | undefined): strin
 }
 
 export default defineSchedule({
-  cron: "* * * * *",
+  cron: scheduleCron("followups", "* * * * *"),
   run({ waitUntil }) {
     waitUntil(
       (async () => {

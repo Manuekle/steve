@@ -1,4 +1,5 @@
 import { defineSchedule } from "eve/schedules";
+import { scheduleCron } from "../../lib/schedule-cron";
 import {
   listAllVoiceCalls,
   listChannelConversations,
@@ -22,7 +23,7 @@ const MAX_PER_RUN = 8;
 const MIN_TURNS = 3;
 
 export default defineSchedule({
-  cron: "*/5 * * * *",
+  cron: scheduleCron("prospect", "*/5 * * * *"),
   run({ waitUntil }) {
     waitUntil(
       (async () => {

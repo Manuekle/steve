@@ -1,4 +1,5 @@
 import { defineSchedule } from "eve/schedules";
+import { scheduleCron } from "../../lib/schedule-cron";
 import { getLeadForms, getLeads, getMetaAdsConfig } from "../../lib/meta-ads";
 import { intakeLead } from "../../lib/lead-intake";
 import { ingestedLeadIds, metaLeadToInput, selectNewLeads } from "../../lib/meta-lead-intake";
@@ -24,7 +25,7 @@ import { listContacts } from "../../lib/business-store";
  * only messages a lead when an automation they set to *active* matches it.
  */
 export default defineSchedule({
-  cron: "*/5 * * * *",
+  cron: scheduleCron("meta-leads", "*/5 * * * *"),
   run({ waitUntil }) {
     waitUntil(
       (async () => {

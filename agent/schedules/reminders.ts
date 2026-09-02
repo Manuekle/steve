@@ -1,4 +1,5 @@
 import { defineSchedule } from "eve/schedules";
+import { scheduleCron } from "../../lib/schedule-cron";
 import { listReminders, updateReminder, listContacts } from "../../lib/business-store";
 import {
   isWithin24hWindow,
@@ -11,7 +12,7 @@ import { getCredential } from "../../lib/credentials";
 // Respects WhatsApp 24h window (uses template if outside).
 
 export default defineSchedule({
-  cron: "* * * * *",
+  cron: scheduleCron("reminders", "* * * * *"),
   run({ waitUntil }) {
     waitUntil(
       (async () => {

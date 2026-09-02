@@ -1,4 +1,5 @@
 import { defineSchedule } from "eve/schedules";
+import { scheduleCron } from "../../lib/schedule-cron";
 import { cronMatches } from "../../lib/automation-engine";
 import { runAutomationSteps } from "../../lib/automation-runner";
 import { listAutomations, recordAutomationFire } from "../../lib/business-store";
@@ -21,7 +22,7 @@ import { listAutomations, recordAutomationFire } from "../../lib/business-store"
  * matching minute. Same assumption as agent/schedules/followups.ts.
  */
 export default defineSchedule({
-  cron: "* * * * *",
+  cron: scheduleCron("automations", "* * * * *"),
   run({ waitUntil }) {
     waitUntil(
       (async () => {

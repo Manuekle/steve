@@ -41,6 +41,11 @@ function getPool(): Pool {
       );
     }
     pool = new Pool({ connectionString, max: 5 });
+    // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
+    // exception, and takes the whole process with it.
+    pool.on("error", (error) => {
+      console.error("[auth] postgres pool error", error);
+    });
   }
   return pool;
 }
