@@ -24,7 +24,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:eval": "eve eval --strict",
-    "smoke:self-host": "node scripts/self-host-smoke.mjs"
+    "smoke:self-host": "node scripts/self-host-smoke.mjs",
+    "seed:accounts": "node scripts/seed-test-accounts.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.16",
