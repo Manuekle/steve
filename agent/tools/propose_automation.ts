@@ -2,6 +2,7 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { createAutomation } from "../../lib/business-store";
 import { workflowStepSchema, toWorkflowSteps } from "../../lib/workflow-schema";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
@@ -20,7 +21,7 @@ export default defineTool({
       .describe(
         "keyword: comma-separated keywords. schedule: 5-field cron (UTC). no_reply: duration like '30min'. Unused for new_chat.",
       ),
-    channel: z.enum(["web", "whatsapp", "messenger", "instagram", "all"]).default("all"),
+    channel: z.enum(["web", "whatsapp", "instagram", "telegram", "all"]).default("all"),
     steps: z
       .array(workflowStepSchema)
       .default([])
@@ -35,7 +36,8 @@ export default defineTool({
     name: z.string(),
     status: z.string(),
   }),
-  async execute({ name, description, trigger, triggerValue, channel, steps }) {
+  async execute({ name, description, trigger, triggerValue, channel, steps }, ctx) {
+    await assertToolAllowed(ctx.session.id, "propose_automation");
     const list = await createAutomation({
       name,
       description: description ?? "",

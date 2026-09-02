@@ -2,13 +2,14 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { getContactBySession } from "../../lib/business-store";
 import { sendWhatsAppMedia } from "../../lib/whatsapp-send";
-import { sendMessengerMedia } from "../../lib/messenger-send";
 import { sendInstagramMedia } from "../../lib/instagram-send";
+import { sendTelegramMedia } from "../../lib/telegram-send";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
     "Send an image, audio, or video by public HTTPS URL to the current contact, on " +
-    "whichever channel they're messaging from (WhatsApp, Messenger, or Instagram). " +
+    "whichever channel they're messaging from (WhatsApp, Instagram or Telegram). " +
     "Requires the matching channel's credentials to be configured. Not available on " +
     "the web chat widget — for web, just put the URL in your reply.",
   inputSchema: z.object({
@@ -17,7 +18,7 @@ export default defineTool({
     caption: z
       .string()
       .optional()
-      .describe("Shown with the media on WhatsApp. Ignored on Messenger/Instagram — those platforms don't support attachment captions."),
+      .describe("Shown with the media on WhatsApp and Telegram. Ignored on Instagram — that platform does not support attachment captions."),
     to: z.string().optional().describe("WhatsApp phone override, with country code. Defaults to this contact. Only applies on WhatsApp."),
   }),
   outputSchema: z.object({
@@ -26,21 +27,22 @@ export default defineTool({
     body: z.string(),
   }),
   async execute({ type, url, caption, to }, ctx) {
+    await assertToolAllowed(ctx.session.id, "send_media");
     const contact = await getContactBySession(ctx.session.id);
     const channel = contact?.channel;
-
-    if (channel === "messenger") {
-      if (!contact?.externalId) {
-        return { ok: false, status: 0, body: "No Messenger recipient id on this contact yet." };
-      }
-      return sendMessengerMedia({ recipientId: contact.externalId, type, url });
-    }
 
     if (channel === "instagram") {
       if (!contact?.externalId) {
         return { ok: false, status: 0, body: "No Instagram recipient id on this contact yet." };
       }
       return sendInstagramMedia({ recipientId: contact.externalId, type, url });
+    }
+
+    if (channel === "telegram") {
+      if (!contact?.externalId) {
+        return { ok: false, status: 0, body: "No Telegram chat id on this contact yet." };
+      }
+      return sendTelegramMedia({ chatId: contact.externalId, type, url, caption });
     }
 
     if (channel === "web") {

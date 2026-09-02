@@ -23,9 +23,10 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/store";
  *   installed this yet has no account to log in with.
  *
  *   `/api/leads` and an automation's `/webhook`, because they are called by
- *   Meta and by whatever the operator wired up, not by a browser. They carry
- *   their own shared-secret checks — see `verifySecret` in the leads route —
- *   and a session cookie is not something a webhook can produce.
+ *   Meta and by whatever the operator wired up, not by a browser. A session
+ *   cookie is not something a webhook can produce, so a shared secret stands
+ *   in for one — and both routes require it rather than treating an absent
+ *   secret as permission (see `verifySecret` in the leads route).
  *
  *   `/api/health`, because a monitor that has to log in is not a monitor.
  *
@@ -40,6 +41,24 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/store";
  *   `/api/webhooks/elevenlabs`, same reasoning — ElevenLabs' post-call
  *   webhook calls it directly, verified by
  *   verifyElevenLabsWebhookSignature in lib/elevenlabs-agents.ts.
+ *
+ *   `/api/webhooks/stripe` and `/api/webhooks/mercadopago`, same reasoning
+ *   again: the operator's own payment processor reporting that a link the
+ *   agent sent was paid. Each verifies an HMAC over the raw body with the
+ *   secret from Settings, and Mercado Pago additionally reads the payment
+ *   back through its API before believing it.
+ *
+ *   `/eve`, because those are Eve's own routes and Eve does its own auth.
+ *   Meta posts to `/eve/v1/whatsapp` and `/eve/v1/instagram` with no
+ *   session cookie, and Telegram to `/eve/v1/telegram`; each channel verifies
+ *   the delivery itself — an HMAC over the raw body with the App Secret for
+ *   Meta's two, the secret-token header for Telegram — before parsing
+ *   anything. The browser
+ *   chat protocol on `/eve/v1` carries the Basic auth in agent/channels/eve.ts,
+ *   waived only on loopback. This also matches production, which runs with
+ *   EVE_SELF_HOSTED=1: there Next never serves `/eve` at all and Caddy routes
+ *   it straight to the Eve process, so gating it here only broke `next dev` —
+ *   Meta's webhook verification got a 307 to /login.
  *
  * Everything else — the inbox, the contacts, the model keys on Settings, and
  * every route under `/api` not named above — needs a session.
@@ -69,6 +88,9 @@ const PUBLIC_PATHS = [
   "/api/f",
   "/api/billing/webhook",
   "/api/webhooks/elevenlabs",
+  "/api/webhooks/stripe",
+  "/api/webhooks/mercadopago",
+  "/eve",
   // Files Next serves from the app directory rather than from `public/`.
   "/icon.svg",
   "/apple-icon",

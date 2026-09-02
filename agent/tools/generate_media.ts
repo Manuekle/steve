@@ -4,11 +4,12 @@ import { z } from "zod";
 import { getContactBySession } from "../../lib/business-store";
 import { generateElevenLabsSpeech, hasElevenLabsKey } from "../../lib/elevenlabs";
 import { sendWhatsAppMediaBytes } from "../../lib/whatsapp-send";
-import { sendMessengerMediaBytes } from "../../lib/messenger-send";
 import { sendInstagramMediaBytes } from "../../lib/instagram-send";
+import { sendTelegramMediaBytes } from "../../lib/telegram-send";
 import { getInstallationId } from "../../lib/license/installation";
 import { billingSourceForElevenLabs, billingSourceForProvider, type BillingSource } from "../../lib/credit-gate";
 import { recordUsage, type UsageType } from "../../lib/ai-usage";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 // Images and video are routed through the Vercel AI Gateway (same
 // AI_GATEWAY_API_KEY as the chat model in agent/agent.ts) — no separate
@@ -80,14 +81,14 @@ async function trackMediaUsage(opts: {
 export default defineTool({
   description:
     "Generate an image, a short spoken-audio clip, or a short video from a text prompt, and send " +
-    "it to the current contact on whichever channel they're messaging from (WhatsApp, Messenger, " +
-    "or Instagram). Nothing is uploaded anywhere public — the file is generated, uploaded straight " +
+    "it to the current contact on whichever channel they're messaging from (WhatsApp, " +
+    "Instagram or Telegram). Nothing is uploaded anywhere public — the file is generated, uploaded straight " +
     "to that platform's own media API, and sent. Video generation can take a while; say so before " +
     "calling this for a video. Not available on the web chat widget.",
   inputSchema: z.object({
     type: z.enum(["image", "audio", "video"]),
     prompt: z.string().min(1).describe("What to generate. For image and video, be descriptive — this is the only guidance the model gets. For audio, this is the exact script that gets spoken, word for word."),
-    caption: z.string().optional().describe("Shown with the media on WhatsApp. Ignored on Messenger/Instagram — those platforms don't support attachment captions."),
+    caption: z.string().optional().describe("Shown with the media on WhatsApp and Telegram. Ignored on Instagram — that platform does not support attachment captions."),
     voice: z.string().optional().describe("Voice for audio, if the user asked for a specific one — an ElevenLabs voice id or one of george, sarah, daniel, charlotte. Defaults to the voice configured in Settings."),
   }),
   outputSchema: z.object({
@@ -96,16 +97,17 @@ export default defineTool({
     body: z.string(),
   }),
   async execute({ type, prompt, caption, voice }, ctx) {
+    await assertToolAllowed(ctx.session.id, "generate_media");
     const contact = await getContactBySession(ctx.session.id);
     const channel = contact?.channel;
 
-    if (channel !== "whatsapp" && channel !== "messenger" && channel !== "instagram") {
+    if (channel !== "whatsapp" && channel !== "instagram" && channel !== "telegram") {
       return {
         ok: false,
         status: 0,
         body:
           channel === "web"
-            ? "The web chat has no proactive send channel yet — describe the media instead, or tell the user this needs WhatsApp/Messenger/Instagram."
+            ? "The web chat has no proactive send channel yet — describe the media instead, or tell the user this needs WhatsApp, Instagram or Telegram."
             : "This contact has no messaging channel yet — nothing to send to.",
       };
     }
@@ -199,8 +201,8 @@ export default defineTool({
     if (channel === "whatsapp") {
       return sendWhatsAppMediaBytes({ to: contact!.phone!, type, data, mimeType, filename, caption });
     }
-    if (channel === "messenger") {
-      return sendMessengerMediaBytes({ recipientId: contact!.externalId!, type, data, mimeType, filename });
+    if (channel === "telegram") {
+      return sendTelegramMediaBytes({ chatId: contact!.externalId!, type, data, mimeType, filename, caption });
     }
     return sendInstagramMediaBytes({ recipientId: contact!.externalId!, type, data, mimeType, filename });
   },

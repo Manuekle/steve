@@ -3,8 +3,9 @@ import { z } from "zod";
 import { getContactBySession } from "../../lib/business-store";
 import { getAsset, readAssetBytes } from "../../lib/media-store";
 import { sendWhatsAppMediaBytes } from "../../lib/whatsapp-send";
-import { sendMessengerMediaBytes } from "../../lib/messenger-send";
 import { sendInstagramMediaBytes } from "../../lib/instagram-send";
+import { sendTelegramMediaBytes } from "../../lib/telegram-send";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 // The sending half of the media library. The bytes go straight from
 // ~/.steve/media to the platform's own media API — same path
@@ -15,13 +16,13 @@ export default defineTool({
   description:
     "Send a file from the business's saved media library to the current contact, by the " +
     "asset_id returned from find_media. Call find_media first — never guess an id. Works on " +
-    "WhatsApp, Messenger, and Instagram; not on the web chat widget.",
+    "WhatsApp, Instagram and Telegram; not on the web chat widget.",
   inputSchema: z.object({
     asset_id: z.string().describe("The asset_id from find_media."),
     caption: z
       .string()
       .optional()
-      .describe("Shown with the file on WhatsApp. Ignored on Messenger/Instagram — those platforms don't support attachment captions."),
+      .describe("Shown with the file on WhatsApp. Ignored on Instagram — that platform does not support attachment captions."),
     to: z
       .string()
       .optional()
@@ -33,6 +34,7 @@ export default defineTool({
     body: z.string(),
   }),
   async execute({ asset_id, caption, to }, ctx) {
+    await assertToolAllowed(ctx.session.id, "send_stored_media");
     const asset = await getAsset(asset_id);
     if (!asset) {
       return { ok: false, status: 0, body: `No saved file with id ${asset_id}. Call find_media first.` };
@@ -59,12 +61,11 @@ export default defineTool({
     const contact = await getContactBySession(ctx.session.id);
     const channel = contact?.channel;
 
-    if (channel === "messenger" || channel === "instagram") {
+    if (channel === "instagram") {
       if (!contact?.externalId) {
-        return { ok: false, status: 0, body: `No ${channel} recipient id on this contact yet.` };
+        return { ok: false, status: 0, body: "No Instagram recipient id on this contact yet." };
       }
-      const send = channel === "messenger" ? sendMessengerMediaBytes : sendInstagramMediaBytes;
-      return send({
+      return sendInstagramMediaBytes({
         recipientId: contact.externalId,
         type: asset.kind,
         data,
@@ -73,11 +74,25 @@ export default defineTool({
       });
     }
 
+    if (channel === "telegram") {
+      if (!contact?.externalId) {
+        return { ok: false, status: 0, body: "No Telegram chat id on this contact yet." };
+      }
+      return sendTelegramMediaBytes({
+        chatId: contact.externalId,
+        type: asset.kind,
+        data,
+        mimeType: asset.mime,
+        filename: asset.name,
+        caption,
+      });
+    }
+
     if (channel === "web") {
       return {
         ok: false,
         status: 0,
-        body: "The web chat has no proactive send channel — describe the file instead, or tell the user this needs WhatsApp/Messenger/Instagram.",
+        body: "The web chat has no proactive send channel — describe the file instead, or tell the user this needs WhatsApp, Instagram or Telegram.",
       };
     }
 

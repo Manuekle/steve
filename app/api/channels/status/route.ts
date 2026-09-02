@@ -8,7 +8,7 @@ import { withApiErrors } from "@/lib/api-error";
 // instead of hardcoding everything as "connected".
 
 type ChannelStatus = {
-  id: "web" | "whatsapp" | "messenger" | "instagram";
+  id: "web" | "whatsapp" | "instagram" | "telegram";
   label: string;
   connected: boolean;
   missing: string[];
@@ -21,12 +21,6 @@ const WHATSAPP_KEYS = [
   "WHATSAPP_VERIFY_TOKEN",
 ] as const;
 
-const MESSENGER_KEYS = [
-  "FACEBOOK_APP_SECRET",
-  "FACEBOOK_PAGE_ACCESS_TOKEN",
-  "FACEBOOK_VERIFY_TOKEN",
-] as const;
-
 const INSTAGRAM_KEYS = [
   "INSTAGRAM_APP_SECRET",
   "INSTAGRAM_ACCESS_TOKEN",
@@ -34,12 +28,14 @@ const INSTAGRAM_KEYS = [
   "INSTAGRAM_VERIFY_TOKEN",
 ] as const;
 
+const TELEGRAM_KEYS = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET_TOKEN"] as const;
+
 export const GET = withApiErrors(async function GET() {
   const masked = await getMaskedCredentials();
 
   const whatsappMissing = WHATSAPP_KEYS.filter((k) => !masked[k]);
-  const messengerMissing = MESSENGER_KEYS.filter((k) => !masked[k]);
   const instagramMissing = INSTAGRAM_KEYS.filter((k) => !masked[k]);
+  const telegramMissing = TELEGRAM_KEYS.filter((k) => !masked[k]);
 
   const channels: ChannelStatus[] = [
     {
@@ -55,16 +51,16 @@ export const GET = withApiErrors(async function GET() {
       missing: whatsappMissing,
     },
     {
-      id: "messenger",
-      label: "Messenger",
-      connected: messengerMissing.length === 0,
-      missing: messengerMissing,
-    },
-    {
       id: "instagram",
       label: "Instagram",
       connected: instagramMissing.length === 0,
       missing: instagramMissing,
+    },
+    {
+      id: "telegram",
+      label: "Telegram",
+      connected: telegramMissing.length === 0,
+      missing: telegramMissing,
     },
   ];
 

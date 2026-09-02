@@ -1,11 +1,11 @@
 "use client";
 
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   Globe02Icon,
-  MessageCircleIcon,
-  MessengerIcon,
+  WhatsappIcon,
   InstagramIcon,
+  TelegramIcon,
   FileEditIcon,
 } from "@hugeicons/core-free-icons";
 import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 
 const CHANNEL_ICONS: Record<ContactChannel, IconSvgElement> = {
   web: Globe02Icon,
-  whatsapp: MessageCircleIcon,
-  messenger: MessengerIcon,
+  whatsapp: WhatsappIcon,
   instagram: InstagramIcon,
+  telegram: TelegramIcon,
   // Not a place you can reply, so it has no entry in CHANNEL_LABELS with the
   // messaging products — but contacts do arrive this way and have to be drawn.
   form: FileEditIcon,
@@ -33,8 +33,8 @@ const iconFor = (channel: ContactChannel): IconSvgElement =>
 export const CHANNEL_LABELS: Record<ChannelId, string> = {
   web: "Web",
   whatsapp: "WhatsApp",
-  messenger: "Messenger",
   instagram: "Instagram",
+  telegram: "Telegram",
 };
 
 export function ChannelIcon({ channel, className }: {

@@ -2,6 +2,7 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { listAutomations, updateAutomation } from "../../lib/business-store";
 import { workflowStepSchema, toWorkflowSteps } from "../../lib/workflow-schema";
+import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
   description:
@@ -15,7 +16,7 @@ export default defineTool({
     description: z.string().optional(),
     trigger: z.enum(["keyword", "schedule", "new_chat", "no_reply"]).optional(),
     triggerValue: z.string().optional(),
-    channel: z.enum(["web", "whatsapp", "messenger", "instagram", "all"]).optional(),
+    channel: z.enum(["web", "whatsapp", "instagram", "telegram", "all"]).optional(),
     steps: z.array(workflowStepSchema).optional().describe("Replaces the entire step list when provided."),
   }),
   outputSchema: z.object({
@@ -23,7 +24,8 @@ export default defineTool({
     status: z.string(),
     message: z.string(),
   }),
-  async execute({ id, name, description, trigger, triggerValue, channel, steps }) {
+  async execute({ id, name, description, trigger, triggerValue, channel, steps }, ctx) {
+    await assertToolAllowed(ctx.session.id, "propose_automation_update");
     const existing = (await listAutomations()).find((a) => a.id === id);
     if (!existing) {
       return { ok: false, status: "not_found", message: `No automation with id ${id}.` };

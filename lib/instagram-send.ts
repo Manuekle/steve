@@ -94,3 +94,16 @@ export async function sendInstagramMediaBytes(opts: {
     attachment: { type: opts.type, payload: { attachment_id: attachmentId } },
   });
 }
+
+/**
+ * Send a plain-text Instagram DM.
+ *
+ * The recipient is an IGSID, not a phone number — `Contact.externalId`, which
+ * agent/hooks/persist.ts captures from the sender's auth context on their
+ * first message. Unlike WhatsApp there is no template fallback: outside the
+ * messaging window Meta refuses the call, and the refusal is what callers
+ * report rather than a success nobody received.
+ */
+export async function sendInstagramText(recipientId: string, text: string): Promise<GraphResult> {
+  return graphSend(recipientId, { text });
+}

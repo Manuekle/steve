@@ -1,9 +1,10 @@
 import { createMemoryState } from "@chat-adapter/state-memory";
 import { createWhatsAppAdapter } from "@chat-adapter/whatsapp";
 import type { Message, Thread } from "chat";
-import { chatSdkChannel, messageToUserContent } from "eve/channels/chat-sdk";
+import { chatSdkChannel } from "eve/channels/chat-sdk";
 import { defineChannel } from "eve/channels";
 import { getCredentialSync } from "../../lib/credentials";
+import { messageToAgentContent } from "../../lib/chat-media";
 
 // WhatsApp Business Cloud API channel.
 //
@@ -30,7 +31,21 @@ const channel =
     ? (() => {
         const { bot, channel, send } = chatSdkChannel({
           userName: "steve",
-          adapters: { whatsapp: createWhatsAppAdapter() },
+          // The adapter must be handed the credentials, not left to find
+          // them: its own fallback is process.env, and Steve keeps these in
+          // ~/.steve/credentials.json so they can be rotated from Settings.
+          // Without this the guard above passes on the store's values and the
+          // adapter then throws on the environment's missing ones, which took
+          // the whole Eve server down at boot the moment WhatsApp was fully
+          // configured.
+          adapters: {
+            whatsapp: createWhatsAppAdapter({
+              accessToken: token,
+              appSecret,
+              phoneNumberId,
+              verifyToken,
+            }),
+          },
           state: createMemoryState(),
           streaming: false,
         });
@@ -47,11 +62,11 @@ const channel =
 
         bot.onNewMention(async (thread: Thread, message: Message) => {
           await thread.subscribe();
-          await send(messageToUserContent(message), { thread, auth: auth(message) });
+          await send(await messageToAgentContent(message), { thread, auth: auth(message) });
         });
 
         bot.onSubscribedMessage(async (thread: Thread, message: Message) => {
-          await send(messageToUserContent(message), { thread, auth: auth(message) });
+          await send(await messageToAgentContent(message), { thread, auth: auth(message) });
         });
 
         return channel;
