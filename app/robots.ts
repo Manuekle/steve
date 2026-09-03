@@ -14,7 +14,11 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/landing", "/pricing", "/terms", "/privacy"],
+      // `/$` and not `/`: the home page is the landing page (rewritten to
+      // `/landing` internally), and a bare `/` here would re-allow the whole
+      // app the `disallow` below exists to keep out. The anchored form matches
+      // the root and nothing under it.
+      allow: ["/$", "/pricing", "/terms", "/privacy"],
       disallow: "/",
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
