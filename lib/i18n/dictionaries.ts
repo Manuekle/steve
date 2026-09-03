@@ -645,6 +645,10 @@ const es: Dictionary = {
   "auth.newPassword": "Contraseña nueva",
   "auth.confirmPassword": "Repetí la contraseña",
   "auth.errorPasswordMismatch": "Las contraseñas no coinciden.",
+  "auth.continueWithGoogle": "Continuar con Google",
+  "auth.orDivider": "o",
+  "auth.errorGoogleUnconfigured": "Esta instancia todavía no tiene Google configurado. Entrá con email y contraseña.",
+  "auth.errorGoogleFailed": "No pudimos completar el inicio de sesión con Google. Probá de nuevo.",
 
   // ── Account ──
   "account.title": "Cuenta",
@@ -3447,6 +3451,10 @@ const en: Dictionary = {
   "auth.newPassword": "New password",
   "auth.confirmPassword": "Confirm password",
   "auth.errorPasswordMismatch": "Passwords don't match.",
+  "auth.continueWithGoogle": "Continue with Google",
+  "auth.orDivider": "or",
+  "auth.errorGoogleUnconfigured": "This instance doesn't have Google set up yet. Sign in with email and password.",
+  "auth.errorGoogleFailed": "We couldn't complete sign-in with Google. Try again.",
 
   // ── Account ──
   "account.title": "Account",

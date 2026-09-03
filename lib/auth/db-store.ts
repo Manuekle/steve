@@ -249,6 +249,37 @@ export async function login(
   return { ok: true, token: session.token };
 }
 
+/** See lib/auth/store.ts's fileLoginWithVerifiedEmail — same contract, this
+ *  is the Postgres side of it. `ON CONFLICT DO NOTHING` covers the gap
+ *  between the check and the insert: worst case, two concurrent first sign-ins
+ *  for the same address both attempt the insert and one silently loses,
+ *  which is exactly the outcome that is supposed to happen. */
+export async function loginWithVerifiedEmail(email: string): Promise<{ token: string }> {
+  const normalised = email.trim().toLowerCase();
+  await ensureSchema();
+
+  const existing = await getPool().query("SELECT 1 FROM steve.accounts WHERE email = $1", [normalised]);
+  if (existing.rowCount === 0) {
+    const salt = randomBytes(16);
+    const derived = await scrypt(randomBytes(32).toString("hex"), salt, KEY_LENGTH, SCRYPT);
+    await getPool().query(
+      `INSERT INTO steve.accounts (email, password_hash, password_salt)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (email) DO NOTHING`,
+      [normalised, derived.toString("hex"), salt.toString("hex")],
+    );
+  }
+
+  const session = newSessionToken();
+  await getPool().query(
+    `INSERT INTO steve.sessions (account_email, token_hash, expires_at)
+     VALUES ($1, $2, $3)`,
+    [normalised, session.tokenHash, session.expiresAt],
+  );
+
+  return { token: session.token };
+}
+
 export async function startPasswordReset(email: string): Promise<string | null> {
   const normalised = email.trim().toLowerCase();
   await ensureSchema();

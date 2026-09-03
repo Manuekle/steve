@@ -8,7 +8,13 @@
 // data; this file is the one code path that reads them.
 
 import { createHash, randomBytes } from "node:crypto";
-import type { OAuthConfig, OAuthConnection } from "./connections";
+import type { OAuthConfig } from "./connections";
+
+/** What every caller here actually needs — the config, not the catalog entry
+ *  around it. An `OAuthConnection` satisfies this structurally, and so does
+ *  any other OAuth flow (Google sign-in on /login, say) that has no place in
+ *  the Connections catalog. */
+type WithOAuth = { readonly oauth: OAuthConfig };
 
 export type TokenSet = {
   readonly accessToken: string;
@@ -50,13 +56,17 @@ export function createState(): string {
 /** One-shot cookies that carry the flow across the hop to the provider. */
 export const stateCookie = (provider: string) => `steve_oauth_state_${provider}`;
 export const verifierCookie = (provider: string) => `steve_oauth_verifier_${provider}`;
+/** Where a login flow (unlike a Connection) stashes the page a bounced
+ *  session was headed to — Google echoes back `code`/`state`, never a query
+ *  param of ours, so this is the only way the callback can still know. */
+export const nextCookie = (provider: string) => `steve_oauth_next_${provider}`;
 
 export function redirectUriFor(origin: string, id: string): string {
   return `${origin}/api/connections/${id}/callback`;
 }
 
 export function buildAuthorizeUrl(args: {
-  readonly definition: OAuthConnection;
+  readonly definition: WithOAuth;
   readonly clientId: string;
   readonly redirectUri: string;
   readonly state: string;
@@ -197,7 +207,7 @@ function toTokenSet(
 }
 
 export async function exchangeCode(args: {
-  readonly definition: OAuthConnection;
+  readonly definition: WithOAuth;
   readonly clientId: string;
   readonly clientSecret: string;
   readonly code: string;
@@ -219,7 +229,7 @@ export async function exchangeCode(args: {
 }
 
 export async function refreshTokens(args: {
-  readonly definition: OAuthConnection;
+  readonly definition: WithOAuth;
   readonly clientId: string;
   readonly clientSecret: string;
   readonly refreshToken: string;

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { ThinkingText } from "@/components/motion/thinking-text";
+import { GoogleLogo } from "@/components/provider-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n/provider";
@@ -26,6 +27,17 @@ function LoginForm() {
   const params = useSearchParams();
 
   const justReset = params.get("reset") === "1";
+  const next = params.get("next");
+  // Set only by /api/auth/google/callback, on the way back from Google.
+  const googleError = params.get("error");
+  const googleErrorMessage =
+    googleError === "google_denied"
+      ? null // Pressing Cancel on Google's own screen isn't an error worth a message.
+      : googleError === "google_unconfigured"
+        ? t("auth.errorGoogleUnconfigured")
+        : googleError
+          ? t("auth.errorGoogleFailed")
+          : null;
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -208,6 +220,27 @@ function LoginForm() {
             {t("auth.resetSuccess")}
           </p>
         ) : null}
+
+        {googleErrorMessage ? (
+          <p className="mx-auto mt-4 max-w-[34ch] text-balance text-center text-[13px] text-destructive">
+            {googleErrorMessage}
+          </p>
+        ) : null}
+
+        <Button asChild className="mt-8 w-full" variant="outline">
+          <Link
+            href={`/api/auth/google/start${next?.startsWith("/") ? `?next=${encodeURIComponent(next)}` : ""}`}
+          >
+            <GoogleLogo size={16} />
+            {t("auth.continueWithGoogle")}
+          </Link>
+        </Button>
+
+        <div className="mt-6 flex items-center gap-3 text-[12px] text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          {t("auth.orDivider")}
+          <span className="h-px flex-1 bg-border" />
+        </div>
 
         <form
           className="mt-8 flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft),var(--shadow-inset)]"

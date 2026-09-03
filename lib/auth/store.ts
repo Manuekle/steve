@@ -8,6 +8,7 @@ import {
   hasAnyAccount as dbHasAnyAccount,
   createAccount as dbCreateAccount,
   login as dbLogin,
+  loginWithVerifiedEmail as dbLoginWithVerifiedEmail,
   startPasswordReset as dbStartPasswordReset,
   resetPassword as dbResetPassword,
   changePassword as dbChangePassword,
@@ -239,6 +240,37 @@ async function fileLogin(
   return { ok: true, token: session.token };
 }
 
+/**
+ * Sign in (or, on a first visit, sign up) with an email a third party — right
+ * now, only Google — already verified. There is no password to check: the
+ * account gets one anyway, random and never revealed, purely so the row
+ * shape matches every other account's. It is never compared against
+ * anything; `fileLogin`/`dbLogin` remain the only path that reads it.
+ */
+async function fileLoginWithVerifiedEmail(email: string): Promise<{ token: string }> {
+  const normalised = email.trim().toLowerCase();
+  const store = await read();
+  let accounts = store.accounts;
+
+  if (!accounts.some((account) => account.email === normalised)) {
+    const salt = randomBytes(16);
+    const derived = await scrypt(randomBytes(32).toString("hex"), salt, KEY_LENGTH, SCRYPT);
+    accounts = [
+      ...accounts,
+      {
+        createdAt: new Date().toISOString(),
+        email: normalised,
+        hash: derived.toString("hex"),
+        salt: salt.toString("hex"),
+      },
+    ];
+  }
+
+  const session = newSession(normalised);
+  await write({ accounts, sessions: [...prune(store.sessions), session.record] });
+  return { token: session.token };
+}
+
 async function fileStartPasswordReset(email: string): Promise<string | null> {
   const store = await read();
   const normalised = email.trim().toLowerCase();
@@ -394,6 +426,13 @@ export async function login(
   password: string,
 ): Promise<{ ok: false } | { ok: true; token: string }> {
   return (await useDb()) ? dbLogin(email, password) : fileLogin(email, password);
+}
+
+/** See `fileLoginWithVerifiedEmail` — the email has already been proven by
+ *  whoever is calling this (Google, today), so there is no password to check
+ *  here either. */
+export async function loginWithVerifiedEmail(email: string): Promise<{ token: string }> {
+  return (await useDb()) ? dbLoginWithVerifiedEmail(email) : fileLoginWithVerifiedEmail(email);
 }
 
 export async function startPasswordReset(email: string): Promise<string | null> {
