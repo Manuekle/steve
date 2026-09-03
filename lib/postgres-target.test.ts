@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { describePostgresTarget } from "./postgres-target";
+import { afterEach, describe, expect, it } from "vitest";
+import { describePostgresTarget, poolMaxConnections } from "./postgres-target";
 
 describe("describePostgresTarget", () => {
   it("reads the local container", () => {
@@ -47,5 +47,33 @@ describe("describePostgresTarget", () => {
   it("is null for an unset or unparseable URL", () => {
     expect(describePostgresTarget(undefined)).toBeNull();
     expect(describePostgresTarget("not a url")).toBeNull();
+  });
+});
+
+describe("poolMaxConnections", () => {
+  const original = process.env.STEVE_PG_MAX_POOL_SIZE;
+  afterEach(() => {
+    if (original === undefined) delete process.env.STEVE_PG_MAX_POOL_SIZE;
+    else process.env.STEVE_PG_MAX_POOL_SIZE = original;
+  });
+
+  it("defaults to 5 when nothing is set", () => {
+    delete process.env.STEVE_PG_MAX_POOL_SIZE;
+    expect(poolMaxConnections()).toBe(5);
+  });
+
+  it("takes the configured value", () => {
+    process.env.STEVE_PG_MAX_POOL_SIZE = "2";
+    expect(poolMaxConnections()).toBe(2);
+  });
+
+  // A typo must not silently become a 1-connection pool or a NaN one: the
+  // failure it is guarding against (EMAXCONNSESSION) is already obscure, and
+  // a pool sized from garbage would make it worse rather than louder.
+  it("falls back to the default for junk, zero and negatives", () => {
+    for (const value of ["", "muchas", "0", "-3"]) {
+      process.env.STEVE_PG_MAX_POOL_SIZE = value;
+      expect(poolMaxConnections()).toBe(5);
+    }
   });
 });

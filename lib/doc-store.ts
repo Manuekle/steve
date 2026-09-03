@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { poolMaxConnections } from "./postgres-target";
 
 /**
  * PostgreSQL backing for the app's JSON stores.
@@ -54,7 +55,7 @@ function getPool(): Pool {
         "WORKFLOW_POSTGRES_URL is not set. The document store needs the same Postgres connection.",
       );
     }
-    pool = new Pool({ connectionString, max: 5 });
+    pool = new Pool({ connectionString, max: poolMaxConnections() });
     // Without this the process dies. `pg` emits `error` on the pool when an
     // idle client's connection drops or was never established, and an
     // unhandled `error` event on an EventEmitter is an uncaught exception —

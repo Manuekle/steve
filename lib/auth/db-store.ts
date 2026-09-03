@@ -1,5 +1,6 @@
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { Pool, type PoolClient } from "pg";
+import { poolMaxConnections } from "../postgres-target";
 import { promisify } from "node:util";
 
 /**
@@ -40,7 +41,7 @@ function getPool(): Pool {
         "WORKFLOW_POSTGRES_URL is not set. Auth DB store needs the same Postgres connection.",
       );
     }
-    pool = new Pool({ connectionString, max: 5 });
+    pool = new Pool({ connectionString, max: poolMaxConnections() });
     // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
     // exception, and takes the whole process with it.
     pool.on("error", (error) => {

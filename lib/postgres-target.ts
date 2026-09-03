@@ -13,6 +13,35 @@
 
 export type PostgresKind = "local" | "supabase" | "remote";
 
+/** What each of the app's own pools may hold when nothing says otherwise. */
+const DEFAULT_POOL_MAX = 5;
+
+/**
+ * How many connections one of the app's Postgres pools may hold.
+ *
+ * There are four of them — documents, credits, auth, billing — and they are
+ * separate because they were written separately, not because anything needs
+ * them to be. Each one used to hardcode 5, which is 20 connections from a
+ * single process before the Workflow world opens its own.
+ *
+ * That is fine against the Docker container, whose `max_connections` is 100.
+ * It is not fine against a hosted pooler: Supabase's session pooler defaults
+ * to 15 *client* connections regardless of the 60 the database itself allows,
+ * and going over it fails the request outright —
+ *
+ *   (EMAXCONNSESSION) max clients reached in session mode -
+ *   max clients are limited to pool_size: 15
+ *
+ * — which is not a slow query or a retry, it is a 500. Worse on a serverless
+ * host, where the count is per instance and the instances are not yours to
+ * count. So the number has to be settable per deployment rather than compiled
+ * in, the same way WORKFLOW_POSTGRES_MAX_POOL_SIZE already is for the world.
+ */
+export function poolMaxConnections(): number {
+  const parsed = Number.parseInt(process.env.STEVE_PG_MAX_POOL_SIZE ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_POOL_MAX;
+}
+
 export type PostgresTarget = {
   readonly host: string;
   readonly port: number;

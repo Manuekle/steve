@@ -1,4 +1,5 @@
 import { Pool, type PoolClient } from "pg";
+import { poolMaxConnections } from "./postgres-target";
 
 // Postgres access for the AI-credits engine (model_pricing / credit_account /
 // credit_transaction / ai_usage), kept in its own `credits` schema in the
@@ -28,7 +29,7 @@ function getPool(): Pool {
           "Postgres connection string the Workflow world uses.",
       );
     }
-    pool = new Pool({ connectionString, max: 5 });
+    pool = new Pool({ connectionString, max: poolMaxConnections() });
     // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
     // exception, and takes the whole process with it.
     pool.on("error", (error) => {
