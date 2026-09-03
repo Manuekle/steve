@@ -22,12 +22,6 @@ const PROVIDER = "google-login";
 
 export const GET = withApiErrors(async function GET(request: NextRequest) {
   const clientId = await getCredential("GOOGLE_OAUTH_CLIENT_ID");
-  console.log(
-    "[debug google/start] clientId len=",
-    clientId?.length,
-    "preview=",
-    clientId ? `${clientId.slice(0, 8)}...${clientId.slice(-8)}` : null,
-  );
   if (!clientId) {
     const url = new URL("/login", request.nextUrl.origin);
     url.searchParams.set("error", "google_unconfigured");
