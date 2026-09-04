@@ -177,6 +177,8 @@ function LoginForm() {
         failWith({ password: t("auth.errorWeak") });
       } else if (code === "invite_required") {
         failWith({ email: t("auth.errorInviteRequired") });
+      } else if (code === "unavailable") {
+        failWith({ email: t("auth.errorSignupUnavailable") });
       } else if (code === "closed") {
         failWith({ email: t("auth.errorSignupClosed") });
       } else if (code === "rate_limited") {

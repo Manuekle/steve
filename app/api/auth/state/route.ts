@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, hasAnyAccount, verifySession } from "@/lib/auth/store";
+import { SESSION_COOKIE, claimState, verifySession } from "@/lib/auth/store";
 import { signupMode, signupNeedsInvite } from "@/lib/auth/signup-policy";
 
 /**
@@ -13,14 +13,17 @@ import { signupMode, signupNeedsInvite } from "@/lib/auth/signup-policy";
  * prefill is gone; the two now agree.
  */
 export async function GET(request: NextRequest) {
-  const claimed = await hasAnyAccount();
+  const claim = await claimState();
   return NextResponse.json({
-    claimed,
+    // Unchanged on the wire: the landing page reads this as "is there an
+    // owner". "Could not tell" is reported as claimed, so an outage never
+    // renders the UI as a fresh install waiting to be taken over.
+    claimed: claim !== "unclaimed",
     signedIn: await verifySession(request.cookies.get(SESSION_COOKIE)?.value),
     // What the signup form should offer. Neither field is a permission — the
     // register route runs `decideSignup` itself and refuses regardless of what
     // the client did with these.
     signupMode: signupMode(),
-    signupNeedsInvite: signupNeedsInvite(claimed),
+    signupNeedsInvite: signupNeedsInvite(claim),
   });
 }

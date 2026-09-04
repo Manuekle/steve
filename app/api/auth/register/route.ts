@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createAccount, hasAnyAccount, sessionCookie } from "@/lib/auth/store";
+import { claimState, createAccount, sessionCookie } from "@/lib/auth/store";
 import { decideSignup } from "@/lib/auth/signup-policy";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -29,10 +29,16 @@ export async function POST(request: NextRequest) {
   const decision = decideSignup({
     email: body.email,
     inviteCode: body.inviteCode ?? request.headers.get("x-signup-invite") ?? undefined,
-    instanceClaimed: await hasAnyAccount(),
+    claim: await claimState(),
   });
   if (!decision.allowed) {
-    return NextResponse.json({ error: decision.reason }, { status: 403 });
+    // 503 for "the database did not answer", because that is a retryable
+    // condition on our side and not a judgement about the caller. 403 for the
+    // two that are.
+    return NextResponse.json(
+      { error: decision.reason },
+      { status: decision.reason === "unavailable" ? 503 : 403 },
+    );
   }
 
   const result = await createAccount(body.email, body.password);

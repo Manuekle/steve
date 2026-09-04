@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { withApiErrors } from "@/lib/api-error";
-import { accountExists, hasAnyAccount, loginWithVerifiedEmail, sessionCookie } from "@/lib/auth/store";
+import { accountExists, claimState, loginWithVerifiedEmail, sessionCookie } from "@/lib/auth/store";
 import { decideSignup } from "@/lib/auth/signup-policy";
 import { getCredential } from "@/lib/credentials";
 import { GOOGLE_LOGIN_OAUTH } from "@/lib/google-login-oauth";
@@ -73,7 +73,7 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
     // nothing about whether that person may have this installation.
     const refused =
       !(await accountExists(email)) &&
-      !decideSignup({ email, instanceClaimed: await hasAnyAccount() }).allowed;
+      !decideSignup({ email, claim: await claimState() }).allowed;
 
     if (refused) {
       // Assigned rather than returned: the one-shot cookies below have to be

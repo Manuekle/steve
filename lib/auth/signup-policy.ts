@@ -33,7 +33,11 @@ export type SignupMode = "claim" | "open" | "closed";
 
 export type SignupDecision =
   | { readonly allowed: true }
-  | { readonly allowed: false; readonly reason: "closed" | "invite_required" };
+  | { readonly allowed: false; readonly reason: "closed" | "invite_required" | "unavailable" };
+
+/** Mirrors `ClaimState` in ./store, kept local so this module stays pure and
+ *  testable without a database anywhere near it. */
+export type ClaimState = "claimed" | "unclaimed" | "unknown";
 
 /** Only the three keys this module reads. An index signature so `process.env`
  *  — whose declared type has no properties in common with a closed object type
@@ -72,17 +76,18 @@ function allowedEmails(env: SignupEnv): string[] {
  * on the server for every route that can mint an account. A client that lies
  * about this gets the same 403 as one that doesn't ask.
  */
-export function signupNeedsInvite(instanceClaimed: boolean, env: SignupEnv = process.env): boolean {
+export function signupNeedsInvite(claim: ClaimState, env: SignupEnv = process.env): boolean {
   if (signupMode(env) !== "claim") return false;
-  if (!instanceClaimed) return false;
+  if (claim === "unclaimed") return false;
   return Boolean(env.STEVE_SIGNUP_INVITE_CODE?.trim());
 }
 
 export function decideSignup(input: {
   readonly email: string;
   readonly inviteCode?: string;
-  /** Whether this installation already has at least one account. */
-  readonly instanceClaimed: boolean;
+  /** Whether this installation already has an account — see `claimState` in
+   *  ./store for why "could not tell" is one of the three answers. */
+  readonly claim: ClaimState;
   readonly env?: SignupEnv;
 }): SignupDecision {
   const env = input.env ?? process.env;
@@ -91,8 +96,14 @@ export function decideSignup(input: {
   if (mode === "closed") return { allowed: false, reason: "closed" };
   if (mode === "open") return { allowed: true };
 
+  // The whole reason `claim` is not a boolean. A database that did not answer
+  // used to arrive here as `false` — indistinguishable from a genuinely empty
+  // accounts table — and opened registration to whoever asked during the blip.
+  // An unanswerable question fails closed.
+  if (input.claim === "unknown") return { allowed: false, reason: "unavailable" };
+
   // claim: the first account on a fresh install is how someone takes it over.
-  if (!input.instanceClaimed) return { allowed: true };
+  if (input.claim === "unclaimed") return { allowed: true };
 
   const email = input.email.trim().toLowerCase();
   if (email && allowedEmails(env).includes(email)) return { allowed: true };

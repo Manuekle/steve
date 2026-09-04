@@ -423,6 +423,49 @@ export async function hasAnyAccount(): Promise<boolean> {
   return (await usingDb()) ? dbHasAnyAccount() : fileHasAnyAccount(await read());
 }
 
+/** Whether this installation has been taken over yet — and, crucially, whether
+ *  that question could be answered at all. */
+export type ClaimState = "claimed" | "unclaimed" | "unknown";
+
+/**
+ * `hasAnyAccount()` with the failure mode separated out, for the one caller
+ * that must not confuse them: the signup gate.
+ *
+ * `hasAnyAccount()` returns a boolean, and a boolean has nowhere to put "the
+ * database did not answer". `usingDb()` degrades to the file store for a
+ * single failed call — correct for reads, and it means a blip makes
+ * `hasAnyAccount()` report `false` from a file that, on a host with no
+ * writable home, does not exist. lib/auth/signup-policy.ts reads `false` as
+ * "unclaimed install, let the first caller take it", so a few seconds of
+ * database trouble opened registration to anyone who asked. On Vercel the
+ * `createAccount` that followed then failed against the read-only filesystem,
+ * which is luck rather than a design; where `~/.steve` is writable it would
+ * have created the account and issued the session.
+ *
+ * So this one reports "unknown" instead of guessing, and the gate fails
+ * closed. Observed in production: a request to a cold instance answered 401 on
+ * a valid login and 500 on a registration that the gate should have refused.
+ */
+export async function claimState(): Promise<ClaimState> {
+  // No database configured — the file is the intended backend, and reading it
+  // does not half-fail: absent parses as empty, which really is unclaimed.
+  if (!process.env.WORKFLOW_POSTGRES_URL) {
+    return fileHasAnyAccount(await read()) ? "claimed" : "unclaimed";
+  }
+
+  try {
+    if (await dbHasAnyAccount()) return "claimed";
+  } catch {
+    // Configured for Postgres and could not ask it. Say so.
+    return "unknown";
+  }
+
+  // The database answered, and it is empty. A file still waiting to be
+  // migrated in on the next write counts as claimed — those accounts exist,
+  // they just have not moved yet.
+  return fileHasAnyAccount(await read()) ? "claimed" : "unclaimed";
+}
+
 /** Whether this address already has an account. Used by the Google callback to
  *  tell "signing in" from "signing up", which are the same call there
  *  (`loginWithVerifiedEmail`) but not the same decision. */
