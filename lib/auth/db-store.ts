@@ -87,8 +87,18 @@ CREATE TABLE IF NOT EXISTS steve.accounts (
   password_salt text NOT NULL,
   reset_token_hash text,
   reset_token_expires_at timestamptz,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  -- A label, not a gate: nothing in the app restricts by account today (one
+  -- installation is one shared inbox — see the schema comment above), so
+  -- there is nothing for "test" to unlock yet. It exists to mark throwaway
+  -- accounts for cleanup and as the hook point for real per-account gating
+  -- if that ever gets built. NULL means an ordinary account.
+  role text
 );
+
+-- CREATE TABLE IF NOT EXISTS is a no-op on an install that already has this
+-- table, so the new column needs its own statement to actually reach it.
+ALTER TABLE steve.accounts ADD COLUMN IF NOT EXISTS role text;
 
 CREATE TABLE IF NOT EXISTS steve.sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
