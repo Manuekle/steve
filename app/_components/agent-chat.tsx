@@ -65,7 +65,7 @@ const PROMPT_TABS: readonly { id: string; label: string; prompts: readonly strin
 ];
 
 type AgentStatus = ReturnType<typeof useEveAgent>["status"];
-export type AgentAuthMode = "basic" | "local" | "misconfigured";
+export type AgentAuthMode = "basic" | "local" | "session" | "misconfigured";
 
 type BasicCredentials = {
   readonly password: string;
