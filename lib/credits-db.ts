@@ -1,5 +1,5 @@
-import { Pool, type PoolClient } from "pg";
-import { poolMaxConnections } from "./postgres-target";
+import { sharedPool } from "./postgres-pool";
+import type { Pool, PoolClient } from "pg";
 
 // Postgres access for the AI-credits engine (model_pricing / credit_account /
 // credit_transaction / ai_usage), kept in its own `credits` schema in the
@@ -17,26 +17,13 @@ import { poolMaxConnections } from "./postgres-target";
 // runtime relative to this module is exactly the class of thing that broke
 // there once already.
 
-let pool: Pool | undefined;
 let schemaReady: Promise<void> | undefined;
 
 function getPool(): Pool {
-  if (!pool) {
-    const connectionString = process.env.WORKFLOW_POSTGRES_URL;
-    if (!connectionString) {
-      throw new Error(
-        "WORKFLOW_POSTGRES_URL is not set. AI credits and usage tracking need the same " +
-          "Postgres connection string the Workflow world uses.",
-      );
-    }
-    pool = new Pool({ connectionString, max: poolMaxConnections() });
-    // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
-    // exception, and takes the whole process with it.
-    pool.on("error", (error) => {
-      console.error("[credits] postgres pool error", error);
-    });
-  }
-  return pool;
+  // One pool for the whole process — see lib/postgres-pool.ts. This module
+  // used to build its own, as did three others, and four pools against one
+  // database exhausted Supabase's session-pooler client cap in production.
+  return sharedPool();
 }
 
 const SCHEMA_SQL = `

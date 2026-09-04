@@ -486,8 +486,22 @@ export async function createAccount(
 export async function login(
   email: string,
   password: string,
-): Promise<{ ok: false } | { ok: true; token: string }> {
-  return (await usingDb()) ? dbLogin(email, password) : fileLogin(email, password);
+): Promise<{ ok: false; reason: "invalid" | "unavailable" } | { ok: true; token: string }> {
+  if (await usingDb()) {
+    const result = await dbLogin(email, password);
+    return result.ok ? result : { ok: false, reason: "invalid" };
+  }
+
+  // Falling back to the file when a database *is* configured means the DB did
+  // not answer — see `claimState` above. The file store on such a host is
+  // empty or absent, so `fileLogin` would say "no such account" and the route
+  // would answer 401: a correct password reported as wrong. That is what
+  // production did while Supabase's session pooler was at its client cap, and
+  // it is indistinguishable from a typo to whoever is trying to sign in.
+  if (process.env.WORKFLOW_POSTGRES_URL) return { ok: false, reason: "unavailable" };
+
+  const result = await fileLogin(email, password);
+  return result.ok ? result : { ok: false, reason: "invalid" };
 }
 
 /** See `fileLoginWithVerifiedEmail` — the email has already been proven by

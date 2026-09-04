@@ -1,5 +1,5 @@
-import { Pool } from "pg";
-import { poolMaxConnections } from "../postgres-target";
+import { sharedPool } from "../postgres-pool";
+import type { Pool } from "pg";
 import { isPlanId, type CurrentPlan, type PlanId } from "../plans";
 
 /**
@@ -14,25 +14,13 @@ import { isPlanId, type CurrentPlan, type PlanId } from "../plans";
  * on first read).
  */
 
-let pool: Pool | undefined;
 let schemaReady: Promise<void> | undefined;
 
 function getPool(): Pool {
-  if (!pool) {
-    const connectionString = process.env.WORKFLOW_POSTGRES_URL;
-    if (!connectionString) {
-      throw new Error(
-        "WORKFLOW_POSTGRES_URL is not set. Billing DB store needs the same Postgres connection.",
-      );
-    }
-    pool = new Pool({ connectionString, max: poolMaxConnections() });
-    // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
-    // exception, and takes the whole process with it.
-    pool.on("error", (error) => {
-      console.error("[billing] postgres pool error", error);
-    });
-  }
-  return pool;
+  // One pool for the whole process — see lib/postgres-pool.ts. This module
+  // used to build its own, as did three others, and four pools against one
+  // database exhausted Supabase's session-pooler client cap in production.
+  return sharedPool();
 }
 
 const SCHEMA_SQL = `

@@ -1,5 +1,5 @@
-import { Pool } from "pg";
-import { poolMaxConnections } from "./postgres-target";
+import { sharedPool } from "./postgres-pool";
+import type { Pool } from "pg";
 
 /**
  * PostgreSQL backing for the app's JSON stores.
@@ -44,29 +44,13 @@ export type DocumentId =
   | "installation"
   | "chat-models";
 
-let pool: Pool | undefined;
 let schemaReady: Promise<void> | undefined;
 
 function getPool(): Pool {
-  if (!pool) {
-    const connectionString = process.env.WORKFLOW_POSTGRES_URL;
-    if (!connectionString) {
-      throw new Error(
-        "WORKFLOW_POSTGRES_URL is not set. The document store needs the same Postgres connection.",
-      );
-    }
-    pool = new Pool({ connectionString, max: poolMaxConnections() });
-    // Without this the process dies. `pg` emits `error` on the pool when an
-    // idle client's connection drops or was never established, and an
-    // unhandled `error` event on an EventEmitter is an uncaught exception —
-    // not a rejected promise the callers' try/catch can see. A database that
-    // is unreachable has to degrade to the file backend, which is what every
-    // `usingDb()` already does; it must not take the server down first.
-    pool.on("error", (error) => {
-      console.error("[doc-store] postgres pool error", error);
-    });
-  }
-  return pool;
+  // One pool for the whole process — see lib/postgres-pool.ts. This module
+  // used to build its own, as did three others, and four pools against one
+  // database exhausted Supabase's session-pooler client cap in production.
+  return sharedPool();
 }
 
 const SCHEMA_SQL = `

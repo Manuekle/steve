@@ -43,8 +43,14 @@ export async function POST(request: NextRequest) {
 
   const result = await login(body.email, body.password);
   if (!result.ok) {
-    // One message for both halves. "That email does not exist" is a way of
-    // asking the server to confirm addresses.
+    // "The database did not answer" is not "wrong password", and answering 401
+    // for it tells someone with correct credentials that they are wrong. 503
+    // says retry, which is the truth and what the client should act on.
+    if (result.reason === "unavailable") {
+      return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    }
+    // One message for both halves of a genuine failure. "That email does not
+    // exist" is a way of asking the server to confirm addresses.
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
 

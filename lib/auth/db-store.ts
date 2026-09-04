@@ -1,6 +1,6 @@
+import { sharedPool } from "../postgres-pool";
+import type { Pool } from "pg";
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
-import { Pool } from "pg";
-import { poolMaxConnections } from "../postgres-target";
 import { promisify } from "node:util";
 
 /**
@@ -30,25 +30,13 @@ const SESSION_DAYS = 30;
 const RESET_TOKEN_HOURS = 1;
 export const MIN_PASSWORD_LENGTH = 10;
 
-let pool: Pool | undefined;
 let schemaReady: Promise<void> | undefined;
 
 function getPool(): Pool {
-  if (!pool) {
-    const connectionString = process.env.WORKFLOW_POSTGRES_URL;
-    if (!connectionString) {
-      throw new Error(
-        "WORKFLOW_POSTGRES_URL is not set. Auth DB store needs the same Postgres connection.",
-      );
-    }
-    pool = new Pool({ connectionString, max: poolMaxConnections() });
-    // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
-    // exception, and takes the whole process with it.
-    pool.on("error", (error) => {
-      console.error("[auth] postgres pool error", error);
-    });
-  }
-  return pool;
+  // One pool for the whole process — see lib/postgres-pool.ts. This module
+  // used to build its own, as did three others, and four pools against one
+  // database exhausted Supabase's session-pooler client cap in production.
+  return sharedPool();
 }
 
 // These live in `steve`, next to the document and blob tables, and not in a
