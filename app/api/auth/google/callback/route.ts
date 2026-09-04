@@ -35,6 +35,10 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
   const next = request.cookies.get(nextCookie(PROVIDER))?.value;
 
   if (!code || !state || !expectedState || state !== expectedState) {
+    console.error(
+      "[auth/google/callback] state check failed:",
+      JSON.stringify({ hasCode: Boolean(code), hasState: Boolean(state), hasExpectedState: Boolean(expectedState), stateMatches: state === expectedState }),
+    );
     return toLogin(request, "google_failed");
   }
 
@@ -64,7 +68,11 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
     const destination = next?.startsWith("/") ? next : "/chat";
     result = NextResponse.redirect(new URL(destination, request.nextUrl.origin));
     result.cookies.set(sessionCookie(session.token, request.nextUrl.protocol === "https:"));
-  } catch {
+  } catch (error) {
+    console.error(
+      "[auth/google/callback] exchange or login failed:",
+      error instanceof Error ? error.message : String(error),
+    );
     result = toLogin(request, "google_failed");
   }
 
