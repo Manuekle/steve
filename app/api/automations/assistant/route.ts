@@ -138,7 +138,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
       prompt: context,
       abortSignal: AbortSignal.timeout(60_000),
     });
-    recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "automations-assistant" });
+    await recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "automations-assistant" });
     return NextResponse.json({ plan: result.object });
   } catch (error) {
     return apiError("generation_failed", {

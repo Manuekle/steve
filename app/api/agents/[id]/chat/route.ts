@@ -231,8 +231,16 @@ export const POST = withApiErrors(async function POST(
     // Usage is only known once the stream ends, so it is recorded from here
     // rather than beside the call — the response has been returned to the
     // browser by then, and `recordRouteUsage` does not block it either way.
-    onFinish: ({ totalUsage }) => {
-      recordRouteUsage({ model: modelId, usage: totalUsage, conversationId: `agents-chat:${id}` });
+    onFinish: async ({ totalUsage }) => {
+      // Awaited, and the callback is async for that reason: `Callback` in the
+      // AI SDK returns `PromiseLike<void> | void`, so returning a promise here
+      // holds the stream open until the row is written. Fire-and-forget lost
+      // every row on Vercel — the instance freezes when the response ends.
+      await recordRouteUsage({
+        model: modelId,
+        usage: totalUsage,
+        conversationId: `agents-chat:${id}`,
+      });
     },
     // Once the first token is out the status line is already sent, so a later
     // provider failure can only end the stream early. Logging it here is what

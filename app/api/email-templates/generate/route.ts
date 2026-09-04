@@ -106,7 +106,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
       prompt: `The user wants an email template for: ${prompt}`,
       abortSignal: AbortSignal.timeout(80_000),
     });
-    recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "email-generate" });
+    await recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "email-generate" });
     draft = result.object;
   } catch (error) {
     return apiError("generation_failed", {

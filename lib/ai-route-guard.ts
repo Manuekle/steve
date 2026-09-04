@@ -58,45 +58,53 @@ export async function guardAiRoute(
 /**
  * Records one model call made from a Next route.
  *
- * Never throws and is never awaited by the response path: the call already
- * happened and the person is already reading the answer, so losing a usage row
- * is far cheaper than turning a successful generation into a 500. Same stance
- * as agent/hooks/usage.ts.
+ * Returns a promise and never rejects, and every caller awaits it. The first
+ * version did not — it fired the write and returned, on the reasoning that the
+ * answer was already on the wire and a usage row was not worth delaying it for.
+ * That reasoning is wrong on a serverless host: the instance is frozen once the
+ * response finishes, and unawaited work is simply dropped. Verified the hard
+ * way — a real generation went through, the table stayed empty, and there was
+ * not even an error in the logs, because the catch never ran either.
+ *
+ * So the wait is the point. For a stream the AI SDK awaits `onFinish`
+ * (`Callback` returns `PromiseLike<void> | void`), so the row lands before the
+ * stream closes; for the `generateObject` routes it is one transaction between
+ * the model returning and the response being built. Failures are still
+ * swallowed into a log line: losing a row must never turn a successful
+ * generation into a 500.
  *
  * The idempotency key is a fresh uuid rather than something derived from the
- * request, and that is the right answer here even though it means a duplicate
- * can never be detected. The keys that Eve uses identify a call that the
- * *platform* may replay — a step retried, a webhook redelivered — where two
- * records would be one charge counted twice. Nothing replays these: a browser
- * that submits the same prompt again has made a second call to the provider
- * and been billed for it twice, so recording it twice is the accurate answer.
+ * request, and that is right here even though it means a duplicate can never
+ * be detected. Eve's keys identify a call the *platform* may replay — a step
+ * retried, a webhook redelivered — where two records would be one charge
+ * counted twice. Nothing replays these: a browser that submits the same prompt
+ * again has made a second call to the provider and been billed for it twice,
+ * so recording it twice is the accurate answer.
  */
-export function recordRouteUsage(input: {
+export async function recordRouteUsage(input: {
   readonly model: string;
   readonly usage: LanguageModelUsage | undefined;
   /** Which screen spent it, so the usage table can be read by feature. */
   readonly conversationId?: string;
-}): void {
+}): Promise<void> {
   if (!input.usage) return;
 
-  void (async () => {
-    try {
-      const provider = resolveProvider();
-      await recordUsage({
-        organizationId: await getInstallationId(),
-        conversationId: input.conversationId ?? null,
-        channel: "web",
-        provider,
-        model: input.model,
-        usageType: "llm",
-        inputTokens: input.usage!.inputTokens,
-        outputTokens: input.usage!.outputTokens,
-        cachedInputTokens: input.usage!.inputTokenDetails?.cacheReadTokens,
-        billingSource: await billingSourceForProvider(provider),
-        idempotencyKey: randomUUID(),
-      });
-    } catch (error) {
-      console.error("[ai-route-guard] usage not recorded", error);
-    }
-  })();
+  try {
+    const provider = resolveProvider();
+    await recordUsage({
+      organizationId: await getInstallationId(),
+      conversationId: input.conversationId ?? null,
+      channel: "web",
+      provider,
+      model: input.model,
+      usageType: "llm",
+      inputTokens: input.usage.inputTokens,
+      outputTokens: input.usage.outputTokens,
+      cachedInputTokens: input.usage.inputTokenDetails?.cacheReadTokens,
+      billingSource: await billingSourceForProvider(provider),
+      idempotencyKey: randomUUID(),
+    });
+  } catch (error) {
+    console.error("[ai-route-guard] usage not recorded", error);
+  }
 }
