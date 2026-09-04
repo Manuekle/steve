@@ -61,7 +61,7 @@ function getPool(): Pool {
     // unhandled `error` event on an EventEmitter is an uncaught exception —
     // not a rejected promise the callers' try/catch can see. A database that
     // is unreachable has to degrade to the file backend, which is what every
-    // `useDb()` already does; it must not take the server down first.
+    // `usingDb()` already does; it must not take the server down first.
     pool.on("error", (error) => {
       console.error("[doc-store] postgres pool error", error);
     });
@@ -239,7 +239,7 @@ export function createDocumentStore<T>(options: {
     await rename(tmp, options.file);
   }
 
-  async function useDb(): Promise<boolean> {
+  async function usingDb(): Promise<boolean> {
     if (dbMode !== null) return dbMode;
     if (!process.env.WORKFLOW_POSTGRES_URL) {
       dbMode = false;
@@ -259,7 +259,7 @@ export function createDocumentStore<T>(options: {
 
   return {
     async read(): Promise<T> {
-      if (await useDb()) {
+      if (await usingDb()) {
         const document = await readDocument<Partial<T>>(options.id);
         return document ? options.normalize(document) : options.empty();
       }
@@ -267,7 +267,7 @@ export function createDocumentStore<T>(options: {
     },
 
     async update<R>(fn: (store: T) => R): Promise<R> {
-      if (await useDb()) {
+      if (await usingDb()) {
         return updateDocument(
           options.id,
           (raw) => (raw ? options.normalize(raw) : options.empty()),
@@ -289,7 +289,7 @@ export function createDocumentStore<T>(options: {
       }
     },
 
-    usingDatabase: useDb,
+    usingDatabase: usingDb,
   };
 }
 

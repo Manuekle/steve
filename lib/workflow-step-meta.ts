@@ -12,7 +12,6 @@ import {
   WhatsappIcon,
   UserEdit01Icon,
   SlackIcon,
-  DiscordIcon,
   GoogleSheetIcon,
   StripeIcon,
   Calendar03Icon,

@@ -81,7 +81,7 @@ function emptyStore(): BusinessStore {
 
 let dbMode: boolean | null = null;
 
-async function useDb(): Promise<boolean> {
+async function usingDb(): Promise<boolean> {
   if (dbMode !== null) return dbMode;
 
   if (!process.env.WORKFLOW_POSTGRES_URL) {
@@ -145,7 +145,7 @@ function normalize(parsed: Partial<BusinessStore>): BusinessStore {
 }
 
 async function readStore(): Promise<BusinessStore> {
-  if (await useDb()) {
+  if (await usingDb()) {
     const document = await dbReadDocument<Partial<BusinessStore>>("business");
     return document ? normalize(document) : emptyStore();
   }
@@ -160,7 +160,7 @@ async function writeStore(store: BusinessStore): Promise<void> {
 }
 
 async function updateStore<T>(fn: (store: BusinessStore) => T): Promise<T> {
-  if (await useDb()) {
+  if (await usingDb()) {
     // No queue: the row lock inside the transaction is the serialisation, and
     // it holds across processes, which the in-process queue never did.
     // Normalized on the way in, so a mutator can push onto a collection the

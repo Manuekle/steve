@@ -39,8 +39,7 @@ import { useI18n, useT } from "@/lib/i18n/provider";
 import { countryOptions } from "@/lib/countries";
 import { fetchJson, isApiError, type UiError } from "@/lib/api-error-message";
 import { cn } from "@/lib/utils";
-import type { Agent, AgentVoice, ProspectAssessment } from "@/lib/types";
-import { ProspectBadge } from "../../../../_components/prospect-badge";
+import type { Agent, AgentVoice } from "@/lib/types";
 import { PageContainer } from "../../../../_components/page-container";
 import {
   Card,

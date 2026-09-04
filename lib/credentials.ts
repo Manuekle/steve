@@ -967,7 +967,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
 
 let dbMode: boolean | null = null;
 
-async function useDb(): Promise<boolean> {
+async function usingDb(): Promise<boolean> {
   if (dbMode !== null) return dbMode;
 
   if (!process.env.WORKFLOW_POSTGRES_URL) {
@@ -1001,7 +1001,7 @@ async function readFileStore(): Promise<CredentialStore | null> {
 }
 
 async function readStore(): Promise<CredentialStore> {
-  if (await useDb()) {
+  if (await usingDb()) {
     const document = (await dbReadDocument<CredentialStore>("credentials")) ?? {};
     // Every async read doubles as a cache warm, which is the only way sync
     // readers ever see a value that lives in the database.
@@ -1037,7 +1037,7 @@ async function writeStore(store: CredentialStore): Promise<void> {
 
 /** Read, mutate and write, on whichever backend is active. */
 async function updateStore<T>(fn: (store: CredentialStore) => T): Promise<T> {
-  if (await useDb()) {
+  if (await usingDb()) {
     return dbUpdateDocument("credentials", (raw): CredentialStore => raw ?? {}, (store) => {
       const result = fn(store);
       cachedStore = store;

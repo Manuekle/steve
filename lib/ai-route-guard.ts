@@ -1,7 +1,11 @@
+import { randomUUID } from "node:crypto";
+import type { LanguageModelUsage } from "ai";
 import type { NextRequest } from "next/server";
 import { apiError } from "./api-error";
 import { resolveProvider } from "./ai-provider";
+import { recordUsage } from "./ai-usage";
 import { billingSourceForProvider, checkCreditGate } from "./credit-gate";
+import { getInstallationId } from "./license/installation";
 import { rateLimit } from "./rate-limit";
 
 /**
@@ -21,12 +25,10 @@ import { rateLimit } from "./rate-limit";
  *   is a loop against a metered provider, and until lib/auth/signup-policy.ts
  *   landed, "signed in" was anyone who found the URL.
  *
- * This is the gate, not the meter: it refuses a call that should not start.
- * Recording what a call actually cost still only happens on the Eve path —
- * these four routes stream or `generateObject` straight from the AI SDK and
- * would each need their own `recordUsage` with a real idempotency key. That is
- * a larger change than a guard and is tracked separately; the gate at least
- * stops the unbounded case.
+ * `guardAiRoute` is the gate — it refuses a call that should not start.
+ * `recordRouteUsage` is the meter, and every one of the four calls it after
+ * the model answers, so the ledger the billing page reads finally counts what
+ * the web UI spends as well as what the channels do.
  */
 export async function guardAiRoute(
   request: NextRequest,
@@ -50,4 +52,51 @@ export async function guardAiRoute(
   }
 
   return null;
+}
+
+
+/**
+ * Records one model call made from a Next route.
+ *
+ * Never throws and is never awaited by the response path: the call already
+ * happened and the person is already reading the answer, so losing a usage row
+ * is far cheaper than turning a successful generation into a 500. Same stance
+ * as agent/hooks/usage.ts.
+ *
+ * The idempotency key is a fresh uuid rather than something derived from the
+ * request, and that is the right answer here even though it means a duplicate
+ * can never be detected. The keys that Eve uses identify a call that the
+ * *platform* may replay — a step retried, a webhook redelivered — where two
+ * records would be one charge counted twice. Nothing replays these: a browser
+ * that submits the same prompt again has made a second call to the provider
+ * and been billed for it twice, so recording it twice is the accurate answer.
+ */
+export function recordRouteUsage(input: {
+  readonly model: string;
+  readonly usage: LanguageModelUsage | undefined;
+  /** Which screen spent it, so the usage table can be read by feature. */
+  readonly conversationId?: string;
+}): void {
+  if (!input.usage) return;
+
+  void (async () => {
+    try {
+      const provider = resolveProvider();
+      await recordUsage({
+        organizationId: await getInstallationId(),
+        conversationId: input.conversationId ?? null,
+        channel: "web",
+        provider,
+        model: input.model,
+        usageType: "llm",
+        inputTokens: input.usage!.inputTokens,
+        outputTokens: input.usage!.outputTokens,
+        cachedInputTokens: input.usage!.inputTokenDetails?.cacheReadTokens,
+        billingSource: await billingSourceForProvider(provider),
+        idempotencyKey: randomUUID(),
+      });
+    } catch (error) {
+      console.error("[ai-route-guard] usage not recorded", error);
+    }
+  })();
 }

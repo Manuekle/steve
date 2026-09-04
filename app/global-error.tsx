@@ -103,6 +103,10 @@ export default function GlobalError({
           >
             {copy.reload}
           </button>
+          {/* A real navigation, not next/link: this component replaces the
+              root layout when the root layout itself threw, so the router
+              context a <Link> needs is exactly what is not there. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/"
             style={{

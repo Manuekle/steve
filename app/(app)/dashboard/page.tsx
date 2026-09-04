@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
@@ -63,7 +64,7 @@ function DashboardPageContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [activity, setActivity] = useState<ActivityPoint[]>([]);
-  const [channelStatus, setChannelStatus] = useState<Record<string, boolean>>({});
+  const [, setChannelStatus] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<UiError | null>(null);
 
@@ -167,20 +168,20 @@ function DashboardPageContent() {
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-3 pt-2">
-                  <a
+                  <Link
                     href="/chat"
                     className="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background shadow-[var(--shadow-soft)] transition-all duration-150 hover:opacity-90 active:translate-y-px"
                   >
                     <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
                     {t("dashboard.emptyStartChat")}
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/automations"
                     className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
                   >
                     <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} />
                     {t("dashboard.emptyCreateAutomation")}
-                  </a>
+                  </Link>
                   <a
                     href="/settings"
                     className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
@@ -439,23 +440,23 @@ function DashboardPageContent() {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-medium">{t("dashboard.activeAutomationsTitle")}</h2>
-            <a
+            <Link
               href="/automations"
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               {t("dashboard.viewAll")}
-            </a>
+            </Link>
           </div>
           {activeAutomations.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">{t("dashboard.noAutomations")}</p>
-              <a
+              <Link
                 href="/automations"
                 className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
               >
                 <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} />
                 {t("dashboard.emptyCreateAutomation")}
-              </a>
+              </Link>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">

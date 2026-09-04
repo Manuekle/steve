@@ -196,8 +196,56 @@ backup to:
 ```
 
 The role validates each dump before publishing it and retains the latest 10 by
-default (`workflow_backup_retention`). Copy backups off the host; a backup on
-the same droplet does not protect against host loss.
+default (`workflow_backup_retention`).
+
+That one is a rollback aid for a deploy, not a backup policy: it only runs when
+somebody deploys, so an install nobody has touched in a month has a month-old
+copy of its only database.
+
+### Scheduled backups
+
+The `backup` role adds the schedule. It installs `/usr/local/bin/steve-backup`
+plus a `steve-backup.timer`, which each night dumps the database, verifies the
+archive with `pg_restore --list` *inside the container* (the host has no
+`postgresql-client`), prunes to `backup_retention`, and — if you have set one —
+runs your offsite command. One backup also runs during the deploy itself, so a
+broken backup path fails the deploy rather than being discovered the night you
+need it.
+
+```text
+backup_enabled: true
+backup_schedule: "*-*-* 03:20:00"   # systemd OnCalendar, UTC
+backup_retention: 14
+backup_offsite_command: ""          # ← set this
+```
+
+**`backup_offsite_command` is the one that matters.** Left empty, every dump
+sits on the same disk as the database it came from: losing the droplet loses
+both, which is a second copy of a single point of failure and not a backup at
+all. The script logs a warning on every run until it is set.
+
+The command receives the dump path as `$1`, so the reliable shape is a short
+script on the host that you name here:
+
+```bash
+# /usr/local/bin/steve-offsite
+#!/usr/bin/env bash
+set -euo pipefail
+aws s3 cp "$1" "s3://my-bucket/steve/$(basename "$1")" --storage-class STANDARD_IA
+```
+
+This is deliberately not a provider setting — the role should not decide where
+your customer data lives, nor hold credentials for it.
+
+### Restoring
+
+```bash
+docker cp /opt/steve-backups/steve-<stamp>.dump steve-postgres:/tmp/restore.dump
+docker exec steve-postgres pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean /tmp/restore.dump
+```
+
+Restore into a scratch database first and read a row back. A dump that has
+never been restored is a hypothesis.
 
 The upgrade to `@workflow/world-postgres@5.0.0-beta.27` adds migration `0015`,
 which moves Workflow-owned enum types from `public` to the `workflow` schema.

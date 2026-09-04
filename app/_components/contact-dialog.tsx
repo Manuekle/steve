@@ -15,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { useI18n } from "@/lib/i18n/provider";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
-import { relativeTime } from "@/lib/format";
 import type { Contact, ContactStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: readonly ContactStatus[] = ["open", "waiting_human", "followup_due", "closed"];
@@ -50,7 +49,7 @@ export function ContactDialog({
   /** Called with the fresh contact list once the save round-trips. */
   readonly onSaved: (contacts: Contact[]) => void;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   // The one control here a <label> cannot wrap: a Radix Select is a button,
   // not a labelable element, which is why this field was a bare span while
   // every other field in this form is correctly wrapped.

@@ -3,14 +3,14 @@ import { type NextRequest } from "next/server";
 import { z } from "zod";
 import { getAgent } from "@/lib/business-store";
 import { resolveLanguageModel } from "@/lib/ai-provider";
-import { languageModelForTask } from "@/lib/task-model";
+import { modelIdForTask } from "@/lib/task-model";
 import { getProviderReport } from "@/lib/provider-catalog";
 import { listDocuments } from "@/lib/knowledge-store";
 import { findMedia } from "@/lib/media-library";
 import { countAssets } from "@/lib/media-store";
 import { RagError, searchKnowledge } from "@/lib/rag";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
-import { guardAiRoute } from "@/lib/ai-route-guard";
+import { guardAiRoute, recordRouteUsage } from "@/lib/ai-route-guard";
 import { toCapabilityIds, type CapabilityId } from "@/lib/agent-capabilities";
 
 // POST /api/agents/[id]/chat
@@ -216,9 +216,8 @@ export const POST = withApiErrors(async function POST(
 
   // An agent pinned to a model runs on that model; the rest follow whatever
   // the app picks for a chat, same as the messaging channels do.
-  const model = agent.model
-    ? resolveLanguageModel(agent.model)
-    : await languageModelForTask("chat");
+  const modelId = agent.model ?? (await modelIdForTask("chat"));
+  const model = resolveLanguageModel(modelId);
 
   const result = streamText({
     model,
@@ -229,6 +228,12 @@ export const POST = withApiErrors(async function POST(
     // the photo) and the answer that follows, without letting a loop run away.
     stopWhen: stepCountIs(6),
     abortSignal: AbortSignal.timeout(120_000),
+    // Usage is only known once the stream ends, so it is recorded from here
+    // rather than beside the call — the response has been returned to the
+    // browser by then, and `recordRouteUsage` does not block it either way.
+    onFinish: ({ totalUsage }) => {
+      recordRouteUsage({ model: modelId, usage: totalUsage, conversationId: `agents-chat:${id}` });
+    },
     // Once the first token is out the status line is already sent, so a later
     // provider failure can only end the stream early. Logging it here is what
     // makes that visible on the server instead of silently truncating.

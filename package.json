@@ -10,6 +10,8 @@
     "build": "eve build && next build",
     "build:eve": "eve build",
     "build:web": "next build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "dev": "next dev",
     "dev:eve": "eve dev --no-ui --host 127.0.0.1",
     "start": "next start",
@@ -97,6 +99,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@types/node": "24.x",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.15.6",
@@ -104,6 +107,8 @@
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "@types/three": "^0.185.4",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.2.12",
     "monaco-editor": "^0.56.0",
     "vitest": "^4.1.11"
   },

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
+import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Timer01Icon,
   Delete01Icon,

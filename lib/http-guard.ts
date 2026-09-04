@@ -21,6 +21,31 @@ export function hostAllowed(host: string, allowlist: string[]): boolean {
 }
 
 /**
+ * Whether the host is an IP address rather than a name, in any of the spellings
+ * a browser and `fetch` accept.
+ *
+ * The dotted-quad regex this replaces was the only check, and it is the one
+ * spelling an attacker would not use. `http://2130706433/` is 127.0.0.1 in
+ * decimal, `http://0x7f000001/` in hex, `http://0177.0.0.1/` in octal, and
+ * `[::ffff:127.0.0.1]` is the v6-mapped form — none of them match a
+ * dotted-quad, and all of them resolve. `URL` strips the brackets from a v6
+ * literal, so `hostname` is the bare address by the time it reaches here.
+ *
+ * Reachable through `assertPublicHttpsUrl`, which the agent's `http_request`
+ * tool does *not* use on its own — that path also has to clear the allowlist,
+ * so this was never the last line of defence there. It is the only one for a
+ * webhook URL a signed-in operator types in.
+ */
+function isIpLiteral(host: string): boolean {
+  if (host.includes(":")) return true; // any v6 literal, mapped forms included
+  const labels = host.split(".");
+  if (labels.length > 4 || labels.some((label) => label === "")) return false;
+  // Every label numeric in some base — decimal, 0x hex or 0-prefixed octal —
+  // is how the shortened forms (`10.1`, `0x7f000001`) are written.
+  return labels.every((label) => /^(0[xX][0-9a-fA-F]+|[0-9]+)$/.test(label));
+}
+
+/**
  * Throws unless `raw` is an HTTPS URL on a public host that the allowlist
  * names. `allowlistLabel` only changes the wording of the two allowlist-
  * specific errors — callers with their own fixed host list (e.g. a known
@@ -61,7 +86,7 @@ export function assertPublicHttpsUrl(raw: string): URL {
   if (PRIVATE_HOST.test(host) || PRIVATE_V6.test(host)) {
     throw new Error("Private or loopback hosts are blocked.");
   }
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+  if (isIpLiteral(host)) {
     throw new Error("Raw IP addresses are blocked.");
   }
   if (url.protocol === "http:") {

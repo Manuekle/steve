@@ -10,7 +10,6 @@ import {
   ArtificialIntelligence08Icon,
   InstagramIcon,
   Loading03Icon,
-  AlertCircleIcon,
   Cancel01Icon,
   GoogleSheetIcon,
   Calendar03Icon,

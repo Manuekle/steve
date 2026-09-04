@@ -93,7 +93,7 @@ export const ConversationBar = React.forwardRef<
   HTMLDivElement,
   ConversationBarProps
 >((
-  { agentId, getConversationToken, className, waveformClassName, onSendMessage, label, onStartError },
+  { agentId, getConversationToken, className, waveformClassName, onSendMessage, onStartError },
   ref
 ) => {
   const { status } = useConversationStatus()

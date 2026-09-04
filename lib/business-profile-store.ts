@@ -1,8 +1,8 @@
-import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { createDocumentStore } from "./doc-store";
 import { getBlob, listBlobs, putBlob, removeBlob } from "./blob-store";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 
 /**

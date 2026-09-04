@@ -1,11 +1,12 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { languageModelForTask } from "@/lib/task-model";
+import { modelIdForTask } from "@/lib/task-model";
+import { resolveLanguageModel } from "@/lib/ai-provider";
 import { getProviderReport } from "@/lib/provider-catalog";
 import { extractTemplateVariables, renderTemplateSource, TemplateRenderError } from "@/lib/email-render";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
-import { guardAiRoute } from "@/lib/ai-route-guard";
+import { guardAiRoute, recordRouteUsage } from "@/lib/ai-route-guard";
 
 // POST /api/email-templates/generate
 // Turns a plain-language description into a complete custom template — label,
@@ -97,13 +98,15 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
 
   let draft: z.infer<typeof emailDraftSchema>;
   try {
+    const modelId = await modelIdForTask("automation");
     const result = await generateObject({
-      model: await languageModelForTask("automation"),
+      model: resolveLanguageModel(modelId),
       schema: emailDraftSchema,
       system,
       prompt: `The user wants an email template for: ${prompt}`,
       abortSignal: AbortSignal.timeout(80_000),
     });
+    recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "email-generate" });
     draft = result.object;
   } catch (error) {
     return apiError("generation_failed", {

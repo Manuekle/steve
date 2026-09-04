@@ -25,6 +25,11 @@ jobs:
         run: pnpm exec eve info --json
       - name: Typecheck
         run: pnpm run typecheck
+      # Errors only. The 132 remaining warnings are eslint-plugin-react-hooks
+      # v7's React Compiler advisory set; see eslint.config.mjs for why they
+      # report rather than block.
+      - name: Lint
+        run: pnpm run lint
       - name: Test
         run: pnpm run test
       - name: Build the Eve host

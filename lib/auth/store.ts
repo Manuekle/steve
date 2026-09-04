@@ -38,7 +38,7 @@ import {
 
 let dbMode: boolean | null = null;
 
-async function useDb(): Promise<boolean> {
+async function usingDb(): Promise<boolean> {
   if (dbMode !== null) return dbMode;
 
   // No Postgres URL → file mode
@@ -85,7 +85,7 @@ async function useDb(): Promise<boolean> {
     // filesystem with no writable home directory — for the rest of its
     // life. The next call gets a fresh try.
     console.error(
-      "[auth/store] useDb() failed this call, will retry next time:",
+      "[auth/store] usingDb() failed this call, will retry next time:",
       error instanceof Error ? error.message : String(error),
     );
     return false;
@@ -420,7 +420,7 @@ async function fileDestroySession(token: string | undefined): Promise<void> {
 // ── Public API: routes to DB or file ─────────────────────────────────────────
 
 export async function hasAnyAccount(): Promise<boolean> {
-  return (await useDb()) ? dbHasAnyAccount() : fileHasAnyAccount(await read());
+  return (await usingDb()) ? dbHasAnyAccount() : fileHasAnyAccount(await read());
 }
 
 /** Whether this address already has an account. Used by the Google callback to
@@ -428,7 +428,7 @@ export async function hasAnyAccount(): Promise<boolean> {
  *  (`loginWithVerifiedEmail`) but not the same decision. */
 export async function accountExists(email: string): Promise<boolean> {
   const normalised = email.trim().toLowerCase();
-  if (await useDb()) return dbAccountExists(normalised);
+  if (await usingDb()) return dbAccountExists(normalised);
   const store = await read();
   return store.accounts.some((account) => account.email === normalised);
 }
@@ -437,32 +437,32 @@ export async function createAccount(
   email: string,
   password: string,
 ): Promise<{ ok: false; reason: "email_exists" | "invalid" } | { ok: true; token: string }> {
-  return (await useDb()) ? dbCreateAccount(email, password) : fileCreateAccount(email, password);
+  return (await usingDb()) ? dbCreateAccount(email, password) : fileCreateAccount(email, password);
 }
 
 export async function login(
   email: string,
   password: string,
 ): Promise<{ ok: false } | { ok: true; token: string }> {
-  return (await useDb()) ? dbLogin(email, password) : fileLogin(email, password);
+  return (await usingDb()) ? dbLogin(email, password) : fileLogin(email, password);
 }
 
 /** See `fileLoginWithVerifiedEmail` — the email has already been proven by
  *  whoever is calling this (Google, today), so there is no password to check
  *  here either. */
 export async function loginWithVerifiedEmail(email: string): Promise<{ token: string }> {
-  return (await useDb()) ? dbLoginWithVerifiedEmail(email) : fileLoginWithVerifiedEmail(email);
+  return (await usingDb()) ? dbLoginWithVerifiedEmail(email) : fileLoginWithVerifiedEmail(email);
 }
 
 export async function startPasswordReset(email: string): Promise<string | null> {
-  return (await useDb()) ? dbStartPasswordReset(email) : fileStartPasswordReset(email);
+  return (await usingDb()) ? dbStartPasswordReset(email) : fileStartPasswordReset(email);
 }
 
 export async function resetPassword(
   token: string,
   newPassword: string,
 ): Promise<{ ok: false } | { ok: true }> {
-  return (await useDb()) ? dbResetPassword(token, newPassword) : fileResetPassword(token, newPassword);
+  return (await usingDb()) ? dbResetPassword(token, newPassword) : fileResetPassword(token, newPassword);
 }
 
 export async function changePassword(
@@ -471,21 +471,21 @@ export async function changePassword(
   newPassword: string,
   currentToken: string,
 ): Promise<{ ok: false; reason: "wrong_password" | "invalid" } | { ok: true }> {
-  return (await useDb())
+  return (await usingDb())
     ? dbChangePassword(email, currentPassword, newPassword, currentToken)
     : fileChangePassword(email, currentPassword, newPassword, currentToken);
 }
 
 export async function verifySession(token: string | undefined): Promise<boolean> {
-  return (await useDb()) ? dbVerifySession(token) : fileVerifySession(token);
+  return (await usingDb()) ? dbVerifySession(token) : fileVerifySession(token);
 }
 
 export async function getSessionAccountEmail(token: string | undefined): Promise<string | null> {
-  return (await useDb()) ? dbGetSessionAccountEmail(token) : fileGetSessionAccountEmail(token);
+  return (await usingDb()) ? dbGetSessionAccountEmail(token) : fileGetSessionAccountEmail(token);
 }
 
 export async function destroySession(token: string | undefined): Promise<void> {
-  return (await useDb()) ? dbDestroySession(token) : fileDestroySession(token);
+  return (await usingDb()) ? dbDestroySession(token) : fileDestroySession(token);
 }
 
 /** Cookie attributes, in one place so the login and logout routes agree. */
