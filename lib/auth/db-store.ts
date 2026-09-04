@@ -41,6 +41,22 @@ function getPool(): Pool {
         "WORKFLOW_POSTGRES_URL is not set. Auth DB store needs the same Postgres connection.",
       );
     }
+    try {
+      const parsed = new URL(connectionString);
+      console.log(
+        "[auth/db-store] connecting to host=",
+        parsed.hostname,
+        "port=",
+        parsed.port,
+        "len=",
+        connectionString.length,
+      );
+    } catch (error) {
+      console.error(
+        "[auth/db-store] WORKFLOW_POSTGRES_URL is not a parseable URL:",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
     pool = new Pool({ connectionString, max: poolMaxConnections() });
     // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
     // exception, and takes the whole process with it.
