@@ -31,6 +31,10 @@
   <dict>
     <key>BACKUP_RETENTION</key>
     <string>__RETENTION__</string>
+    <key>BACKUP_OFFSITE_DIR</key>
+    <string>__OFFSITE_DIR__</string>
+    <key>BACKUP_OFFSITE_COMMAND</key>
+    <string>__OFFSITE_COMMAND__</string>
     <!-- launchd starts jobs with a near-empty PATH. The script finds pg_dump by
          absolute path anyway, but `docker` on the fallback path needs this. -->
     <key>PATH</key>

@@ -13,6 +13,8 @@
 #
 #   BACKUP_DIR            where dumps go            (default ~/steve-backups)
 #   BACKUP_RETENTION      how many to keep          (default 14)
+#   BACKUP_OFFSITE_DIR    copy each dump here too   (see "Offsite")
+#   BACKUP_OFFSITE_COMMAND  run this with the dump path as $1
 #   BACKUP_POSTGRES_URL   dump through this instead (see "Which connection")
 #   PG_DUMP               path to a specific pg_dump
 #   ENV_FILES             colon-separated overrides (default .env.prod:.env.local:.env)
@@ -33,6 +35,28 @@
 # on projects without the IPv4 add-on. Docker Desktop has no IPv6 by default,
 # so a containerised pg_dump cannot reach it — verified, "Network is
 # unreachable". Hence a host pg_dump first.
+#
+# ── Offsite ──────────────────────────────────────────────────────────────────
+#
+# A dump on the same laptop as nothing else is still one disk away from being
+# no backup at all: lose the machine and you lose both it and your access to
+# the thing it was protecting. So there are two ways out, and neither hardcodes
+# a provider or wants a credential this script has any business holding.
+#
+#   BACKUP_OFFSITE_DIR      a directory — iCloud Drive, Dropbox, a mounted
+#                           external disk. Copied there and pruned to the same
+#                           retention. Zero setup on a Mac.
+#   BACKUP_OFFSITE_COMMAND  anything else, invoked with the dump path as "$1":
+#                           `aws s3 cp`, rclone, restic, scp, your own script.
+#
+# What a synced folder does and does not buy, plainly: it protects against
+# losing the machine, which is the risk here. It does not protect against a bad
+# write, because sync propagates deletions and corruption too. Object storage
+# with versioning is the stronger answer when the data justifies it.
+#
+# A failed offsite step never deletes the local dump and never rewrites
+# history — it logs and exits non-zero, so a scheduled run that stopped copying
+# is visible instead of silently local-only.
 #
 # ── Which pg_dump ────────────────────────────────────────────────────────────
 #
@@ -134,6 +158,48 @@ mv "$partial" "$target"; chmod 600 "$target"
 trap - EXIT; cleanup
 log "wrote $(basename "$target") ($(du -h "$target" | cut -f1))"
 
+# ── offsite ──────────────────────────────────────────────────────────────────
+offsite_failed=0
+offsite_done=0
+
+if [ -n "${BACKUP_OFFSITE_DIR:-}" ]; then
+  if mkdir -p "$BACKUP_OFFSITE_DIR" 2>/dev/null; then
+    # A temp name then a rename, so a copy interrupted by a closing lid or a
+    # sync client cannot leave a truncated file wearing a finished name.
+    tmp="$BACKUP_OFFSITE_DIR/.$(basename "$target").partial"
+    if cp "$target" "$tmp" 2>/dev/null && mv "$tmp" "$BACKUP_OFFSITE_DIR/$(basename "$target")"; then
+      chmod 600 "$BACKUP_OFFSITE_DIR/$(basename "$target")" 2>/dev/null || true
+      log "copied offsite to ${BACKUP_OFFSITE_DIR}"
+      offsite_done=1
+      while IFS= read -r old_remote; do
+        rm -f "$old_remote" && log "pruned offsite $(basename "$old_remote")"
+      done < <(ls -1 "$BACKUP_OFFSITE_DIR"/steve-*.dump 2>/dev/null | sort -r | tail -n "+$((BACKUP_RETENTION + 1))")
+    else
+      rm -f "$tmp" 2>/dev/null || true
+      log "ERROR: could not copy to ${BACKUP_OFFSITE_DIR}"
+      offsite_failed=1
+    fi
+  else
+    log "ERROR: ${BACKUP_OFFSITE_DIR} does not exist and could not be created"
+    offsite_failed=1
+  fi
+fi
+
+if [ -n "${BACKUP_OFFSITE_COMMAND:-}" ]; then
+  log "running the offsite command"
+  if "${BACKUP_OFFSITE_COMMAND}" "$target" 2>&1 | sed 's/^/  /'; then
+    log "offsite command finished"
+    offsite_done=1
+  else
+    log "ERROR: the offsite command failed"
+    offsite_failed=1
+  fi
+fi
+
+if [ "$offsite_done" -eq 0 ] && [ "$offsite_failed" -eq 0 ]; then
+  log "WARNING: no offsite destination configured — this dump exists only on this machine"
+fi
+
 # ── retention ────────────────────────────────────────────────────────────────
 # `sort -r | tail -n +N`, not `sort | head -n -N`: the negative-count form of
 # head is a GNU extension, and macOS ships BSD head where it errors — quietly,
@@ -145,3 +211,8 @@ while IFS= read -r old; do
 done < <(ls -1 "$BACKUP_DIR"/steve-*.dump 2>/dev/null | sort -r | tail -n "+$((BACKUP_RETENTION + 1))")
 kept="$(ls -1 "$BACKUP_DIR"/steve-*.dump 2>/dev/null | wc -l | tr -d ' ')"
 log "done — ${kept} kept, ${removed} pruned, retention ${BACKUP_RETENTION}"
+
+# Last, so a failed copy still leaves a good local dump and a pruned directory
+# behind it. Non-zero because a backup that quietly stopped leaving the machine
+# is the failure you find out about at the worst moment.
+[ "$offsite_failed" -eq 0 ] || exit 1

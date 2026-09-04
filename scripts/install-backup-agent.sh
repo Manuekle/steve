@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Install (or remove) the daily backup as a launchd agent on this Mac.
 #
-#   ./scripts/install-backup-agent.sh            # daily at 13:30 local
-#   ./scripts/install-backup-agent.sh --at 03:30 # a different hour
+#   ./scripts/install-backup-agent.sh                    # daily at 13:30 local
+#   ./scripts/install-backup-agent.sh --at 03:30         # a different hour
+#   ./scripts/install-backup-agent.sh --offsite icloud   # + copy to iCloud Drive
+#   ./scripts/install-backup-agent.sh --offsite /Volumes/Backups/steve
+#   ./scripts/install-backup-agent.sh --offsite-command ~/bin/steve-offsite
 #   ./scripts/install-backup-agent.sh --status
 #   ./scripts/install-backup-agent.sh --run      # run it now, through launchd
 #   ./scripts/install-backup-agent.sh --uninstall
@@ -20,10 +23,23 @@ TEMPLATE="$REPO/scripts/launchd/${LABEL}.plist.template"
 RETENTION="${BACKUP_RETENTION:-14}"
 AT="13:30"
 ACTION="install"
+OFFSITE_DIR="${BACKUP_OFFSITE_DIR:-}"
+OFFSITE_COMMAND="${BACKUP_OFFSITE_COMMAND:-}"
+ICLOUD="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --at) AT="$2"; shift 2 ;;
+    --offsite)
+      # `icloud` is a shorthand for the one destination every Mac already has.
+      if [ "$2" = "icloud" ]; then
+        [ -d "$ICLOUD" ] || { echo "iCloud Drive is not enabled on this Mac" >&2; exit 1; }
+        OFFSITE_DIR="$ICLOUD/steve-backups"
+      else
+        OFFSITE_DIR="$2"
+      fi
+      shift 2 ;;
+    --offsite-command) OFFSITE_COMMAND="$2"; shift 2 ;;
     --status) ACTION="status"; shift ;;
     --run) ACTION="run"; shift ;;
     --uninstall) ACTION="uninstall"; shift ;;
@@ -56,9 +72,13 @@ hour="${AT%%:*}"; minute="${AT##*:}"
 mkdir -p "$HOME/Library/LaunchAgents" "$HOME/steve-backups"
 chmod 700 "$HOME/steve-backups"
 
+[ -z "$OFFSITE_DIR" ] || mkdir -p "$OFFSITE_DIR"
+
 sed -e "s|__REPO__|$REPO|g" \
     -e "s|__HOME__|$HOME|g" \
     -e "s|__RETENTION__|$RETENTION|g" \
+    -e "s|__OFFSITE_DIR__|$OFFSITE_DIR|g" \
+    -e "s|__OFFSITE_COMMAND__|$OFFSITE_COMMAND|g" \
     -e "s|__HOUR__|$((10#$hour))|g" \
     -e "s|__MINUTE__|$((10#$minute))|g" \
     "$TEMPLATE" > "$PLIST"
@@ -72,4 +92,12 @@ echo "installed ${LABEL} — daily at ${hour}:${minute} local, keeping ${RETENTI
 echo "  plist:  $PLIST"
 echo "  dumps:  $HOME/steve-backups"
 echo "  log:    $HOME/steve-backups/backup.log"
+if [ -n "$OFFSITE_DIR" ]; then
+  echo "  offsite: $OFFSITE_DIR"
+elif [ -n "$OFFSITE_COMMAND" ]; then
+  echo "  offsite: $OFFSITE_COMMAND \"<dump>\""
+else
+  echo "  offsite: NONE — dumps stay on this machine only."
+  echo "           --offsite icloud, --offsite <dir>, or --offsite-command <cmd>"
+fi
 echo "  status: ./scripts/install-backup-agent.sh --status"
