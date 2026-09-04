@@ -448,9 +448,6 @@ function LoginForm() {
           </button>
         </form>
 
-        <p className="mx-auto mt-7 max-w-[40ch] text-balance text-center text-[12.5px] leading-relaxed text-muted-foreground/70">
-          {t("auth.footnote")}
-        </p>
 
         {/* Out to the marketing page, which is the only other thing someone
             who cannot get in can reach. `/`, not `history.back()`: an
