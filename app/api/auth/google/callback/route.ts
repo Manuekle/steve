@@ -65,7 +65,13 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
     if (!email) throw new Error("Google returned no email for this account.");
 
     const session = await loginWithVerifiedEmail(email);
-    const destination = next?.startsWith("/") ? next : "/chat";
+    // Not "/chat": that path rewrites to "/", which a later rewrite rule
+    // (the unconditional "/" -> "/landing" in next.config.ts) re-matches and
+    // sends on to the marketing page instead — see the identical bug fixed
+    // for /landing itself in the redirect-loop commit. "/dashboard" is the
+    // same destination the landing page's own "already signed in" button
+    // already trusts (app/landing/_components/landing-hero.tsx).
+    const destination = next?.startsWith("/") ? next : "/dashboard";
     result = NextResponse.redirect(new URL(destination, request.nextUrl.origin));
     result.cookies.set(sessionCookie(session.token, request.nextUrl.protocol === "https:"));
   } catch (error) {
