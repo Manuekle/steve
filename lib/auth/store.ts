@@ -76,8 +76,12 @@ async function useDb(): Promise<boolean> {
 
     dbMode = true;
     return true;
-  } catch {
+  } catch (error) {
     // DB not reachable — fall back to file
+    console.error(
+      "[auth/store] useDb() failed, falling back to the file store:",
+      error instanceof Error ? error.message : String(error),
+    );
     dbMode = false;
     return false;
   }
