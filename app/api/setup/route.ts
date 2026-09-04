@@ -40,7 +40,6 @@ export type SetupCheck = {
 
 /** Container name pinned in docker-compose.yml. */
 const POSTGRES_CONTAINER = "steve-postgres";
-const SAFE_IDENTIFIER = /^[A-Za-z0-9_-]+$/;
 
 async function tryRun(file: string, args: string[], timeout = 8000) {
   try {

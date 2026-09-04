@@ -11,6 +11,7 @@ import {
   stateCookie,
   verifierCookie,
 } from "@/lib/oauth-client";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 // GET /api/auth/google/start — hand the browser to Google, same shape as
 // /api/connections/[provider]/start but for signing in rather than
@@ -53,8 +54,8 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
   // only ever echoes back what it was given (code, state), never our own
   // query params, so where a bounced session was headed has to ride a cookie
   // too or the callback has no way to know.
-  const next = request.nextUrl.searchParams.get("next");
-  if (next?.startsWith("/")) response.cookies.set(nextCookie(PROVIDER), next, options);
+  const next = safeNextPath(request.nextUrl.searchParams.get("next"), "");
+  if (next) response.cookies.set(nextCookie(PROVIDER), next, options);
 
   return response;
 });

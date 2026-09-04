@@ -1,7 +1,6 @@
 import {
   createAgent,
   deleteAgent,
-  getAgent,
   listAgents,
   toggleAgentStatus,
   updateAgent,

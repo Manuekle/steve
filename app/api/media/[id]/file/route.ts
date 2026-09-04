@@ -34,6 +34,14 @@ export const GET = withApiErrors(async function GET(
       // the business's own material.
       "cache-control": "private, max-age=31536000, immutable",
       "content-disposition": `inline; filename="${encodeURIComponent(asset.name)}"`,
+      // These bytes were uploaded by a person and are served back from this
+      // app's own origin, so the same two headers the business logo carries
+      // apply here: nothing this document references may load or run, and the
+      // browser may not re-interpret the declared type. `ingestMedia` already
+      // refuses anything outside ACCEPTED_MEDIA_EXTENSIONS; this is the second
+      // lock, for the rows an older build let in before that check existed.
+      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; media-src data:; sandbox",
+      "x-content-type-options": "nosniff",
     },
   });
 });

@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Clause } from "@/app/landing/_components/legal-page";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
 import { Shell } from "@/app/landing/_components/primitives";

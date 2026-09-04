@@ -5,7 +5,6 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowDown01Icon,
   CheckIcon,
-  AlertCircleIcon,
   ArtificialIntelligence08Icon,
   Loading03Icon,
 } from "@hugeicons/core-free-icons";

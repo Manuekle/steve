@@ -236,7 +236,6 @@ function Phone({
     if (!iframe) return;
     let observer: ResizeObserver | null = null;
     let frame = 0;
-    let swap: number | undefined;
     let settle: number | undefined;
 
     setVisible(false);
@@ -273,7 +272,7 @@ function Phone({
     };
 
     iframe.addEventListener("load", onLoad);
-    swap = window.setTimeout(() => {
+    const swap = window.setTimeout(() => {
       // `srcdoc`, not document.write. `allow-same-origin` is granted only so
       // the parent can read the rendered height and hand the iframe a box tall
       // enough for the whole email; `allow-scripts` stays off, so nothing in

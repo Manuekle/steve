@@ -4,12 +4,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // A throwaway home, so the test never reads or writes the developer's real
 // ~/.steve/credentials.json.
+// `require`, not `import`: vi.hoisted runs before the module's ESM imports are
+// evaluated — that is the whole point of it — so there is nothing else to read
+// `node:fs` with at this moment.
+/* eslint-disable @typescript-eslint/no-require-imports */
 const home = vi.hoisted(() => {
   const { mkdtempSync: make } = require("node:fs") as typeof import("node:fs");
   const { tmpdir: temp } = require("node:os") as typeof import("node:os");
   const { join: at } = require("node:path") as typeof import("node:path");
   return make(at(temp(), "steve-credentials-"));
 });
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 vi.mock("node:os", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:os")>();

@@ -1,9 +1,11 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
-import { languageModelForTask } from "@/lib/task-model";
+import { modelIdForTask } from "@/lib/task-model";
+import { resolveLanguageModel } from "@/lib/ai-provider";
 import { getProviderReport } from "@/lib/provider-catalog";
 import { z } from "zod";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { guardAiRoute, recordRouteUsage } from "@/lib/ai-route-guard";
 
 // POST /api/agents/optimize
 // Takes a free-text description and returns a structured agent config
@@ -40,6 +42,9 @@ const AVAILABLE_TOOLS = [
 ];
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
+  const refused = await guardAiRoute(request, "agents-optimize");
+  if (refused) return refused;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -90,13 +95,15 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
   ].join("\n");
 
   try {
+    const modelId = await modelIdForTask("agent_design");
     const result = await generateObject({
-      model: await languageModelForTask("agent_design"),
+      model: resolveLanguageModel(modelId),
       schema: agentConfigSchema,
       system,
       prompt: `User wants an agent that: ${description}`,
       abortSignal: AbortSignal.timeout(60_000),
     });
+    recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "agents-optimize" });
     return NextResponse.json({ config: result.object });
   } catch (error) {
     return apiError("generation_failed", {

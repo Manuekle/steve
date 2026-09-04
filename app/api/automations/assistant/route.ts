@@ -1,11 +1,13 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
-import { languageModelForTask } from "@/lib/task-model";
+import { modelIdForTask } from "@/lib/task-model";
+import { resolveLanguageModel } from "@/lib/ai-provider";
 import { getProviderReport } from "@/lib/provider-catalog";
 import { workflowPlanSchema } from "@/lib/workflow-schema";
 import { STEP_TYPES } from "@/lib/workflow-step-meta";
 import type { WorkflowStep } from "@/lib/types";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { guardAiRoute, recordRouteUsage } from "@/lib/ai-route-guard";
 
 // POST /api/automations/assistant
 // Turns a plain-language request into a proposed workflow. It only ever
@@ -38,6 +40,9 @@ function describeExistingSteps(steps: readonly WorkflowStep[]): string {
 }
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
+  const refused = await guardAiRoute(request, "automations-assistant");
+  if (refused) return refused;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -125,13 +130,15 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
   ].join("\n");
 
   try {
+    const modelId = await modelIdForTask("automation");
     const result = await generateObject({
-      model: await languageModelForTask("automation"),
+      model: resolveLanguageModel(modelId),
       schema: workflowPlanSchema,
       system,
       prompt: context,
       abortSignal: AbortSignal.timeout(60_000),
     });
+    recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "automations-assistant" });
     return NextResponse.json({ plan: result.object });
   } catch (error) {
     return apiError("generation_failed", {

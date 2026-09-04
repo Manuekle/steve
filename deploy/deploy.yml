@@ -13,6 +13,7 @@
 #   docker     - Docker Engine + compose
 #   app        - clone, install, .env, Postgres, migrate, eve agent (systemd)
 #   frontend   - build Next.js UI, run `next start` (systemd), the public site
+#   backup     - scheduled pg_dump + retention + optional offsite copy
 #   monitoring - Beszel hub + agent (Docker)
 #   jaeger     - Jaeger all-in-one trace UI + OTLP receiver (Docker)
 #   caddy      - TLS reverse proxy: domain -> UI, status -> Beszel, jaeger -> Jaeger
@@ -26,6 +27,8 @@
       become: true
     - role: app
     - role: frontend
+    - role: backup
+      when: backup_enabled | default(true) | bool
     - role: monitoring
       when: monitoring_manage | default(true) | bool
     - role: jaeger

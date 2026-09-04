@@ -83,7 +83,7 @@ function InboxSkeleton() {
 export default function InboxPage() {
   const t = useT();
   const { locale } = useI18n();
-  const { confirm, dialog: confirmDialog } = useConfirmDialog();
+  const { confirm } = useConfirmDialog();
   const { toast } = useToast();
   const phoneCountries = useMemo(() => countryOptions(locale), [locale]);
   const reduce = useReducedMotion();

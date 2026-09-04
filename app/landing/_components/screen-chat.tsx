@@ -475,9 +475,6 @@ function Answer({
 
 const NOOP = () => {};
 
-/** `transfer_human`'s payload, spelled the way the runtime prints it. */
-const HANDOFF_OUTPUT = '{\n  "contact": "Carlos Ruiz",\n  "status": "waiting_human"\n}';
-
 /** Where in the composer the pointer lands: the start of the line, not the
  *  middle of the box, because that is where a caret goes. */
 const INPUT_BIAS: Point = { x: 0.08, y: 0.3 };

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { existsSync, mkdirSync, rmSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -11,7 +11,6 @@ import { tmpdir } from "node:os";
 // the same millisecond — same path, same underlying business.json, and one
 // file's writes clobber the other's mid-test.
 const TEST_DIR = join(tmpdir(), `steve-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-const TEST_FILE = join(TEST_DIR, "business.json");
 
 // We need to set HOME so the business-store reads from our test dir.
 // business-store uses homedir() → ~/.steve/business.json.
@@ -129,7 +128,7 @@ describe("business-store: contacts", () => {
 
   it("upserts by phone (no duplicate)", async () => {
     await upsertContact({ name: "Juan", phone: "+54111234", channel: "whatsapp" });
-    const contact = await upsertContact({ name: "Juan Updated", phone: "+54111234", channel: "whatsapp" });
+    await upsertContact({ name: "Juan Updated", phone: "+54111234", channel: "whatsapp" });
     const list = await listContacts();
     expect(list).toHaveLength(1);
     expect(list[0].name).toBe("Juan Updated");

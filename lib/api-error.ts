@@ -116,15 +116,26 @@ export function missingField(field: string): NextResponse {
 }
 
 /**
- * Wraps an unexpected throw. The thrown message goes to `detail` (support and
- * logs) and never becomes the sentence a person reads, so a stack-shaped
- * message from a third-party SDK can't leak into the UI.
+ * Wraps an unexpected throw.
+ *
+ * `detail` used to carry the thrown message. The comment said "support and
+ * logs", but `apiErrorBody` puts `detail` in the response, so it was going to
+ * the caller: a `pg` failure naming the host and database, an `ENOENT` with
+ * the server's home directory in it, an SDK message quoting the request it
+ * built. In production the message is logged and the caller gets the code
+ * alone; outside production it is passed through, because "something broke on
+ * our side" with nothing after it is a bad afternoon for whoever is building
+ * against this locally.
  */
 export function apiFailure(
   error: unknown,
   code: Extract<ApiErrorCode, "server_error" | "upstream_failed" | "timeout"> = "server_error",
 ): NextResponse {
   const detail = error instanceof Error ? error.message : String(error);
+  if (process.env.NODE_ENV === "production") {
+    console.error(`[api] ${code}:`, detail);
+    return apiError(code);
+  }
   return apiError(code, { detail });
 }
 

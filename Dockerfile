@@ -27,13 +27,21 @@ RUN corepack enable
 # ---- deps: every dependency, dev included — eve build and next build both
 # need the TypeScript toolchain. ----
 FROM base AS deps
+# `patches/` is not optional: pnpm-workspace.yaml's `patchedDependencies`
+# names patches/@elevenlabs__client@1.23.0.patch, and pnpm hashes that file
+# during resolution. Without it every image build died at this line with
+# `ENOENT ... patches/@elevenlabs__client@1.23.0.patch` — the whole Docker
+# path was broken and CI never noticed, because it validates
+# `docker compose config` and never runs `docker build`.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile --strict-peer-dependencies
 
 # ---- prod-deps: production-only install for the eve runtime image, built
 # separately so the dev toolchain never ships in it. ----
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile --strict-peer-dependencies --prod
 
 # ---- build: `pnpm build` == `eve build && next build`. Produces .output/
@@ -90,6 +98,15 @@ COPY --from=build /app/agent ./agent
 COPY --from=build /app/lib ./lib
 COPY package.json tsconfig.json ./
 EXPOSE 3000
+# Deliberately still root, unlike the `web` target below: this container talks
+# to the host's docker socket to create sandboxes, and the socket's group id is
+# the host's, not something a Dockerfile can pin. Read the trust-boundary note
+# in docker-compose.enterprise.yml before running it.
+# A TCP connect, not an HTTP path: eve owns its own route table and this
+# Dockerfile should not encode a guess about which path answers. "The listener
+# is up" is what a restart policy needs anyway.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "require('node:net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
 CMD ["node", "node_modules/eve/bin/eve.js", "start", "--host", "0.0.0.0", "--port", "3000"]
 
 # ---- web: the Next.js UI. Standalone output is already self-contained, so
@@ -100,8 +117,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV EVE_SELF_HOSTED=1
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
+# The node image ships an unprivileged `node` user; nothing in the Next server
+# needs root, and a container that runs as root turns any RCE in a dependency
+# into root inside the namespace.
+USER node
 EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "server.js"]

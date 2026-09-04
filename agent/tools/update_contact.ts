@@ -3,7 +3,6 @@ import { z } from "zod";
 import {
   upsertContact,
   listContacts,
-  getContactBySession,
   normalizePhone,
 } from "../../lib/business-store";
 import { assertToolAllowed } from "../../lib/agent-scope";

@@ -61,7 +61,7 @@ type ConnectionStore = Partial<Record<ConnectionId, StoredConnection>>;
 
 let dbMode: boolean | null = null;
 
-async function useDb(): Promise<boolean> {
+async function usingDb(): Promise<boolean> {
   if (dbMode !== null) return dbMode;
 
   if (!process.env.WORKFLOW_POSTGRES_URL) {
@@ -107,7 +107,7 @@ async function readFileStore(): Promise<ConnectionStore | null> {
 }
 
 async function readStore(): Promise<ConnectionStore> {
-  if (await useDb()) {
+  if (await usingDb()) {
     return (await dbReadDocument<ConnectionStore>("connections")) ?? {};
   }
   return (await readFileStore()) ?? {};
@@ -122,7 +122,7 @@ async function readStore(): Promise<ConnectionStore> {
  * token file worth moving off.
  */
 async function updateStore<T>(fn: (store: ConnectionStore) => T): Promise<T> {
-  if (await useDb()) {
+  if (await usingDb()) {
     return dbUpdateDocument("connections", (raw) => raw ?? {}, fn);
   }
   return enqueue(async () => {

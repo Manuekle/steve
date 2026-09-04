@@ -649,6 +649,11 @@ const es: Dictionary = {
   "auth.orDivider": "o",
   "auth.errorGoogleUnconfigured": "Esta instancia todavía no tiene Google configurado. Entrá con email y contraseña.",
   "auth.errorGoogleFailed": "No pudimos completar el inicio de sesión con Google. Probá de nuevo.",
+  "auth.errorSignupClosed": "Esta instancia no acepta cuentas nuevas. Pedile acceso a quien la administra.",
+  "auth.errorInviteRequired": "Necesitás un código de invitación para crear una cuenta acá.",
+  "auth.inviteCode": "Código de invitación",
+  "auth.inviteCodePlaceholder": "Pegá el código que te pasaron",
+  "auth.inviteCodeHint": "Lo genera quien administra esta instancia.",
 
   // ── Account ──
   "account.title": "Cuenta",
@@ -3455,6 +3460,11 @@ const en: Dictionary = {
   "auth.orDivider": "or",
   "auth.errorGoogleUnconfigured": "This instance doesn't have Google set up yet. Sign in with email and password.",
   "auth.errorGoogleFailed": "We couldn't complete sign-in with Google. Try again.",
+  "auth.errorSignupClosed": "This instance isn't accepting new accounts. Ask whoever runs it for access.",
+  "auth.errorInviteRequired": "You need an invite code to create an account here.",
+  "auth.inviteCode": "Invite code",
+  "auth.inviteCodePlaceholder": "Paste the code you were given",
+  "auth.inviteCodeHint": "Whoever runs this instance issues it.",
 
   // ── Account ──
   "account.title": "Account",

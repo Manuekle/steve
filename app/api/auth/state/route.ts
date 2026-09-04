@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, hasAnyAccount, verifySession } from "@/lib/auth/store";
+import { signupMode, signupNeedsInvite } from "@/lib/auth/signup-policy";
 
 /**
  * What a public page needs to decide what to offer: has anyone claimed this
@@ -12,8 +13,14 @@ import { SESSION_COOKIE, hasAnyAccount, verifySession } from "@/lib/auth/store";
  * prefill is gone; the two now agree.
  */
 export async function GET(request: NextRequest) {
+  const claimed = await hasAnyAccount();
   return NextResponse.json({
-    claimed: await hasAnyAccount(),
+    claimed,
     signedIn: await verifySession(request.cookies.get(SESSION_COOKIE)?.value),
+    // What the signup form should offer. Neither field is a permission — the
+    // register route runs `decideSignup` itself and refuses regardless of what
+    // the client did with these.
+    signupMode: signupMode(),
+    signupNeedsInvite: signupNeedsInvite(claimed),
   });
 }

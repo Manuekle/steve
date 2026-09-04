@@ -4,6 +4,7 @@
 // root layout, so the locale provider is available and both languages get the
 // same sentence — which is why this is a client component.
 
+import Link from "next/link";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { FileXIcon, ArrowLeft02Icon } from "@hugeicons/core-free-icons";
 import { useT } from "@/lib/i18n/provider";
@@ -31,12 +32,12 @@ export default function NotFound() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <a
+        <Link
           href="/"
           className="inline-flex h-9 items-center gap-2 rounded-lg bg-foreground px-4 text-sm font-medium text-background shadow-[var(--shadow-soft)] transition-all duration-150 hover:opacity-90 active:translate-y-px"
         >
           {t("notFound.home")}
-        </a>
+        </Link>
         <button
           onClick={handleBack}
           className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent active:translate-y-px"

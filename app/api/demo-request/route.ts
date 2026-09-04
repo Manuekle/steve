@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, withApiErrors } from "@/lib/api-error";
+import { rateLimit } from "@/lib/rate-limit";
 import { sendAppEmail } from "@/lib/email-send";
 import { ENTITY } from "@/app/landing/_components/legal-page";
 
@@ -14,32 +15,11 @@ import { ENTITY } from "@/app/landing/_components/legal-page";
 const MAX_LEN = { name: 200, email: 320, company: 200, message: 4000 } as const;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** One submission every ten seconds per address, 10 in a ten-minute window —
- *  a sales form gets nowhere near the traffic a public webhook does, so the
- *  budget is tighter. In-memory on purpose: single self-hosted process, and a
- *  dependency for a counter that resets on deploy is a bad trade. See the
- *  identical pattern in app/api/f/[slug]/route.ts. */
+/** 10 submissions in a ten-minute window per address — a sales form gets
+ *  nowhere near the traffic a public webhook does, so the budget is tighter
+ *  than the one on /api/f/<slug>. Both now share lib/rate-limit.ts. */
 const RATE_WINDOW_MS = 10 * 60_000;
 const RATE_MAX = 10;
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((at) => now - at < RATE_WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) {
-    for (const [key, times] of hits) {
-      if (times.every((at) => now - at >= RATE_WINDOW_MS)) hits.delete(key);
-    }
-  }
-  return recent.length > RATE_MAX;
-}
-
-function clientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
-}
 
 type DemoRequestBody = {
   readonly name?: unknown;
@@ -64,7 +44,8 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
   // app/pricing/_components/pricing.tsx's ContactSalesDialog).
   if (!ENTITY.email) return apiError("not_configured");
 
-  if (rateLimited(clientIp(request))) return apiError("rate_limited");
+  const limit = rateLimit("demo-request", request, { max: RATE_MAX, windowMs: RATE_WINDOW_MS });
+  if (!limit.allowed) return apiError("rate_limited");
 
   let body: DemoRequestBody;
   try {

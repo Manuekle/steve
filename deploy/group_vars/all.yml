@@ -52,6 +52,38 @@ pnpm_version: "10.33.2"
 eve_replay_cutover_version: "0.20.0"
 workflow_backup_retention: 10
 
+# --- Scheduled backups (roles/backup) -------------------------------------
+# `workflow_backup_*` above are the pre-migration dump the app role takes on
+# every deploy. These are the *scheduled* ones, which is a different job: a
+# deploy-time dump is a rollback aid, and an install nobody has deployed to in
+# a month has a month-old copy of its only database.
+backup_enabled: true
+# systemd OnCalendar. Daily at 03:20 UTC, with a randomised delay in the unit.
+backup_schedule: "*-*-* 03:20:00"
+backup_retention: 14
+postgres_container: "steve-postgres"
+# Run one backup during the deploy, so a broken backup path fails the deploy
+# rather than being discovered the night you need it.
+backup_verify_on_deploy: true
+
+# THE ONE THAT MATTERS. Leave this empty and every dump sits on the same disk
+# as the database it came from — losing the droplet loses both, which is a
+# second copy of a single point of failure rather than a backup.
+#
+# Name a command here. It is invoked with the dump's path as "$1", so the
+# reliable shape is a short script on the host:
+#
+#   # /usr/local/bin/steve-offsite
+#   #!/usr/bin/env bash
+#   set -euo pipefail
+#   aws s3 cp "$1" "s3://my-bucket/steve/$(basename "$1")" --storage-class STANDARD_IA
+#
+#   backup_offsite_command: "/usr/local/bin/steve-offsite"
+#
+# Deliberately not a provider setting: this role should not decide where
+# someone's customer data lives, nor hold credentials for it.
+backup_offsite_command: ""
+
 # Environment applied to every pnpm invocation. Build-script permissions live
 # in pnpm-workspace.yaml instead of a process-wide allow-all switch.
 pnpm_env:

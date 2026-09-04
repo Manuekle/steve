@@ -63,7 +63,7 @@ function emptyState(): BillingState {
 
 let dbMode: boolean | null = null;
 
-async function useDb(): Promise<boolean> {
+async function usingDb(): Promise<boolean> {
   if (dbMode !== null) return dbMode;
 
   if (!process.env.WORKFLOW_POSTGRES_URL) {
@@ -162,13 +162,13 @@ async function fileUpdateBillingState(
 // ── Public API: routes to DB or file ─────────────────────────────────────────
 
 export async function readBillingState(): Promise<BillingState> {
-  return (await useDb()) ? dbReadBillingState() : fileReadBillingState();
+  return (await usingDb()) ? dbReadBillingState() : fileReadBillingState();
 }
 
 export async function updateBillingState(
   fn: (state: BillingState) => BillingState,
 ): Promise<BillingState> {
-  return (await useDb()) ? dbUpdateBillingState(fn) : fileUpdateBillingState(fn);
+  return (await usingDb()) ? dbUpdateBillingState(fn) : fileUpdateBillingState(fn);
 }
 
 /** One month out, which is the period every subscription plan bills on. */

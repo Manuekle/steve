@@ -150,6 +150,10 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
  *  A caller passing `getThinkingMessage` owns its own wording. */
 function useDefaultThinkingMessage() {
   const t = useT();
+  // Not a component — a hook returning the render function the trigger calls
+  // with its own arguments. The lint rule sees "returns JSX" and asks for a
+  // displayName that would never appear anywhere.
+  // eslint-disable-next-line react/display-name
   return (isStreaming: boolean, duration?: number) => {
     if (isStreaming || duration === 0) {
       return (
