@@ -4,6 +4,7 @@ import { languageModelForTask } from "@/lib/task-model";
 import { getProviderReport } from "@/lib/provider-catalog";
 import { z } from "zod";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { guardAiRoute } from "@/lib/ai-route-guard";
 
 // POST /api/agents/optimize
 // Takes a free-text description and returns a structured agent config
@@ -40,6 +41,9 @@ const AVAILABLE_TOOLS = [
 ];
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
+  const refused = await guardAiRoute(request, "agents-optimize");
+  if (refused) return refused;
+
   let body: unknown;
   try {
     body = await request.json();

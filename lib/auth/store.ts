@@ -6,6 +6,7 @@ import { promisify } from "node:util";
 import {
   migrateFromFileStore as dbMigrateFromFile,
   hasAnyAccount as dbHasAnyAccount,
+  accountExists as dbAccountExists,
   createAccount as dbCreateAccount,
   login as dbLogin,
   loginWithVerifiedEmail as dbLoginWithVerifiedEmail,
@@ -420,6 +421,16 @@ async function fileDestroySession(token: string | undefined): Promise<void> {
 
 export async function hasAnyAccount(): Promise<boolean> {
   return (await useDb()) ? dbHasAnyAccount() : fileHasAnyAccount(await read());
+}
+
+/** Whether this address already has an account. Used by the Google callback to
+ *  tell "signing in" from "signing up", which are the same call there
+ *  (`loginWithVerifiedEmail`) but not the same decision. */
+export async function accountExists(email: string): Promise<boolean> {
+  const normalised = email.trim().toLowerCase();
+  if (await useDb()) return dbAccountExists(normalised);
+  const store = await read();
+  return store.accounts.some((account) => account.email === normalised);
 }
 
 export async function createAccount(

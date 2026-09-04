@@ -10,6 +10,7 @@ import { findMedia } from "@/lib/media-library";
 import { countAssets } from "@/lib/media-store";
 import { RagError, searchKnowledge } from "@/lib/rag";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { guardAiRoute } from "@/lib/ai-route-guard";
 import { toCapabilityIds, type CapabilityId } from "@/lib/agent-capabilities";
 
 // POST /api/agents/[id]/chat
@@ -126,6 +127,9 @@ export const POST = withApiErrors(async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  const refused = await guardAiRoute(request, "agents-chat");
+  if (refused) return refused;
+
   const { id } = await context.params;
   const agent = await getAgent(id);
   if (!agent) return apiError("not_found");

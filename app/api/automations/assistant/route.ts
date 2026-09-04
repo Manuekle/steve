@@ -6,6 +6,7 @@ import { workflowPlanSchema } from "@/lib/workflow-schema";
 import { STEP_TYPES } from "@/lib/workflow-step-meta";
 import type { WorkflowStep } from "@/lib/types";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { guardAiRoute } from "@/lib/ai-route-guard";
 
 // POST /api/automations/assistant
 // Turns a plain-language request into a proposed workflow. It only ever
@@ -38,6 +39,9 @@ function describeExistingSteps(steps: readonly WorkflowStep[]): string {
 }
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
+  const refused = await guardAiRoute(request, "automations-assistant");
+  if (refused) return refused;
+
   let body: unknown;
   try {
     body = await request.json();

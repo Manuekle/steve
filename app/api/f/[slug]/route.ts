@@ -5,6 +5,7 @@ import { allFields } from "@/lib/forms/scoring";
 import type { Form, FormAnswer } from "@/lib/types";
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * The public half of forms: the only routes in the app a stranger can reach
@@ -20,31 +21,12 @@ const MAX_ANSWERS = 100;
 const MAX_TEXT = 2000;
 const MAX_PICKS = 50;
 
-/** One submission every two seconds per address, 30 in a five-minute window.
- *  In-memory on purpose: this app is a single self-hosted process, and a
- *  dependency for a counter that resets on deploy is a bad trade. */
+/** 30 submissions in a five-minute window per address. The counter and its
+ *  caveats now live in lib/rate-limit.ts — this route's own copy read the
+ *  *first* `X-Forwarded-For` entry, which is the one the caller gets to write,
+ *  so a header made the limit disappear. */
 const RATE_WINDOW_MS = 5 * 60_000;
 const RATE_MAX = 30;
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((at) => now - at < RATE_WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  // Bounded cleanup, so a stream of one-shot addresses can't grow the map.
-  if (hits.size > 5000) {
-    for (const [key, times] of hits) {
-      if (times.every((at) => now - at >= RATE_WINDOW_MS)) hits.delete(key);
-    }
-  }
-  return recent.length > RATE_MAX;
-}
-
-function clientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
-}
 
 /** What a visitor is allowed to see: the questions, and nothing about how the
  *  answers are scored. Points on the wire would tell a respondent which button
@@ -130,7 +112,8 @@ export const POST = withApiErrors(async function POST(
 ) {
   const { slug } = await context.params;
 
-  if (rateLimited(clientIp(request))) return apiError("rate_limited");
+  const limit = rateLimit("form-submit", request, { max: RATE_MAX, windowMs: RATE_WINDOW_MS });
+  if (!limit.allowed) return apiError("rate_limited");
 
   const form = await getFormBySlug(slug);
   if (!form || form.status !== "published") return apiError("not_found");

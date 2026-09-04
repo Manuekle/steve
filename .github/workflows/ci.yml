@@ -36,6 +36,14 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Validate Compose
         run: docker compose config --quiet
+      # `docker compose config` only parses YAML. It never noticed that both
+      # dependency stages were missing `COPY patches ./patches`, so every image
+      # build failed at `pnpm install` — the documented container deployment
+      # path was broken and green.
+      - name: Build the container images
+        run: |
+          docker build --target eve -t steve-eve:ci .
+          docker build --target web -t steve-web:ci .
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level high
 

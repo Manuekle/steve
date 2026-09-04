@@ -95,7 +95,18 @@ export async function ingestMedia(input: {
 
   const extension = extensionOf(input.name);
   const kind = kindForMime(input.mime, input.name);
-  if (kind === "file") {
+  // Both halves, and the extension one is the half that was missing.
+  //
+  // `kindForMime` classifies on the MIME prefix, so `image/svg+xml` came back
+  // as "image" and sailed through — `extension` was only ever interpolated
+  // into the error message, never checked. An SVG is a document that can carry
+  // script, and app/api/media/[id]/file serves these bytes back inline under
+  // the stored MIME on this app's own origin: an upload was a stored-XSS slot
+  // with the whole session-authenticated API behind it, including the
+  // plaintext credential export. ACCEPTED_MEDIA_EXTENSIONS holds no format
+  // that can execute, so requiring membership closes it at the door — and the
+  // response headers on that route close it again on the way out.
+  if (kind === "file" || !(ACCEPTED_MEDIA_EXTENSIONS as readonly string[]).includes(extension)) {
     throw new MediaError(
       `Formato no soportado: ${extension || input.mime}. Aceptados: ${ACCEPTED_MEDIA_EXTENSIONS.join(", ")}.`,
     );

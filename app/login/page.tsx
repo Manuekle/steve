@@ -10,6 +10,7 @@ import { GoogleLogo } from "@/components/provider-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n/provider";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { cn } from "@/lib/utils";
 
 type Mode = "signin" | "signup";
@@ -27,7 +28,7 @@ function LoginForm() {
   const params = useSearchParams();
 
   const justReset = params.get("reset") === "1";
-  const next = params.get("next");
+  const googleNext = safeNextPath(params.get("next"), "");
   // Set only by /api/auth/google/callback, on the way back from Google.
   const googleError = params.get("error");
   const googleErrorMessage =
@@ -39,6 +40,8 @@ function LoginForm() {
           ? t("auth.errorGoogleFailed")
           : null;
   const [mode, setMode] = useState<Mode>("signin");
+  const [needsInvite, setNeedsInvite] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -98,9 +101,26 @@ function LoginForm() {
     [],
   );
 
+  // Whether this installation is accepting new accounts, and on what terms —
+  // see lib/auth/signup-policy.ts. Only ever shapes the form; the register
+  // route decides, and refuses a request that ignores this.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/state")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((state: { signupNeedsInvite?: boolean } | null) => {
+        if (!cancelled) setNeedsInvite(Boolean(state?.signupNeedsInvite));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const switchMode = (next: Mode) => {
     setMode(next);
     setErrors({});
+    setInviteCode("");
     setPassword("");
     setConfirmPassword("");
     setShowPassword(false);
@@ -144,7 +164,7 @@ function LoginForm() {
     setErrors({});
 
     const response = await fetch(mode === "signin" ? "/api/auth/login" : "/api/auth/register", {
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, ...(inviteCode ? { inviteCode } : {}) }),
       headers: { "content-type": "application/json" },
       method: "POST",
     }).catch(() => null);
@@ -155,6 +175,12 @@ function LoginForm() {
         failWith({ email: t("auth.errorNetwork") });
       } else if (code === "invalid") {
         failWith({ password: t("auth.errorWeak") });
+      } else if (code === "invite_required") {
+        failWith({ email: t("auth.errorInviteRequired") });
+      } else if (code === "closed") {
+        failWith({ email: t("auth.errorSignupClosed") });
+      } else if (code === "rate_limited") {
+        failWith({ email: t("apiError.rate_limited") });
       } else if (code === "email_exists") {
         // The natural recovery from "you already have an account" is to sign
         // in — flip there rather than leaving them stuck on a form that will
@@ -174,8 +200,7 @@ function LoginForm() {
     // A fresh signup goes to onboarding (which redirects itself straight back
     // if this instance's business profile is already set up); a returning
     // account goes wherever it was headed.
-    const next = params.get("next");
-    router.replace(mode === "signin" ? (next?.startsWith("/") ? next : "/chat") : "/onboarding");
+    router.replace(mode === "signin" ? safeNextPath(params.get("next"), "/chat") : "/onboarding");
     router.refresh();
   };
 
@@ -229,7 +254,7 @@ function LoginForm() {
 
         <Button asChild className="mt-8 w-full" variant="outline">
           <Link
-            href={`/api/auth/google/start${next?.startsWith("/") ? `?next=${encodeURIComponent(next)}` : ""}`}
+            href={`/api/auth/google/start${googleNext ? `?next=${encodeURIComponent(googleNext)}` : ""}`}
           >
             <GoogleLogo size={16} />
             {t("auth.continueWithGoogle")}
@@ -364,6 +389,25 @@ function LoginForm() {
                   {errors.confirm}
                 </p>
               ) : null}
+            </div>
+          ) : null}
+
+          {mode === "signup" && needsInvite ? (
+            <div className="t-input-wrap flex flex-col gap-1.5">
+              <label className="font-medium text-sm" htmlFor="auth-invite">
+                {t("auth.inviteCode")}
+              </label>
+              <div className="t-input relative rounded-xl">
+                <Input
+                  autoComplete="off"
+                  id="auth-invite"
+                  onChange={(event) => setInviteCode(event.target.value)}
+                  placeholder={t("auth.inviteCodePlaceholder")}
+                  type="text"
+                  value={inviteCode}
+                />
+              </div>
+              <span className="text-muted-foreground text-xs">{t("auth.inviteCodeHint")}</span>
             </div>
           ) : null}
 

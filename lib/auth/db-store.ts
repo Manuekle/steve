@@ -41,18 +41,6 @@ function getPool(): Pool {
         "WORKFLOW_POSTGRES_URL is not set. Auth DB store needs the same Postgres connection.",
       );
     }
-    console.log(
-      "[auth/db-store] WORKFLOW_POSTGRES_URL shape:",
-      JSON.stringify({
-        len: connectionString.length,
-        head: connectionString.slice(0, 15),
-        tail: connectionString.slice(-10),
-        hasProtocol: connectionString.includes("://"),
-        hasAt: connectionString.includes("@"),
-        slashCount: connectionString.split("/").length - 1,
-        atCount: connectionString.split("@").length - 1,
-      }),
-    );
     pool = new Pool({ connectionString, max: poolMaxConnections() });
     // See lib/doc-store.ts: an unhandled pool `error` event is an uncaught
     // exception, and takes the whole process with it.
@@ -188,6 +176,14 @@ export async function hasAnyAccount(): Promise<boolean> {
   await ensureSchema();
   const result = await getPool().query("SELECT 1 FROM steve.accounts LIMIT 1");
   return result.rowCount! > 0;
+}
+
+export async function accountExists(email: string): Promise<boolean> {
+  await ensureSchema();
+  const result = await getPool().query("SELECT 1 FROM steve.accounts WHERE email = $1", [
+    email.trim().toLowerCase(),
+  ]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function createAccount(

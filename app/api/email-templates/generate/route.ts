@@ -5,6 +5,7 @@ import { languageModelForTask } from "@/lib/task-model";
 import { getProviderReport } from "@/lib/provider-catalog";
 import { extractTemplateVariables, renderTemplateSource, TemplateRenderError } from "@/lib/email-render";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { guardAiRoute } from "@/lib/ai-route-guard";
 
 // POST /api/email-templates/generate
 // Turns a plain-language description into a complete custom template — label,
@@ -70,6 +71,9 @@ const system = [
 export const maxDuration = 90;
 
 export const POST = withApiErrors(async function POST(request: NextRequest) {
+  const refused = await guardAiRoute(request, "email-generate");
+  if (refused) return refused;
+
   let body: unknown;
   try {
     body = await request.json();

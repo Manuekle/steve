@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { withApiErrors } from "@/lib/api-error";
-import { loginWithVerifiedEmail, sessionCookie } from "@/lib/auth/store";
+import { accountExists, hasAnyAccount, loginWithVerifiedEmail, sessionCookie } from "@/lib/auth/store";
+import { decideSignup } from "@/lib/auth/signup-policy";
 import { getCredential } from "@/lib/credentials";
 import { GOOGLE_LOGIN_OAUTH } from "@/lib/google-login-oauth";
 import { exchangeCode, nextCookie, stateCookie, verifierCookie } from "@/lib/oauth-client";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 // GET /api/auth/google/callback — where Google sends the browser back.
 //
@@ -64,16 +66,31 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
     const email = tokens.accountLabel;
     if (!email) throw new Error("Google returned no email for this account.");
 
-    const session = await loginWithVerifiedEmail(email);
-    // Not "/chat": that path rewrites to "/", which a later rewrite rule
-    // (the unconditional "/" -> "/landing" in next.config.ts) re-matches and
-    // sends on to the marketing page instead — see the identical bug fixed
-    // for /landing itself in the redirect-loop commit. "/dashboard" is the
-    // same destination the landing page's own "already signed in" button
-    // already trusts (app/landing/_components/landing-hero.tsx).
-    const destination = next?.startsWith("/") ? next : "/dashboard";
-    result = NextResponse.redirect(new URL(destination, request.nextUrl.origin));
-    result.cookies.set(sessionCookie(session.token, request.nextUrl.protocol === "https:"));
+    // `loginWithVerifiedEmail` creates the account when it does not exist, so
+    // this button is a registration endpoint as much as a sign-in one — and it
+    // would be the way around lib/auth/signup-policy.ts if it did not ask.
+    // Google proves the address belongs to whoever is holding it; it says
+    // nothing about whether that person may have this installation.
+    const refused =
+      !(await accountExists(email)) &&
+      !decideSignup({ email, instanceClaimed: await hasAnyAccount() }).allowed;
+
+    if (refused) {
+      // Assigned rather than returned: the one-shot cookies below have to be
+      // cleared on this exit too, and an early return walks past them.
+      result = toLogin(request, "signup_closed");
+    } else {
+      const session = await loginWithVerifiedEmail(email);
+      // Not "/chat": that path rewrites to "/", which a later rewrite rule
+      // (the unconditional "/" -> "/landing" in next.config.ts) re-matches and
+      // sends on to the marketing page instead — see the identical bug fixed
+      // for /landing itself in the redirect-loop commit. "/dashboard" is the
+      // same destination the landing page's own "already signed in" button
+      // already trusts (app/landing/_components/landing-hero.tsx).
+      const destination = safeNextPath(next, "/dashboard");
+      result = NextResponse.redirect(new URL(destination, request.nextUrl.origin));
+      result.cookies.set(sessionCookie(session.token, request.nextUrl.protocol === "https:"));
+    }
   } catch (error) {
     console.error(
       "[auth/google/callback] exchange or login failed:",

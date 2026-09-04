@@ -56,6 +56,24 @@ describe("ingestMedia", () => {
     ).rejects.toBeInstanceOf(MediaError);
   });
 
+  // `kindForMime` classifies on the MIME prefix, so an SVG used to come back as
+  // "image" and be stored; app/api/media/[id]/file then served it back inline,
+  // same-origin, under that MIME. An SVG can carry script.
+  it("rejects an SVG even though its MIME says image", async () => {
+    await expect(
+      ingestMedia({ name: "logo.svg", mime: "image/svg+xml", bytes: bytes(64) }),
+    ).rejects.toBeInstanceOf(MediaError);
+  });
+
+  it("rejects a name whose extension is not on the list, whatever the MIME claims", async () => {
+    await expect(
+      ingestMedia({ name: "payload.html", mime: "image/png", bytes: bytes(64) }),
+    ).rejects.toBeInstanceOf(MediaError);
+    await expect(
+      ingestMedia({ name: "noextension", mime: "image/png", bytes: bytes(64) }),
+    ).rejects.toBeInstanceOf(MediaError);
+  });
+
   it("rejects an empty file", async () => {
     await expect(
       ingestMedia({ name: "vacio.png", mime: "image/png", bytes: new Uint8Array(0) }),
