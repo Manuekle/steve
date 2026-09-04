@@ -77,12 +77,16 @@ async function useDb(): Promise<boolean> {
     dbMode = true;
     return true;
   } catch (error) {
-    // DB not reachable — fall back to file
+    // DB not reachable — fall back to file for *this* call only. Left
+    // uncached (dbMode stays null) on purpose: a warm serverless instance
+    // that saw one transient failure (a pool briefly at capacity, a network
+    // blip) must not commit to file mode — which doesn't work at all on a
+    // filesystem with no writable home directory — for the rest of its
+    // life. The next call gets a fresh try.
     console.error(
-      "[auth/store] useDb() failed, falling back to the file store:",
+      "[auth/store] useDb() failed this call, will retry next time:",
       error instanceof Error ? error.message : String(error),
     );
-    dbMode = false;
     return false;
   }
 }
