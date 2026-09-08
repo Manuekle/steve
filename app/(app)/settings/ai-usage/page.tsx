@@ -10,7 +10,6 @@ import {
   Robot01Icon,
   MessageMultiple01Icon,
   Wallet01Icon,
-  Loading03Icon,
   ChartLineData01Icon,
 } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../../_components/page-container";
@@ -27,6 +26,7 @@ import { RankedBars, TimeSeries, type RankedBar } from "@/app/_components/chart"
 import { formatDayTick } from "@/lib/chart-data";
 import type { ChannelId } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 function channelLabel(channel: string | null, fallback: string): string {
   if (!channel) return fallback;
@@ -429,7 +429,7 @@ export default function AiUsagePage() {
             <CardSeparator />
             {!details ? (
               <div className="flex items-center justify-center py-10">
-                <HugeiconsIcon icon={Loading03Icon} size={18} strokeWidth={1.75} className="animate-spin text-muted-foreground" />
+                <Spinner size={18} className="text-muted-foreground" />
               </div>
             ) : details.rows.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-muted-foreground">{t("aiUsage.detailsEmpty")}</p>

@@ -45,6 +45,14 @@ export const CHART_TONE_FILL: Readonly<Record<ChartTone, string>> = {
   warning: "bg-amber-500/70",
 };
 
+/** The same roles as a low-opacity ground, for a mark that carries text. */
+export const CHART_TONE_WASH: Readonly<Record<ChartTone, string>> = {
+  critical: "bg-rose-500/20",
+  neutral: "bg-foreground/12",
+  positive: "bg-emerald-500/20",
+  warning: "bg-amber-500/20",
+};
+
 export const CHART_TONE_STROKE: Readonly<Record<ChartTone, string>> = {
   critical: "text-rose-500",
   neutral: "text-foreground/45",
@@ -101,34 +109,45 @@ export function RankedBars({
   }
 
   return (
-    <div className="space-y-2.5">
+    <ul className="space-y-1.5">
       {ranked.map((bar, index) => {
         const barTone = bar.tone ?? tone;
-        // Zero keeps a hairline so the row reads as "none" rather than as a
-        // bar that failed to draw.
-        const percent = max === 0 ? 0 : Math.max((Math.max(bar.value, 0) / max) * 100, 1.5);
+        // Zero keeps a sliver so the row reads as "none" rather than as a bar
+        // that failed to draw.
+        const percent = max === 0 ? 0 : Math.max((Math.max(bar.value, 0) / max) * 100, 2);
         return (
-          <div key={bar.key}>
-            <div className="mb-1 flex items-center justify-between gap-2 text-xs">
-              <span className="min-w-0 truncate font-medium">{bar.label}</span>
-              <span className="shrink-0 text-muted-foreground tabular-nums">{bar.formatted}</span>
+          <li
+            key={bar.key}
+            className="relative flex h-8 items-center overflow-hidden rounded-lg bg-muted/50 shadow-[var(--shadow-inset)]"
+          >
+            {/* The bar is the row's own ground, not a hairline underneath it.
+                A 1px rule under a label is not a chart — at the sizes this
+                product actually plots (three sources, six providers) it read
+                as underlined text. Filling the row instead gives the ranking
+                a shape you can see across the card, and it puts the mark on
+                the same plate-and-inset language as everything around it. */}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute inset-y-0 left-0 transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                CHART_TONE_WASH[barTone],
+              )}
+              style={{
+                // Neutral rows step down with rank so the list reads as an
+                // order rather than as one grey repeated. Toned rows keep
+                // their weight — a row is coloured because it matters.
+                opacity: barTone === "neutral" ? Math.max(0.4, 1 - index * 0.12) : undefined,
+                width: `${percent}%`,
+              }}
+            />
+            <div className="relative flex min-w-0 flex-1 items-center gap-2 px-2.5 text-xs">
+              <span className="min-w-0 flex-1 truncate font-medium">{bar.label}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">{bar.formatted}</span>
             </div>
-            <div aria-hidden="true" className="h-1 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn("h-full rounded-full", CHART_TONE_FILL[barTone])}
-                style={{
-                  /* Neutral rows step down with rank so the list reads as an
-                     order rather than as one grey repeated. Toned rows keep
-                     their weight — a row is coloured because it matters. */
-                  opacity: barTone === "neutral" ? Math.max(0.35, 1 - index * 0.13) : undefined,
-                  width: `${percent}%`,
-                }}
-              />
-            </div>
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
 
@@ -158,6 +177,7 @@ export function TimeSeries({
   emptyLabel,
   formatValue,
   height = 148,
+  markers,
   tone = "neutral",
 }: {
   readonly data: readonly TimePoint[];
@@ -165,6 +185,16 @@ export function TimeSeries({
   /** Tooltip body for one bucket — "128 mensajes · Martes". */
   readonly formatValue: (point: TimePoint) => ReactNode;
   readonly height?: number;
+  /**
+   * Buckets to flag, by key — the day a title was rewritten, the day a
+   * deploy went out. Drawn as a dot between the bars and the axis, because a
+   * marker whose whole job is to say "this column, this day" has to be under
+   * the column it means; below the dates it reads as an unrelated strip.
+   *
+   * Only the dot lives here. What the marker *says* belongs in the bucket's
+   * own tooltip, which the caller already writes.
+   */
+  readonly markers?: ReadonlySet<string>;
   readonly tone?: ChartTone;
 }) {
   const max = Math.max(...data.map((point) => point.value), 1);
@@ -178,7 +208,7 @@ export function TimeSeries({
   if (data.length === 0 || total === 0) {
     return (
       <div
-        className="flex items-center justify-center text-muted-foreground/60 text-xs"
+        className="flex items-center justify-center text-muted-foreground text-xs"
         style={{ height }}
       >
         {emptyLabel}
@@ -189,52 +219,75 @@ export function TimeSeries({
   return (
     <div>
       <div className="relative" style={{ height }}>
+        {/* Solid hairlines at the app's own border weight, and the scale
+            printed inside the plot. The dashed rules this replaced read as a
+            wireframe next to a product built out of soft shadows, and their
+            numbers hung off the left edge into the card's padding. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           {[0, 0.5, 1].map((fraction) => (
             <div
-              className="absolute inset-x-0 border-border border-t border-dashed"
+              className={cn(
+                "absolute inset-x-0 border-t",
+                fraction === 0 ? "border-border" : "border-border/45",
+              )}
               key={fraction}
               style={{ bottom: `${fraction * 100}%` }}
             >
-              <span className="-top-2 -translate-x-full absolute left-0 pr-2 text-[10px] text-muted-foreground/45 tabular-nums">
-                {Math.round(max * fraction)}
-              </span>
+              {fraction > 0 ? (
+                <span className="absolute -top-4 left-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                  {Math.round(max * fraction)}
+                </span>
+              ) : null}
             </div>
           ))}
         </div>
 
-        <div className="flex h-full items-end gap-1.5 sm:gap-2">
+        <div className="flex h-full items-end gap-1 sm:gap-1.5">
           {data.map((point, index) => {
             const isPeak = point.value === max && point.value > 0;
-            // Zero still gets a sliver so the column reads as "nothing here"
-            // rather than as a rendering gap.
-            const percent = point.value === 0 ? 1.5 : Math.max((point.value / max) * 100, 6);
+            // An empty bucket draws nothing. It used to keep a 2px sliver so
+            // the column read as "nothing here" rather than as a gap — which
+            // made sense while every column also had a painted track behind
+            // it. With the track gone the slivers were the only marks left on
+            // the baseline, and a fortnight of quiet days rendered as a dashed
+            // line pretending to be an axis. The column is still hoverable and
+            // still reports its zero.
+            const percent = point.value === 0 ? 0 : Math.max((point.value / max) * 100, 6);
             return (
               <Tooltip key={point.key}>
                 <TooltipTrigger asChild>
                   <button
-                    className="group relative flex h-full flex-1 items-end rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    className="group relative flex h-full flex-1 items-end rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                     type="button"
                   >
-                    <span className="absolute inset-0 rounded-lg bg-foreground/[0.035] transition-colors duration-150 group-hover:bg-foreground/[0.07]" />
+                    {/* The hover target used to be painted at rest, which
+                        turned every empty bucket into a full-height grey
+                        column — a fence the eye had to look past to find the
+                        one bar carrying data. It only appears under the
+                        pointer now. */}
+                    <span className="absolute inset-0 rounded-md bg-foreground/0 transition-colors duration-150 group-hover:bg-foreground/[0.05] group-focus-visible:bg-foreground/[0.05]" />
                     <span
                       className={cn(
                         // Square bottom: the fill sits on the baseline, so a
                         // rounded foot would float it off the axis.
-                        "chart-bar relative w-full rounded-t-lg transition-[filter,opacity] duration-150",
+                        "chart-bar relative w-full rounded-t-md transition-[filter,opacity] duration-150",
                         tone === "neutral"
                           ? cn(
                               "bg-gradient-to-t",
                               isPeak
-                                ? "from-foreground/70 to-foreground"
-                                : "from-foreground/25 to-foreground/45 group-hover:from-foreground/40 group-hover:to-foreground/65",
+                                ? "from-foreground/55 to-foreground/85"
+                                : "from-foreground/15 to-foreground/35 group-hover:from-foreground/30 group-hover:to-foreground/55",
                             )
-                          : cn(CHART_TONE_FILL[tone], isPeak ? "opacity-100" : "opacity-60 group-hover:opacity-85"),
+                          : cn(
+                              CHART_TONE_FILL[tone],
+                              isPeak ? "opacity-100" : "opacity-55 group-hover:opacity-85",
+                            ),
                       )}
                       style={{
                         height: `${percent}%`,
                         animationDelay: `${index * 45}ms`,
                       }}
+                      hidden={percent === 0}
                     />
                   </button>
                 </TooltipTrigger>
@@ -245,8 +298,22 @@ export function TimeSeries({
         </div>
       </div>
 
+      {markers && markers.size > 0 ? (
+        /* Same cell count and same gaps as the plot above and the axis below,
+           so a dot sits under its own column at every width. */
+        <div aria-hidden="true" className="mt-1.5 flex gap-1 sm:gap-1.5">
+          {data.map((point) => (
+            <div className="flex flex-1 justify-center" key={point.key}>
+              {markers.has(point.key) ? (
+                <span className={cn("size-1.5 rounded-full", CHART_TONE_FILL[tone], "opacity-90")} />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {/* Axis labels sit outside the plot so the bars all share one baseline. */}
-      <div className="mt-2.5 flex gap-1.5 sm:gap-2">
+      <div className="mt-2 flex gap-1 sm:gap-1.5">
         {data.map((point, index) => {
           const isPeak = point.value === max;
           const shows = isPeak || index % tickStride === 0;

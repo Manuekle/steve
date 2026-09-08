@@ -67,7 +67,7 @@ function ContextMenuLabel({ className, ...props }: React.ComponentProps<typeof C
     <ContextMenuPrimitive.Label
       data-slot="context-menu-label"
       className={cn(
-        "px-2 pt-1 pb-1.5 font-mono text-[10px] tracking-[0.14em] text-muted-foreground/60 uppercase",
+        "px-2 pt-1 pb-1.5 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase",
         className,
       )}
       {...props}

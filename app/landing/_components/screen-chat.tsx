@@ -365,7 +365,7 @@ export function ChatScreen() {
             ) : (
               <div className="flex flex-col items-center gap-6 text-center">
                 <p className="font-semibold text-4xl">
-                  <span className="text-muted-foreground/40">st</span>
+                  <span className="text-muted-foreground">st</span>
                   <span className="text-foreground">eve</span>
                 </p>
                 <p className="max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">

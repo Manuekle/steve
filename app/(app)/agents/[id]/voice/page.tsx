@@ -16,7 +16,6 @@ import {
   ArrowLeft02Icon,
   ArrowRight01Icon,
   CallOutgoing01Icon,
-  Loading03Icon,
   TelephoneIcon,
   VolumeHighIcon,
 } from "@hugeicons/core-free-icons";
@@ -48,7 +47,8 @@ import {
   CardTitle,
 } from "../../../../_components/dashboard-card";
 import { StreamingResponse } from "@/components/agents/streaming-response";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { Spinner } from "@/components/ui/spinner";
 
 /* The ElevenLabs orb is WebGL: three.js, react-three-fiber and drei, which is
  * the heaviest thing in this app by an order of magnitude. Loading it only on
@@ -234,6 +234,7 @@ function CallStage({
   const { getInputVolume, getOutputVolume, getId } = useConversationControls();
   const scrollRef = useRef<HTMLDivElement>(null);
   const taggedCallRef = useRef<string | null>(null);
+  const reduced = useReducedMotion();
 
   const ready = Boolean(agent.voice?.enabled && agent.voice?.elevenlabsAgentId);
 
@@ -403,7 +404,7 @@ function CallStage({
           {transcript.length === 0 ? (
             <div className="flex h-full min-h-[140px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 px-6 py-8 text-center">
               <p className="text-[13px] text-muted-foreground">{t("voice.transcriptEmpty")}</p>
-              <p className="mt-1 max-w-[32ch] text-[12px] leading-relaxed text-muted-foreground/70">
+              <p className="mt-1 max-w-[32ch] text-[12px] leading-relaxed text-muted-foreground">
                 {isLive ? t("voice.transcriptLiveHint") : t("voice.transcriptIdleHint")}
               </p>
             </div>
@@ -413,16 +414,20 @@ function CallStage({
                 {transcript.map((line) => (
                   <motion.li
                     key={line.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    // A live transcript appends a line every few seconds. The
+                    // slide-in is the one piece of motion on this page that
+                    // repeats indefinitely, so it is also the one that has to
+                    // stop for `prefers-reduced-motion` (WCAG 2.3.3).
+                    initial={reduced ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                    animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    transition={reduced ? { duration: 0 } : { duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                     className={cn(
                       "flex flex-col gap-1",
                       line.source === "user" ? "items-end" : "items-start",
                     )}
                   >
-                    <span className="font-mono text-[10px] tracking-wide text-muted-foreground/70">
+                    <span className="font-mono text-[10px] tracking-wide text-muted-foreground">
                       {line.source === "user" ? "Tú" : agent.name}
                     </span>
                     {line.source === "user" ? (
@@ -449,7 +454,7 @@ function CallStage({
                   animate={{ opacity: 1, y: 0 }}
                   className="flex flex-col gap-1 items-start"
                 >
-                  <span className="font-mono text-[10px] tracking-wide text-muted-foreground/70">
+                  <span className="font-mono text-[10px] tracking-wide text-muted-foreground">
                     {agent.name}
                   </span>
                   <StreamingResponse status="streaming" showActions={false} announce={false} className="max-w-[85%]">
@@ -641,7 +646,7 @@ function VoiceSettings({
         <div className="flex items-center gap-3">
           <Button disabled={saving || !configured} onClick={() => void save()}>
             {saving ? (
-              <HugeiconsIcon className="animate-spin" icon={Loading03Icon} size={16} />
+              <Spinner />
             ) : (
               <HugeiconsIcon icon={VolumeHighIcon} size={16} strokeWidth={1.75} />
             )}
@@ -654,7 +659,16 @@ function VoiceSettings({
           ) : null}
         </div>
 
-        <p className="text-muted-foreground/80 text-[12px] leading-relaxed">
+        {agent.voice?.toolsWarning ? (
+          // The one failure that is invisible on a call: the agent still
+          // answers, still sounds right, and books nothing. Said here rather
+          // than left to be discovered by a customer who was promised a turno.
+          <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-relaxed text-amber-900 dark:text-amber-200">
+            {agent.voice.toolsWarning}
+          </p>
+        ) : null}
+
+        <p className="text-muted-foreground text-[12px] leading-relaxed">
           {t("voice.mirrorNote")}
         </p>
       </div>
@@ -818,11 +832,11 @@ function PhonePanel({
               variant="outline"
             >
               {busy === "import" ? (
-                <HugeiconsIcon className="animate-spin" icon={Loading03Icon} size={16} />
+                <Spinner />
               ) : null}
               {t("voice.phoneImport")}
             </Button>
-            <p className="text-muted-foreground/80 text-[12px] leading-relaxed">
+            <p className="text-muted-foreground text-[12px] leading-relaxed">
               {t("voice.phoneImportHelp")}{" "}
               <Link className="underline underline-offset-2" href="/settings">
                 {t("voice.needsKeyLink")}
@@ -883,7 +897,7 @@ function PhonePanel({
               onClick={() => void call()}
             >
               {busy === "call" ? (
-                <HugeiconsIcon className="animate-spin" icon={Loading03Icon} size={16} />
+                <Spinner />
               ) : (
                 <HugeiconsIcon icon={CallOutgoing01Icon} size={16} strokeWidth={1.75} />
               )}
@@ -893,7 +907,7 @@ function PhonePanel({
           {callResult ? (
             <p className="text-muted-foreground mt-2 text-[13px]">{callResult}</p>
           ) : (
-            <p className="text-muted-foreground/80 mt-2 text-[12px]">{t("voice.callHelp")}</p>
+            <p className="text-muted-foreground mt-2 text-[12px]">{t("voice.callHelp")}</p>
           )}
         </div>
       </div>

@@ -7,7 +7,6 @@ import {
   ArrowLeft02Icon,
   ArrowUp01Icon,
   CheckmarkCircle02Icon,
-  Loading03Icon,
   MinusSignCircleIcon,
 } from "@hugeicons/core-free-icons";
 import {
@@ -36,6 +35,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import type { BillingState } from "@/lib/billing-store";
 import { featuresLost, getPlan, planMove, PLANS, type PlanId } from "@/lib/plans";
+import { Spinner } from "@/components/ui/spinner";
 
 const DOWNGRADE_REASONS = ["expensive", "unused", "missing", "switching", "other"] as const;
 
@@ -198,11 +198,7 @@ export function ChangePlanDialog({
                             onClick={() => void upgrade(plan.id)}
                           >
                             {busy === plan.id ? (
-                              <HugeiconsIcon
-                                className="animate-spin"
-                                icon={Loading03Icon}
-                                size={16}
-                              />
+                              <Spinner />
                             ) : (
                               <HugeiconsIcon icon={ArrowUp01Icon} size={16} strokeWidth={1.75} />
                             )}
@@ -304,7 +300,7 @@ export function ChangePlanDialog({
                 onClick={() => void submit(downgradeTo, true)}
               >
                 {busy === downgradeTo ? (
-                  <HugeiconsIcon className="animate-spin" icon={Loading03Icon} size={16} />
+                  <Spinner />
                 ) : (
                   <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={1.75} />
                 )}

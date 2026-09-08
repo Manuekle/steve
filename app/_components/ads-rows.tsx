@@ -333,7 +333,7 @@ export function CampaignRow({
       subtitle={
         <>
           {view.objective}
-          <span aria-hidden="true" className="text-muted-foreground/40">
+          <span aria-hidden="true" className="text-muted-foreground">
             ·
           </span>
           {view.statusLabel}

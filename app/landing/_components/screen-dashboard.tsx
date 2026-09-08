@@ -140,7 +140,7 @@ function ActivityChart() {
               className="absolute inset-x-0 border-border border-t border-dashed"
               style={{ bottom: `${fraction * 100}%` }}
             >
-              <span className="-top-2 -translate-x-full absolute left-0 pr-2 text-[10px] text-muted-foreground/45 tabular-nums">
+              <span className="-top-2 -translate-x-full absolute left-0 pr-2 text-[10px] text-muted-foreground tabular-nums">
                 {Math.round(max * fraction)}
               </span>
             </div>
@@ -348,7 +348,7 @@ export function DashboardScreen() {
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-muted-foreground text-xs tabular-nums">{chat.when}</p>
-                  <p className="mt-0.5 text-muted-foreground/60 text-xs tabular-nums">
+                  <p className="mt-0.5 text-muted-foreground text-xs tabular-nums">
                     {chat.messageCount} {t("dashboard.messages")}
                   </p>
                 </div>

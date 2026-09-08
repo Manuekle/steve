@@ -32,6 +32,7 @@ import type { Reminder, ReminderStatus } from "@/lib/types";
 const STATUS_VARIANT: Record<ReminderStatus, StatusVariant> = {
   pending: "pending",
   sent: "success",
+  failed: "failed",
   cancelled: "expired",
 };
 
@@ -39,6 +40,7 @@ const STATUS_LABEL: Record<ReminderStatus, string> = {
   // Singular: this one labels a single reminder, not the section of them.
   pending: "reminders.statusPending",
   sent: "reminders.sent",
+  failed: "reminders.failed",
   cancelled: "reminders.cancelled",
 };
 
@@ -286,7 +288,7 @@ function ReminderSection({
     <section>
       <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
         {title}
-        <span className="tabular-nums text-muted-foreground/60">{count}</span>
+        <span className="tabular-nums text-muted-foreground">{count}</span>
       </h2>
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">

@@ -136,11 +136,11 @@ function Quote({
       className="lp-cap lp-cap-still flex-col p-6 sm:p-7"
     >
       <blockquote className="text-[15px] leading-[1.65] text-foreground">
-        <span aria-hidden="true" className="text-muted-foreground/40">
+        <span aria-hidden="true" className="text-muted-foreground">
           “
         </span>
         {testimonial.quote}
-        <span aria-hidden="true" className="text-muted-foreground/40">
+        <span aria-hidden="true" className="text-muted-foreground">
           ”
         </span>
       </blockquote>
@@ -260,7 +260,7 @@ export function TestimonialsSection() {
                 <p className="font-medium text-sm text-muted-foreground">
                   {t("landing.testimonials.empty")}
                 </p>
-                <p className="mt-1 text-[13px] text-muted-foreground/70">
+                <p className="mt-1 text-[13px] text-muted-foreground">
                   {t("landing.testimonials.emptyHint")}
                 </p>
               </div>

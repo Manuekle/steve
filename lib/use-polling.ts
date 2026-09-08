@@ -16,8 +16,14 @@ export function usePolling(fn: () => void | Promise<void>, intervalMs: number, e
   const fnRef = useRef(fn);
   const inFlight = useRef(false);
 
-  // Always point to the latest fn
-  fnRef.current = fn;
+  // Point at the latest `fn` from an effect, not during render. Writing to a
+  // ref while rendering is what breaks under concurrent rendering: React may
+  // render a tree it then throws away, and the discarded render would have
+  // already overwritten the ref the live tree is polling with. The effect runs
+  // before the polling effect below, so a tick never reads a stale callback.
+  useEffect(() => {
+    fnRef.current = fn;
+  }, [fn]);
 
   useEffect(() => {
     if (!enabled) return;

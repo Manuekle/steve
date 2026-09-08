@@ -297,7 +297,7 @@ export function TodoList({
           aria-hidden="true"
           animate={{ rotate: currentOpen ? 180 : 0 }}
           transition={reduce ? { duration: 0 } : SPRING_SWAP}
-          className="text-muted-foreground/50 transition-colors group-hover:text-muted-foreground"
+          className="text-muted-foreground transition-colors group-hover:text-muted-foreground"
         >
           <ChevronDown className="size-3.5" />
         </motion.span>
@@ -342,10 +342,10 @@ export function TodoList({
                     <span
                       className={cn(
                         "min-w-0 flex-1 truncate text-sm leading-5",
-                        status === "pending" && "text-muted-foreground/65",
+                        status === "pending" && "text-muted-foreground",
                         status === "in-progress" && "text-foreground",
-                        status === "completed" && "text-muted-foreground/60",
-                        status === "cancelled" && "text-muted-foreground/55",
+                        status === "completed" && "text-muted-foreground",
+                        status === "cancelled" && "text-muted-foreground",
                       )}
                     >
                       <span className="relative inline-block max-w-full">
@@ -367,7 +367,7 @@ export function TodoList({
                       </span>
                     </span>
                     {item.detail ? (
-                      <span className="shrink-0 text-sm text-muted-foreground/55">
+                      <span className="shrink-0 text-sm text-muted-foreground">
                         {item.detail}
                       </span>
                     ) : null}

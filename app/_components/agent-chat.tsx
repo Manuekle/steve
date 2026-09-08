@@ -37,6 +37,7 @@ import {
   ProviderStatusBadge,
   useModelCatalog,
 } from "@/components/ai-elements/model-picker";
+import { SuggestionChip } from "@/components/ui/suggestion-chip";
 
 const AGENT_NAME = "steve";
 const MONITORING_HREF = process.env.NEXT_PUBLIC_MONITORING_URL;
@@ -484,7 +485,7 @@ function ConnectedAgentSession({
       {isEmpty ? (
         <div className="flex flex-col items-center gap-6 text-center">
           <h1 className="text-4xl font-semibold sm:text-5xl">
-            <span className="text-muted-foreground/40">st</span>
+            <span className="text-muted-foreground">st</span>
             <span className="text-foreground">eve</span>
           </h1>
           <p className="max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
@@ -523,14 +524,12 @@ function ConnectedAgentSession({
               // The chip surface goes opaque here: the beam's core is painted
               // behind the child, and `bg-card/50` let it read through.
               <Beam active={!isBusy} colorVariant="mono" key={promptKey} strength={0.4}>
-                <button
-                  className="rounded-full border border-border bg-card px-3.5 py-1.5 text-xs text-muted-foreground shadow-[var(--shadow-inset)] transition-all duration-150 hover:bg-accent hover:text-accent-foreground hover:border-input active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                <SuggestionChip
                   disabled={isBusy}
                   onClick={() => void send({ message: t(promptKey) })}
-                  type="button"
                 >
                   {t(promptKey)}
-                </button>
+                </SuggestionChip>
               </Beam>
             ))}
           </div>

@@ -116,7 +116,7 @@ export default function OnboardingPage() {
       <div aria-hidden="true" className="auth-grid" />
 
       <div className="relative w-full max-w-[34rem]">
-        <p className="text-center font-mono text-[11px] text-muted-foreground/70 uppercase tracking-[0.14em]">
+        <p className="text-center font-mono text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
           {t("onboarding.step", { current: String(step), total: String(STEPS) })}
         </p>
         <h1 className="mt-4 text-balance text-center font-cooper text-[2rem] leading-[1.08] tracking-[-0.03em]">

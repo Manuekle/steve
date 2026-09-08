@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   ArrowLeft02Icon,
@@ -17,12 +17,24 @@ import {
   Ticket01Icon,
   File01Icon,
   SparklesIcon,
+  Calendar03Icon,
+  CustomerSupportIcon,
 } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../../_components/page-container";
 import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
-import { FORM_TEMPLATES, recommendedTemplate, type FormPurpose } from "@/lib/forms/templates";
+import { PublicForm } from "@/app/f/[slug]/public-form";
+import {
+  FORM_TEMPLATES,
+  getTemplate,
+  recommendedTemplate,
+  templateToForm,
+  type FormPurpose,
+  type FormTemplate,
+} from "@/lib/forms/templates";
+import { toPublicView } from "@/lib/forms/public-view";
+import { maxScore } from "@/lib/forms/scoring";
 import { useI18n } from "@/lib/i18n/provider";
 import type { Form } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -52,6 +64,8 @@ const SOURCES: ReadonlyArray<{ id: LeadSource; labelKey: string; icon: IconSvgEl
  *  `purpose`, so one map covers both screens. */
 const PURPOSE_ICONS: Record<FormPurpose, IconSvgElement> = {
   leads: Target01Icon,
+  booking: Calendar03Icon,
+  support: CustomerSupportIcon,
   feedback: PencilEdit01Icon,
   event: Ticket01Icon,
   applications: File01Icon,
@@ -60,6 +74,8 @@ const PURPOSE_ICONS: Record<FormPurpose, IconSvgElement> = {
 
 const PURPOSES: ReadonlyArray<{ id: FormPurpose; labelKey: string }> = [
   { id: "leads", labelKey: "forms.wizard.q2Leads" },
+  { id: "booking", labelKey: "forms.wizard.q2Booking" },
+  { id: "support", labelKey: "forms.wizard.q2Support" },
   { id: "feedback", labelKey: "forms.wizard.q2Feedback" },
   { id: "event", labelKey: "forms.wizard.q2Event" },
   { id: "applications", labelKey: "forms.wizard.q2Applications" },
@@ -157,15 +173,29 @@ function ChoiceCard({
 }
 
 export default function NewFormPage() {
+  // `useSearchParams` opts the whole subtree into client-side rendering unless
+  // it sits behind a boundary, and this page's first paint is worth keeping.
+  return (
+    <Suspense fallback={null}>
+      <NewForm />
+    </Suspense>
+  );
+}
+
+function NewForm() {
   const router = useRouter();
   const { locale, t } = useI18n();
+  /** `?pick=1` skips the onboarding questions — see the Forms list header. */
+  const skipQuestions = useSearchParams().get("pick") === "1";
 
-  const [question, setQuestion] = useState<1 | 2 | "pick">(1);
+  const [question, setQuestion] = useState<1 | 2 | "pick">(skipQuestions ? "pick" : 1);
   const [source, setSource] = useState<LeadSource | null>(null);
   const [purpose, setPurpose] = useState<FormPurpose | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<UiError | null>(null);
+  /** Bumped to send the preview back to its first question. */
+  const [previewNonce, setPreviewNonce] = useState(0);
 
   const recommended = purpose ? recommendedTemplate(purpose) : null;
   // Recommendation first, everything else in its own order — a suggestion that
@@ -176,8 +206,13 @@ export default function NewFormPage() {
       )
     : FORM_TEMPLATES;
 
+  /** What the picker has selected. Landing straight on the gallery there is no
+   *  recommendation to fall back on, and defaulting to "blank" would preview an
+   *  empty form as if it were the pick — so the first card wins instead. */
+  const selectedId = templateId ?? recommended ?? templates[0]?.id ?? "blank";
+
   const create = async () => {
-    const chosen = templateId ?? recommended ?? "blank";
+    const chosen = selectedId;
     setBusy(true);
     const result = await fetchJson<{ form: Form }>("/api/forms", t, {
       method: "POST",
@@ -192,11 +227,15 @@ export default function NewFormPage() {
     router.push(`/forms/${result.data.form.id}`);
   };
 
+  const chosen = getTemplate(selectedId);
+
   return (
-    <PageContainer maxWidth="max-w-2xl" pattern="grid">
+    // The picker is two columns wide because it now shows the form itself;
+    // the questions before it stay a narrow single column.
+    <PageContainer maxWidth={question === "pick" ? "max-w-5xl" : "max-w-2xl"} pattern="grid">
       <div className="content-enter">
         <ErrorBanner className="mb-6" error={error} onDismiss={() => setError(null)} />
-        <StepRail current={question === "pick" ? 2 : 1} />
+        {skipQuestions ? null : <StepRail current={question === "pick" ? 2 : 1} />}
 
         {question !== "pick" ? (
           <>
@@ -262,24 +301,41 @@ export default function NewFormPage() {
             <h1 className="text-2xl font-semibold">{t("forms.wizard.pickTitle")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("forms.wizard.pickSubtitle")}</p>
 
-            <div className="mt-6 grid gap-2">
-              {templates.map((template) => (
-                <ChoiceCard
-                  key={template.id}
-                  icon={PURPOSE_ICONS[template.purpose]}
-                  selected={(templateId ?? recommended) === template.id}
-                  title={t(template.titleKey)}
-                  blurb={t(template.blurbKey)}
-                  badge={
-                    template.id === recommended ? t("forms.wizard.recommended") : undefined
-                  }
-                  onClick={() => setTemplateId(template.id)}
-                />
-              ))}
+            {/* Picking used to be blind: nine titles and a one-line blurb, and
+                you only found out what you had chosen after it was created.
+                The preview is the real public renderer fed the real template
+                body, so what is on the right is what the link will serve. */}
+            <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+              <div className="grid gap-2">
+                {templates.map((template) => (
+                  <ChoiceCard
+                    key={template.id}
+                    icon={PURPOSE_ICONS[template.purpose]}
+                    selected={selectedId === template.id}
+                    title={t(template.titleKey)}
+                    blurb={t(template.blurbKey)}
+                    badge={
+                      template.id === recommended ? t("forms.wizard.recommended") : undefined
+                    }
+                    onClick={() => {
+                      setTemplateId(template.id);
+                      setPreviewNonce((n) => n + 1);
+                    }}
+                  />
+                ))}
+              </div>
+
+              {chosen ? (
+                <TemplatePreview template={chosen} nonce={previewNonce} />
+              ) : null}
             </div>
 
-            <div className="mt-6 flex items-center justify-between">
-              <Button variant="ghost" size="sm" onClick={() => setQuestion(2)}>
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => (skipQuestions ? router.push("/forms") : setQuestion(2))}
+              >
                 <HugeiconsIcon icon={ArrowLeft02Icon} size={16} strokeWidth={1.75} />
                 {t("forms.wizard.back")}
               </Button>
@@ -291,5 +347,59 @@ export default function NewFormPage() {
         )}
       </div>
     </PageContainer>
+  );
+}
+
+/**
+ * The template, rendered.
+ *
+ * Two things are on show: the form as a visitor gets it, and the three facts
+ * a picker actually decides on — how long it is, what it can score, and
+ * whether it asks who you are. Under both, the sentence that makes the choice
+ * cheap: none of it is final.
+ */
+function TemplatePreview({
+  template,
+  nonce,
+}: {
+  readonly template: FormTemplate;
+  readonly nonce: number;
+}) {
+  const { locale, t } = useI18n();
+  const seed = templateToForm(template, locale);
+  const ceiling = maxScore({ ...seed, steps: seed.steps } as Form);
+  const capturesContact = seed.steps.some((step) =>
+    step.fields.some((field) => field.maps !== undefined),
+  );
+
+  return (
+    <aside className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] lg:sticky lg:top-6">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-3 text-xs text-muted-foreground">
+        <span aria-hidden="true" className="text-base">
+          {template.emoji}
+        </span>
+        <span>{t("forms.wizard.previewSteps", { count: seed.steps.length })}</span>
+        <span aria-hidden="true">·</span>
+        <span>
+          {ceiling > 0
+            ? t("forms.wizard.previewScored", { max: ceiling })
+            : t("forms.wizard.previewUnscored")}
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>
+          {capturesContact
+            ? t("forms.wizard.previewContact")
+            : t("forms.wizard.previewAnonymous")}
+        </span>
+      </div>
+
+      <div className="p-4">
+        <PublicForm key={`${template.id}-${nonce}`} preview bare form={toPublicView(seed)} />
+      </div>
+
+      <p className="border-t border-border px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+        {t("forms.wizard.previewEditable")}
+      </p>
+    </aside>
   );
 }

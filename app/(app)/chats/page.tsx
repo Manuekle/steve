@@ -273,7 +273,7 @@ export default function ChatsPage() {
                       <p className="text-xs text-muted-foreground tabular-nums">
                         {relativeTime(chat.lastMessageAt)}
                       </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground/60 tabular-nums">
+                      <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                         {chat.messageCount} {t("chats.msgs")}
                       </p>
                     </div>
@@ -329,7 +329,7 @@ export default function ChatsPage() {
               pageCount={pageCount}
               pageSize={pageSize}
             />
-            <p className="text-center text-muted-foreground/60 text-xs">
+            <p className="text-center text-muted-foreground text-xs">
               {t("chats.summary", { shown: filtered.length, total: chats.length })}
             </p>
           </div>

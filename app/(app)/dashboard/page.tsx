@@ -425,7 +425,7 @@ function DashboardPageContent() {
                     <p className="text-xs text-muted-foreground tabular-nums">
                       {relativeTime(chat.lastMessageAt)}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground/60 tabular-nums">
+                    <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                       {chat.messageCount} {t("dashboard.messages")}
                     </p>
                   </div>

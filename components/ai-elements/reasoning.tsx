@@ -22,7 +22,7 @@ import {
 } from "react";
 import { Streamdown } from "streamdown";
 
-import { ThinkIndicator } from "./think-indicator";
+import { ThinkingText } from "@/components/motion/thinking-text";
 import { Orb } from "@/components/ui/orb";
 import { useT } from "@/lib/i18n/provider";
 
@@ -159,7 +159,7 @@ function useDefaultThinkingMessage() {
       return (
         <span className="flex items-center gap-2">
           <Orb state="solving" />
-          <ThinkIndicator
+          <ThinkingText
             states={[
               t("chat.thinking"),
               t("chat.analyzing"),

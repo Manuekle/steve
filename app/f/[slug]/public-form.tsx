@@ -10,42 +10,29 @@ import { SuccessCheck } from "@/components/ai-elements/success-check";
 import { useI18n } from "@/lib/i18n/provider";
 import { countryOptions } from "@/lib/countries";
 import { stepIsVisible } from "@/lib/forms/scoring";
-import type { FormAnswer, FormCondition, FormFieldType } from "@/lib/types";
+import type { PublicFormView } from "@/lib/forms/public-view";
+import type { FormAnswer } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-/** The form as a visitor is allowed to see it — no points, no thresholds, no
- *  ids beyond what an answer has to name. Mirrors `publicView` in
- *  app/api/f/[slug]/route.ts. */
-export type PublicFormView = {
-  readonly slug: string;
-  readonly name: string;
-  readonly description: string;
-  readonly thankYou?: string;
-  readonly steps: ReadonlyArray<{
-    readonly id: string;
-    readonly title?: string;
-    readonly description?: string;
-    readonly showIf?: FormCondition;
-    readonly fields: ReadonlyArray<{
-      readonly id: string;
-      readonly type: FormFieldType;
-      readonly label: string;
-      readonly help?: string;
-      readonly required: boolean;
-      readonly placeholder?: string;
-      readonly choices?: ReadonlyArray<{
-        readonly id: string;
-        readonly label: string;
-        readonly emoji?: string;
-        readonly iconSvg?: string;
-      }>;
-    }>;
-  }>;
-};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function PublicForm({ form }: { readonly form: PublicFormView | null }) {
+/**
+ * The form a visitor fills in — and, with `preview`, the same component
+ * driving the builder's live pane. One renderer on purpose: a preview that
+ * approximates the real page is a preview people stop trusting.
+ */
+export function PublicForm({
+  form,
+  preview = false,
+  bare = false,
+}: {
+  readonly form: PublicFormView | null;
+  /** Walk the steps without recording anything. No response is created, the
+   *  thank-you screen still shows, and `onReset` puts it back to question one. */
+  readonly preview?: boolean;
+  /** Render without the standalone page chrome, for embedding in a card. */
+  readonly bare?: boolean;
+}) {
   const { locale, t } = useI18n();
   const [values, setValues] = useState<Record<string, string | string[]>>({});
   const [index, setIndex] = useState(0);
@@ -59,6 +46,7 @@ export function PublicForm({ form }: { readonly form: PublicFormView | null }) {
   const [phoneCountry, setPhoneCountry] = useState<Record<string, string>>({});
   const [phoneLocal, setPhoneLocal] = useState<Record<string, string>>({});
   const countries = useMemo(() => countryOptions(locale), [locale]);
+  const Frame = bare ? Bare : Shell;
   /** Handed back by the first save. Carrying it forward is what makes the
    *  later steps update one response instead of starting new ones. */
   const [responseId, setResponseId] = useState<string | undefined>(undefined);
@@ -79,19 +67,37 @@ export function PublicForm({ form }: { readonly form: PublicFormView | null }) {
     [form, answers],
   );
 
+  /** Preview only: back to question one with nothing filled in, so the next
+   *  run through exercises the branches from a clean slate. */
+  const restart = () => {
+    setValues({});
+    setPhoneCountry({});
+    setPhoneLocal({});
+    setProblems({});
+    setIndex(0);
+    setDone(false);
+  };
+
   if (!form) {
     return (
-      <Shell>
+      <Frame>
         <p className="text-center text-sm text-muted-foreground">{t("publicForm.notFound")}</p>
-      </Shell>
+      </Frame>
     );
   }
 
   if (done) {
     return (
-      <Shell>
+      <Frame>
         <ThankYou text={form.thankYou || t("publicForm.thanks")} />
-      </Shell>
+        {preview ? (
+          <div className="mt-6 flex justify-center">
+            <Button variant="outline" size="sm" onClick={restart}>
+              {t("publicForm.previewRestart")}
+            </Button>
+          </div>
+        ) : null}
+      </Frame>
     );
   }
 
@@ -162,6 +168,13 @@ export function PublicForm({ form }: { readonly form: PublicFormView | null }) {
 
   const advance = async () => {
     if (!validate()) return;
+    // Nothing is recorded from the builder: a preview that files a response
+    // would put the operator's own test answers in their leads.
+    if (preview) {
+      if (isLast) setDone(true);
+      else setIndex((current) => current + 1);
+      return;
+    }
     setSending(true);
     setFailed(false);
     try {
@@ -183,12 +196,12 @@ export function PublicForm({ form }: { readonly form: PublicFormView | null }) {
   };
 
   return (
-    <Shell>
+    <Frame>
       <header className="mb-6">
         <p className="text-xs font-medium text-muted-foreground">
           {t("publicForm.stepOf", { current: index + 1, total: steps.length })}
         </p>
-        <h1 className="mt-1 font-cooper text-xl">{step?.title ?? form.name}</h1>
+        <h1 className="mt-1 font-cooper text-xl">{step?.title || form.name}</h1>
         {step?.description ? (
           <p className="mt-1 text-sm text-muted-foreground">{step.description}</p>
         ) : null}
@@ -372,8 +385,14 @@ export function PublicForm({ form }: { readonly form: PublicFormView | null }) {
           ) : null}
         </Button>
       </div>
-    </Shell>
+    </Frame>
   );
+}
+
+/** The embedded frame: the builder's preview pane already sits inside a card,
+ *  so a second bordered box around it would just be a box in a box. */
+function Bare({ children }: { readonly children: React.ReactNode }) {
+  return <div className="text-foreground">{children}</div>;
 }
 
 /** No sidebar, no nav, no product chrome: this page belongs to whoever is

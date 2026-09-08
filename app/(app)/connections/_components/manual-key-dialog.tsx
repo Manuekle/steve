@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { CheckIcon, Loading03Icon } from "@hugeicons/core-free-icons";
+import { CheckIcon } from "@hugeicons/core-free-icons";
 import {
   Dialog,
   DialogClose,
@@ -20,6 +20,7 @@ import { useT } from "@/lib/i18n/provider";
 import { VALIDATION_ERROR_KEYS } from "@/lib/settings-i18n";
 import { CredentialField } from "@/app/_components/credential-field";
 import type { CredentialGroup } from "@/lib/credentials";
+import { Spinner } from "@/components/ui/spinner";
 
 type SettingsResponse = {
   readonly groups?: CredentialGroup[];
@@ -252,7 +253,7 @@ export function ManualKeyDialog({
           </DialogClose>
           <Button disabled={saving || loading || !group} onClick={() => void submit()}>
             {saving ? (
-              <HugeiconsIcon icon={Loading03Icon} size={16} strokeWidth={1.75} className="animate-spin" />
+              <Spinner />
             ) : (
               <HugeiconsIcon icon={CheckIcon} size={16} strokeWidth={1.75} />
             )}

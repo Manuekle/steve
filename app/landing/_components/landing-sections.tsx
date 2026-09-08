@@ -117,7 +117,7 @@ export function ChannelBand() {
             what a cycling word is. */}
         <Reveal delay={200}>
           <div className="mt-14 border-border border-t pt-10">
-            <p className="text-center text-[13px] text-muted-foreground/70">
+            <p className="text-center text-[13px] text-muted-foreground">
               {/* The prefix cannot wrap — the component keeps it on one line so
                   the sweep has a stable box to travel across — and the word
                   slot always reserves the width of the longest option. Kept
@@ -129,7 +129,7 @@ export function ChannelBand() {
                 words={PROVIDERS.map((provider) => provider.label)}
               />
             </p>
-            <div className="mt-6 flex items-center justify-center gap-9 text-muted-foreground/70">
+            <div className="mt-6 flex items-center justify-center gap-9 text-muted-foreground">
               {PROVIDERS.map((provider) => (
                 <span key={provider.label} title={provider.label}>
                   {provider.mark}
@@ -403,7 +403,7 @@ function AutomationConnectors() {
   return (
     <Reveal delay={80}>
       <div className="mt-16 border-border border-t pt-10 sm:mt-20">
-        <p className="text-center text-[13px] text-muted-foreground/70">
+        <p className="text-center text-[13px] text-muted-foreground">
           {t("landing.features.automation.connectorsIntro")}
         </p>
         <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">

@@ -32,6 +32,14 @@ export interface SlidingTabsProps {
  * pill snaps without a transition; on tab click it animates.
  *
  * Requires the `.t-tabs*` CSS from globals.css.
+ *
+ * Deliberately NOT `role="tablist"` / `role="tab"`. Those roles promise a
+ * composite widget — one tab stop, arrow keys between tabs, and an
+ * `aria-controls` panel — and this bar has none of that. It is also used for
+ * things that are not tabs at all (pagination, a monthly/yearly price
+ * toggle), where the roles would be wrong even with the keyboard handling.
+ * Plain buttons carrying `aria-pressed` describe what this actually is: a
+ * group of toggles, each its own tab stop, one of them on.
  */
 export function SlidingTabs({
   tabs,
@@ -97,7 +105,7 @@ export function SlidingTabs({
   }, [positionPill]);
 
   return (
-    <div className={cn("t-tabs", className)} ref={barRef} role="tablist">
+    <div className={cn("t-tabs", className)} ref={barRef}>
       <span
         className="t-tabs-pill"
         ref={pillRef}
@@ -106,7 +114,7 @@ export function SlidingTabs({
       />
       {tabs.map((tab) => (
         <button
-          aria-selected={tab.id === value}
+          aria-pressed={tab.id === value}
           className="t-tab"
           data-cuelume-toggle
           key={tab.id}
@@ -115,7 +123,6 @@ export function SlidingTabs({
             if (el) tabRefs.current.set(tab.id, el);
             else tabRefs.current.delete(tab.id);
           }}
-          role="tab"
           type="button"
         >
           {tab.label}

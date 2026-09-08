@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { getFormBySlug, getFormResponse } from "@/lib/business-store";
 import { recordSubmission } from "@/lib/forms/ingest";
+import { toPublicView } from "@/lib/forms/public-view";
 import { allFields } from "@/lib/forms/scoring";
 import type { Form, FormAnswer } from "@/lib/types";
 import { type NextRequest, NextResponse } from "next/server";
@@ -28,36 +29,14 @@ const MAX_PICKS = 50;
 const RATE_WINDOW_MS = 5 * 60_000;
 const RATE_MAX = 30;
 
-/** What a visitor is allowed to see: the questions, and nothing about how the
- *  answers are scored. Points on the wire would tell a respondent which button
- *  is the "right" one. */
+/** What a visitor is allowed to see. The projection itself lives in
+ *  lib/forms/public-view.ts, shared with the server-rendered page and with the
+ *  builder's preview: three hand-written copies of "the form minus its points"
+ *  is three chances for one of them to start leaking. The id rides along here
+ *  because a client fetching this endpoint has nothing else to name the form
+ *  with. */
 function publicView(form: Form) {
-  return {
-    id: form.id,
-    slug: form.slug,
-    name: form.name,
-    description: form.description,
-    thankYou: form.thankYou,
-    steps: form.steps.map((step) => ({
-      id: step.id,
-      title: step.title,
-      description: step.description,
-      showIf: step.showIf,
-      fields: step.fields.map((field) => ({
-        id: field.id,
-        type: field.type,
-        label: field.label,
-        help: field.help,
-        required: field.required,
-        placeholder: field.placeholder,
-        choices: field.choices?.map((choice) => ({
-          id: choice.id,
-          label: choice.label,
-          emoji: choice.emoji,
-        })),
-      })),
-    })),
-  };
+  return { id: form.id, ...toPublicView(form) };
 }
 
 export const GET = withApiErrors(async function GET(

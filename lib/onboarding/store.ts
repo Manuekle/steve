@@ -48,6 +48,8 @@ function empty(): Store {
 // Postgres when one is configured, ~/.steve/onboarding.json otherwise.
 const onboardingStore = createDocumentStore<Store>({
   id: "onboarding",
+  // Per business: each business is set up on its own. See lib/business-scope.ts.
+  scoped: true,
   file: FILE,
   empty,
   normalize: (parsed: Partial<Store>) => ({

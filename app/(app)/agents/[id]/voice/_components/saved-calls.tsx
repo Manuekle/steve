@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Loading03Icon, TelephoneIcon } from "@hugeicons/core-free-icons";
+import { TelephoneIcon } from "@hugeicons/core-free-icons";
 import {
   Conversation,
   ConversationContent,
@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../../../_components/dashboard-card";
+import { Spinner } from "@/components/ui/spinner";
 
 type SavedCallTurn = { readonly role: "agent" | "user"; readonly message: string; readonly timeInCallSecs: number };
 type SavedCallStatus = "initiated" | "in-progress" | "processing" | "done" | "failed";
@@ -228,7 +229,7 @@ function CallDetail({
           {settled ? (
             <Button size="xs" variant="ghost" disabled={assessing} onClick={onAssess}>
               {assessing ? (
-                <HugeiconsIcon icon={Loading03Icon} size={12} strokeWidth={1.75} className="animate-spin" />
+                <Spinner size={12} />
               ) : null}
               {assessing ? t("prospect.assessing") : call.prospect ? t("prospect.reassess") : t("prospect.assess")}
             </Button>

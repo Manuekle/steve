@@ -51,7 +51,7 @@ export function LandingHero() {
               icon={ArrowRight02Icon}
               size={13}
               strokeWidth={2}
-              className="text-muted-foreground/70 transition-transform duration-200 ease-[var(--lp-ease)] group-hover:translate-x-0.5"
+              className="text-muted-foreground transition-transform duration-200 ease-[var(--lp-ease)] group-hover:translate-x-0.5"
             />
           </Link>
         </Reveal>

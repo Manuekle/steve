@@ -151,6 +151,10 @@ export type CredentialKey =
   | "ELEVENLABS_VOICE_ID"
   | "ELEVENLABS_MODEL_ID"
   | "ELEVENLABS_WEBHOOK_SECRET"
+  // Shared secret this app sends to itself on the voice agent's webhook tools.
+  // Generated on the first voice sync and never shown in Settings: nobody has
+  // to know it exists, and there is nowhere to paste it. See lib/voice-tools.ts.
+  | "VOICE_TOOLS_SECRET"
   // Twilio (phone numbers for voice agents)
   | "TWILIO_ACCOUNT_SID"
   | "TWILIO_AUTH_TOKEN"

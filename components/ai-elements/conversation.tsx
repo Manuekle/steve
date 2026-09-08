@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "ai";
 import { HugeiconsIcon } from "@/components/icons/icon";
@@ -76,7 +77,7 @@ export const ConversationScrollButton = ({
     !isAtBottom && (
       <Button
         className={cn(
-          "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full border border-border bg-card shadow-[var(--shadow-elevated)] dark:bg-card dark:hover:bg-card/80",
+          "absolute bottom-4 left-[50%] translate-x-[-50%] border border-border bg-card shadow-[var(--shadow-elevated)] dark:bg-card dark:hover:bg-card/80",
           className,
         )}
         onClick={handleScrollToBottom}
@@ -122,6 +123,9 @@ export const ConversationDownload = ({
   children,
   ...props
 }: ConversationDownloadProps) => {
+  const t = useT();
+  const label = t("common.downloadConversation");
+
   const handleDownload = useCallback(() => {
     const markdown = messagesToMarkdown(messages, formatMessage);
     const blob = new Blob([markdown], { type: "text/markdown" });
@@ -138,11 +142,13 @@ export const ConversationDownload = ({
   return (
     <Button
       className={cn(
-        "absolute top-4 right-4 rounded-full border border-border bg-card shadow-[var(--shadow-elevated)] dark:bg-card dark:hover:bg-card/80",
+        "absolute top-4 right-4 border border-border bg-card shadow-[var(--shadow-elevated)] dark:bg-card dark:hover:bg-card/80",
         className,
       )}
+      aria-label={label}
       onClick={handleDownload}
       size="icon"
+      title={label}
       type="button"
       variant="outline"
       {...props}

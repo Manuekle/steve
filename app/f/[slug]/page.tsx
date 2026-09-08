@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getFormBySlug } from "@/lib/business-store";
+import { toPublicView } from "@/lib/forms/public-view";
 import { PublicForm } from "./public-form";
 
 /**
@@ -35,40 +36,5 @@ export default async function PublicFormPage({
   const form = await getFormBySlug(slug);
   const published = form && form.status === "published";
 
-  return (
-    <PublicForm
-      form={
-        published
-          ? {
-              slug: form.slug,
-              name: form.name,
-              description: form.description,
-              thankYou: form.thankYou,
-              // The points never reach the browser: knowing which answer is
-              // worth 15 tells a respondent which button to press.
-              steps: form.steps.map((step) => ({
-                id: step.id,
-                title: step.title,
-                description: step.description,
-                showIf: step.showIf,
-                fields: step.fields.map((field) => ({
-                  id: field.id,
-                  type: field.type,
-                  label: field.label,
-                  help: field.help,
-                  required: field.required,
-                  placeholder: field.placeholder,
-                  choices: field.choices?.map((choice) => ({
-                    id: choice.id,
-                    label: choice.label,
-                    emoji: choice.emoji,
-                    iconSvg: choice.iconSvg,
-                  })),
-                })),
-              })),
-            }
-          : null
-      }
-    />
-  );
+  return <PublicForm form={published ? toPublicView(form) : null} />;
 }

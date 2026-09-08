@@ -110,7 +110,7 @@ export function StepPalette({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("automations.searchStep")}
             aria-label={t("automations.searchStep")}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
 
@@ -129,12 +129,12 @@ export function StepPalette({
                     type="button"
                     onClick={() => toggleGroup(group.labelKey)}
                     aria-expanded={isOpen}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors duration-150 hover:bg-accent/60 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors duration-150 hover:bg-accent/60 focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]"
                   >
-                    <span className="flex-1 font-mono text-[10px] tracking-[0.14em] text-muted-foreground/70 uppercase">
+                    <span className="flex-1 font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
                       {t(group.labelKey)}
                     </span>
-                    <span className="t-acc-chevron text-muted-foreground/60" aria-hidden="true">
+                    <span className="t-acc-chevron text-muted-foreground" aria-hidden="true">
                       <svg viewBox="0 0 16 16" width={13} height={13} fill="none">
                         <path
                           d="M4 6.5L8 10.5L12 6.5"
@@ -157,7 +157,7 @@ export function StepPalette({
                             className={cn(
                               "flex items-start gap-2.5 rounded-lg p-2 text-left",
                               "transition-colors duration-150 hover:bg-accent",
-                              "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50",
+                              "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
                             )}
                           >
                             <span

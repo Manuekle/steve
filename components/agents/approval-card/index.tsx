@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Check,
   CircleHelp,
-  LoaderCircle,
   MessageSquareText,
   X,
 } from "lucide-react";
@@ -14,10 +13,11 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AgentDisclosure } from "@/components/agents/agent-disclosure";
 import { ActionSwapRollText } from "@/components/motion/action-swap-roll";
-import { Button } from "@/components/motion/button";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/motion/checkbox";
 import { Input } from "@/components/motion/input";
 import { RadioGroup, RadioGroupItem } from "@/components/motion/radio";
+import { Spinner } from "@/components/ui/spinner";
 import { EASE_OUT, SPRING_SWAP } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/provider";
@@ -304,7 +304,7 @@ export function ApprovalCard({
           )}
         >
           {busy ? (
-            <LoaderCircle className={cn("size-4", !reduce && "animate-spin")} />
+            <Spinner />
           ) : interactive ? (
             questionMode ? (
               <CircleHelp className="size-4" />
@@ -326,7 +326,7 @@ export function ApprovalCard({
               </ActionSwapRollText>
             </h3>
             {questionMode && interactive ? (
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground/65">
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                 {currentStep + 1}/{questions.length}
               </span>
             ) : (
@@ -390,11 +390,10 @@ export function ApprovalCard({
               <div className="mt-4 flex items-center gap-3">
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="icon-sm"
                   aria-label="Previous question"
                   disabled={busy || currentStep === 0}
                   onClick={() => setStep(currentStep - 1)}
-                  className="rounded-full"
                 >
                   <ArrowLeft className="size-4" />
                 </Button>
@@ -403,7 +402,7 @@ export function ApprovalCard({
                   ids={questions.map((item) => item.id)}
                 />
                 <Button
-                  size={currentStep === questions.length - 1 ? "sm" : "icon"}
+                  size={currentStep === questions.length - 1 ? "sm" : "icon-sm"}
                   aria-label={
                     currentStep === questions.length - 1
                       ? "Submit response"
@@ -411,10 +410,10 @@ export function ApprovalCard({
                   }
                   disabled={busy || !isAnswered(currentAnswer)}
                   onClick={continueQuestion}
-                  className="ml-auto rounded-full"
+                  className="ml-auto"
                 >
                   {busy ? (
-                    <LoaderCircle className={cn("size-4", !reduce && "animate-spin")} />
+                    <Spinner />
                   ) : currentStep === questions.length - 1 ? (
                     <>
                       {submit}
@@ -431,7 +430,6 @@ export function ApprovalCard({
                   size="sm"
                   disabled={busy}
                   onClick={onApprove}
-                  className="rounded-full"
                 >
                   {approve}
                 </Button>
@@ -441,7 +439,6 @@ export function ApprovalCard({
                     size="sm"
                     disabled={busy}
                     onClick={onRequestChanges}
-                    className="rounded-full"
                   >
                     {t("approval.requestChanges")}
                   </Button>
@@ -452,7 +449,7 @@ export function ApprovalCard({
                     size="sm"
                     disabled={busy}
                     onClick={onReject}
-                    className="rounded-full text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400"
+                    className="text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400"
                   >
                     {t("approval.reject")}
                   </Button>

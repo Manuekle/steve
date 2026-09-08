@@ -617,7 +617,7 @@ const ContactCard = memo(function ContactCard({
       className={cn(
         "kpi-card group touch-none select-none rounded-xl border p-3 text-left outline-none",
         "transition-[border-color,box-shadow] duration-200",
-        "focus-visible:ring-[3px] focus-visible:ring-[var(--btn-focus-ring)]",
+        "focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
         PLATE,
         isDragging
           ? "cursor-grabbing border-input shadow-[0_18px_38px_-16px_oklch(0_0_0/0.3),var(--shadow-inset)]"
@@ -660,7 +660,7 @@ const ContactCard = memo(function ContactCard({
         </div>
 
         {contact.lastMessage ? (
-          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85">{contact.lastMessage}</p>
+          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{contact.lastMessage}</p>
         ) : null}
 
         <div className="mt-2.5 flex items-center gap-2">
@@ -703,7 +703,7 @@ const ContactCard = memo(function ContactCard({
                   "inline-flex items-center gap-1 rounded-lg border border-border bg-card px-1.5 py-1 text-[11px] font-medium text-muted-foreground",
                   "shadow-[var(--shadow-inset)] transition-[background-color,border-color,color,transform] duration-150",
                   "ease-[var(--btn-easing)] hover:border-input hover:bg-accent hover:text-foreground active:scale-[0.96]",
-                  "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--btn-focus-ring)]",
+                  "focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
                 )}
               >
                 {t(`contactStatus.${targetStatus}`)}

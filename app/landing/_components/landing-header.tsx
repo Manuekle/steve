@@ -48,7 +48,7 @@ export function Wordmark({ className }: { readonly className?: string }) {
     <span className={cn("inline-flex items-center gap-2", className)}>
       <SteveMark />
       <span className="font-semibold text-lg leading-none tracking-tight">
-        <span className="text-muted-foreground/40">st</span>
+        <span className="text-muted-foreground">st</span>
         <span className="text-foreground">eve</span>
       </span>
     </span>

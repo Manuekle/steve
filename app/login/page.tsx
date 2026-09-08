@@ -327,8 +327,9 @@ function LoginForm() {
                 value={password}
               />
               <button
-                className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                className="absolute top-1/2 right-2 size-6 -translate-y-1/2 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
                 onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? t("settings.hide") : t("settings.show")}
                 title={showPassword ? t("settings.hide") : t("settings.show")}
                 type="button"
               >
@@ -371,8 +372,9 @@ function LoginForm() {
                   value={confirmPassword}
                 />
                 <button
-                  className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute top-1/2 right-2 size-6 -translate-y-1/2 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => setShowConfirmPassword((current) => !current)}
+                  aria-label={showConfirmPassword ? t("settings.hide") : t("settings.show")}
                   title={showConfirmPassword ? t("settings.hide") : t("settings.show")}
                   type="button"
                 >

@@ -286,7 +286,7 @@ export default function CalendarPage() {
                   <div className={cn("p-3", gridLoading && "opacity-60")}>
                     <div className="grid grid-cols-7 gap-1 px-2 pb-1">
                       {labels.map((label, i) => (
-                        <div key={i} className="text-center text-[11px] font-medium text-muted-foreground/70 uppercase">
+                        <div key={i} className="text-center text-[11px] font-medium text-muted-foreground uppercase">
                           {label}
                         </div>
                       ))}
@@ -305,7 +305,7 @@ export default function CalendarPage() {
                             onClick={() => setSelectedDay(isSelected ? null : key)}
                             className={cn(
                               "flex aspect-square flex-col items-center justify-start gap-1 rounded-lg px-1 py-1.5 text-xs transition-colors",
-                              inMonth ? "text-foreground" : "text-muted-foreground/40",
+                              inMonth ? "text-foreground" : "text-muted-foreground",
                               isSelected ? "bg-accent" : "hover:bg-accent/50",
                               isToday && !isSelected && "bg-primary/8",
                             )}

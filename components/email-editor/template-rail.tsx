@@ -95,7 +95,7 @@ export function TemplateRail({
             icon={Search01Icon}
             size={13}
             strokeWidth={1.75}
-            className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground/60"
+            className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground"
           />
           <input
             type="search"
@@ -106,7 +106,7 @@ export function TemplateRail({
             className={cn(
               "h-8 w-full rounded-lg border border-border bg-card pr-2.5 pl-7.5 text-xs",
               "shadow-[var(--shadow-inset)] transition-colors duration-150 outline-none",
-              "placeholder:text-muted-foreground/60 focus:border-input",
+              "placeholder:text-muted-foreground focus:border-input",
             )}
           />
         </div>
@@ -114,7 +114,7 @@ export function TemplateRail({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3 scrollbar-hide">
         {empty ? (
-          <p className="px-2 py-6 text-center text-xs leading-relaxed text-muted-foreground/70">
+          <p className="px-2 py-6 text-center text-xs leading-relaxed text-muted-foreground">
             {query ? t("emailTemplates.searchEmpty") : t("emailTemplates.railEmpty")}
           </p>
         ) : null}
@@ -192,7 +192,7 @@ function TemplateRow({
           strokeWidth={1.75}
           className={cn(
             "mt-0.5 shrink-0 transition-colors duration-150",
-            selected ? "text-foreground" : "text-muted-foreground/70",
+            selected ? "text-foreground" : "text-muted-foreground",
           )}
         />
         <span className="min-w-0 flex-1">
@@ -205,7 +205,7 @@ function TemplateRow({
             {template.label}
           </span>
           {template.description ? (
-            <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-muted-foreground/70">
+            <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-muted-foreground">
               {template.description}
             </span>
           ) : null}
@@ -217,7 +217,7 @@ function TemplateRow({
           onClick={onDelete}
           aria-label={t("emailTemplates.delete")}
           className={cn(
-            "mt-0.5 shrink-0 rounded-md p-1 text-muted-foreground/60 opacity-0",
+            "mt-0.5 shrink-0 rounded-md p-1 text-muted-foreground opacity-0",
             "transition-[opacity,color,background-color] duration-150",
             "hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100",
             "group-hover:opacity-100",
@@ -240,7 +240,7 @@ function MicroLabel({
   return (
     <span
       className={cn(
-        "font-mono text-[10px] tracking-[0.14em] text-muted-foreground/60 uppercase",
+        "font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase",
         className,
       )}
     >

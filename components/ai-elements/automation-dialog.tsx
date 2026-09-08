@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
+import { ScheduleBuilder } from "./schedule-builder";
 import { SuccessCheck } from "./success-check";
 import type { Agent, Automation, AutomationTrigger, ChannelId } from "@/lib/types";
 
@@ -198,7 +199,20 @@ export function AutomationDialog({
                     : "border-border bg-card/50 text-muted-foreground hover:border-input hover:text-foreground",
                 )}
                 key={opt.value}
-                onClick={() => setTrigger(opt.value)}
+                onClick={() => {
+                  if (opt.value === trigger) return;
+                  setTrigger(opt.value);
+                  // One box serves every trigger, so switching type has to
+                  // empty it. Leaving it filled offered the previous
+                  // trigger's value as the next one's — a keyword as a
+                  // webhook secret, a cron line as a wait time — and the
+                  // webhook case was a real hole: the keyword is the word
+                  // the business publishes. The server refuses to inherit
+                  // one either (see webhookToken in
+                  // app/api/automations/route.ts); this is so nobody is
+                  // shown a token that was never going to be saved.
+                  setTriggerValue(opt.value === editing?.trigger ? editing.triggerValue : "");
+                }}
                 type="button"
               >
                 <span className="block text-sm font-medium">{t(opt.labelKey)}</span>
@@ -218,17 +232,7 @@ export function AutomationDialog({
           </label>
         ) : null}
         {trigger === "schedule" ? (
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium">{t("automations.cronExpression")}</span>
-            <Input
-              onChange={(e) => setTriggerValue(e.target.value)}
-              placeholder="0 9 * * *"
-              value={triggerValue}
-              pattern="^[\d\*\/\-\,]+$"
-              title="Formato cron: minuto hora día mes díaSemana (ej: 0 9 * * *)"
-            />
-            <p className="text-xs text-muted-foreground">{t("automations.cronFormat")}</p>
-          </label>
+          <ScheduleBuilder onChange={setTriggerValue} value={triggerValue} />
         ) : null}
         {trigger === "webhook" ? (
           <div className="space-y-2">

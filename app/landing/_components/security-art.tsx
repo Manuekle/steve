@@ -32,7 +32,7 @@ import {
   Cancel01Icon,
   Database01Icon,
   GlobalIcon,
-  Key01Icon,
+  AuthorizedIcon,
   LockKeyIcon,
   SourceCodeIcon,
   Tick02Icon,
@@ -56,7 +56,7 @@ export function DatabaseScene() {
       <div className="space-y-2">
         <Row>
           <Plate active className="size-7" icon={Database01Icon} />
-          <Mono className="min-w-0 flex-1 truncate text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+          <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             postgres://localhost
           </Mono>
         </Row>
@@ -90,7 +90,7 @@ export function SandboxScene() {
         <div className="flex items-center gap-3">
           <Plate active className="size-10 rounded-xl" icon={SourceCodeIcon} size={18} />
           <span className="relative flex size-10 items-center justify-center">
-            <span className="lp-plate flex size-10 items-center justify-center rounded-xl text-muted-foreground/60 transition-opacity duration-500 group-hover:opacity-30">
+            <span className="lp-plate flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-opacity duration-500 group-hover:opacity-30">
               <HugeiconsIcon icon={GlobalIcon} size={18} strokeWidth={1.75} />
             </span>
             <span
@@ -128,18 +128,18 @@ export function WebhookScene() {
       <div className="space-y-2">
         <Row>
           <Plate active className="size-7" icon={WebhookIcon} />
-          <Mono className="min-w-0 flex-1 truncate text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+          <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             POST /api/webhooks
           </Mono>
         </Row>
         <Row className="transition-colors duration-500 group-hover:border-input">
           <SwapPlate className="size-7" delay={220} from={LockKeyIcon} to={Tick02Icon} />
           <span className="min-w-0 flex-1">
-            <Mono className="block truncate text-muted-foreground/50">
+            <Mono className="block truncate text-muted-foreground">
               sha256=a3f1…
             </Mono>
             <span className="relative mt-1 block h-3.5">
-              <Mono className="absolute inset-0 text-muted-foreground/40 transition-opacity duration-500 group-hover:opacity-0">
+              <Mono className="absolute inset-0 text-muted-foreground transition-opacity duration-500 group-hover:opacity-0">
                 verificando…
               </Mono>
               <Mono
@@ -168,9 +168,9 @@ export function KeysScene() {
   return (
     <Scene>
       <div className="flex flex-col items-center gap-3">
-        <Plate active className="size-10 rounded-xl" icon={Key01Icon} size={18} />
+        <Plate active className="size-10 rounded-xl" icon={AuthorizedIcon} size={18} />
         <Chip
-          className="text-muted-foreground/50 opacity-60 transition-all duration-500 group-hover:text-muted-foreground group-hover:opacity-100"
+          className="text-muted-foreground opacity-60 transition-all duration-500 group-hover:text-muted-foreground group-hover:opacity-100"
           style={at(140)}
         >
           ~/.steve · tu servidor
@@ -214,8 +214,8 @@ export function AllowlistScene() {
             <Mono
               className={`min-w-0 flex-1 truncate transition-all duration-500 ${
                 host.allowed
-                  ? "text-muted-foreground/70 group-hover:text-foreground"
-                  : "text-muted-foreground/50 group-hover:line-through group-hover:opacity-50"
+                  ? "text-muted-foreground group-hover:text-foreground"
+                  : "text-muted-foreground group-hover:line-through group-hover:opacity-50"
               }`}
               style={at(200 + index * 90)}
             >
@@ -250,7 +250,7 @@ export function TracesScene() {
       <div className="space-y-2.5">
         <div className="flex items-center gap-3">
           <Plate active className="size-7" icon={SourceCodeIcon} />
-          <Mono className="text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+          <Mono className="text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             OpenTelemetry
           </Mono>
         </div>

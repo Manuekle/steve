@@ -151,7 +151,7 @@ export function PricingSection() {
                             list that brightens in order is someone reading
                             down it, which is what the card wants you to do. */}
                         <HugeiconsIcon
-                          className="mt-1 shrink-0 text-muted-foreground/50 transition-colors duration-500 group-hover:text-foreground"
+                          className="mt-1 shrink-0 text-muted-foreground transition-colors duration-500 group-hover:text-foreground"
                           icon={CheckIcon}
                           size={15}
                           strokeWidth={2}
@@ -187,7 +187,7 @@ export function PricingSection() {
             none of the three cards carries, and a pricing band that leaves it
             out is the reason someone feels misled two weeks later. */}
         <Reveal delay={140}>
-          <p className="mx-auto mt-10 max-w-[64ch] text-center text-[13px] leading-relaxed text-muted-foreground/70">
+          <p className="mx-auto mt-10 max-w-[64ch] text-center text-[13px] leading-relaxed text-muted-foreground">
             {t("landing.pricing.note")}
           </p>
         </Reveal>

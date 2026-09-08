@@ -16,7 +16,12 @@ type TranslationParams = Record<string, string | number>;
 interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string, params?: TranslationParams) => string;
+  /** `fallback` is for the handful of strings that come from a layer with its
+   *  own vocabulary — a validator's issue codes, an API error code — where the
+   *  set is open enough that a missing entry is a real possibility. Without it
+   *  a key with no line in the dictionary renders as the key itself, which is
+   *  worse than the English sentence the caller already has. */
+  t: (key: string, params?: TranslationParams, fallback?: string) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
@@ -93,9 +98,9 @@ export function I18nProvider({ children }: { readonly children: ReactNode }) {
   }, []);
 
   const t = useCallback(
-    (key: string, params?: TranslationParams): string => {
+    (key: string, params?: TranslationParams, fallback?: string): string => {
       const dict = dictionaries[locale] ?? dictionaries[DEFAULT_LOCALE];
-      const template = dict[key] ?? key;
+      const template = dict[key] ?? fallback ?? key;
       return interpolate(template, params);
     },
     [locale],

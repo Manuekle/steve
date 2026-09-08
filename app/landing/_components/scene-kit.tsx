@@ -71,7 +71,7 @@ export function Plate({
   return (
     <span
       className={`lp-plate flex shrink-0 items-center justify-center rounded-[10px] transition-colors duration-500 ${
-        active ? "text-muted-foreground group-hover:text-foreground" : "text-muted-foreground/70"
+        active ? "text-muted-foreground group-hover:text-foreground" : "text-muted-foreground"
       } ${className}`}
     >
       <HugeiconsIcon icon={icon} size={size} strokeWidth={1.75} />

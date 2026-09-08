@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { Add01Icon, Cancel01Icon, DragDropIcon, RefreshIcon, SearchIcon } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
@@ -74,6 +74,7 @@ function CrmSkeleton() {
 
 export default function CrmPage() {
   const { t } = useI18n();
+  const reduced = useReducedMotion();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { toast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -272,7 +273,11 @@ export default function CrmPage() {
                         className={cn("block h-full rounded-full", STATUS_THEME[status].bar)}
                         initial={false}
                         animate={{ flexGrow: count }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.7 }}
+                        transition={
+                          reduced
+                            ? { duration: 0 }
+                            : { type: "spring", stiffness: 300, damping: 30, mass: 0.7 }
+                        }
                         style={{ flexBasis: 0 }}
                       />
                     </TooltipTrigger>
@@ -305,7 +310,7 @@ export default function CrmPage() {
                   type="button"
                   onClick={() => setSearch("")}
                   aria-label={t("crm.clearSearch")}
-                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+                  className="absolute top-1/2 right-2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
                 >
                   <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={2} />
                 </button>

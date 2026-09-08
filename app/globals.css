@@ -76,7 +76,11 @@
   --muted-foreground: oklch(0.52 0 0);
   --accent: oklch(0.955 0 0);
   --accent-foreground: oklch(0.2 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* Darkened from L=0.577: at that lightness the red measured 4.38:1 on
+     `--background`, so every inline field error and every `hover:text-destructive`
+     over a `bg-destructive/10` tint sat under the 4.5:1 AA floor. L=0.54 clears
+     both (5.21:1 on the page, 4.68:1 on the hover tint) without changing the hue. */
+  --destructive: oklch(0.54 0.22 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   /* The violet the billing screens use the way the rest of the app uses
      `--destructive`: a tinted text button, not a filled surface. Kept as a
@@ -85,7 +89,17 @@
   --billing: oklch(0.48 0.23 296);
   --border: oklch(0 0 0 / 0.1);
   --input: oklch(0 0 0 / 0.08);
-  --ring: oklch(0.5 0 0);
+  /* Tuned by eye to sit just above `--border`, which paints at 1.25:1: the
+     ring is meant to read like a soft shadow around the control, not like a
+     stroke. L=0.75 lands at 2.23:1 on a card and 2.05:1 on the page.
+
+     This is a deliberate choice against WCAG 1.4.11, which asks 3:1 of a
+     focus indicator, made by the product owner with the number in hand. The
+     compliant value was L=0.61 (3.79:1 on a card) and is restored below for
+     anyone whose OS asks for more contrast — see the `prefers-contrast`
+     block at the end of this file. Change this back before claiming AA on
+     focus appearance. */
+  --ring: oklch(0.75 0 0);
   /* The scrollbar thumb is a wash of the foreground over the page, the same
      way `--border` is — so it reads as part of the surface rather than as a
      platform widget sitting on top of it. */
@@ -115,6 +129,33 @@
   --btn-primary-shadow-hover: 0 2px 4px oklch(0 0 0 / 0.15), 0 1px 2px oklch(0 0 0 / 0.08),
     inset 0 1px 0 oklch(1 0 0 / 0.15), inset 0 -1px 2px oklch(0 0 0 / 0.25);
   --btn-primary-shadow-pressed: inset 0 1px 2px oklch(0 0 0 / 0.3), inset 0 -1px 0 oklch(1 0 0 / 0.05);
+  /* The sheen: a vertical wash laid over the flat fill so the surface reads as
+     a material catching light from above rather than as a printed rectangle.
+     It rides as `background-image` over `--btn-primary-bg`, which stays the
+     real colour — so the token still answers "what colour is this button", and
+     a surface that cannot paint the gradient falls back to it intact.
+
+     Deliberately below the threshold where anyone would call it a gradient:
+     the top lifts ~0.05 L and the bottom drops ~0.03 against a 0.2 base. Any
+     more and it stops being metal and starts being a 2010 web button. The
+     stops are asymmetric — the highlight decays fast over the top 45%, the
+     shade gathers only in the last quarter — because that is how a slightly
+     convex surface actually falls off, and an even ramp reads as a fade. */
+  --btn-primary-sheen: linear-gradient(
+    to bottom,
+    oklch(1 0 0 / 0.1) 0%,
+    oklch(1 0 0 / 0.03) 45%,
+    oklch(0 0 0 / 0.04) 78%,
+    oklch(0 0 0 / 0.08) 100%
+  );
+  /* Pressed flips the light to the bottom: the face has tipped away, so the
+     lit edge is now the far one. Without this the sheen keeps claiming the
+     surface is rising while the inset shadow says it sank. */
+  --btn-primary-sheen-pressed: linear-gradient(
+    to bottom,
+    oklch(0 0 0 / 0.06),
+    oklch(1 0 0 / 0.03)
+  );
 
   /* Secondary: muted neutral surface, same depth language, lower contrast. */
   --btn-secondary-bg: oklch(0.965 0 0);
@@ -148,8 +189,15 @@
     inset 0 1px 0 oklch(1 0 0 / 0.95), inset 0 -1px 2px oklch(0.5 0.05 27 / 0.06);
   --btn-destructive-shadow-pressed: inset 0 1px 2px oklch(0.5 0.05 27 / 0.1), inset 0 -1px 0 oklch(1 0 0 / 0.4);
 
-  /* Focus ring — neutral, works on light. */
-  --btn-focus-ring: oklch(0.5 0 0 / 0.35);
+  /* Focus ring. Solid, and the same neutral as `--ring`, because a focus
+     indicator has to clear 3:1 against every surface it can land on (WCAG
+     1.4.11) and an alpha wash cannot: at 35% this measured 1.64:1 and was
+     effectively invisible. */
+  --btn-focus-ring: var(--ring);
+  /* The destructive ring follows the neutral one down, keeping just enough
+     chroma to still read as red: 2.62:1 on a card. Same tradeoff, same
+     `prefers-contrast` restore. */
+  --btn-destructive-focus-ring: oklch(0.72 0.13 27);
 
   /* Button easing */
   --btn-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -206,7 +254,9 @@
   --secondary: oklch(0.23 0 0);           /* #1D1D1D */
   --secondary-foreground: oklch(0.93 0 0);
   --muted: oklch(0.21 0 0);              /* #181818 */
-  --muted-foreground: oklch(0.58 0 0);
+  /* L=0.58 cleared 4.5:1 on `--background` but only reached 4.39:1 on
+     `--card`, and most secondary text in this app sits on a card. */
+  --muted-foreground: oklch(0.62 0 0);
   --accent: oklch(0.23 0 0);
   --accent-foreground: oklch(0.93 0 0);
   --destructive: oklch(0.637 0.193 21.4);
@@ -214,7 +264,10 @@
   --billing: oklch(0.75 0.16 296);
   --border: oklch(1 0 0 / 0.1);
   --input: oklch(1 0 0 / 0.1);
-  --ring: oklch(0.5 0 0);
+  /* Same intent as light, from the other side: 2.22:1 on a card, 2.31:1 on
+     the page — a shadow, not a stroke. Compliant value was L=0.55 (3.88:1),
+     restored under `prefers-contrast: more`. */
+  --ring: oklch(0.42 0 0);
   --scrollbar-thumb: oklch(1 0 0 / 0.16);
   --scrollbar-thumb-hover: oklch(1 0 0 / 0.34);
 
@@ -240,6 +293,23 @@
   --btn-primary-shadow-hover: 0 2px 4px oklch(0 0 0 / 0.55), 0 1px 2px oklch(0 0 0 / 0.35),
     inset 0 1px 0 oklch(1 0 0 / 0.8), inset 0 -1px 2px oklch(0 0 0 / 0.1);
   --btn-primary-shadow-pressed: inset 0 1px 2px oklch(0 0 0 / 0.15), inset 0 -1px 0 oklch(1 0 0 / 0.3);
+  /* Same sheen, repolarised for a near-white fill. White-on-white does nothing
+     at 10%, so the highlight runs far stronger here (0.55) to move a 0.96 base
+     at all, while the shade stays about where light mode has it — dark pigment
+     on a bright surface is the half that carries. Reusing light mode's numbers
+     here produced a button that looked flat next to its own dark siblings. */
+  --btn-primary-sheen: linear-gradient(
+    to bottom,
+    oklch(1 0 0 / 0.55) 0%,
+    oklch(1 0 0 / 0.12) 45%,
+    oklch(0 0 0 / 0.03) 78%,
+    oklch(0 0 0 / 0.07) 100%
+  );
+  --btn-primary-sheen-pressed: linear-gradient(
+    to bottom,
+    oklch(0 0 0 / 0.05),
+    oklch(1 0 0 / 0.15)
+  );
 
   /* Secondary */
   --btn-secondary-bg: oklch(0.23 0 0);
@@ -273,8 +343,10 @@
     inset 0 1px 0 oklch(1 0 0 / 0.07), inset 0 -1px 2px oklch(0.2 0.1 22 / 0.12);
   --btn-destructive-shadow-pressed: inset 0 1px 2px oklch(0.2 0.1 22 / 0.2), inset 0 -1px 0 oklch(1 0 0 / 0.02);
 
-  /* Focus ring */
-  --btn-focus-ring: oklch(0.7 0 0 / 0.4);
+  /* Focus ring — see the light-theme note. At 40% this measured 2.09:1. */
+  --btn-focus-ring: var(--ring);
+  /* 2.47:1 on a card — see the light-theme note. */
+  --btn-destructive-focus-ring: oklch(0.46 0.13 22);
 
   /* Button easing */
   --btn-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -345,6 +417,35 @@ button,
 input,
 textarea {
   font-family: inherit;
+}
+
+/* Default focus ring, for everything the design system does not style itself.
+   Two things were wrong with leaving this to the browser. A bare text link —
+   "¿Olvidaste tu contraseña?" and "Crear una" on /login are the first two you
+   reach with Tab — fell back to Chrome's own `1px auto` ring: a hard grey
+   rectangle drawn tight against the text, in a page where nothing else has a
+   square corner. And an `outline` traces the element's own `border-radius`,
+   which a text link has none of, so there was nothing to round it with.
+
+   So: the app's ring, plus a small radius when the element does not state one.
+   `border-radius` on something that paints no background and no border costs
+   nothing visually — it only changes the shape of the outline.
+
+   `@layer base` is what makes this a default rather than an override: every
+   `focus-visible:outline-*` utility lives in `@layer utilities` and wins, so
+   Button, Input and SelectTrigger keep their own ring, and anything that
+   deliberately opts out with `focus-visible:outline-none` still opts out.
+   `tabindex="-1"` is excluded on purpose — those are programmatic focus
+   targets like a dialog's content wrapper, and a ring around the whole dialog
+   is not what anyone means by focus. */
+@layer base {
+  :where(a, button, summary, [role="button"], [role="link"], [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 1px solid var(--ring);
+    outline-offset: 1px;
+  }
+  :where(a, button, summary, [role="button"], [role="link"], [tabindex]:not([tabindex="-1"])):not([class*="rounded"]):focus-visible {
+    border-radius: 6px;
+  }
 }
 
 /* Browsers disagree on the default `<button>` cursor — Safari shows a
@@ -724,6 +825,28 @@ textarea {
     transparent 100%);
 }
 .t-reason-viewport::-webkit-scrollbar { display: none; }
+/* Horizontal scroller whose clipped edges fade instead of being cut off.
+   The two lengths are set by whoever owns the scroll position, so a side only
+   fades while there is actually content past it — a permanent both-sides mask
+   dims the first column of a board that has not been scrolled yet. */
+.x-fade {
+  --x-fade-start: 0px;
+  --x-fade-end: 0px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--x-fade-start),
+    black calc(100% - var(--x-fade-end)),
+    transparent 100%);
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--x-fade-start),
+    black calc(100% - var(--x-fade-end)),
+    transparent 100%);
+  transition: -webkit-mask-image 200ms ease-out, mask-image 200ms ease-out;
+}
+
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .t-reason-scroll {
@@ -1049,8 +1172,10 @@ textarea {
   z-index: 1;
   transition: color var(--tabs-dur) var(--tabs-ease);
 }
-.t-tab:not([aria-selected="true"]):hover,
-.t-tab[aria-selected="true"] {
+/* `aria-pressed`, not `aria-selected`: these are toggle buttons, not a
+   composite tab widget. See the note in `sliding-tabs.tsx`. */
+.t-tab:not([aria-pressed="true"]):hover,
+.t-tab[aria-pressed="true"] {
   color: var(--tabs-text-active);
 }
 
@@ -1190,8 +1315,8 @@ textarea {
 
 .t-pager-edge:focus-visible,
 .t-pager-page:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  outline: 1px solid var(--ring);
+  outline-offset: 1px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1756,66 +1881,6 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .t-icon-swap .t-icon { transition: none !important; }
-}
-
-/* ── Page side-by-side ───────────────────────────────────────────── */
-/* Two views that live next to each other — read ↔ edit, list ↔ detail.
-   Page 1 leaves to the left, page 2 to the right, so the direction of
-   travel says which way you moved.
-
-   The height line is the one addition to the transitions.dev snippet, and
-   it is not optional here: `.t-page` is absolutely positioned, so the
-   container collapses to nothing unless something gives it a height. The
-   caller measures the visible page and sets `--page-height`; this tweens
-   between the two so a taller edit form grows instead of snapping. */
-:root {
-  --page-slide-dur: 250ms;
-  --page-fade-dur: 250ms;
-  --page-slide-distance: 8px;
-  --page-blur: 3px;
-  --page-stagger: 0ms;
-  --page-exit-enabled: 1;
-  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --page-height-dur: 250ms;
-}
-
-.t-page-slide {
-  position: relative;
-  height: var(--page-height, auto);
-  transition: height var(--page-height-dur) var(--page-slide-ease);
-}
-.t-page-slide .t-page[data-page-id="1"] {
-  --t-page-from-x: calc(var(--page-slide-distance) * -1);
-}
-.t-page-slide .t-page[data-page-id="2"] {
-  --t-page-from-x: var(--page-slide-distance);
-}
-.t-page-slide .t-page {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(calc(var(--t-page-from-x, 0px) * var(--page-exit-enabled)));
-  filter: blur(calc(var(--page-blur) * var(--page-exit-enabled)));
-  transition:
-    opacity   var(--page-fade-dur)  var(--page-fade-ease),
-    transform var(--page-slide-dur) var(--page-slide-ease),
-    filter    var(--page-slide-dur) var(--page-slide-ease);
-  will-change: opacity, transform, filter;
-}
-.t-page-slide[data-page="1"] .t-page[data-page-id="1"],
-.t-page-slide[data-page="2"] .t-page[data-page-id="2"] {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(0);
-  filter: blur(0);
-  transition-delay: var(--page-stagger);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .t-page-slide .t-page { transition: none !important; }
-  .t-page-slide { transition: none !important; }
 }
 
 /* ── Panel reveal ────────────────────────────────────────────────── */
@@ -2428,8 +2493,10 @@ html:has(.lp) body {
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  /* The same step the app uses for the mono category label on a flow node. */
-  color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+  /* Full `--muted-foreground`, not a 70% mix of it. At 11px this is body text
+     as far as WCAG 1.4.3 is concerned, and the mix landed at 3.15:1 on the
+     dark page ground — the same alpha-scale defect the app-side utilities had. */
+  color: var(--muted-foreground);
 }
 
 /* ── Scroll reveal ──────────────────────────────────────────────── */
@@ -2569,7 +2636,7 @@ html.lenis body {
   outline: none;
 }
 .lp-focus:focus-visible {
-  outline: 2px solid var(--ring);
+  outline: 1px solid var(--ring);
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -3424,5 +3491,30 @@ html.lenis body {
   .lp-cap *, .lp-cap *::before, .lp-cap *::after {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* ── Focus ring, high-contrast fallback ─────────────────────── */
+/* `--ring` is deliberately tuned below the 3:1 that WCAG 1.4.11 asks of a
+   focus indicator, so the ring reads as a soft shadow rather than a stroke.
+   That is a legitimate call for the default look, but it is not one to make
+   on behalf of someone who has told their operating system they need more
+   contrast — Windows "Increase contrast", macOS "Increase contrast", or a
+   browser honouring either. For them the ring goes back to the values the
+   accessibility audit landed on: 3.79:1 on a card in light, 3.88:1 in dark.
+
+   `prefers-contrast: more` only fires on that explicit user setting, so this
+   costs the default appearance nothing. Forced-colors mode is covered
+   separately by the choice of `outline` over `box-shadow`, which is the one
+   focus property the high-contrast renderer preserves. */
+@media (prefers-contrast: more) {
+  :root {
+    --ring: oklch(0.61 0 0);
+    --btn-destructive-focus-ring: oklch(0.58 0.2 27);
+  }
+  :root.dark,
+  .dark {
+    --ring: oklch(0.55 0 0);
+    --btn-destructive-focus-ring: oklch(0.58 0.18 22);
   }
 }

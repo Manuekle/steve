@@ -3,11 +3,8 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
-  KeyRoundIcon,
-  Loading03Icon,
+  AuthorizedIcon,
   Logout01Icon,
-  UserCircleIcon,
-  CrownIcon,
   Invoice01Icon,
 } from "@hugeicons/core-free-icons";
 import type { LicenseInfo } from "@/lib/license/types";
@@ -26,9 +23,12 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { LicenseCard } from "@/components/ai-elements/license-card";
+import { licenseTone } from "@/components/ai-elements/license-credit-card";
 import { SoundSettings } from "../../_components/sound-settings";
+import { BusinessesCard } from "../../_components/businesses-card";
 import { useT } from "@/lib/i18n/provider";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function AccountPage() {
   const t = useT();
@@ -108,90 +108,101 @@ export default function AccountPage() {
     }
   };
 
+  // Plan line: edition first, then who it was issued to, then whether
+  // maintenance is still running. Every part is optional and the separators
+  // come from joining what is actually there, so a license with no company
+  // does not render a leading "· ".
+  const edition = license?.payload?.edition;
+  const planParts = [
+    edition
+      ? edition.charAt(0).toUpperCase() + edition.slice(1)
+      : license?.status === "missing"
+        ? t("account.planNone")
+        : t("account.planLoading"),
+    license?.payload?.company,
+    license?.status === "valid"
+      ? license.maintenanceActive
+        ? t("account.planActive")
+        : t("account.planMaintenanceExpired")
+      : undefined,
+  ].filter(Boolean) as string[];
+
+  const tone = licenseTone(license);
+  const toneDot =
+    tone === "valid-active"
+      ? "bg-emerald-500"
+      : tone === "valid-inactive"
+        ? "bg-amber-500"
+        : tone === "invalid"
+          ? "bg-destructive"
+          : "bg-muted-foreground/40";
+
   return (
     <PageContainer maxWidth="max-w-4xl" pattern="grid">
       <Skeleton className="min-h-[400px]" isLoading={loading} skeleton={<AccountSkeleton />}>
         <div className="content-enter">
-          <header className="mb-8">
-            <h1 className="text-2xl font-semibold">{t("account.title")}</h1>
+          <header className="mb-6">
+            <h1 className="font-heading text-2xl font-semibold tracking-tight">{t("account.title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("account.subtitle")}</p>
           </header>
 
           <ErrorBanner className="mb-4" error={loadError} onRetry={() => void load()} />
 
+          {/* Identity and plan in one block. These used to be two cards that
+              both answered "whose install is this" — the email one, and a plan
+              one that repeated the edition, the company and the status the
+              licence card below already draws. */}
           <Card className="mb-4">
-            <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={UserCircleIcon} size={16} strokeWidth={1.75} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle>{t("account.emailCardTitle")}</CardTitle>
-                <CardDescription>{t("account.emailCardDescription")}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardSeparator />
-            <CardBody>
-              <p className="truncate text-sm font-medium">{email ?? "—"}</p>
-            </CardBody>
-          </Card>
-
-          <Card className="mb-4">
-            <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={CrownIcon} size={16} strokeWidth={1.75} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle>{t("account.planTitle")}</CardTitle>
-                <CardDescription>{t("account.planDescription")}</CardDescription>
-              </div>
-              <a
-                href="/pricing"
-                className="hidden shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-[var(--shadow-inset)] hover:bg-accent sm:inline-flex"
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+              <div
+                aria-hidden
+                className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-gradient-to-br from-muted to-accent text-lg font-semibold text-foreground/70 shadow-[var(--shadow-inset)]"
               >
-                {t("account.planViewPlans")}
-              </a>
-            </CardHeader>
-            <CardSeparator />
-            <CardBody>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium">
-                    {license?.payload?.edition
-                      ? license.payload.edition.charAt(0).toUpperCase() + license.payload.edition.slice(1)
-                      : license?.status === "missing"
-                        ? t("account.planNone")
-                        : t("account.planLoading")}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {license?.payload?.company ?? ""}
-                    {license?.status === "valid" && license.maintenanceActive
-                      ? `${license.payload?.company ? " · " : ""}${t("account.planActive")}`
-                      : license?.status === "valid"
-                        ? `${license.payload?.company ? " · " : ""}${t("account.planMaintenanceExpired")}`
-                        : ""}
-                  </p>
-                </div>
+                {(email ?? "?").charAt(0).toUpperCase()}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] text-muted-foreground">
+                  {t("account.emailCardTitle")}
+                </p>
+                <p className="mt-1 truncate text-base font-medium">{email ?? "—"}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className={`size-1.5 shrink-0 rounded-full ${toneDot}`} />
+                  <span className="truncate">{planParts.join(" · ")}</span>
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <a
+                  href="/pricing"
+                  className="inline-flex h-8 items-center rounded-[11px] border border-border bg-card px-3 text-xs font-medium shadow-[var(--shadow-inset)] transition-colors hover:bg-accent"
+                >
+                  {t("account.planViewPlans")}
+                </a>
                 <a
                   href="/account/billing"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-[var(--shadow-button)] hover:opacity-90"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-[11px] bg-primary px-3 text-xs font-medium text-primary-foreground shadow-[var(--shadow-button)] transition-opacity hover:opacity-90"
                 >
                   <HugeiconsIcon icon={Invoice01Icon} size={14} strokeWidth={1.75} />
                   {t("account.planManageBilling")}
                 </a>
               </div>
-            </CardBody>
+            </div>
           </Card>
 
-          {/* The plan card above says which edition this is; this one is where
-              the key is actually pasted, and where the installation id lives. */}
-          <LicenseCard />
+          {/* Right under the account it belongs to, and above the plan: which
+              businesses this installation runs is a bigger fact about it than
+              which tier it is on. */}
+          <BusinessesCard />
 
-          <SoundSettings />
+          {/* The licence itself, drawn as the card it is — edition, holder,
+              expiry and installation id all live on its two faces. */}
+          <LicenseCard />
 
           <Card className="mb-4">
             <CardHeader>
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={KeyRoundIcon} size={16} strokeWidth={1.75} />
+                <HugeiconsIcon icon={AuthorizedIcon} size={16} strokeWidth={1.75} />
               </div>
               <div className="min-w-0 flex-1">
                 <CardTitle>{t("account.changePasswordTitle")}</CardTitle>
@@ -201,46 +212,48 @@ export default function AccountPage() {
             <CardSeparator />
             <CardBody>
               <form className="space-y-4" onSubmit={onSubmit}>
-                <div className="space-y-1.5">
-                  <label htmlFor="current-password" className="text-sm font-medium">
-                    {t("account.currentPassword")}
-                  </label>
-                  <Input
-                    id="current-password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={currentPassword}
-                    onChange={(event) => setCurrentPassword(event.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="new-password" className="text-sm font-medium">
-                    {t("auth.newPassword")}
-                  </label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={10}
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="confirm-new-password" className="text-sm font-medium">
-                    {t("auth.confirmPassword")}
-                  </label>
-                  <Input
-                    id="confirm-new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    required
-                  />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label htmlFor="current-password" className="text-sm font-medium">
+                      {t("account.currentPassword")}
+                    </label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="new-password" className="text-sm font-medium">
+                      {t("auth.newPassword")}
+                    </label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={10}
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="confirm-new-password" className="text-sm font-medium">
+                      {t("auth.confirmPassword")}
+                    </label>
+                    <Input
+                      id="confirm-new-password"
+                      type="password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
 
                 {fieldError ? <p className="text-xs text-destructive">{fieldError}</p> : null}
@@ -255,7 +268,7 @@ export default function AccountPage() {
                     }
                   >
                     {saving ? (
-                      <HugeiconsIcon icon={Loading03Icon} size={15} strokeWidth={2} className="animate-spin" />
+                      <Spinner size={15} strokeWidth={2} />
                     ) : null}
                     {t("account.changePasswordAction")}
                   </Button>
@@ -267,21 +280,26 @@ export default function AccountPage() {
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle>{t("account.signOutCardTitle")}</CardTitle>
-                <CardDescription>{t("account.signOutCardDescription")}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardSeparator />
-            <CardBody>
-              <SignOutButton className="border border-border shadow-[var(--shadow-inset)]" />
-            </CardBody>
-          </Card>
+          {/* Two short cards that were each spending a full page-width row. */}
+          <div className="grid gap-4 lg:grid-cols-2 [&>*]:mb-0">
+            <SoundSettings />
+
+            <Card className="flex flex-col">
+              <CardHeader>
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                  <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <CardTitle>{t("account.signOutCardTitle")}</CardTitle>
+                  <CardDescription>{t("account.signOutCardDescription")}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardSeparator />
+              <CardBody className="mt-auto">
+                <SignOutButton className="border border-border shadow-[var(--shadow-inset)]" />
+              </CardBody>
+            </Card>
+          </div>
         </div>
       </Skeleton>
     </PageContainer>
@@ -291,31 +309,55 @@ export default function AccountPage() {
 function AccountSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="mb-4 space-y-2">
-        <SkeletonBar className="h-7 w-40" />
+      <div className="mb-6 space-y-2">
+        <SkeletonBar className="h-8 w-40" />
         <SkeletonBar className="h-4 w-full max-w-sm" />
       </div>
 
-      {/* Email + plan cards */}
-      {Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
-          <div className="flex items-center gap-3 p-5">
-            <SkeletonBar className="size-9 shrink-0 rounded-xl" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <SkeletonBar className="h-4 w-28" />
-              <SkeletonBar className="h-3 w-48" />
-            </div>
+      {/* Identity + plan */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-4 p-5">
+          <SkeletonBar className="size-12 shrink-0 rounded-2xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-3 w-24" />
+            <SkeletonBar className="h-5 w-56" />
+            <SkeletonBar className="h-3 w-40" />
           </div>
-          <div className="h-px bg-border" />
-          <div className="p-5">
-            <SkeletonBar className="h-5 w-40" />
+          <SkeletonBar className="hidden h-8 w-36 rounded-[11px] sm:block" />
+        </div>
+      </div>
+
+      {/* Businesses */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-4 w-28" />
+            <SkeletonBar className="h-3 w-48" />
           </div>
         </div>
-      ))}
+        <div className="h-px bg-border" />
+        <div className="p-5">
+          <SkeletonBar className="h-5 w-40" />
+        </div>
+      </div>
 
-      {/* License card + sound settings */}
-      <SkeletonBar className="h-32 w-full rounded-2xl" />
-      <SkeletonBar className="h-20 w-full rounded-2xl" />
+      {/* Licence card — the credit card and its wallet */}
+      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-3 p-5">
+          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBar className="h-4 w-36" />
+            <SkeletonBar className="h-3 w-56" />
+          </div>
+        </div>
+        <div className="border-y border-border bg-muted/40 px-5 py-7">
+          <SkeletonBar className="mx-auto aspect-[1.586] w-full max-w-[27rem] rounded-[18px]" />
+        </div>
+        <div className="p-5">
+          <SkeletonBar className="h-4 w-52" />
+        </div>
+      </div>
 
       {/* Change password form */}
       <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
@@ -335,19 +377,23 @@ function AccountSkeleton() {
         </div>
       </div>
 
-      {/* Sign out */}
-      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
-        <div className="flex items-center gap-3 p-5">
-          <SkeletonBar className="size-9 shrink-0 rounded-xl" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <SkeletonBar className="h-4 w-28" />
-            <SkeletonBar className="h-3 w-48" />
+      {/* Sound + sign out */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+            <div className="flex items-center gap-3 p-5">
+              <SkeletonBar className="size-9 shrink-0 rounded-xl" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <SkeletonBar className="h-4 w-28" />
+                <SkeletonBar className="h-3 w-40" />
+              </div>
+            </div>
+            <div className="h-px bg-border" />
+            <div className="p-5">
+              <SkeletonBar className="h-9 w-32 rounded-lg" />
+            </div>
           </div>
-        </div>
-        <div className="h-px bg-border" />
-        <div className="p-5">
-          <SkeletonBar className="h-9 w-32 rounded-lg" />
-        </div>
+        ))}
       </div>
     </div>
   );

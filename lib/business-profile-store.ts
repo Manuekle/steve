@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { createDocumentStore } from "./doc-store";
 import { getBlob, listBlobs, putBlob, removeBlob } from "./blob-store";
+import { activeBusinessId, blobPrefix, renameBusiness } from "./business-scope";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 
@@ -130,6 +131,8 @@ function normalizeIdentity(parsed: Partial<BusinessIdentity> | undefined): Busin
 // Postgres when one is configured, ~/.steve/business-profile.json otherwise.
 const profileStore = createDocumentStore<Store>({
   id: "business-profile",
+  // Per business: the identity, the AI profile and the logo are what one business is. See lib/business-scope.ts.
+  scoped: true,
   file: FILE,
   empty,
   normalize: (parsed) => ({
@@ -187,15 +190,23 @@ export async function getBusinessIdentity(): Promise<BusinessIdentity> {
 export async function saveBusinessIdentity(
   patch: Partial<BusinessIdentityFields>,
 ): Promise<BusinessIdentity> {
-  return mutate((store) => {
-    const updated: BusinessIdentity = {
+  const updated = await mutate((store) => {
+    const next: BusinessIdentity = {
       ...store.identity,
       ...patch,
       updatedAt: new Date().toISOString(),
     };
-    store.identity = updated;
-    return updated;
+    store.identity = next;
+    return next;
   });
+
+  // The switcher in the sidebar names this business, and this is the field
+  // people think of as its name. Keeping the registry entry in step means
+  // there is one place to rename a business rather than two that can disagree.
+  if (typeof patch.name === "string") {
+    await renameBusiness(await activeBusinessId(), patch.name).catch(() => undefined);
+  }
+  return updated;
 }
 
 export async function setLegalPage(kind: LegalPageKind, page: LegalPage | null): Promise<BusinessIdentity> {
@@ -220,7 +231,11 @@ export async function saveBusinessLogo(input: {
   mime: string;
   extension: string;
 }): Promise<BusinessLogo> {
-  const file = `logo-${randomUUID()}${input.extension}`;
+  // The business goes in the name, not in a path segment: blob ids are two
+  // segments and no more (lib/blob-store.ts), and carrying the scope in the
+  // stored name means every read, delete and disk fallback below stays inside
+  // this business without a second lookup.
+  const file = `${await blobPrefix()}logo-${randomUUID()}${input.extension}`;
   await putBlob(`profile/${file}`, input.bytes, input.mime);
 
   const { logo, previous } = await mutate((store) => {
@@ -274,7 +289,9 @@ export async function pruneBusinessLogos(): Promise<void> {
     const { identity } = await read();
     const keep = identity.logo?.file;
 
-    for (const id of await listBlobs("profile/logo-")) {
+    // Scoped: an unprefixed list would return the other businesses' logos,
+    // find them "not the one to keep", and delete them.
+    for (const id of await listBlobs(`profile/${await blobPrefix()}logo-`)) {
       if (id !== `profile/${keep}`) await removeBlob(id);
     }
   } catch {

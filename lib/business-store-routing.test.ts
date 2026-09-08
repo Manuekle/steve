@@ -22,7 +22,20 @@ vi.mock("./doc-store", () => ({
   readDocument: (...a: unknown[]) => readDocument(...(a as [])),
   updateDocument: (...a: unknown[]) => updateDocument(...(a as [])),
   migrateFromFileStore: (...a: unknown[]) => migrateFromFileStore(...(a as [])),
+  // business-store asks lib/business-scope which business is active, and the
+  // registry that answers is itself a document store. It is stubbed as the
+  // one, original business — the case these tests are about — so the row key
+  // and the file path stay unsuffixed and the four mocks above still see the
+  // calls they assert on.
+  createDocumentStore: () => ({
+    read: async () => ({ businesses: [DEFAULT_ENTRY], activeId: "default" }),
+    update: async (fn: (store: unknown) => unknown) =>
+      fn({ businesses: [DEFAULT_ENTRY], activeId: "default" }),
+    usingDatabase: async () => false,
+  }),
 }));
+
+const DEFAULT_ENTRY = { id: "default", name: "", createdAt: "2024-01-01T00:00:00.000Z" };
 
 /** The module resolves its backend once per process, so each test needs a
  *  fresh copy of it rather than a shared import. */

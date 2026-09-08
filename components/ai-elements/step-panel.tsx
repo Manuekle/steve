@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useT } from "@/lib/i18n/provider";
 import { STEP_DESCRIPTION_KEYS, STEP_ICONS, STEP_LABEL_KEYS } from "@/lib/workflow-step-meta";
 import type { WorkflowStep } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 
 /**
  * Right-hand properties dock for the selected node — its config form plus the
@@ -60,29 +61,32 @@ export function StepPanel({
 
       {/* Structural actions */}
       <div className="flex shrink-0 items-center gap-1 border-t border-border px-3 py-2.5">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => onMove("up")}
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-accent hover:text-foreground active:scale-95"
+          className="text-[13px] text-muted-foreground hover:text-foreground active:scale-95"
         >
           <HugeiconsIcon icon={ArrowUp02Icon} size={13} strokeWidth={1.75} />
           {t("automations.moveUp")}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => onMove("down")}
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-accent hover:text-foreground active:scale-95"
+          className="text-[13px] text-muted-foreground hover:text-foreground active:scale-95"
         >
           <HugeiconsIcon icon={ArrowDown02Icon} size={13} strokeWidth={1.75} />
           {t("automations.moveDown")}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onRemove}
-          className="ml-auto rounded-full px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-destructive/10 hover:text-destructive active:scale-95"
+          className="ml-auto text-[13px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95"
         >
           {t("automations.deleteStep")}
-        </button>
+        </Button>
       </div>
     </div>
   );

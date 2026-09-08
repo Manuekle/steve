@@ -112,14 +112,14 @@ export function InputClear({
   return (
     <div
       className={cn(
-        "relative flex h-9 w-full items-center rounded-lg border border-input bg-muted pl-9 pr-9 text-sm shadow-[var(--shadow-inset)] outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-within:border-ring/50 focus-within:bg-card focus-within:shadow-[var(--shadow-inset),0_0_0_3px_oklch(0.5_0_0/0.1)]",
+        "relative flex h-9 w-full items-center rounded-lg border border-input bg-muted pl-9 pr-9 text-sm shadow-[var(--shadow-inset)] outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-within:border-ring focus-within:bg-card focus-within:outline-solid focus-within:outline-1 focus-within:outline-offset-1 focus-within:outline-[color:var(--ring)]",
         className,
       )}
     >
       <HugeiconsIcon icon={Search01Icon} size={16} strokeWidth={1.75} className="absolute left-3 shrink-0 text-muted-foreground" />
       <input
         aria-label={placeholder}
-        className="h-full w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+        className="h-full w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         ref={inputRef}

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   CheckmarkCircle02Icon,
-  Loading03Icon,
   MagicWand01Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
@@ -14,6 +13,7 @@ import { AGENT_TEMPLATES, TEMPLATE_BULLETS, type AgentTemplate } from "@/lib/age
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * The hiring board: every ready-made agent as a card you can put to work in
@@ -33,7 +33,9 @@ export function AgentTemplates({
   /** Names already on the team, lowercased. Drives the "hired" marker so the
    *  board reflects the list right above it. */
   readonly hiredNames: ReadonlySet<string>;
-  readonly onHired: (name: string) => void;
+  /** The workspace is where a hired template becomes this business's agent,
+   *  so the id travels with the name — the list opens it. */
+  readonly onHired: (name: string, agentId: string) => void;
   readonly onCustom: () => void;
   readonly onError: (error: UiError) => void;
 }) {
@@ -43,7 +45,7 @@ export function AgentTemplates({
   const hire = async (template: AgentTemplate) => {
     setHiringId(template.id);
     const name = t(`agentTemplates.${template.id}.name`);
-    const result = await fetchJson("/api/agents", t, {
+    const result = await fetchJson<{ agent?: { id: string } }>("/api/agents", t, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -59,7 +61,12 @@ export function AgentTemplates({
       onError(result.error);
       return;
     }
-    onHired(name);
+    const id = result.data.agent?.id;
+    if (!id) {
+      onError({ messageKey: "errors.generation_failed" });
+      return;
+    }
+    onHired(name, id);
   };
 
   return (
@@ -125,12 +132,7 @@ export function AgentTemplates({
                 >
                   {isHiring ? (
                     <>
-                      <HugeiconsIcon
-                        icon={Loading03Icon}
-                        size={14}
-                        strokeWidth={1.75}
-                        className="animate-spin"
-                      />
+                      <Spinner size={14} />
                       {t("agents.templatesHiring")}
                     </>
                   ) : (

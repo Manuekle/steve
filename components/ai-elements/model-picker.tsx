@@ -6,8 +6,7 @@ import {
   ArrowDown01Icon,
   CheckIcon,
   ArtificialIntelligence08Icon,
-  Loading03Icon,
-} from "@hugeicons/core-free-icons";
+  } from "@hugeicons/core-free-icons";
 import {
   CommandDialog,
   CommandEmpty,
@@ -22,6 +21,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useCredentialsChanged } from "@/lib/credentials-changed";
 import type { AiProvider } from "@/lib/model-catalog";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 // The model chooser used by the chat header and the agents form.
 //
@@ -208,7 +208,7 @@ export function ModelPicker({
         title={t("models.pick")}
       >
         {loading ? (
-          <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={2} className="animate-spin" />
+          <Spinner size={14} strokeWidth={2} />
         ) : selected ? (
           <ProviderLogo vendor={selected.vendor} size={14} />
         ) : (

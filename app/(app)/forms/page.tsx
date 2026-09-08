@@ -140,8 +140,12 @@ export default function FormsPage() {
               <h1 className="text-2xl font-semibold">{t("forms.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("forms.subtitle")}</p>
             </div>
+            {/* The two questions in front of the picker are onboarding: they
+                choose which template is recommended for an account that has
+                never made one. Somebody making their fourth form has already
+                answered them, so this jumps to the gallery. */}
             <Link
-              href="/forms/new"
+              href={forms.length > 0 ? "/forms/new?pick=1" : "/forms/new"}
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
             >
               <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />

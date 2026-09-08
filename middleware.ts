@@ -90,6 +90,10 @@ const PUBLIC_PATHS = [
   "/f",
   "/api/f",
   "/api/billing/webhook",
+  // Covers the post-call webhook and, under it, the voice agent's tool
+  // endpoints (/tools/<agentId>/<tool>) — ElevenLabs calls those from its own
+  // servers mid-conversation, so they carry no session cookie either. Each one
+  // checks its own shared secret; see lib/voice-tools.ts.
   "/api/webhooks/elevenlabs",
   "/api/webhooks/stripe",
   "/api/webhooks/mercadopago",
@@ -108,7 +112,18 @@ const PUBLIC_PATHS = [
  *  route under an automation is the operator's own screen. */
 const WEBHOOK = /^\/api\/automations\/[^/]+\/webhook\/?$/;
 
+/** Everything under /dev — the component catalog and whatever joins it.
+ *
+ *  The routes themselves 404 outside a development build (app/dev/layout.tsx);
+ *  this only keeps the session gate from bouncing them to /login while
+ *  working locally, where there is usually no account yet. Read once, at
+ *  module scope, because the value cannot change between requests. */
+const DEV_ROUTES_OPEN = process.env.NODE_ENV !== "production";
+
 function isPublic(pathname: string): boolean {
+  if (DEV_ROUTES_OPEN && (pathname === "/dev" || pathname.startsWith("/dev/"))) {
+    return true;
+  }
   if (WEBHOOK.test(pathname)) return true;
   return PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),

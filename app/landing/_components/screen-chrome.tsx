@@ -86,7 +86,7 @@ export const MockSidebar = memo(function MockSidebar({ active }: { readonly acti
         {NAV_GROUPS.map((group, groupIndex) => (
           <div key={group.id} className={cn("flex flex-col gap-1", groupIndex > 0 && "mt-3")}>
             {group.labelKey ? (
-              <p className="px-3 pb-1 font-medium text-[11px] text-muted-foreground/60">
+              <p className="px-3 pb-1 font-medium text-[11px] text-muted-foreground">
                 {t(group.labelKey)}
               </p>
             ) : null}

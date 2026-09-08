@@ -43,6 +43,9 @@ export const PUT = withApiErrors(async function PUT(
   const input = body as Partial<AgentVoice>;
   const voice: AgentVoice = {
     ...agent.voice,
+    // Cleared on every save: syncVoiceAgent sets it again if the problem is
+    // still there, and a stale warning is worse than none.
+    toolsWarning: undefined,
     enabled: input.enabled ?? agent.voice?.enabled ?? true,
     voiceId: input.voiceId ?? agent.voice?.voiceId,
     firstMessage: input.firstMessage ?? agent.voice?.firstMessage,
@@ -83,7 +86,7 @@ export const DELETE = withApiErrors(async function DELETE(
   const mirrorId = agent.voice?.elevenlabsAgentId;
   if (mirrorId) {
     try {
-      await deleteVoiceAgent(mirrorId);
+      await deleteVoiceAgent(mirrorId, agent.voice?.toolIds);
     } catch (error) {
       // A mirror deleted from the ElevenLabs dashboard is already in the state
       // this call wants, so the local record is cleared either way rather than
@@ -92,6 +95,8 @@ export const DELETE = withApiErrors(async function DELETE(
     }
   }
 
+  // toolIds cleared with the mirror: keeping them would make the next sync
+  // try to update tools that no longer exist.
   const updated = await updateAgent(id, { voice: { enabled: false } });
   return NextResponse.json({ ok: true, agent: updated });
 });

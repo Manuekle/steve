@@ -13,7 +13,6 @@ import {
   Add01Icon,
   ArtificialIntelligence08Icon,
   Copy01Icon,
-  Loading03Icon,
   Mail01Icon,
   PanelLeftIcon,
   SquareLock02Icon,
@@ -44,6 +43,8 @@ import { useT } from "@/lib/i18n/provider";
 import { useSound } from "@/components/sound-provider";
 import { useCelebrate } from "@/components/use-celebrate";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
+import { DockReopenButton } from "@/app/_components/dock-reopen-button";
 
 const DOCK_MIN = 320;
 const DOCK_MAX = 560;
@@ -587,30 +588,11 @@ export default function EmailTemplatesPage() {
           </Skeleton>
 
           {!dockOpen && selectedId ? (
-            <Beam
-              className="transition-transform duration-150 ease-out hover:-translate-y-px"
-              // z-index has to travel with `position` here, not in `className` —
-              // see the note on `Beam` about its injected stylesheet winning
-              // equal-specificity ties against Tailwind classes. Without it the
-              // pill sits at the implicit stacking order of a `position:
-              // absolute` wrapper with no `z-index` of its own, which the
-              // Monaco editor's internal layers (scrollbar, overlay widgets)
-              // can end up in front of.
-              style={{ position: "absolute", top: "1rem", right: "1rem", zIndex: 20 }}
-              colorVariant="mono"
-            >
-              <button
-                type="button"
-                onClick={() => setDockOpenPersisted(true)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5",
-                  "text-xs font-medium shadow-[var(--shadow-float)] backdrop-blur-sm",
-                )}
-              >
-                <HugeiconsIcon icon={Mail01Icon} size={13} strokeWidth={1.75} />
-                {t("emailTemplates.preview")}
-              </button>
-            </Beam>
+            <DockReopenButton
+              icon={Mail01Icon}
+              label={t("emailTemplates.preview")}
+              onClick={() => setDockOpenPersisted(true)}
+            />
           ) : null}
         </div>
 
@@ -779,7 +761,7 @@ export default function EmailTemplatesPage() {
                 onClick={() => void handleGenerateWithAI()}
               >
                 {aiGenerating ? (
-                  <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={1.75} className="animate-spin" />
+                  <Spinner size={14} />
                 ) : (
                   <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={14} strokeWidth={1.75} />
                 )}
@@ -839,9 +821,9 @@ function SaveIndicator({
   if (status === "idle" && !dirty) return null;
   const saving = status === "saving";
   return (
-    <span className="list-fade-in mr-1 hidden items-center gap-1.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground/70 uppercase sm:flex">
+    <span className="list-fade-in mr-1 hidden items-center gap-1.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase sm:flex">
       {saving ? (
-        <HugeiconsIcon icon={Loading03Icon} size={11} strokeWidth={2} className="animate-spin" />
+        <Spinner size={11} strokeWidth={2} />
       ) : (
         <span
           className={cn(

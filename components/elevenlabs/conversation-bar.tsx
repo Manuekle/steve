@@ -265,7 +265,7 @@ export const ConversationBar = React.forwardRef<
                       onClick={toggleMute}
                       aria-pressed={isMuted}
                       aria-label={isMuted ? "Unmute" : "Mute"}
-                      className={cn("rounded-full h-9 w-9", isMuted ? "bg-muted" : "")}
+                      className={cn(isMuted && "bg-muted")}
                       disabled={!isConnected}
                     >
                       {isMuted ? <MicOff className="h-[18px] w-[18px]" /> : <Mic className="h-[18px] w-[18px]" />}
@@ -281,7 +281,7 @@ export const ConversationBar = React.forwardRef<
                       onClick={() => setKeyboardOpen((v) => !v)}
                       aria-pressed={keyboardOpen}
                       aria-label={keyboardOpen ? "Hide text input" : "Show text input"}
-                      className="relative rounded-full h-9 w-9"
+                      className="relative"
                       disabled={!isConnected}
                     >
                       <Keyboard
@@ -309,7 +309,6 @@ export const ConversationBar = React.forwardRef<
                       onClick={handleStartOrEnd}
                       aria-label={isConnected || status === "connecting" ? "End call" : "Start call"}
                       className={cn(
-                        "rounded-full h-9 w-9",
                         // Literal white, not `text-destructive-foreground`: that
                         // token is tuned for red-as-accent text on a near-white/
                         // near-black surface (see button.tsx's destructive

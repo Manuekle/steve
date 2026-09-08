@@ -35,7 +35,7 @@ import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { ArrowUp02Icon, Image01Icon, MonitorIcon, Add01Icon, StopIcon, Cancel01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
+import { ArrowUp02Icon, Image01Icon, MonitorIcon, Add01Icon, StopIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { nanoid } from "nanoid";
 import type {
   ChangeEvent,
@@ -60,6 +60,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 // ============================================================================
 // Helpers
@@ -1203,12 +1204,7 @@ export const PromptInputSubmit = ({
 
   if (status === "submitted") {
     Icon = (
-      <HugeiconsIcon
-        className="animate-spin"
-        icon={Loading03Icon}
-        size={16}
-        strokeWidth={1.75}
-      />
+      <Spinner />
     );
   } else if (status === "streaming") {
     // `StopIcon`, not `Square01Icon` — the latter is the maths "x squared"
@@ -1265,16 +1261,30 @@ export type PromptInputSelectTriggerProps = ComponentProps<typeof SelectTrigger>
 export const PromptInputSelectTrigger = ({
   className,
   ...props
-}: PromptInputSelectTriggerProps) => (
-  <SelectTrigger
-    className={cn(
-      "border-none bg-transparent font-medium text-muted-foreground shadow-none transition-colors",
-      "hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
-      className,
-    )}
-    {...props}
-  />
-);
+}: PromptInputSelectTriggerProps) => {
+  // `role="combobox"` takes no name from its contents, so without a label
+  // this reads as an unnamed combobox. `props` spreads after it, so a
+  // caller with a more specific label still wins.
+  const t = useT();
+  return (
+    <SelectTrigger
+      aria-label={t("common.model")}
+      className={cn(
+        "border-none bg-transparent font-medium text-muted-foreground shadow-none transition-colors",
+        "hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
+        // A ghost trigger has to opt out of the base select's focus surface as
+        // well as its resting one. `bg-transparent` only clears `bg-muted`;
+        // `focus-visible:bg-card` is a separate variant and survived the merge,
+        // so tabbing onto the model chip painted a card-coloured box in the
+        // middle of the composer toolbar. Same handover `InputGroupInput`
+        // makes: the ring is the focus signal, the surface stays put.
+        "focus-visible:bg-transparent",
+        className,
+      )}
+      {...props}
+    />
+  );
+};
 
 export type PromptInputSelectContentProps = ComponentProps<typeof SelectContent>;
 

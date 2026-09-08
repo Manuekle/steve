@@ -4,6 +4,7 @@ import {
   cronMatches,
   matchKeyword,
   matchInbound,
+  automationsForAgent,
   automationMatchesChannel,
   formatPlaybook,
 } from "./automation-engine";
@@ -290,5 +291,27 @@ describe("formatPlaybook", () => {
     };
     const result = formatPlaybook([auto]);
     expect(result).not.toContain("Paused");
+  });
+});
+
+// ── automationsForAgent ──────────────────────────────────────────
+
+describe("automationsForAgent", () => {
+  const all = [
+    { id: "a1" },
+    { id: "a2", agentId: "agent_sales" },
+    { id: "a3", agentId: "agent_support" },
+  ] as Automation[];
+
+  it("gives an agent its own automations and the shared ones", () => {
+    expect(automationsForAgent(all, "agent_sales").map((a) => a.id)).toEqual(["a1", "a2"]);
+  });
+
+  it("never leaks another agent's playbook", () => {
+    expect(automationsForAgent(all, "agent_support").map((a) => a.id)).toEqual(["a1", "a3"]);
+  });
+
+  it("gives a conversation with no agent only the unassigned ones", () => {
+    expect(automationsForAgent(all, undefined).map((a) => a.id)).toEqual(["a1"]);
   });
 });

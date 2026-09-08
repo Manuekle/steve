@@ -27,18 +27,16 @@ import {
   toCapabilityIds,
   type CapabilityId,
 } from "./agent-capabilities";
-import type { Agent, ChannelId } from "./types";
+import { toMessagingChannel } from "./contact-channel";
+import type { Agent } from "./types";
 
-/** Contacts carry one channel more than the messaging channels do. */
-function toChannelId(channel: string): ChannelId {
-  return channel === "form" ? "web" : (channel as ChannelId);
-}
+// Contacts carry two channels the messaging ones don't — see toMessagingChannel.
 
 /** The agent answering this session, if the operator has assigned one. */
 export async function agentForSession(sessionId: string): Promise<Agent | undefined> {
   const contact = await getContactBySession(sessionId);
   if (!contact) return undefined;
-  const agentId = (await getChannelAgents())[toChannelId(contact.channel)];
+  const agentId = (await getChannelAgents())[toMessagingChannel(contact.channel)];
   if (!agentId) return undefined;
   return (await listAgents()).find((agent) => agent.id === agentId);
 }

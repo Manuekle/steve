@@ -6,11 +6,10 @@ import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   Mail01Icon,
   WebhookIcon,
-  PlugSocketIcon,
-  KeyRoundIcon,
+  Blockchain05Icon,
+  AuthorizedIcon,
   CheckmarkCircle02Icon,
   AlertCircleIcon,
-  Loading03Icon,
   ArrowRight01Icon,
   ExternalLinkIcon,
   Unlink01Icon,
@@ -47,6 +46,7 @@ import {
   CardTitle,
 } from "../../_components/dashboard-card";
 import { ManualKeyDialog } from "./_components/manual-key-dialog";
+import { Spinner } from "@/components/ui/spinner";
 
 // Connections.
 //
@@ -120,7 +120,7 @@ const BRAND_ICONS: Record<string, (props: { size: number }) => React.JSX.Element
 function ConnectionIcon({ id, size }: { readonly id: string; readonly size: number }) {
   const Brand = BRAND_ICONS[id];
   if (Brand) return <Brand size={size} />;
-  return <HugeiconsIcon icon={ICONS[id] ?? PlugSocketIcon} size={size} strokeWidth={1.75} />;
+  return <HugeiconsIcon icon={ICONS[id] ?? Blockchain05Icon} size={size} strokeWidth={1.75} />;
 }
 
 /** Only the host is worth reading in a list: the path of a webhook URL is
@@ -302,7 +302,7 @@ export default function ConnectionsPage() {
           {/* ── Sign in with the account ── */}
           <section>
             <SectionHeading
-              icon={PlugSocketIcon}
+              icon={Blockchain05Icon}
               title={t("connections.oauthTitle")}
               description={t("connections.oauthDescription")}
             />
@@ -328,7 +328,7 @@ export default function ConnectionsPage() {
           {/* ── Still a key, and why ── */}
           <section className="mt-10">
             <SectionHeading
-              icon={KeyRoundIcon}
+              icon={AuthorizedIcon}
               title={t("connections.manualTitle")}
               description={t("connections.manualDescription")}
             />
@@ -396,7 +396,7 @@ export default function ConnectionsPage() {
                               className="ml-1"
                             >
                               {busy === integration.id ? (
-                                <HugeiconsIcon icon={Loading03Icon} size={13} strokeWidth={1.75} className="animate-spin" />
+                                <Spinner size={13} />
                               ) : (
                                 <HugeiconsIcon icon={Unlink01Icon} size={13} strokeWidth={1.75} />
                               )}
@@ -622,7 +622,7 @@ function ConnectionCard({
                 disabled={busy}
               >
                 {busy ? (
-                  <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={1.75} className="animate-spin" />
+                  <Spinner size={14} />
                 ) : confirming ? null : (
                   <HugeiconsIcon icon={Unlink01Icon} size={14} strokeWidth={1.75} />
                 )}
@@ -639,7 +639,7 @@ function ConnectionCard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" size="sm" onClick={onSetUpApp}>
-                    <HugeiconsIcon icon={KeyRoundIcon} size={14} strokeWidth={1.75} />
+                    <HugeiconsIcon icon={AuthorizedIcon} size={14} strokeWidth={1.75} />
                     {t("connections.setUpApp")}
                   </Button>
                 </TooltipTrigger>

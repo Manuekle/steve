@@ -26,6 +26,7 @@ import type { ConnectionId } from "./connections";
 
 export type CapabilityId =
   | "contacts"
+  | "deals"
   | "handoff"
   | "knowledge"
   | "media"
@@ -70,6 +71,17 @@ export const CAPABILITIES: readonly Capability[] = [
     labelKey: "capability.contacts",
     descriptionKey: "capability.contactsDesc",
     tools: ["upsert_contact", "update_contact"],
+  },
+  {
+    id: "deals",
+    labelKey: "capability.deals",
+    descriptionKey: "capability.dealsDesc",
+    // `pipeline` rides along with `deal` rather than adding a line to the
+    // picker: an owner who granted "Oportunidades" meant the pipeline, and a
+    // second checkbox for reading what the first one writes is a distinction
+    // only this codebase cares about. The tool refuses on customer channels
+    // regardless of capability — see agent/tools/pipeline.ts.
+    tools: ["deal", "pipeline"],
   },
   {
     id: "handoff",

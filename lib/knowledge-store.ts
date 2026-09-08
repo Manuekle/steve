@@ -77,6 +77,8 @@ function normalize(parsed: Partial<KnowledgeStore>): KnowledgeStore {
 // the hand-rolled queue here used to approximate for one process only.
 const knowledgeStore = createDocumentStore<KnowledgeStore>({
   id: "knowledge",
+  // Per business: one business's price lists and policies must never answer for another. See lib/business-scope.ts.
+  scoped: true,
   file: STORE_FILE,
   empty: emptyStore,
   normalize,

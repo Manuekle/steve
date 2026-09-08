@@ -48,6 +48,27 @@ export function automationMatchesChannel(auto: Automation, channel: ChannelId): 
   return auto.channel === "all" || auto.channel === channel;
 }
 
+/**
+ * The automations one agent should see.
+ *
+ * `Automation.agentId` has been storable, editable and returned by the API
+ * since the field existed, and nothing ever read it: every agent got every
+ * active automation injected into its prompt on every turn. A business with a
+ * sales agent and a support agent had both of them following both playbooks.
+ *
+ * Unassigned automations belong to everyone — that is what every automation
+ * saved before this was, and narrowing them would silently switch working
+ * playbooks off. An assigned one belongs only to its agent, which also means
+ * a conversation with no agent assigned to its channel sees just the
+ * unassigned ones.
+ */
+export function automationsForAgent(
+  automations: readonly Automation[],
+  agentId: string | undefined,
+): Automation[] {
+  return automations.filter((auto) => !auto.agentId || auto.agentId === agentId);
+}
+
 export function matchKeyword(auto: Automation, message: string): boolean {
   if (auto.trigger !== "keyword") return false;
   const haystack = message.toLowerCase();

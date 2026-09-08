@@ -297,7 +297,7 @@ export function Disclosure({
           icon={Add01Icon}
           size={15}
           strokeWidth={2}
-          className="t-acc-chevron shrink-0 text-muted-foreground/70"
+          className="t-acc-chevron shrink-0 text-muted-foreground"
         />
       </button>
       <div className="t-acc-panel">
@@ -381,7 +381,7 @@ export function ScreenFrame({
       {overlays}
 
       {hint ? (
-        <p className="relative z-[2] mt-5 flex items-center justify-center gap-2 text-[13px] text-muted-foreground/70">
+        <p className="relative z-[2] mt-5 flex items-center justify-center gap-2 text-[13px] text-muted-foreground">
           <HugeiconsIcon icon={CursorPointer01Icon} size={14} strokeWidth={1.75} className="shrink-0" />
           {hint}
         </p>

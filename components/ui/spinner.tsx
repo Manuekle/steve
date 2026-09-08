@@ -14,7 +14,10 @@ function Spinner({
       strokeWidth={1.75}
       role="status"
       aria-label="Loading"
-      className={cn("animate-spin", className)}
+      // `motion-reduce:` sorts after the base utility, so it is the one that
+      // lands when someone has asked the OS for less motion — a bare
+      // `animate-none` from a caller would be a coin toss on stylesheet order.
+      className={cn("animate-spin motion-reduce:animate-none", className)}
       {...props}
     />
   );

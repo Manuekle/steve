@@ -148,7 +148,7 @@ function CitationRow({
           {citation.title}
         </span>
         {citation.domain ? (
-          <span className="min-w-0 truncate text-xs text-muted-foreground/60">
+          <span className="min-w-0 truncate text-xs text-muted-foreground">
             {citation.domain}
           </span>
         ) : null}
@@ -158,7 +158,7 @@ function CitationRow({
           {index}
         </span>
         {citation.url ? (
-          <ExternalLink className="size-3.5 text-muted-foreground/40 transition-colors group-hover/citation:text-muted-foreground" />
+          <ExternalLink className="size-3.5 text-muted-foreground transition-colors group-hover/citation:text-muted-foreground" />
         ) : null}
       </span>
     </>
@@ -268,7 +268,7 @@ export function Citations({
           aria-hidden="true"
           animate={{ rotate: currentOpen ? 180 : 0 }}
           transition={reduce ? { duration: 0 } : SPRING_SWAP}
-          className="text-muted-foreground/60"
+          className="text-muted-foreground"
         >
           <ChevronDown className="size-3.5" />
         </motion.span>

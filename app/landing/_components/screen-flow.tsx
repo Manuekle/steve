@@ -86,7 +86,7 @@ export function FlowScreen() {
 
         {/* Draft note, like the app. */}
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-border border-t bg-muted/30 px-4 py-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground/75">{t("automations.draftLabel")}</span>
+          <span className="text-[11px] font-medium text-muted-foreground">{t("automations.draftLabel")}</span>
           <span className="h-3 w-px bg-border" />
           <span className="text-[11px] text-muted-foreground">{t("automations.draftHint")}</span>
         </div>

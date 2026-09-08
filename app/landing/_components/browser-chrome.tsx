@@ -36,7 +36,7 @@ import {
 function Glyph({ icon, size = 15 }: { readonly icon: IconSvgElement; readonly size?: number }) {
   return (
     <HugeiconsIcon
-      className="shrink-0 text-muted-foreground/70"
+      className="shrink-0 text-muted-foreground"
       icon={icon}
       size={size}
       strokeWidth={1.75}
@@ -73,7 +73,7 @@ export function BrowserChrome({ url }: { readonly url: string }) {
         <span className="flex items-center gap-2.5">
           <Glyph icon={ArrowLeft02Icon} />
           <HugeiconsIcon
-            className="shrink-0 text-muted-foreground/25"
+            className="shrink-0 text-muted-foreground"
             icon={ArrowRight02Icon}
             size={15}
             strokeWidth={1.75}

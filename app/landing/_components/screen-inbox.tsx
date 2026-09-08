@@ -12,7 +12,7 @@ import {
   SearchIcon,
   UserIcon,
 } from "@hugeicons/core-free-icons";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 import { Card } from "@/app/_components/dashboard-card";
 import { ChannelIcon } from "@/app/_components/channel-badge";
@@ -117,6 +117,7 @@ function useContacts(t: (key: string) => string): readonly Contact[] {
 
 export function InboxScreen() {
   const t = useT();
+  const reduced = useReducedMotion();
   const contacts = useContacts(t);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>("Lucía Romero");
@@ -219,7 +220,11 @@ export function InboxScreen() {
                   <motion.div
                     initial={false}
                     animate={{ height: "auto", opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25, mass: 0.8 }}
+                    transition={
+                      reduced
+                        ? { duration: 0 }
+                        : { type: "spring", stiffness: 300, damping: 25, mass: 0.8 }
+                    }
                     style={{ overflow: "hidden" }}
                   >
                     <div className="space-y-2 border-border border-t px-5 py-3 text-muted-foreground text-xs">

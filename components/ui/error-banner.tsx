@@ -112,7 +112,8 @@ export function ErrorBanner({
           type="button"
           onClick={onDismiss}
           aria-label={t("apiError.dismiss")}
-          className="shrink-0 rounded-lg p-1 transition-colors duration-150 hover:bg-destructive/10"
+          // p-1 around a 13px icon came to 21x21, under 2.5.8's 24x24 minimum.
+          className="grid size-6 shrink-0 place-items-center rounded-lg transition-colors duration-150 hover:bg-destructive/10"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={13} strokeWidth={1.75} />
         </button>

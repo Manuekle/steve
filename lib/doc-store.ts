@@ -42,7 +42,9 @@ export type DocumentId =
   | "email-templates"
   | "license"
   | "installation"
-  | "chat-models";
+  | "chat-models"
+  | "seo"
+  | "businesses";
 
 let schemaReady: Promise<void> | undefined;
 
@@ -78,16 +80,25 @@ async function ensureSchema(): Promise<void> {
   await schemaReady;
 }
 
+/**
+ * A document's row key.
+ *
+ * The business-owned stores are keyed per business (see lib/business-scope.ts),
+ * and the first business keeps the bare id so an install that predates
+ * multi-business finds its rows exactly where it left them.
+ */
+export type StoredDocumentId = DocumentId | `${DocumentId}::${string}`;
+
 /** Whether this database already holds the document. Used to decide between
  *  DB and file mode, and to decide whether a file needs migrating in. */
-export async function hasDocument(id: DocumentId): Promise<boolean> {
+export async function hasDocument(id: StoredDocumentId): Promise<boolean> {
   await ensureSchema();
   const result = await getPool().query("SELECT 1 FROM steve.documents WHERE id = $1", [id]);
   return (result.rowCount ?? 0) > 0;
 }
 
 /** The stored document, or `null` when this install has never written one. */
-export async function readDocument<T>(id: DocumentId): Promise<T | null> {
+export async function readDocument<T>(id: StoredDocumentId): Promise<T | null> {
   await ensureSchema();
   const result = await getPool().query<{ data: T }>(
     "SELECT data FROM steve.documents WHERE id = $1",
@@ -105,7 +116,7 @@ export async function readDocument<T>(id: DocumentId): Promise<T | null> {
  * does in memory.
  */
 export async function updateDocument<TStore, TResult>(
-  id: DocumentId,
+  id: StoredDocumentId,
   /** Turns the stored row — or `null`, on a document that does not exist yet —
    *  into the object the mutator works on, filling in whatever an older
    *  version did not write. Its return value is what gets written back, so a
@@ -150,7 +161,7 @@ export async function updateDocument<TStore, TResult>(
  * truth from that point on, and re-importing a stale file would silently undo
  * everything written since.
  */
-export async function migrateFromFileStore<T>(id: DocumentId, store: T): Promise<void> {
+export async function migrateFromFileStore<T>(id: StoredDocumentId, store: T): Promise<void> {
   await ensureSchema();
   await getPool().query(
     "INSERT INTO steve.documents (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
@@ -200,60 +211,91 @@ export function createDocumentStore<T>(options: {
   readonly normalize: (parsed: Partial<T>) => T;
   /** File mode only. 0o600 for anything holding a secret. */
   readonly fileMode?: number;
+  /**
+   * Owned by one business rather than by the installation, so the row key and
+   * the file path carry the active business — see lib/business-scope.ts.
+   *
+   * Off by default, and deliberately: the account, the provider keys and the
+   * plan belong to the install, and scoping one of those by accident would
+   * ask an owner to set it up again for every shop they added.
+   */
+  readonly scoped?: boolean;
 }): DocumentStore<T> {
   let dbMode: boolean | null = null;
   let writeQueue: Promise<unknown> = Promise.resolve();
+  /** Scopes whose file has already been considered for migration. Per scope,
+   *  not per store: a second business starts with no row and no file, and
+   *  must not import the first one's. */
+  const migrated = new Set<string>();
 
-  async function readFileStore(): Promise<T | null> {
+  /** Which row and which file this call is about. */
+  async function target(): Promise<{ id: StoredDocumentId; file: string }> {
+    if (!options.scoped) return { id: options.id, file: options.file };
+    // Imported lazily so the scope module can build its own registry store
+    // through this factory without an import cycle.
+    const { scopedDocumentId, scopedFile } = await import("./business-scope");
+    return {
+      id: (await scopedDocumentId(options.id)) as StoredDocumentId,
+      file: await scopedFile(options.file),
+    };
+  }
+
+  async function readFileStore(file: string): Promise<T | null> {
     try {
-      const raw = await readFile(options.file, "utf-8");
+      const raw = await readFile(file, "utf-8");
       return options.normalize(JSON.parse(raw) as Partial<T>);
     } catch {
       return null;
     }
   }
 
-  async function writeFileStore(store: T): Promise<void> {
-    await mkdir(dirname(options.file), { recursive: true });
-    const tmp = `${options.file}.tmp`;
+  async function writeFileStore(file: string, store: T): Promise<void> {
+    await mkdir(dirname(file), { recursive: true });
+    const tmp = `${file}.tmp`;
     await writeFile(tmp, JSON.stringify(store, null, 2) + "\n", {
       encoding: "utf-8",
       ...(options.fileMode === undefined ? {} : { mode: options.fileMode }),
     });
-    await rename(tmp, options.file);
+    await rename(tmp, file);
   }
 
-  async function usingDb(): Promise<boolean> {
-    if (dbMode !== null) return dbMode;
+  async function usingDb(where?: { id: StoredDocumentId; file: string }): Promise<boolean> {
     if (!process.env.WORKFLOW_POSTGRES_URL) {
       dbMode = false;
       return false;
     }
+    const resolved = where ?? (await target());
+    if (dbMode === true && migrated.has(resolved.id)) return true;
     try {
-      if (!(await hasDocument(options.id))) {
-        const file = await readFileStore();
-        if (file !== null) await migrateFromFileStore(options.id, file);
+      if (!(await hasDocument(resolved.id))) {
+        const file = await readFileStore(resolved.file);
+        if (file !== null) await migrateFromFileStore(resolved.id, file);
       }
       dbMode = true;
+      migrated.add(resolved.id);
     } catch {
+      // Database unreachable — keep serving the file rather than failing every
+      // read, and retry on the next call rather than caching the outage.
       return false;
     }
-    return dbMode;
+    return true;
   }
 
   return {
     async read(): Promise<T> {
-      if (await usingDb()) {
-        const document = await readDocument<Partial<T>>(options.id);
+      const where = await target();
+      if (await usingDb(where)) {
+        const document = await readDocument<Partial<T>>(where.id);
         return document ? options.normalize(document) : options.empty();
       }
-      return (await readFileStore()) ?? options.empty();
+      return (await readFileStore(where.file)) ?? options.empty();
     },
 
     async update<R>(fn: (store: T) => R): Promise<R> {
-      if (await usingDb()) {
+      const where = await target();
+      if (await usingDb(where)) {
         return updateDocument(
-          options.id,
+          where.id,
           (raw) => (raw ? options.normalize(raw) : options.empty()),
           fn,
         );
@@ -266,14 +308,14 @@ export function createDocumentStore<T>(options: {
       return run;
 
       async function runUpdate(): Promise<R> {
-        const store = (await readFileStore()) ?? options.empty();
+        const store = (await readFileStore(where.file)) ?? options.empty();
         const result = fn(store);
-        await writeFileStore(store);
+        await writeFileStore(where.file, store);
         return result;
       }
     },
 
-    usingDatabase: usingDb,
+    usingDatabase: () => usingDb(),
   };
 }
 

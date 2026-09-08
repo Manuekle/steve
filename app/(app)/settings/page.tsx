@@ -5,11 +5,10 @@ import Link from "next/link";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   CheckIcon,
-  KeyRoundIcon,
+  AuthorizedIcon,
   WhatsappIcon,
   ArtificialIntelligence08Icon,
   InstagramIcon,
-  Loading03Icon,
   Cancel01Icon,
   GoogleSheetIcon,
   Calendar03Icon,
@@ -24,7 +23,7 @@ import {
   DatabaseIcon,
   SquareLock02Icon,
   Coins01Icon,
-  PlugSocketIcon,
+  Blockchain05Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -58,6 +57,7 @@ import { WebhookUrlNote, type WebhookChannel } from "../../_components/webhook-u
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { useEnterpriseAllowed } from "@/components/enterprise-gate";
+import { Spinner } from "@/components/ui/spinner";
 
 type CredentialStatus = Record<string, boolean>;
 
@@ -105,9 +105,9 @@ const GROUP_ICONS: Record<string, IconSvgElement> = {
   smtp: Mail01Icon,
   resend: Mail01Icon,
   "meta-ads": MetaIcon,
-  integrations: PlugSocketIcon,
+  integrations: Blockchain05Icon,
   storage: DatabaseIcon,
-  "oauth-apps": KeyRoundIcon,
+  "oauth-apps": AuthorizedIcon,
 };
 
 /** Groups with a real brand mark on hand — everything else falls back to the
@@ -145,7 +145,7 @@ function GroupIcon({
   }
   const Brand = GROUP_BRAND_ICONS[groupId];
   if (Brand) return <Brand size={size} />;
-  return <HugeiconsIcon icon={GROUP_ICONS[groupId] ?? KeyRoundIcon} size={size} strokeWidth={1.75} />;
+  return <HugeiconsIcon icon={GROUP_ICONS[groupId] ?? AuthorizedIcon} size={size} strokeWidth={1.75} />;
 }
 
 /**
@@ -713,7 +713,7 @@ export default function SettingsPage() {
                     // it came from instead of offering a Clear that
                     // would silently do nothing.
                     fromEnv ? (
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <span className="size-1.5 rounded-full bg-muted-foreground/40" />
                         {t("settings.fromEnv")}
                       </span>
@@ -721,14 +721,14 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => handleClearField(field.key)}
-                        className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                         title={t("settings.clearField")}
                       >
                         <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.75} />
                         {t("settings.clearField")}
                       </button>
                     ) : (
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <span className="size-1.5 rounded-full bg-muted-foreground/30" />
                         {t("settings.notSet")}
                       </span>
@@ -804,11 +804,11 @@ export default function SettingsPage() {
               return (
                 <section key={section.id} className="mb-9 last:mb-0">
                   <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-border/60 pb-2">
-                    <h2 className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground/70 uppercase">
+                    <h2 className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
                       {t(section.labelKey)}
                     </h2>
                     {fields.length > 0 ? (
-                      <span className="font-mono text-[10px] tabular-nums text-muted-foreground/50">
+                      <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
                         {set}/{fields.length}
                       </span>
                     ) : null}
@@ -844,7 +844,7 @@ export default function SettingsPage() {
                 style={{ display: buttonPhase === "idle" ? "none" : "inline-block" }}
               >
                 {buttonPhase === "saving" ? (
-                  <HugeiconsIcon icon={Loading03Icon} size={16} strokeWidth={1.75} className="animate-spin" />
+                  <Spinner />
                 ) : buttonPhase === "saved" ? (
                   <HugeiconsIcon icon={CheckIcon} size={16} strokeWidth={1.75} />
                 ) : null}
@@ -868,7 +868,7 @@ export default function SettingsPage() {
               {t("settings.footerText", { path: "~/.steve/credentials.json" })}
             </p>
             {totalFields > 0 ? (
-              <p className="mt-2 text-xs text-muted-foreground/60">
+              <p className="mt-2 text-xs text-muted-foreground">
                 {t("settings.credentialsConfigured", { configured: configuredFields, total: totalFields })}
               </p>
             ) : null}

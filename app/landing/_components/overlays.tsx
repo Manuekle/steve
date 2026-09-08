@@ -81,7 +81,7 @@ export function ConversationOverlay({
       <p className="mt-1.5 ml-6 rounded-xl rounded-tr-md bg-primary px-3 py-2 text-[11px] leading-relaxed text-primary-foreground">
         {reply}
       </p>
-      <p className="mt-2 text-[10px] text-muted-foreground/70">
+      <p className="mt-2 text-[10px] text-muted-foreground">
         {t("landing.overlay.repliedByPrefix")} <span className="text-foreground/80">steve</span> ·{" "}
         {t("landing.overlay.repliedBySuffix")}
       </p>
@@ -114,7 +114,7 @@ export function MetricOverlay({
         <p className="font-medium text-[11px] text-muted-foreground">{label}</p>
       </div>
       <p className="mt-2.5 font-semibold text-2xl leading-none tracking-tight tabular-nums">{value}</p>
-      {delta ? <p className="mt-1.5 text-[10px] text-muted-foreground/70">{delta}</p> : null}
+      {delta ? <p className="mt-1.5 text-[10px] text-muted-foreground">{delta}</p> : null}
     </OverlayShell>
   );
 }
@@ -139,13 +139,13 @@ export function AgentOverlay({
     <OverlayShell className={cn("w-[20rem] p-3.5", className)} delay={delay}>
       <div className="flex items-center gap-2 border-border border-b pb-2.5">
         <span className="font-semibold text-xs">
-          <span className="text-muted-foreground/40">st</span>
+          <span className="text-muted-foreground">st</span>
           <span className="text-foreground">eve</span>
         </span>
         <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">
           Claude Opus 5
         </span>
-        <span className="ml-auto text-[10px] text-muted-foreground/70">{t("landing.overlay.workedDuration")}</span>
+        <span className="ml-auto text-[10px] text-muted-foreground">{t("landing.overlay.workedDuration")}</span>
       </div>
 
       <p className="mt-2.5 rounded-xl bg-muted px-3 py-2 text-[11px] leading-relaxed">{prompt}</p>

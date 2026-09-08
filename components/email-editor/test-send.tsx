@@ -103,7 +103,7 @@ export function TestSend({ templateId, source, variables, subject, provider }: T
       </label>
 
       {configured ? (
-        <p className="text-[11px] leading-relaxed text-muted-foreground/70">
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
           {t("emailTemplates.testFrom", {
             provider: provider?.resend ? "Resend" : "SMTP",
             from: provider?.from ?? "",

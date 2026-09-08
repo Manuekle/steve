@@ -15,9 +15,11 @@ import {
   FileEditIcon,
   Mail01Icon,
   UserCircleIcon,
-  PlugSocketIcon,
+  Blockchain05Icon,
   TelevisionTableIcon,
   UserGroup02Icon,
+  MoneyBag02Icon,
+  GlobalSearchIcon,
 } from "@hugeicons/core-free-icons";
 
 export type NavItem = {
@@ -60,6 +62,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     labelKey: "nav.groupCrm",
     items: [
       { href: "/crm", labelKey: "nav.crm", icon: TelevisionTableIcon },
+      { href: "/pipeline", labelKey: "nav.pipeline", icon: MoneyBag02Icon },
       { href: "/leads", labelKey: "nav.leads", icon: UserGroup02Icon },
       { href: "/forms", labelKey: "nav.forms", icon: FileEditIcon },
     ],
@@ -74,6 +77,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { href: "/email-templates", labelKey: "nav.emailTemplates", icon: Mail01Icon },
       { href: "/reminders", labelKey: "nav.reminders", icon: Timer01Icon },
       { href: "/ads", labelKey: "nav.ads", icon: MetaIcon },
+      { href: "/seo", labelKey: "nav.seo", icon: GlobalSearchIcon },
     ],
   },
   {
@@ -86,7 +90,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     labelKey: "nav.groupSystem",
     items: [
       { href: "/account", labelKey: "nav.account", icon: UserCircleIcon },
-      { href: "/connections", labelKey: "nav.connections", icon: PlugSocketIcon },
+      { href: "/connections", labelKey: "nav.connections", icon: Blockchain05Icon },
       { href: "/settings", labelKey: "nav.settings", icon: Settings01Icon },
       { href: "/setup", labelKey: "nav.setup", icon: FilterHorizontalIcon },
     ],

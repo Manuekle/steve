@@ -366,7 +366,7 @@ export default function AutomationsPage() {
                 ) : null}
                 {auto.steps && auto.steps.length > 0 ? (
                   <div className="px-5 py-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <HugeiconsIcon icon={GitBranchIcon} size={14} strokeWidth={1.75} />
                       <span className="font-medium">{t("automations.workflow")}</span>
                       <div className="flex flex-wrap items-center gap-1">
@@ -375,7 +375,7 @@ export default function AutomationsPage() {
                           return (
                             <span key={step.id} className="inline-flex items-center gap-1">
                               {i > 0 ? (
-                                <span className="text-muted-foreground/40">→</span>
+                                <span className="text-muted-foreground">→</span>
                               ) : null}
                               <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-xs">
                                 <HugeiconsIcon icon={StepIcon} size={12} strokeWidth={1.75} className="text-muted-foreground" />

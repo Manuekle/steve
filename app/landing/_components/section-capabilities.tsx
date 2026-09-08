@@ -365,7 +365,7 @@ export function CapabilitiesSection() {
             <p className="text-[13px] leading-relaxed text-muted-foreground">
               {t("landing.capabilities.andAlso")}
             </p>
-            <p className="text-[13px] leading-relaxed text-muted-foreground/70">
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
               {t("landing.capabilities.footnote")}
             </p>
           </div>

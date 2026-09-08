@@ -335,7 +335,7 @@ export function StepEditor({
               placeholder={t("automations.spreadsheetIdPlaceholder")}
               value={step.config.spreadsheetId ?? ""}
             />
-            <p className="text-xs leading-relaxed text-muted-foreground/80">{t("automations.spreadsheetIdHelp")}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">{t("automations.spreadsheetIdHelp")}</p>
           </label>
           <label className="block space-y-1 text-sm">
             <span className="text-[13px] font-medium text-muted-foreground">{t("automations.sheetNameLabel")}</span>

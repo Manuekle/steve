@@ -958,7 +958,10 @@ export function FlowCanvas({
                     >
                       <button
                         type="button"
-                        aria-selected={selected}
+                        // Not `aria-selected`: that attribute is only valid on
+                        // option/tab/row/gridcell/treeitem, so on a plain button it
+                        // was dropped and the selected state reached no one.
+                        aria-pressed={selected}
                         aria-label={t(STEP_LABEL_KEYS[node.step.type])}
                         onPointerDown={(e) => startNodeDrag(e, node.path)}
                         onClick={(e) => {
@@ -969,7 +972,7 @@ export function FlowCanvas({
                         className={cn(
                           "flex h-full w-full cursor-grab flex-col overflow-hidden rounded-xl border bg-card text-left",
                           "transition-[border-color,box-shadow,transform,opacity] duration-200 ease-out",
-                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/50",
+                          "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
                           disabled ? "border-dashed opacity-45" : null,
                           linkTarget
                             ? "border-foreground/50 shadow-[var(--shadow-float)]"
@@ -1004,7 +1007,7 @@ export function FlowCanvas({
                           <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
                             {t(STEP_LABEL_KEYS[node.step.type])}
                           </span>
-                          <span className="shrink-0 font-mono text-[9px] tracking-[0.12em] text-muted-foreground/60 uppercase">
+                          <span className="shrink-0 font-mono text-[9px] tracking-[0.12em] text-muted-foreground uppercase">
                             {t(STEP_CATEGORY_KEYS[node.step.type])}
                           </span>
                         </span>
@@ -1020,7 +1023,7 @@ export function FlowCanvas({
                           <span
                             className={cn(
                               "line-clamp-2 text-[11px] leading-snug",
-                              preview ? "text-muted-foreground" : "text-muted-foreground/45 italic",
+                              preview ? "text-muted-foreground" : "text-muted-foreground italic",
                             )}
                           >
                             {preview ?? t(STEP_EMPTY_KEYS[node.step.type])}
@@ -1132,7 +1135,7 @@ export function FlowCanvas({
                           "border-muted-foreground/40 text-muted-foreground",
                           "transition-[transform,color,border-color,background-color] duration-200 ease-out",
                           "hover:scale-110 hover:border-foreground/40 hover:text-foreground",
-                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/50",
+                          "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
                         )}
                       >
                         <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={1.75} aria-hidden="true" />
@@ -1201,7 +1204,7 @@ export function FlowCanvas({
                               "flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground",
                               "transition-[background-color,color,transform] duration-150 ease-out active:scale-90",
                               "hover:bg-accent hover:text-foreground",
-                              "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50",
+                              "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
                             )}
                           >
                             <HugeiconsIcon icon={Add01Icon} size={13} strokeWidth={1.75} aria-hidden="true" />
@@ -1214,10 +1217,10 @@ export function FlowCanvas({
                               aria-label={t("automations.disconnectStep")}
                               title={t("automations.disconnectStep")}
                               className={cn(
-                                "flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground/80",
+                                "flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground",
                                 "transition-[background-color,color,transform] duration-150 ease-out active:scale-90",
                                 "hover:bg-destructive/10 hover:text-destructive",
-                                "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50",
+                                "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
                               )}
                             >
                               <HugeiconsIcon icon={Unlink01Icon} size={12} strokeWidth={1.75} aria-hidden="true" />
@@ -1387,7 +1390,7 @@ export function FlowCanvas({
             type="button"
             onClick={resetView}
             title={t("automations.resetView")}
-            className="w-12 rounded-full py-1 text-center font-mono text-[11px] tabular-nums text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50"
+            className="w-12 rounded-full py-1 text-center font-mono text-[11px] tabular-nums text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]"
           >
             {Math.round(zoom * 100)}%
           </button>
@@ -1428,7 +1431,7 @@ function NodeTool({
             "flex size-6 items-center justify-center rounded-full text-muted-foreground",
             "transition-[background-color,color,transform] duration-150 ease-out active:scale-90",
             destructive ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-accent hover:text-foreground",
-            "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50",
+            "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
           )}
         >
           <HugeiconsIcon icon={icon} size={13} strokeWidth={1.75} aria-hidden="true" />
@@ -1457,7 +1460,7 @@ function ToolbarButton({
           aria-label={label}
           data-cuelume-press
           data-cuelume-release
-          className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-accent hover:text-foreground active:scale-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50"
+          className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-accent hover:text-foreground active:scale-90 focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]"
         >
           <HugeiconsIcon icon={icon} size={14} strokeWidth={1.75} aria-hidden="true" />
         </button>

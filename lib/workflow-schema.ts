@@ -41,26 +41,30 @@ export type WorkflowStepInput = {
  * advisory (see lib/automation-engine.ts formatPlaybook): there's no
  * deterministic runtime, the agent just reads the branch it should follow.
  */
+/** Every step type the runner and the playbook know how to read. One list,
+ *  shared by the model-facing schema and the stored one. */
+export const workflowStepTypeSchema = z.enum([
+  "message",
+  "wait",
+  "condition",
+  "ai_response",
+  "transfer_human",
+  "send_audio",
+  "send_image",
+  "send_video",
+  "http_request",
+  "notify_whatsapp",
+  "notify_team",
+  "notify_email",
+  "update_contact",
+  "log_sheet",
+  "send_payment_link",
+  "book_meeting",
+]);
+
 export const workflowStepSchema: z.ZodType<WorkflowStepInput> = z.lazy(() =>
   z.object({
-    type: z.enum([
-      "message",
-      "wait",
-      "condition",
-      "ai_response",
-      "transfer_human",
-      "send_audio",
-      "send_image",
-      "send_video",
-      "http_request",
-      "notify_whatsapp",
-      "notify_team",
-      "notify_email",
-      "update_contact",
-      "log_sheet",
-      "send_payment_link",
-      "book_meeting",
-    ]),
+    type: workflowStepTypeSchema,
     message: z.string().optional().describe("Exact text to send. Used by: message, transfer_human. Also the confirmation text sent to the contact (with {{start}} and {{meetLink}} placeholders) for book_meeting."),
     duration: z.string().optional().describe("e.g. '30min', '2h', '1d'. Used by: wait."),
     condition: z.string().optional().describe("Plain-language condition the agent evaluates at runtime. Used by: condition."),
@@ -209,6 +213,41 @@ export function planToInput(steps: readonly WorkflowPlanStep[]): WorkflowStepInp
     ...(step.elseSteps?.length ? { elseSteps: step.elseSteps.map(clean) } : {}),
   });
   return steps.map(clean);
+}
+
+/**
+ * The *stored* step shape, as it travels over `/api/automations`.
+ *
+ * `workflowStepSchema` above is the model-facing one: flat, no ids, written to
+ * be legible in a tool's JSON schema. What the editor saves is the shape the
+ * runner reads — `{ id, type, config }` — and that shape had no validation at
+ * all. Anything at all could be POSTed into `steps` and would then be read
+ * back by `formatPlaybook` on every single turn of every conversation, and by
+ * `runAutomationSteps` on every webhook fire: an unknown `type` fell through
+ * to a silent skip, and arbitrary keys rode along on the config forever.
+ *
+ * Unknown keys are stripped rather than rejected — an extra field is usually a
+ * newer editor talking to an older server, and refusing the whole save would
+ * lose the operator's flow to fix a problem they cannot see. What matters is
+ * that the junk never reaches the store. The config's *values* stay lenient,
+ * because that object is genuinely the union of every step type's fields and
+ * each step reads only its own.
+ */
+export const storedWorkflowStepSchema: z.ZodType<WorkflowStep> = z.lazy(() =>
+  z.object({
+    id: z.string().min(1),
+    type: workflowStepTypeSchema,
+    config: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]).optional()),
+    thenSteps: z.array(storedWorkflowStepSchema).optional(),
+    elseSteps: z.array(storedWorkflowStepSchema).optional(),
+  }),
+) as z.ZodType<WorkflowStep>;
+
+/** Steps as stored, or `undefined` when the payload is not a valid step list.
+ *  A partly-valid list is rejected whole: half a flow is not a flow. */
+export function parseStoredSteps(value: unknown): WorkflowStep[] | undefined {
+  const parsed = z.array(storedWorkflowStepSchema).safeParse(value);
+  return parsed.success ? parsed.data : undefined;
 }
 
 let stepIdCounter = 0;

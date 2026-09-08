@@ -12,6 +12,7 @@ import type {
   ChatSummary,
   Contact,
   ContactStatus,
+  Deal,
   Form,
   FormResponse,
   LeadInput,
@@ -29,7 +30,9 @@ import {
   migrateFromFileStore as dbMigrateFromFile,
   readDocument as dbReadDocument,
   updateDocument as dbUpdateDocument,
+  type StoredDocumentId,
 } from "./doc-store";
+import { scopedDocumentId, scopedFile } from "./business-scope";
 
 // Shared by the Eve agent (tools/hooks/schedules) and Next.js API routes.
 //
@@ -46,9 +49,25 @@ import {
 
 const STORE_FILE = join(homedir(), ".steve", "business.json");
 
+/**
+ * Which business's store this call is about.
+ *
+ * The first business keeps `business` and ~/.steve/business.json, so an
+ * install that predates multi-business needs no migration; a second one gets
+ * `business::<id>` and its own file under ~/.steve/businesses/<id>/. See
+ * lib/business-scope.ts.
+ */
+async function target(): Promise<{ id: StoredDocumentId; file: string }> {
+  return {
+    id: (await scopedDocumentId("business")) as StoredDocumentId,
+    file: await scopedFile(STORE_FILE),
+  };
+}
+
 type BusinessStore = {
   automations: Automation[];
   contacts: Contact[];
+  deals: Deal[];
   chats: ChatSummary[];
   reminders: Reminder[];
   agents: Agent[];
@@ -65,6 +84,7 @@ function emptyStore(): BusinessStore {
   return {
     automations: [],
     contacts: [],
+    deals: [],
     chats: [],
     reminders: [],
     agents: [],
@@ -80,29 +100,33 @@ function emptyStore(): BusinessStore {
 // ── Backend selection (resolved once, lazily) ─────────────────────
 
 let dbMode: boolean | null = null;
+/** Scopes already considered for the file import. Per business, not per
+ *  process: a second business starts with no row and no file, and must never
+ *  import the first business's data as its own. */
+const migrated = new Set<string>();
 
-async function usingDb(): Promise<boolean> {
-  if (dbMode !== null) return dbMode;
-
+async function usingDb(where: { id: StoredDocumentId; file: string }): Promise<boolean> {
   if (!process.env.WORKFLOW_POSTGRES_URL) {
     dbMode = false;
     return false;
   }
+  if (dbMode === true && migrated.has(where.id)) return true;
 
   try {
-    if (!(await dbHasDocument("business"))) {
+    if (!(await dbHasDocument(where.id))) {
       // Reachable but empty. An install that has been running on the file
       // store keeps its data; a fresh one just starts empty.
-      const file = await readFileStore();
-      if (file !== null) await dbMigrateFromFile("business", file);
+      const file = await readFileStore(where.file);
+      if (file !== null) await dbMigrateFromFile(where.id, file);
     }
     dbMode = true;
+    migrated.add(where.id);
   } catch {
     // Database unreachable — keep serving from the file rather than failing
     // every read. Retried on the next call, since dbMode stays unset.
     return false;
   }
-  return dbMode;
+  return true;
 }
 
 let writeQueue: Promise<void> = Promise.resolve();
@@ -116,15 +140,42 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** The file's contents, or `null` when there is no readable file — which is
- *  what tells the migration there is nothing to import. */
-async function readFileStore(): Promise<BusinessStore | null> {
+/**
+ * The file's contents, or `null` when there is no file at all — which is what
+ * tells the migration there is nothing to import.
+ *
+ * "No file" and "file I cannot read" have to stay separate, and this used to
+ * catch both into `null`. That is a silent total-loss bug: a `business.json`
+ * that fails to parse read as an empty store, the app rendered zero contacts
+ * and zero deals as though the account were new, and the very next write
+ * replaced the real file with that empty store. The write itself is atomic
+ * (tmp + rename below), so nothing was ever half-written — the data was
+ * destroyed by a clean write of the wrong thing.
+ *
+ * So an unreadable file throws. A loud failure on a corrupt store is
+ * recoverable, because the bytes are still on disk; a quiet one is not.
+ */
+async function readFileStore(file: string): Promise<BusinessStore | null> {
+  let raw: string;
   try {
-    const raw = await readFile(STORE_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as Partial<BusinessStore>;
-    return normalize(parsed);
-  } catch {
-    return null;
+    raw = await readFile(file, "utf-8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code === "ENOENT") return null;
+    throw new Error(
+      `No pude leer ${file}. Revisá los permisos antes de seguir — ` +
+        "la app no arranca vacía sobre un archivo que existe.",
+      { cause: error },
+    );
+  }
+
+  try {
+    return normalize(JSON.parse(raw) as Partial<BusinessStore>);
+  } catch (error) {
+    throw new Error(
+      `${file} existe pero no es JSON válido. No lo sobrescribo: ` +
+        "movelo a un lado o arreglalo, y volvé a abrir la app.",
+      { cause: error },
+    );
   }
 }
 
@@ -132,6 +183,9 @@ function normalize(parsed: Partial<BusinessStore>): BusinessStore {
   return {
     automations: parsed.automations ?? [],
     contacts: parsed.contacts ?? [],
+    // Absent from every store written before deals existed, which is why it is
+    // read defensively rather than assumed.
+    deals: parsed.deals ?? [],
     chats: parsed.chats ?? [],
     reminders: parsed.reminders ?? [],
     agents: parsed.agents ?? [],
@@ -145,32 +199,34 @@ function normalize(parsed: Partial<BusinessStore>): BusinessStore {
 }
 
 async function readStore(): Promise<BusinessStore> {
-  if (await usingDb()) {
-    const document = await dbReadDocument<Partial<BusinessStore>>("business");
+  const where = await target();
+  if (await usingDb(where)) {
+    const document = await dbReadDocument<Partial<BusinessStore>>(where.id);
     return document ? normalize(document) : emptyStore();
   }
-  return (await readFileStore()) ?? emptyStore();
+  return (await readFileStore(where.file)) ?? emptyStore();
 }
 
-async function writeStore(store: BusinessStore): Promise<void> {
-  await mkdir(dirname(STORE_FILE), { recursive: true });
-  const tmp = `${STORE_FILE}.tmp`;
+async function writeStore(file: string, store: BusinessStore): Promise<void> {
+  await mkdir(dirname(file), { recursive: true });
+  const tmp = `${file}.tmp`;
   await writeFile(tmp, JSON.stringify(store, null, 2) + "\n", "utf-8");
-  await rename(tmp, STORE_FILE);
+  await rename(tmp, file);
 }
 
 async function updateStore<T>(fn: (store: BusinessStore) => T): Promise<T> {
-  if (await usingDb()) {
+  const where = await target();
+  if (await usingDb(where)) {
     // No queue: the row lock inside the transaction is the serialisation, and
     // it holds across processes, which the in-process queue never did.
     // Normalized on the way in, so a mutator can push onto a collection the
     // stored document predates.
-    return dbUpdateDocument("business", (raw) => (raw ? normalize(raw) : emptyStore()), fn);
+    return dbUpdateDocument(where.id, (raw) => (raw ? normalize(raw) : emptyStore()), fn);
   }
   return enqueue(async () => {
-    const store = await readStore();
+    const store = (await readFileStore(where.file)) ?? emptyStore();
     const result = fn(store);
-    await writeStore(store);
+    await writeStore(where.file, store);
     return result;
   });
 }
@@ -248,6 +304,10 @@ export async function listContacts(): Promise<Contact[]> {
   return (await readStore()).contacts;
 }
 
+
+export async function getContact(id: string): Promise<Contact | undefined> {
+  return (await readStore()).contacts.find((c) => c.id === id);
+}
 
 export async function getContactBySession(sessionId: string): Promise<Contact | undefined> {
   return (await readStore()).contacts.find((c) => c.sessionId === sessionId);
@@ -397,6 +457,12 @@ export async function deleteChat(key: string): Promise<ChatSummary[]> {
 export async function deleteContact(contactId: string): Promise<Contact[]> {
   return updateStore((store) => {
     store.contacts = store.contacts.filter((c) => c.id !== contactId);
+    // Deals and reminders belong to the person, and both name them by id. Left
+    // behind they are rows nothing can resolve: a pipeline column counting
+    // money against nobody, and a reminder queued to message a contact who is
+    // no longer in the store. Same rule `deleteForm` applies to responses.
+    store.deals = store.deals.filter((deal) => deal.contactId !== contactId);
+    store.reminders = store.reminders.filter((r) => r.contact_id !== contactId);
     return store.contacts;
   });
 }
@@ -524,13 +590,17 @@ export async function getAgent(id: string): Promise<Agent | undefined> {
 }
 
 export async function createAgent(
-  input: Omit<Agent, "id" | "createdAt" | "status">,
+  input: Omit<Agent, "id" | "createdAt" | "status"> & { readonly status?: AgentStatus },
 ): Promise<Agent> {
   return updateStore((store) => {
     const created: Agent = {
       ...input,
       id: newId("agent"),
-      status: "active",
+      // Templates and the API's own default still hire a working agent
+      // outright; the builder passes "draft", because an agent that exists
+      // only so the workspace has something to autosave into must not start
+      // out answering customers.
+      status: input.status ?? "active",
       createdAt: nowIso(),
     };
     store.agents = [created, ...store.agents];
@@ -563,6 +633,8 @@ export async function toggleAgentStatus(id: string): Promise<Agent | undefined> 
   return updateStore((store) => {
     const existing = store.agents.find((a) => a.id === id);
     if (!existing) return undefined;
+    // A draft has never been on, so its toggle turns it on — the same as a
+    // paused one. Only "active" toggles the other way.
     const nextStatus: AgentStatus = existing.status === "active" ? "inactive" : "active";
     const updated: Agent = { ...existing, status: nextStatus };
     store.agents = store.agents.map((a) => (a.id === id ? updated : a));
@@ -995,6 +1067,83 @@ export async function deleteForm(id: string): Promise<boolean> {
     // counting answers to questions nobody can read any more.
     store.formResponses = store.formResponses.filter((r) => r.formId !== id);
     return store.forms.length < initial;
+  });
+}
+
+// ── Deals ──────────────────────────────────────────────────────────
+
+export async function listDeals(contactId?: string): Promise<Deal[]> {
+  const deals = (await readStore()).deals;
+  return contactId ? deals.filter((deal) => deal.contactId === contactId) : deals;
+}
+
+export async function getDeal(id: string): Promise<Deal | undefined> {
+  return (await readStore()).deals.find((deal) => deal.id === id);
+}
+
+export async function createDeal(
+  input: Pick<Deal, "contactId" | "title" | "value" | "currency"> &
+    Partial<Pick<Deal, "stage" | "expectedCloseAt" | "notes" | "source" | "lostReason">>,
+): Promise<Deal> {
+  return updateStore((store) => {
+    const now = nowIso();
+    const stage = input.stage ?? "lead";
+    const created: Deal = {
+      id: newId("dl"),
+      contactId: input.contactId,
+      title: input.title,
+      value: input.value,
+      currency: input.currency,
+      stage,
+      expectedCloseAt: input.expectedCloseAt,
+      notes: input.notes,
+      // Inherited from the contact when the caller didn't say, so "which
+      // channel actually pays" is answerable without anyone filling a field.
+      source: input.source ?? store.contacts.find((c) => c.id === input.contactId)?.source,
+      lostReason: input.lostReason,
+      createdAt: now,
+      updatedAt: now,
+      closedAt: stage === "won" || stage === "lost" ? now : undefined,
+    };
+    store.deals = [created, ...store.deals];
+    return created;
+  });
+}
+
+export async function updateDeal(
+  id: string,
+  updates: Partial<Omit<Deal, "id" | "contactId" | "createdAt">>,
+): Promise<Deal | undefined> {
+  return updateStore((store) => {
+    const existing = store.deals.find((deal) => deal.id === id);
+    if (!existing) return undefined;
+    const stage = updates.stage ?? existing.stage;
+    const closing = stage === "won" || stage === "lost";
+    const wasClosed = existing.stage === "won" || existing.stage === "lost";
+    const updated: Deal = {
+      ...existing,
+      ...updates,
+      stage,
+      // `closedAt` is owned by the stage, not by the caller: stamped the first
+      // time a deal closes, kept across later edits to a closed deal, and
+      // cleared when one is reopened — otherwise a reopened deal keeps a
+      // closing date it no longer has.
+      closedAt: closing ? (wasClosed ? existing.closedAt : nowIso()) : undefined,
+      // A reason only means anything on a lost deal. Moving one back out of
+      // `lost` takes the reason with it.
+      lostReason: stage === "lost" ? (updates.lostReason ?? existing.lostReason) : undefined,
+      updatedAt: nowIso(),
+    };
+    store.deals = store.deals.map((deal) => (deal.id === id ? updated : deal));
+    return updated;
+  });
+}
+
+export async function deleteDeal(id: string): Promise<boolean> {
+  return updateStore((store) => {
+    const initial = store.deals.length;
+    store.deals = store.deals.filter((deal) => deal.id !== id);
+    return store.deals.length < initial;
   });
 }
 

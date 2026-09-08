@@ -29,6 +29,7 @@ import { SidebarNotifications } from "@/components/ai-elements/sidebar-notificat
 import { SidebarStatus } from "@/components/ai-elements/sidebar-status";
 import { SupportDialog } from "@/components/ai-elements/support-dialog";
 import { CommandPalette } from "@/components/ai-elements/command-palette";
+import { BusinessSwitcher } from "./business-switcher";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getChats } from "@/lib/dashboard-store";
 import { NAV_GROUPS, NAV_ITEMS, type NavItem } from "@/lib/nav-items";
@@ -231,7 +232,7 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
             <div className="flex items-center gap-2">
               <SteveMark />
               <span className="text-lg font-semibold">
-                <span className="text-muted-foreground/40">st</span>
+                <span className="text-muted-foreground">st</span>
                 <span className="text-foreground">eve</span>
               </span>
             </div>
@@ -253,6 +254,14 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
             </TooltipTrigger>
             <TooltipContent side="right">{collapsed ? t("nav.expand") : t("nav.collapse")}</TooltipContent>
           </Tooltip>
+        </div>
+
+        {/* Which business everything below belongs to. First, and above the
+            navigation, because it is the frame around it: the inbox, the
+            contacts and the agents on every page under here are this
+            business's and nobody else's. */}
+        <div className={cn("shrink-0 pb-2", collapsed ? "flex justify-center px-2" : "px-3")}>
+          <BusinessSwitcher collapsed={collapsed} />
         </div>
 
         {/* The two things you reach for before navigating anywhere: starting a
@@ -285,7 +294,7 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
               {/* Collapsed to icons there is no room for a heading, so the
                   groups are separated by a rule instead. */}
               {group.labelKey && !collapsed ? (
-                <p className="px-3 pb-1 text-[11px] font-medium text-muted-foreground/60">
+                <p className="px-3 pb-1 text-[11px] font-medium text-muted-foreground">
                   {t(group.labelKey)}
                 </p>
               ) : null}
@@ -327,7 +336,7 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
         <div className="relative md:hidden">
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
             <span className="text-lg font-semibold">
-              <span className="text-muted-foreground/40">st</span>
+              <span className="text-muted-foreground">st</span>
               <span className="text-foreground">eve</span>
             </span>
             <button
@@ -366,6 +375,11 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
             style={{ "--panel-translate-y": "-10px" } as CSSProperties}
             data-open={mobileMenuOpen}
           >
+            {/* Same first position as on the desktop sidebar — the business
+                names what every row under it belongs to. */}
+            <div className="pb-1">
+              <BusinessSwitcher />
+            </div>
             {NAV_ITEMS.map((item) => {
               const isActive = isActivePath(item.href);
               const badgeCount = badgeFor(item.href);

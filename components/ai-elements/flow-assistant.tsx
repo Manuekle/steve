@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { STEP_ICONS, STEP_LABEL_KEYS, stepPreview } from "@/lib/workflow-step-meta";
 import type { WorkflowPlan, WorkflowPlanStep } from "@/lib/workflow-schema";
 import type { Automation, WorkflowStep } from "@/lib/types";
+import { SuggestionChip } from "@/components/ui/suggestion-chip";
+import { Button } from "@/components/ui/button";
 
 type Turn =
   | { readonly role: "user"; readonly text: string }
@@ -188,7 +190,7 @@ export function FlowAssistant({
           }}
           placeholder={t("assistant.placeholder")}
           rows={2}
-          className="w-full resize-none bg-transparent px-3 pt-2 pb-1 text-[13px] leading-relaxed outline-none placeholder:text-muted-foreground/60"
+          className="w-full resize-none bg-transparent px-3 pt-2 pb-1 text-[13px] leading-relaxed outline-none placeholder:text-muted-foreground"
         />
         <div className="flex items-center justify-end">
           <Beam
@@ -208,7 +210,7 @@ export function FlowAssistant({
                 "transition-[background-color,color,transform,opacity] duration-200 ease-out",
                 canSend
                   ? "bg-primary text-primary-foreground hover:scale-105 active:scale-95"
-                  : "bg-foreground/[0.06] text-muted-foreground/40",
+                  : "bg-foreground/[0.06] text-muted-foreground",
               )}
             >
               <HugeiconsIcon icon={ArrowUp02Icon} size={16} strokeWidth={1.75} />
@@ -229,7 +231,7 @@ export function FlowAssistant({
           {/* Same wordmark as the main chat — this is the same agent, just
               pointed at one flow, so it should introduce itself the same way. */}
           <h2 className="text-3xl font-semibold tracking-tight">
-            <span className="text-muted-foreground/40">st</span>
+            <span className="text-muted-foreground">st</span>
             <span className="text-foreground">eve</span>
           </h2>
           <p className="max-w-[34ch] text-balance text-[13px] leading-relaxed text-muted-foreground">
@@ -243,19 +245,9 @@ export function FlowAssistant({
             // painted behind the chip and a half-transparent pill lets it read
             // straight through.
             <Beam key={suggestionKey} colorVariant="mono" strength={0.4}>
-              <button
-                type="button"
-                onClick={() => void send(t(suggestionKey))}
-                data-cuelume-hover="tick"
-                data-cuelume-press
-                className={cn(
-                  "rounded-full border border-border bg-card px-3.5 py-1.5 text-xs text-muted-foreground",
-                  "shadow-[var(--shadow-inset)] transition-all duration-150",
-                  "hover:border-input hover:bg-accent hover:text-accent-foreground active:scale-[0.98]",
-                )}
-              >
+              <SuggestionChip onClick={() => void send(t(suggestionKey))}>
                 {t(suggestionKey)}
-              </button>
+              </SuggestionChip>
             </Beam>
           ))}
         </div>
@@ -267,18 +259,15 @@ export function FlowAssistant({
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-5">
         <div className="flex justify-end">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={() => setTurns([])}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] text-muted-foreground/70",
-              "transition-colors duration-150 hover:bg-accent hover:text-foreground",
-              "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground/50",
-            )}
+            className="text-[11px] text-muted-foreground hover:text-foreground"
           >
             <HugeiconsIcon icon={Delete02Icon} size={12} strokeWidth={1.75} aria-hidden="true" />
             {t("assistant.clear")}
-          </button>
+          </Button>
         </div>
 
         {turns.map((turn, i) => {
@@ -385,7 +374,7 @@ function planToTodos(
               className="shrink-0 text-muted-foreground"
               aria-hidden="true"
             />
-            {branch && i === 0 ? <span className="text-muted-foreground/70">{branch}</span> : null}
+            {branch && i === 0 ? <span className="text-muted-foreground">{branch}</span> : null}
             {t(STEP_LABEL_KEYS[step.type])}
           </span>
         ),

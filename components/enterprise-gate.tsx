@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { ArrowLeft02Icon, Certificate01Icon, CrownIcon } from "@hugeicons/core-free-icons";
+import { ArrowLeft02Icon, Award05Icon, CrownIcon } from "@hugeicons/core-free-icons";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/provider";
@@ -73,7 +73,7 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
         <Beam size="pulse-outside" colorVariant="mono" strength={0.7} borderRadius={20} className="w-full max-w-[420px]">
           <div className="w-full rounded-[20px] border border-border bg-card p-6 shadow-[var(--shadow-soft),var(--shadow-soft)] sm:p-7">
             <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--shadow-inset)]">
-              <HugeiconsIcon icon={Certificate01Icon} size={18} strokeWidth={1.75} />
+              <HugeiconsIcon icon={Award05Icon} size={18} strokeWidth={1.75} />
             </div>
 
             <h2 className="mt-4 text-center font-cooper text-[1.7rem] leading-[1.05] tracking-[-0.02em]">
@@ -111,7 +111,7 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
                 />
                 {t("gate.back")}
               </button>
-              <p className="text-center text-[11px] text-muted-foreground/70" style={{ fontFamily: "var(--font-sans)" }}>
+              <p className="text-center text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-sans)" }}>
                 {t("gate.footnote")}
               </p>
             </div>

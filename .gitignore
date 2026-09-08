@@ -16,3 +16,6 @@ logs
 deploy/.galaxy
 deploy/inventory.ini
 deploy/*.retry
+
+# Reference checkout (Houston), kept out of the build and the repo
+que-podemos-sacar-de-este-repositorio

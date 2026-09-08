@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Delete02Icon, Edit02Icon, Loading03Icon, SparklesIcon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, Edit02Icon, SparklesIcon } from "@hugeicons/core-free-icons";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { useToast } from "@/components/toast-provider";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import type { BusinessProfile, BusinessProfileRecord } from "@/lib/business-profile-store";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Feeds the AI analyzer whatever the owner has on hand — a website, a Google
@@ -223,7 +224,7 @@ export function BusinessProfilePanel({
         <Beam colorVariant="mono" strength={analyzing ? 0.9 : 0.55}>
           <Button type="button" onClick={() => void analyze()} disabled={analyzing || !canAnalyze}>
             {analyzing ? (
-              <HugeiconsIcon icon={Loading03Icon} size={15} strokeWidth={2} className="animate-spin" />
+              <Spinner size={15} strokeWidth={2} />
             ) : (
               <HugeiconsIcon icon={SparklesIcon} size={15} strokeWidth={1.75} />
             )}
@@ -435,7 +436,7 @@ function ProfileEditor({
       <div className="flex items-center gap-2">
         <Button type="button" size="sm" disabled={saving || !draft.name.trim()} onClick={onSave}>
           {saving ? (
-            <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={2} className="animate-spin" />
+            <Spinner size={14} strokeWidth={2} />
           ) : null}
           {t("common.save")}
         </Button>

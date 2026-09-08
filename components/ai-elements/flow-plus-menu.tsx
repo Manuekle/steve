@@ -153,7 +153,7 @@ export function FlowPlusMenu({
             className={cn(
               "flex size-11 items-center justify-center rounded-full border border-border text-foreground",
               "transition-transform duration-300 ease-out active:scale-95",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/50",
+              "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
               open ? "rotate-45" : "rotate-0",
             )}
           >

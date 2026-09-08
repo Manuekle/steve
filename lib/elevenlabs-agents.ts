@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { getCredential } from "./credentials";
+import { deleteVoiceTools, syncVoiceTools } from "./voice-tools";
 import type { Agent, AgentVoice, VoiceCallTurn } from "./types";
 
 // The ElevenLabs Agents platform, which is what answers a phone call.
@@ -105,6 +106,14 @@ export async function syncVoiceAgent(
 ): Promise<AgentVoice> {
   const el = await client();
 
+  // Tools first: the mirror's prompt references them by id, and an agent
+  // updated with a stale id loses the tool rather than keeping the old one.
+  // A failure here degrades to a talking-only agent with a warning attached —
+  // never to a failed sync, which would leave the operator with the *previous*
+  // prompt live on the phone and no idea why.
+  const tools = await syncVoiceTools(agent, voice);
+  const toolIds = Object.values(tools.toolIds);
+
   const conversationConfig = {
     tts: {
       ...(voice.voiceId ? { voiceId: voice.voiceId } : {}),
@@ -118,11 +127,24 @@ export async function syncVoiceAgent(
     agent: {
       firstMessage: voice.firstMessage?.trim() || undefined,
       language: voice.language?.trim() || DEFAULT_LANGUAGE,
-      prompt: { prompt: buildPrompt(agent), llm: DEFAULT_LLM },
+      prompt: {
+        prompt: buildPrompt(agent, Object.keys(tools.toolIds)),
+        llm: DEFAULT_LLM,
+        // Always sent, empty list included: that is what detaches a tool the
+        // agent is no longer allowed. Omitting the field leaves the mirror
+        // with whatever it had.
+        toolIds,
+      },
     },
   };
 
   const platformSettings = { guardrails: GUARDRAILS };
+
+  const synced: Pick<AgentVoice, "toolIds" | "toolsWarning" | "syncedAt"> = {
+    toolIds: tools.toolIds,
+    toolsWarning: tools.warning,
+    syncedAt: new Date().toISOString(),
+  };
 
   if (voice.elevenlabsAgentId) {
     await el.conversationalAi.agents.update(voice.elevenlabsAgentId, {
@@ -130,7 +152,7 @@ export async function syncVoiceAgent(
       conversationConfig,
       platformSettings,
     });
-    return { ...voice, syncedAt: new Date().toISOString() };
+    return { ...voice, ...synced };
   }
 
   const created = await el.conversationalAi.agents.create({
@@ -141,16 +163,21 @@ export async function syncVoiceAgent(
   });
   return {
     ...voice,
+    ...synced,
     elevenlabsAgentId: created.agentId,
-    syncedAt: new Date().toISOString(),
   };
 }
 
-/** Delete the mirror. Called when voice is switched off, so an account does
- *  not accumulate agents nobody can see from this app. */
-export async function deleteVoiceAgent(elevenlabsAgentId: string): Promise<void> {
+/** Delete the mirror and the webhook tools it owned. Called when voice is
+ *  switched off, so an account does not accumulate agents — or tools pointing
+ *  at this app — that nobody can see from here. */
+export async function deleteVoiceAgent(
+  elevenlabsAgentId: string,
+  toolIds?: Readonly<Record<string, string>>,
+): Promise<void> {
   const el = await client();
   await el.conversationalAi.agents.delete(elevenlabsAgentId);
+  if (toolIds) await deleteVoiceTools(toolIds);
 }
 
 /**
@@ -365,11 +392,20 @@ export async function getConversation(conversationId: string): Promise<Conversat
 /**
  * What the mirror agent is told to be.
  *
- * The agent's own system prompt carries over unchanged, with a short preamble
- * about the medium: the same instructions that read fine in a chat bubble
- * produce unlistenable speech when the model answers with a bulleted list.
+ * The agent's own system prompt carries over unchanged, with a preamble about
+ * the medium — the same instructions that read fine in a chat bubble produce
+ * unlistenable speech when the model answers with a bulleted list — and a
+ * section about its tools.
+ *
+ * That last part is not decoration. Before webhook tools existed here, this
+ * prompt told the agent "el sistema se encarga de crearlo y enviarlo" about a
+ * payment link, and no system did: the agent said the words, the call ended,
+ * and nothing had happened. Every line below about tools is therefore written
+ * as a hard rule about *when you may claim something was done* — which is the
+ * failure mode a voice agent has and a chat agent mostly does not, because
+ * nobody can see a tool call on a phone call.
  */
-function buildPrompt(agent: Agent): string {
+function buildPrompt(agent: Agent, toolNames: readonly string[]): string {
   const parts = [
     agent.systemPrompt?.trim(),
     agent.description?.trim() ? `Contexto del negocio: ${agent.description.trim()}` : "",
@@ -380,8 +416,53 @@ function buildPrompt(agent: Agent): string {
     "Mantené siempre tu rol definido en el prompt y la descripción del negocio. No te desvíes de tu función (vender, atender, asesorar, etc.): si te preguntan algo fuera de tu objetivo, respondé muy breve (1 frase) y redirigí al objetivo comercial (producto, precio, entrega, stock, reserva, ayuda). No des recetas, tutoriales ni información ajena completa si tu rol es vender/atender.",
     "No repitas el mismo saludo. Si ya saludaste, no vuelvas a decir 'hola' idéntico cuando el usuario diga 'hola' de nuevo; variá, recordá lo ya dicho y avanzá la conversación.",
     "Turnos: no interrumpas. Dejá que la persona termine de hablar. Si decís 'un momento por favor' porque estás consultando algo, quedate en silencio trabajando: NO digas '¿sigues ahí?' antes de 10 segundos, no pidas que hable. Solo avisa cuando tengas el resultado.",
-    "Cierre: cuando el pedido/duda esté resuelto y el usuario diga 'gracias/vale/chau' sin más pendientes, despedite breve ('Gracias Manuel, te llega el link por WhatsApp, que tengas buen día') y quedate en silencio para que la llamada se corte sola. No insistas con '¿sigues ahí?'",
-    "CRM y pago: cuando juntes nombre completo, teléfono y dirección, confirmá los datos una sola vez y avisá que el link de pago de Stripe se enviará por WhatsApp al número dado (no lo leas en la llamada). El sistema se encarga de crearlo y enviarlo.",
+    "Cierre: cuando el pedido/duda esté resuelto y el usuario diga 'gracias/vale/chau' sin más pendientes, despedite breve y quedate en silencio para que la llamada se corte sola. No insistas con '¿sigues ahí?'",
+    toolsSection(toolNames),
   ];
   return parts.filter(Boolean).join("\n\n");
+}
+
+/** One line per tool the mirror actually has, plus the rules that stop the
+ *  agent from narrating actions it never took. */
+function toolsSection(toolNames: readonly string[]): string {
+  if (toolNames.length === 0) {
+    return (
+      "No tenés ninguna herramienta conectada en esta llamada. No podés agendar, " +
+      "guardar datos, cobrar ni programar recordatorios. Si te lo piden, decí con " +
+      "honestidad que vas a pasar el pedido al equipo y que se van a comunicar. " +
+      "NUNCA digas que agendaste, guardaste o enviaste algo."
+    );
+  }
+
+  const lines: Record<string, string> = {
+    check_availability:
+      "- check_availability: horarios libres reales. Usala ANTES de ofrecer cualquier horario.",
+    book_appointment:
+      "- book_appointment: agenda la cita de verdad. Usá un start_iso salido de check_availability.",
+    save_contact: "- save_contact: guarda a la persona en el sistema. Usala apenas tengas nombre y teléfono.",
+    set_reminder: "- set_reminder: programa un recordatorio real para una fecha y hora.",
+    send_payment_link:
+      "- send_payment_link: crea el link de pago y lo manda por WhatsApp. Nunca leas un link en voz alta.",
+    search_knowledge:
+      "- search_knowledge: busca en los documentos del negocio. Usala ANTES de decir un precio o una condición.",
+    transfer_to_human: "- transfer_to_human: deja el caso marcado para que lo siga una persona del equipo.",
+  };
+
+  return [
+    "# Herramientas",
+    "",
+    "Tenés estas herramientas conectadas al sistema real del negocio:",
+    ...toolNames.map((name) => lines[name] ?? `- ${name}`),
+    "",
+    "Reglas, sin excepciones:",
+    "1. Antes de decir que algo quedó hecho (una cita, un recordatorio, un dato guardado, " +
+      "un pago enviado), tenés que haber llamado la herramienta y haber recibido success=true. " +
+      "Si no la llamaste, no pasó.",
+    "2. Si una herramienta responde success=false, decile a la persona lo que dice el mensaje. " +
+      "No inventes una confirmación ni prometas que 'ya quedó'.",
+    "3. Nunca inventes disponibilidad, precios, ni datos del negocio: salen de las herramientas.",
+    "4. Mientras esperás la respuesta de una herramienta, quedate en silencio o decí una sola " +
+      "frase corta ('dame un segundo'). No repitas la pregunta ni preguntes si sigue ahí.",
+    "5. Los links nunca se dictan por teléfono: se envían.",
+  ].join("\n");
 }

@@ -8,6 +8,7 @@ import {
   upsertContact,
 } from "../../lib/business-store";
 import { replyToContact } from "../../lib/automation-runner";
+import { isInboundOnlyChannel, toMessagingChannel } from "../../lib/contact-channel";
 
 function followupText(autoName: string, stepsMessage: string | undefined): string {
   return stepsMessage?.trim() || `Following up from ${autoName}. Can we continue?`;
@@ -32,8 +33,8 @@ export default defineSchedule({
 
           for (const contact of contacts) {
             if (contact.status !== "open") continue;
-            if (contact.channel === "form") continue;
-            if (!automationMatchesChannel(auto, contact.channel)) continue;
+            if (isInboundOnlyChannel(contact.channel)) continue;
+            if (!automationMatchesChannel(auto, toMessagingChannel(contact.channel))) continue;
             const last = new Date(contact.lastMessageAt).getTime();
             if (!Number.isFinite(last) || now.getTime() - last < waitMs) continue;
             if (now.getTime() - last > waitMs + 70_000) continue;

@@ -1,4 +1,5 @@
 import { runAutomationSteps } from "@/lib/automation-runner";
+import { toMessagingChannel } from "@/lib/contact-channel";
 import {
   ingestLead,
   listAutomations,
@@ -71,7 +72,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest, cont
     channel: input.channel ?? (automation.channel === "all" ? "web" : automation.channel),
   });
 
-  const channel = contact.channel === "form" ? "web" : contact.channel;
+  const channel = toMessagingChannel(contact.channel);
   await upsertChat({
     title: contact.name,
     channel,

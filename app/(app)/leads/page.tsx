@@ -11,6 +11,7 @@ import { ContactDialog } from "../../_components/contact-dialog";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import { useConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
 import { useI18n } from "@/lib/i18n/provider";
 import { relativeTime } from "@/lib/format";
-import { contactSourceLabel, contactStatusLabel } from "@/lib/contact-labels";
+import { CONTACT_STATUS_VARIANT, contactSourceLabel, contactStatusLabel } from "@/lib/contact-labels";
 import type { Contact, ContactStatus } from "@/lib/types";
 import { usePolling } from "@/lib/use-polling";
 
@@ -290,8 +291,17 @@ export default function LeadsPage() {
                       >
                         <td className="px-4 py-2.5 font-medium">{c.name}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">{c.phone || c.email || "—"}</td>
-                        <td className="px-4 py-2.5"><span className="rounded-full bg-muted px-2 py-0.5 text-xs">{contactSourceLabel(t, c.source)}</span></td>
-                        <td className="px-4 py-2.5 text-xs">{contactStatusLabel(t, c.status)}</td>
+                        <td className="px-4 py-2.5">
+                          <span className="inline-flex max-w-[14ch] items-center truncate rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                            {contactSourceLabel(t, c.source)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <StatusBadge
+                            status={CONTACT_STATUS_VARIANT[c.status]}
+                            label={contactStatusLabel(t, c.status)}
+                          />
+                        </td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{relativeTime(c.lastMessageAt, locale)}</td>
                         <td className="px-4 py-2.5 text-right">
                           <div className="flex items-center justify-end gap-1">

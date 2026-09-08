@@ -203,7 +203,7 @@ export function CredentialField({
             <button
               type="button"
               onClick={() => onToggleShow(field.key)}
-              className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+              className="absolute top-1/2 right-2 size-6 -translate-y-1/2 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
               title={show ? t("settings.hide") : t("settings.show")}
               aria-label={show ? t("settings.hide") : t("settings.show")}
             >

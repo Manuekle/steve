@@ -1,4 +1,5 @@
 import { matchInbound } from "./automation-engine";
+import { toMessagingChannel } from "./contact-channel";
 import { replyToContact } from "./automation-runner";
 import {
   ingestLead,
@@ -25,7 +26,7 @@ import type { Contact, LeadInput } from "./types";
 export async function intakeLead(input: LeadInput): Promise<Contact> {
   const contact = await ingestLead(input);
 
-  const channel = contact.channel === "form" ? "web" : contact.channel;
+  const channel = toMessagingChannel(contact.channel);
   await upsertChat({
     title: contact.name,
     channel,

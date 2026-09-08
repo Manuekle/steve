@@ -26,10 +26,10 @@ export function VariableInspector({ variables, values, onChange }: VariableInspe
   if (variables.length === 0) {
     return (
       <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 px-8 text-center">
-        <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground/60 uppercase">
+        <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
           {t("emailTemplates.variables")}
         </span>
-        <p className="max-w-[32ch] text-[12px] leading-relaxed text-muted-foreground/70">
+        <p className="max-w-[32ch] text-[12px] leading-relaxed text-muted-foreground">
           {t("emailTemplates.noVariables")}
         </p>
       </div>
@@ -50,7 +50,7 @@ export function VariableInspector({ variables, values, onChange }: VariableInspe
                 {name}
               </code>
               {isStructured(value) ? (
-                <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.12em] text-muted-foreground/60 uppercase">
+                <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.12em] text-muted-foreground uppercase">
                   <HugeiconsIcon icon={CodeIcon} size={10} strokeWidth={2} />
                   JSON
                 </span>

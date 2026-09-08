@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Delete02Icon, ImageUpload01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, ImageUpload01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,7 @@ import { useConfirmDialog } from "@/components/confirm-dialog";
 import { fetchJson, readApiError, type UiError } from "@/lib/api-error-message";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import type { BusinessIdentity, BusinessIdentityFields } from "@/lib/business-profile-store";
+import { Spinner } from "@/components/ui/spinner";
 
 /** Mirrors `LOGO_ACCEPT_ATTRIBUTE` in lib/business-identity.ts, which is
  *  server-only — importing it here would pull the AI and fs modules it sits
@@ -180,7 +181,7 @@ export function BusinessIdentityForm({
             onClick={() => fileInput.current?.click()}
           >
             {uploading ? (
-              <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={2} className="animate-spin" />
+              <Spinner size={14} strokeWidth={2} />
             ) : (
               <HugeiconsIcon icon={ImageUpload01Icon} size={14} strokeWidth={1.75} />
             )}
@@ -233,7 +234,7 @@ export function BusinessIdentityForm({
       <div className="flex items-center gap-3">
         <Button type="button" onClick={() => void save()} disabled={saving || !dirty}>
           {saving ? (
-            <HugeiconsIcon icon={Loading03Icon} size={15} strokeWidth={2} className="animate-spin" />
+            <Spinner size={15} strokeWidth={2} />
           ) : null}
           {t("common.save")}
         </Button>

@@ -9,8 +9,7 @@ import {
   BubbleChatIcon,
   Delete01Icon,
   Add01Icon,
-  Loading03Icon,
-} from "@hugeicons/core-free-icons";
+  } from "@hugeicons/core-free-icons";
 import {
   Conversation,
   ConversationContent,
@@ -24,7 +23,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { TextShimmer } from "@/components/motion/text-shimmer";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -46,6 +45,8 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../../_components/dashboard-card";
+import { Spinner } from "@/components/ui/spinner";
+import { SuggestionChip } from "@/components/ui/suggestion-chip";
 
 /**
  * The text half of the agent playground — the same screen shape as
@@ -464,14 +465,9 @@ export default function AgentChatPage() {
                   </div>
                   <div className="flex flex-wrap justify-center gap-2">
                     {STARTERS.map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent hover:text-foreground"
-                        onClick={() => void send(t(key))}
-                      >
+                      <SuggestionChip key={key} onClick={() => void send(t(key))}>
                         {t(key)}
-                      </button>
+                      </SuggestionChip>
                     ))}
                   </div>
                 </ConversationEmptyState>
@@ -487,7 +483,7 @@ export default function AgentChatPage() {
                         // An assistant turn with no text yet is the agent
                         // searching the knowledge base or the media library —
                         // a tool call streams nothing until it returns.
-                        <Shimmer as="span" className="text-sm">{`${agent.name}…`}</Shimmer>
+                        <TextShimmer as="span" className="text-sm">{`${agent.name}…`}</TextShimmer>
                       )}
                     </MessageContent>
                   </Message>
@@ -496,7 +492,7 @@ export default function AgentChatPage() {
               {status === "submitted" && (
                 <Message from="assistant">
                   <MessageContent>
-                    <Shimmer as="span" className="text-sm">{`${agent.name}…`}</Shimmer>
+                    <TextShimmer as="span" className="text-sm">{`${agent.name}…`}</TextShimmer>
                   </MessageContent>
                 </Message>
               )}
@@ -706,12 +702,7 @@ function LiveConversation({
           <ProspectBadge prospect={prospect} />
           <Button size="xs" variant="ghost" disabled={assessing} onClick={onAssess}>
             {assessing ? (
-              <HugeiconsIcon
-                icon={Loading03Icon}
-                size={12}
-                strokeWidth={1.75}
-                className="animate-spin"
-              />
+              <Spinner size={12} />
             ) : null}
             {assessing ? t("prospect.assessing") : prospect ? t("prospect.reassess") : t("prospect.assess")}
           </Button>

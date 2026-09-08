@@ -8,7 +8,6 @@ import {
   File01Icon,
   AlertCircleIcon,
   SearchIcon,
-  Loading03Icon,
   ArtificialIntelligence08Icon,
   ArrowLeft01Icon,
   Delete02Icon,
@@ -55,6 +54,7 @@ import {
 import { FolderArt, FolderDialog, FolderGrid, type FolderSummary } from "./_components/folder-grid";
 import { MediaLibrary } from "./_components/media-library";
 import { BusinessCard } from "./_components/business-card";
+import { Spinner } from "@/components/ui/spinner";
 
 type EmbeddingStatus =
   | { available: true; model: string; route: "openai" | "gateway" }
@@ -448,7 +448,7 @@ export default function KnowledgePage() {
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => void handleDriveSync()} disabled={syncingDrive}>
                 {syncingDrive ? (
-                  <HugeiconsIcon icon={Loading03Icon} size={15} strokeWidth={1.75} className="animate-spin" />
+                  <Spinner size={15} />
                 ) : (
                   <GoogleDriveBrandIcon size={15} />
                 )}
@@ -778,12 +778,7 @@ export default function KnowledgePage() {
                 </div>
                 <Button type="submit" disabled={searching || query.trim().length === 0}>
                   {searching ? (
-                    <HugeiconsIcon
-                      icon={Loading03Icon}
-                      size={16}
-                      strokeWidth={2}
-                      className="animate-spin"
-                    />
+                    <Spinner strokeWidth={2} />
                   ) : null}
                   {t("knowledge.searchAction")}
                 </Button>

@@ -2,12 +2,13 @@
 
 import { useCallback, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { ArtificialIntelligence08Icon, Loading03Icon } from "@hugeicons/core-free-icons";
+import { ArtificialIntelligence08Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ProviderLogo } from "@/components/provider-logo";
 import { useI18n } from "@/lib/i18n/provider";
 import type { ModelsResponse } from "./model-picker";
 import { ProviderStatusBadge, useModelCatalog } from "./model-picker";
+import { Spinner } from "@/components/ui/spinner";
 
 // Settings card: is the configured key actually usable, and what does the app
 // run on when nobody picks a model.
@@ -105,7 +106,7 @@ export function ModelHealthCard() {
         <div>
           <Button size="sm" variant="outline" onClick={() => void runCheck()} disabled={checking}>
             {checking ? (
-              <HugeiconsIcon icon={Loading03Icon} size={15} strokeWidth={2} className="animate-spin" />
+              <Spinner size={15} strokeWidth={2} />
             ) : null}
             {t("models.checkAction")}
           </Button>

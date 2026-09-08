@@ -4,10 +4,17 @@ import {
   listAutomations,
   updateAutomation,
 } from "@/lib/business-store";
-import type { Automation, AutomationStatus, ChannelId, WorkflowStep } from "@/lib/types";
+import type {
+  Automation,
+  AutomationStatus,
+  AutomationTrigger,
+  ChannelId,
+  WorkflowStep,
+} from "@/lib/types";
 import { randomBytes } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
+import { parseStoredSteps } from "@/lib/workflow-schema";
 
 /**
  * A webhook automation's `triggerValue` is its shared secret, and the route
@@ -15,12 +22,58 @@ import { apiError, missingField, withApiErrors } from "@/lib/api-error";
  * app/api/automations/[id]/webhook/route.ts. Generating it here means the
  * operator never has to think about it: the token is simply there, shown next
  * to the automation, ready to paste into whatever calls it.
+ *
+ * `inherited` is the guard against the way this used to leak. The dialog keeps
+ * one `triggerValue` box for every trigger type, so switching a keyword
+ * automation to Webhook re-submitted the keyword as the token — and a keyword
+ * is the opposite of a secret: it is the word the business prints in its ads
+ * and tells customers to send. Anyone who knew it could POST the public
+ * webhook and make the account send WhatsApp messages, emails and payment
+ * links. A value that is only the previous trigger's value is therefore
+ * treated as no value at all, and a real token is minted instead.
  */
-function webhookToken(trigger: string | undefined, value: string | undefined): string | undefined {
+function webhookToken(
+  trigger: string | undefined,
+  value: string | undefined,
+  inherited = false,
+): string | undefined {
   if (trigger !== "webhook") return undefined;
-  const current = value?.trim();
+  const current = inherited ? "" : value?.trim();
   return current || randomBytes(24).toString("hex");
 }
+
+const TRIGGERS: readonly AutomationTrigger[] = [
+  "keyword",
+  "schedule",
+  "new_chat",
+  "no_reply",
+  "webhook",
+];
+
+const CHANNELS: ReadonlyArray<ChannelId | "all"> = ["all", "web", "whatsapp", "instagram"];
+
+function isTrigger(value: unknown): value is AutomationTrigger {
+  return typeof value === "string" && TRIGGERS.includes(value as AutomationTrigger);
+}
+
+function isChannel(value: unknown): value is ChannelId | "all" {
+  return typeof value === "string" && CHANNELS.includes(value as ChannelId | "all");
+}
+
+/** The fields a screen can actually change. Spreading the request body into
+ *  the stored record — which is what this route used to do — let a caller
+ *  rewrite `createdAt`, reset `responseCount`, backdate `lastTriggeredAt`, or
+ *  park arbitrary keys on an automation that every later read then carries. */
+const EDITABLE = [
+  "name",
+  "description",
+  "trigger",
+  "triggerValue",
+  "channel",
+  "status",
+  "agentId",
+  "steps",
+] as const;
 
 export const GET = withApiErrors(async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(request.nextUrl.searchParams.get("page") ?? "1", 10) || 1);
@@ -48,8 +101,22 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
   if (!input.name || typeof input.name !== "string") {
     return missingField("name");
   }
+  if (input.trigger !== undefined && !isTrigger(input.trigger)) {
+    return apiError("invalid_field", { field: "trigger" });
+  }
+  if (input.channel !== undefined && !isChannel(input.channel)) {
+    return apiError("invalid_field", { field: "channel" });
+  }
   const trigger = input.trigger ?? "keyword";
   const requested = typeof input.triggerValue === "string" ? input.triggerValue : "";
+
+  // Steps are read on every turn of every conversation (formatPlaybook) and
+  // executed on every webhook fire, so an unvalidated one is not inert: an
+  // unknown type reaches the runner as a silent skip, and stray keys stay on
+  // the record forever. Absent means "no steps"; malformed is a 400.
+  const steps = input.steps === undefined ? [] : parseStoredSteps(input.steps);
+  if (!steps) return apiError("invalid_field", { field: "steps" });
+
   const automations = await createAutomation({
     name: input.name.trim(),
     description: typeof input.description === "string" ? input.description : "",
@@ -57,7 +124,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     triggerValue: webhookToken(trigger, requested) ?? requested,
     channel: (input.channel as ChannelId | "all") ?? "all",
     ...(typeof input.agentId === "string" ? { agentId: input.agentId } : {}),
-    steps: Array.isArray(input.steps) ? (input.steps as WorkflowStep[]) : [],
+    steps,
   });
   return NextResponse.json({ automations });
 });
@@ -72,20 +139,46 @@ export const PUT = withApiErrors(async function PUT(request: NextRequest) {
   if (!body || typeof body !== "object" || !("id" in body) || typeof body.id !== "string") {
     return missingField("id");
   }
-  const { id, ...updates } = body as { id: string } & Partial<Omit<Automation, "id">>;
-  if (updates.status && !isStatus(updates.status)) {
+  const input = body as Record<string, unknown>;
+  const id = input.id as string;
+  const updates: Partial<Omit<Automation, "id">> = {};
+  for (const key of EDITABLE) {
+    if (input[key] !== undefined) {
+      (updates as Record<string, unknown>)[key] = input[key];
+    }
+  }
+  if (input.steps !== undefined) {
+    const steps = parseStoredSteps(input.steps);
+    if (!steps) return apiError("invalid_field", { field: "steps" });
+    (updates as { steps?: WorkflowStep[] }).steps = steps;
+  }
+  if (updates.status !== undefined && !isStatus(String(updates.status))) {
     return apiError("invalid_field", { field: "status" });
+  }
+  if (updates.trigger !== undefined && !isTrigger(updates.trigger)) {
+    return apiError("invalid_field", { field: "trigger" });
+  }
+  if (updates.channel !== undefined && !isChannel(updates.channel)) {
+    return apiError("invalid_field", { field: "channel" });
   }
   // Switching an automation to the webhook trigger, or saving one that never
   // had a token, mints one now rather than leaving a webhook that 401s. The
   // effective trigger can come from either side, so the stored one is read
   // before deciding.
   const existing = (await listAutomations()).find((a) => a.id === id);
-  const token = webhookToken(
-    updates.trigger ?? existing?.trigger,
-    updates.triggerValue ?? existing?.triggerValue,
-  );
-  if (token) updates.triggerValue = token;
+  const nextTrigger = updates.trigger ?? existing?.trigger;
+  const nextValue = updates.triggerValue ?? existing?.triggerValue;
+  // "Inherited" means: this automation was not a webhook one, and the value
+  // arriving with it is the one it already had — i.e. the previous trigger's
+  // keyword, cron line or wait time, echoed back by the dialog rather than
+  // typed as a secret.
+  const inherited =
+    nextTrigger === "webhook" &&
+    existing !== undefined &&
+    existing.trigger !== "webhook" &&
+    nextValue === existing.triggerValue;
+  const token = webhookToken(nextTrigger, nextValue, inherited);
+  if (token) (updates as { triggerValue?: string }).triggerValue = token;
   const automations = await updateAutomation(id, updates);
   return NextResponse.json({ automations });
 });

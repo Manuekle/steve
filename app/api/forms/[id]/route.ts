@@ -2,6 +2,7 @@ import { deleteForm, getForm, listFormResponses, updateForm } from "@/lib/busine
 import type { Form } from "@/lib/types";
 import { type NextRequest, NextResponse } from "next/server";
 import { assertPublicHttpsUrl } from "@/lib/http-guard";
+import { parseScoring, parseSteps } from "@/lib/forms/schema";
 import { apiError, withApiErrors } from "@/lib/api-error";
 
 export const GET = withApiErrors(async function GET(
@@ -69,6 +70,36 @@ export const PATCH = withApiErrors(async function PATCH(
       }
       mutable.webhookUrl = raw;
     }
+  }
+
+  // The builder is the only caller that sends these, and it validates the
+  // same rules before enabling its save button — but "the client checked" is
+  // not a check. A step list that got through here reaches the public page,
+  // which renders whatever it is handed.
+  if (updates.steps !== undefined) {
+    const parsed = parseSteps(updates.steps);
+    if (!parsed.ok) {
+      const [first] = parsed.issues;
+      return apiError("invalid_field", {
+        field: first?.path,
+        message: first?.message ?? "The form's questions aren't in a shape this endpoint accepts.",
+        detail: JSON.stringify(parsed.issues),
+      });
+    }
+    (updates as { steps?: Form["steps"] }).steps = parsed.steps;
+  }
+
+  if (updates.scoring !== undefined) {
+    const parsed = parseScoring(updates.scoring);
+    if (!parsed.ok) {
+      const [first] = parsed.issues;
+      return apiError("invalid_field", {
+        field: first?.path,
+        message: first?.message ?? "Those score thresholds aren't usable.",
+        detail: JSON.stringify(parsed.issues),
+      });
+    }
+    (updates as { scoring?: Form["scoring"] }).scoring = parsed.scoring;
   }
 
   const form = await updateForm(id, updates);

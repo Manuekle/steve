@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Loading03Icon, LockPasswordIcon, StripeIcon } from "@hugeicons/core-free-icons";
+import { LockPasswordIcon, StripeIcon } from "@hugeicons/core-free-icons";
 import {
   Dialog,
   DialogClose,
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, isApiError, type UiError } from "@/lib/api-error-message";
 import { useT } from "@/lib/i18n/provider";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Adding a card, from the billing page instead of a detour through /pricing.
@@ -98,7 +99,7 @@ export function PaymentMethodDialog({
           </DialogClose>
           <Button disabled={busy} onClick={() => void start()}>
             {busy ? (
-              <HugeiconsIcon className="animate-spin" icon={Loading03Icon} size={16} />
+              <Spinner />
             ) : (
               <HugeiconsIcon icon={StripeIcon} size={16} strokeWidth={1.75} />
             )}

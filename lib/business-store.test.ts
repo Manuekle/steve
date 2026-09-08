@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -57,6 +57,40 @@ afterEach(() => {
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true, force: true });
   }
+});
+
+// ── The file itself ──────────────────────────────────────────────
+//
+// A corrupt store used to read as an empty one, so the app rendered a working
+// account as brand new and the next write replaced the real file with that
+// emptiness. The write is atomic, which is exactly what made it total: the
+// data was destroyed by a clean write of the wrong thing.
+
+describe("business-store: an unreadable file", () => {
+  const storeFile = join(TEST_DIR, ".steve", "business.json");
+
+  it("starts empty when there is no file at all", async () => {
+    await expect(listContacts()).resolves.toEqual([]);
+  });
+
+  it("refuses to read a corrupt file as an empty account", async () => {
+    await upsertContact({ name: "Marta", phone: "+5491100000", sessionId: "s-1", source: "web" });
+    mkdirSync(join(TEST_DIR, ".steve"), { recursive: true });
+    writeFileSync(storeFile, '{"contacts": [', "utf-8");
+
+    await expect(listContacts()).rejects.toThrow(/no es JSON válido/);
+  });
+
+  // The salvage case Houston's json-salvage.ts exists for: a complete value
+  // followed by trailing bytes. Steve writes atomically so it cannot produce
+  // one itself, but an outside editor can — and it must still not silently
+  // become an empty account.
+  it("refuses a file with a valid prefix and trailing garbage", async () => {
+    mkdirSync(join(TEST_DIR, ".steve"), { recursive: true });
+    writeFileSync(storeFile, '{"contacts": []}{"contacts": [', "utf-8");
+
+    await expect(listContacts()).rejects.toThrow(/no es JSON válido/);
+  });
 });
 
 // ── Automations ──────────────────────────────────────────────────

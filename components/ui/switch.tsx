@@ -49,7 +49,7 @@ export function Switch({
       className={cn(
         "t-toggle relative h-5 w-[43px] shrink-0 rounded-full p-0",
         "shadow-[var(--switch-track-shadow)]",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--switch-on)]",
+        "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[var(--switch-on)]",
         checked ? "bg-[var(--switch-on)]" : "bg-[var(--switch-off)]",
         disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
         interacted && "is-init",

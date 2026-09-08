@@ -24,7 +24,13 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
         "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3",
 
         // Focus state.
-        "has-[[data-slot=input-group-control]:focus-visible]:border-ring/50 has-[[data-slot=input-group-control]:focus-visible]:shadow-[var(--shadow-inset),0_0_0_3px_oklch(0.5_0_0/0.1)] has-[[data-slot=input-group-control]:focus-visible]:bg-card",
+        // The group owns the focus ring, because the group is what has the
+        // radius. It was still on the pre-audit recipe here — a 10% grey
+        // shadow at 1.14:1 — while the control inside had been moved to a
+        // real outline, so the field showed a hard square ring from the
+        // control and nothing legible from the group.
+        "has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:bg-card",
+        "has-[[data-slot=input-group-control]:focus-visible]:outline-solid has-[[data-slot=input-group-control]:focus-visible]:outline-1 has-[[data-slot=input-group-control]:focus-visible]:outline-offset-1 has-[[data-slot=input-group-control]:focus-visible]:outline-[color:var(--ring)]",
 
         // Error state.
         "has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:shadow-[inset_0_-1px_0_oklch(0.577_0.245_27.325/0.15)] dark:has-[[data-slot][aria-invalid=true]]:shadow-[inset_0_-1px_0_oklch(0.637_0.193_21.4/0.15)]",
@@ -128,10 +134,13 @@ function InputGroupInput({ className, ...props }: React.ComponentProps<"input">)
       data-slot="input-group-control"
       className={cn(
         // The focus surface belongs to the group, not the control: the base
-        // Input paints its own `bg-card` + 3px ring on focus, and that box is
+        // Input paints its own `bg-card` + ring on focus, and that box is
         // square and full-bleed. Groups that clip to their radius hid it; ones
         // that let content spill showed a square edge around the field.
-        "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent",
+        // `outline-none` is part of that handover — without it the control's
+        // own outline traced its `rounded-none` box and drew the square ring
+        // the group exists to avoid.
+        "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent",
         "focus-visible:bg-transparent focus-visible:shadow-none dark:focus-visible:bg-transparent",
         className,
       )}
@@ -145,9 +154,10 @@ function InputGroupTextarea({ className, ...props }: React.ComponentProps<"texta
     <Textarea
       data-slot="input-group-control"
       className={cn(
-        // Same as InputGroupInput: drop the control's own focus surface so the
-        // group's rounded one is the only thing that paints.
-        "flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent",
+        // Same as InputGroupInput: drop the control's own focus surface —
+        // outline included — so the group's rounded one is the only thing
+        // that paints. This is the square ring on the chat composer.
+        "flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent",
         "focus-visible:bg-transparent focus-visible:shadow-none dark:focus-visible:bg-transparent",
         className,
       )}

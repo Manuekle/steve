@@ -57,6 +57,8 @@ type PaymentStore = { payments: PaymentRecord[] };
 // Postgres when one is configured, ~/.steve/payments.json (0600) otherwise.
 const paymentStore = createDocumentStore<PaymentStore>({
   id: "payments",
+  // Per business: a payment link belongs to the business that sent it. See lib/business-scope.ts.
+  scoped: true,
   file: STORE_FILE,
   empty: () => ({ payments: [] }),
   normalize: (parsed) => (Array.isArray(parsed?.payments) ? (parsed as PaymentStore) : { payments: [] }),

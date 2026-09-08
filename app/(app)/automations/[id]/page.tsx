@@ -37,7 +37,6 @@ import { StepPanel } from "@/components/ai-elements/step-panel";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { useCelebrate } from "@/components/use-celebrate";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Beam } from "@/components/ui/beam";
 import { Orb } from "@/components/ui/orb";
 import { useT } from "@/lib/i18n/provider";
 import { useSound } from "@/components/sound-provider";
@@ -59,6 +58,7 @@ import {
   type StepPath,
 } from "@/lib/workflow-tree";
 import type { Automation, WorkflowStep, WorkflowStepType } from "@/lib/types";
+import { DockReopenButton } from "@/app/_components/dock-reopen-button";
 
 const DOCK_MIN = 340;
 const DOCK_MAX = 620;
@@ -517,7 +517,7 @@ export default function AutomationFlowPage() {
 
           {automation.status === "draft" ? (
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-t border-border bg-muted/30 px-4 py-1.5">
-              <MicroLabel className="text-muted-foreground/75">{t("automations.draftLabel")}</MicroLabel>
+              <MicroLabel className="text-muted-foreground">{t("automations.draftLabel")}</MicroLabel>
               <span className="h-3 w-px bg-border" />
               <span className="text-[11px] text-muted-foreground">{t("automations.draftHint")}</span>
             </div>
@@ -554,31 +554,15 @@ export default function AutomationFlowPage() {
               heightClassName="h-full"
               containerClassName="h-full rounded-none border-0"
             />
-            <p className="pointer-events-none absolute top-4 left-4 hidden max-w-[46%] font-mono text-[10px] leading-relaxed tracking-wide text-muted-foreground/40 xl:block">
+            <p className="pointer-events-none absolute top-4 left-4 hidden max-w-[46%] font-mono text-[10px] leading-relaxed tracking-wide text-muted-foreground xl:block">
               {t("automations.canvasHint")}
             </p>
             {!dockOpen ? (
-              // The lift on hover lives on the Beam wrapper, not the button:
-              // the beam is painted on the wrapper, so moving the button alone
-              // would slide it out from under its own glow. The placement has to
-              // be an inline style — the package pins the wrapper to
-              // `position: relative` from its own stylesheet.
-              <Beam
-                className="transition-transform duration-150 ease-out hover:-translate-y-px"
-                style={{ position: "absolute", top: "1rem", right: "1rem" }}
-                colorVariant="mono"
-              >
-                <button
-                  onClick={() => setDockOpenPersisted(true)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5",
-                    "text-xs font-medium shadow-[var(--shadow-float)] backdrop-blur-sm",
-                  )}
-                >
-                  <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={13} strokeWidth={1.75} />
-                  {t("assistant.tab")}
-                </button>
-              </Beam>
+              <DockReopenButton
+                icon={ArtificialIntelligence08Icon}
+                label={t("assistant.tab")}
+                onClick={() => setDockOpenPersisted(true)}
+              />
             ) : null}
           </div>
 
@@ -846,7 +830,7 @@ function RunOutcomeToast({
           )}
         />
         <span className="min-w-0">
-          <span className="block font-mono text-[10px] tracking-[0.14em] text-muted-foreground/70 uppercase">
+          <span className="block font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
             {outcome.status}
           </span>
           {outcome.detail ? (
@@ -860,7 +844,7 @@ function RunOutcomeToast({
 
 function MicroLabel({ children, className }: { readonly children: ReactNode; readonly className?: string }) {
   return (
-    <span className={cn("font-mono text-[10px] tracking-[0.14em] text-muted-foreground/60 uppercase", className)}>
+    <span className={cn("font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase", className)}>
       {children}
     </span>
   );
@@ -871,7 +855,7 @@ function SaveIndicator({ status }: { readonly status: SaveStatus }) {
   const t = useT();
   if (status === "idle") return null;
   return (
-    <span className="list-fade-in mr-1 hidden items-center gap-1.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground/70 uppercase sm:flex">
+    <span className="list-fade-in mr-1 hidden items-center gap-1.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase sm:flex">
       <span
         className={cn(
           "size-1.5 rounded-full",

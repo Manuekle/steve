@@ -22,8 +22,20 @@ const buttonVariants = cva(
   "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[13px] text-sm font-medium whitespace-nowrap"
   + " transition-[background-color,box-shadow,transform,border-color,color] duration-150 ease-[var(--btn-easing)]"
   + " outline-none"
-  // Focus — a soft ring coherent with the system, not the browser default.
-  + " focus-visible:ring-[3px] focus-visible:ring-[var(--btn-focus-ring)] focus-visible:ring-offset-0"
+  // Focus — an outline, not a `ring`. `ring` composes into `box-shadow`, which
+  // every variant here already spends on its surface depth, so the indicator
+  // was competing with the depth recipe for the same property. `outline` is
+  // its own property and is the one focus style forced-colors mode preserves.
+  // `outline-solid` is not redundant: `outline-none` above sets
+  // `--tw-outline-style: none`, which `outline-1` would otherwise inherit and
+  // render nothing.
+  //
+  // A hairline, not a 2px band: 1px at the ring token's weight reads as a
+  // soft edge rather than a second border. WCAG 2.2 AA sets no minimum
+  // thickness — 2px is 2.4.13 Focus Appearance, which is AAA. The colour is
+  // `--btn-focus-ring`; globals.css documents where it sits against 1.4.11.
+  + " focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1"
+  + " focus-visible:outline-[color:var(--btn-focus-ring)]"
   // Disabled — lower contrast, no interaction. Native `disabled` already
   // drops the cursor to the browser default; pointer-events:none keeps it
   // from ever showing `pointer` again on hover.
@@ -39,16 +51,26 @@ const buttonVariants = cva(
         // Dark surface in light, white surface in dark.
         default:
           "text-[var(--btn-primary-fg)] bg-[var(--btn-primary-bg)] border border-[var(--btn-primary-border)]"
+          // The sheen is a `background-image` over the fill, not a replacement
+          // for it: `--btn-primary-bg` stays the button's actual colour and
+          // the gradient only washes light across it. `image:` is the type
+          // hint that keeps Tailwind from compiling this to background-color
+          // — without it the arbitrary value is read as a colour and dropped.
+          + " bg-[image:var(--btn-primary-sheen)]"
           + " shadow-[var(--btn-primary-shadow)]"
           + " hover:shadow-[var(--btn-primary-shadow-hover)] hover:bg-[var(--btn-primary-bg-hover)]"
-          + " active:shadow-[var(--btn-primary-shadow-pressed)] active:translate-y-px",
+          + " active:shadow-[var(--btn-primary-shadow-pressed)] active:translate-y-px"
+          + " active:bg-[image:var(--btn-primary-sheen-pressed)]",
         // Destructive — same surface language, red as a controlled accent.
         destructive:
           "text-[var(--btn-destructive-fg)] bg-[var(--btn-destructive-bg)] border border-[var(--btn-destructive-border)]"
           + " shadow-[var(--btn-destructive-shadow)]"
           + " hover:shadow-[var(--btn-destructive-shadow-hover)] hover:bg-[var(--btn-destructive-bg-hover)]"
           + " active:shadow-[var(--btn-destructive-shadow-pressed)] active:translate-y-px"
-          + " focus-visible:ring-[var(--btn-destructive-border)]",
+          // Its own tint, but one that clears 3:1. Reusing the border token
+          // here put the app's most consequential button behind its least
+          // visible focus indicator, at 1.33:1.
+          + " focus-visible:outline-[color:var(--btn-destructive-focus-ring)]",
         // Secondary — muted neutral, same depth language, lower contrast.
         secondary:
           "text-[var(--btn-secondary-fg)] bg-[var(--btn-secondary-bg)] border border-[var(--btn-secondary-border)]"

@@ -38,6 +38,7 @@ import {
   CardSeparator,
   CardTitle,
 } from "../../_components/dashboard-card";
+import { Spinner } from "@/components/ui/spinner";
 
 type Summary = { ready: boolean; failing: number; warning: number; total: number };
 
@@ -54,7 +55,7 @@ const STATUS_TONE: Record<CheckStatus, string> = {
   warn: "text-amber-600 dark:text-amber-400",
   fail: "text-destructive",
   unknown: "text-muted-foreground",
-  skipped: "text-muted-foreground/50",
+  skipped: "text-muted-foreground",
 };
 
 /** Detail strings the API returns as dictionary keys rather than prose, so the
@@ -334,7 +335,7 @@ export default function SetupPage() {
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {t(`setup.check.${check.id}.hint`)}
                         </p>
-                        <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground/70">
+                        <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
                           {DETAIL_KEYS.has(check.detail)
                             ? t(`setup.detail.${check.detail}`)
                             : check.detail}
@@ -426,12 +427,7 @@ export default function SetupPage() {
                     onClick={importPasted}
                   >
                     {importing ? (
-                      <HugeiconsIcon
-                        icon={Loading03Icon}
-                        size={15}
-                        strokeWidth={2}
-                        className="animate-spin"
-                      />
+                      <Spinner size={15} strokeWidth={2} />
                     ) : null}
                     {t("setup.importAction")}
                   </Button>

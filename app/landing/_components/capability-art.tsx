@@ -44,7 +44,7 @@ import {
   Link01Icon,
   MetaIcon,
   Mic01Icon,
-  PlugSocketIcon,
+  Blockchain05Icon,
   Search01Icon,
   Target01Icon,
   Tick02Icon,
@@ -74,10 +74,10 @@ export function KnowledgeScene() {
     <Scene>
       <Row>
         <Plate active className="size-8" icon={Search01Icon} />
-        <Mono className="min-w-0 flex-1 truncate text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+        <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
           ¿hacen devoluciones?
         </Mono>
-        <Mono className="shrink-0 text-muted-foreground/40">2 docs</Mono>
+        <Mono className="shrink-0 text-muted-foreground">2 docs</Mono>
       </Row>
 
       <div className="mt-2.5 space-y-2">
@@ -96,8 +96,8 @@ export function KnowledgeScene() {
             <Mono
               className={`min-w-0 flex-1 truncate transition-all duration-500 ${
                 doc.hit
-                  ? "text-muted-foreground/70 blur-[3px] group-hover:text-foreground group-hover:blur-none"
-                  : "text-muted-foreground/50 group-hover:opacity-40"
+                  ? "text-muted-foreground blur-[3px] group-hover:text-foreground group-hover:blur-none"
+                  : "text-muted-foreground group-hover:opacity-40"
               }`}
               style={at(160 + index * 80)}
             >
@@ -108,7 +108,7 @@ export function KnowledgeScene() {
               className={`shrink-0 tabular-nums transition-all duration-500 ${
                 doc.hit
                   ? "translate-y-1 text-transparent group-hover:translate-y-0 group-hover:text-muted-foreground"
-                  : "text-muted-foreground/30 group-hover:opacity-40"
+                  : "text-muted-foreground group-hover:opacity-40"
               }`}
               style={at(240 + index * 80)}
             >
@@ -142,12 +142,12 @@ export function HandoffScene() {
             size={19}
           />
           <HugeiconsIcon
-            className="text-muted-foreground/40 transition-transform duration-500 group-hover:translate-x-1"
+            className="text-muted-foreground transition-transform duration-500 group-hover:translate-x-1"
             icon={ArrowRight02Icon}
             size={16}
             strokeWidth={2}
           />
-          <span className="lp-plate flex size-11 items-center justify-center rounded-xl text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+          <span className="lp-plate flex size-11 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             <HugeiconsIcon icon={UserCircleIcon} size={19} strokeWidth={1.75} />
           </span>
         </div>
@@ -183,10 +183,10 @@ export function CalendarScene() {
       <div className="lp-panel rounded-xl px-4 py-3.5">
         <div className="flex items-center gap-3">
           <Plate active className="size-8" icon={Calendar03Icon} />
-          <Mono className="truncate text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+          <Mono className="truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             esta semana
           </Mono>
-          <Mono className="ml-auto shrink-0 text-muted-foreground/40">10:30</Mono>
+          <Mono className="ml-auto shrink-0 text-muted-foreground">10:30</Mono>
         </div>
 
         <div className="mt-4 grid grid-cols-7 gap-1.5">
@@ -215,7 +215,7 @@ export function CalendarScene() {
 
       <div className="mt-3 flex justify-center">
         <Chip
-          className="translate-y-1 text-muted-foreground/40 opacity-60 transition-all duration-500 group-hover:translate-y-0 group-hover:text-muted-foreground group-hover:opacity-100"
+          className="translate-y-1 text-muted-foreground opacity-60 transition-all duration-500 group-hover:translate-y-0 group-hover:text-muted-foreground group-hover:opacity-100"
           icon={Tick02Icon}
           style={at(300)}
         >
@@ -246,10 +246,10 @@ export function LeadsScene() {
     <Scene>
       <Row>
         <Plate active className="size-8" icon={MetaIcon} />
-        <Mono className="min-w-0 flex-1 truncate text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+        <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
           Retargeting · carrito abandonado
         </Mono>
-        <Mono className="shrink-0 text-muted-foreground/40">form</Mono>
+        <Mono className="shrink-0 text-muted-foreground">form</Mono>
       </Row>
 
       <div className="mt-2.5 space-y-2">
@@ -270,7 +270,7 @@ export function LeadsScene() {
                 1er mensaje
               </Chip>
             ) : (
-              <Mono className="shrink-0 text-muted-foreground/40">{lead.when}</Mono>
+              <Mono className="shrink-0 text-muted-foreground">{lead.when}</Mono>
             )}
           </Row>
         ))}
@@ -294,10 +294,10 @@ export function PaymentsScene() {
     <Scene>
       <Row>
         <Plate active className="size-8" icon={Link01Icon} />
-        <Mono className="min-w-0 flex-1 truncate text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+        <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
           pago.mercadopago.com/…
         </Mono>
-        <Mono className="shrink-0 text-muted-foreground/40">enviado</Mono>
+        <Mono className="shrink-0 text-muted-foreground">enviado</Mono>
       </Row>
 
       <Row className="mt-2.5 transition-colors duration-500 group-hover:border-input">
@@ -307,7 +307,7 @@ export function PaymentsScene() {
           {/* Both statuses stacked in a fixed slot rather than swapped in flow,
               so the row does not change height mid-fade. */}
           <span className="relative mt-1 block h-3.5">
-            <Mono className="absolute inset-0 text-muted-foreground/40 transition-opacity duration-500 group-hover:opacity-0">
+            <Mono className="absolute inset-0 text-muted-foreground transition-opacity duration-500 group-hover:opacity-0">
               esperando el pago…
             </Mono>
             <Mono
@@ -420,7 +420,7 @@ export function ProspectScene() {
         {threads.map((thread, index) => (
           <Row key={thread.who} style={at(index * 90)}>
             <Plate active={index === 0} className="size-8" icon={Target01Icon} />
-            <Mono className="min-w-0 flex-1 truncate text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+            <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
               {thread.who}
             </Mono>
             {/* A fixed slot, so two chips of different lengths do not shuffle
@@ -459,8 +459,8 @@ export function ApiScene() {
       <div className="mx-auto w-full max-w-[30rem]">
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-center gap-2">
-            <Plate active className="size-12 rounded-xl" icon={PlugSocketIcon} size={21} />
-            <Mono className="text-muted-foreground/60">steve</Mono>
+            <Plate active className="size-12 rounded-xl" icon={Blockchain05Icon} size={21} />
+            <Mono className="text-muted-foreground">steve</Mono>
           </div>
 
           {/* The chip travels from the near end to `100% - its own width`, so
@@ -468,7 +468,7 @@ export function ApiScene() {
               of overshooting on a wide one. */}
           <div className="relative mx-4 h-px flex-1 bg-border">
             <Chip
-              className="absolute -top-4 left-0 text-muted-foreground/50 opacity-60 transition-all duration-500 group-hover:left-[calc(100%-5.5rem)] group-hover:text-muted-foreground group-hover:opacity-100"
+              className="absolute -top-4 left-0 text-muted-foreground opacity-60 transition-all duration-500 group-hover:left-[calc(100%-5.5rem)] group-hover:text-muted-foreground group-hover:opacity-100"
               style={at(80)}
             >
               GET /stock
@@ -476,10 +476,10 @@ export function ApiScene() {
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <span className="lp-plate flex size-12 items-center justify-center rounded-xl text-muted-foreground/70 transition-colors duration-500 group-hover:text-foreground">
+            <span className="lp-plate flex size-12 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
               <HugeiconsIcon icon={WebhookIcon} size={21} strokeWidth={1.75} />
             </span>
-            <Mono className="text-muted-foreground/60">tu API</Mono>
+            <Mono className="text-muted-foreground">tu API</Mono>
           </div>
         </div>
 

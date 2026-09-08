@@ -98,7 +98,7 @@ export function FeaturesDialog({
                   </span>
                 </span>
                 <HugeiconsIcon
-                  className="shrink-0 text-muted-foreground/60 transition-transform duration-200 group-hover:translate-x-0.5"
+                  className="shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5"
                   icon={ArrowRight02Icon}
                   size={15}
                   strokeWidth={2}

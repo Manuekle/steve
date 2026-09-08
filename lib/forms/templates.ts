@@ -16,13 +16,24 @@ import type { Form, FormStep } from "@/lib/types";
 
 export type FormTemplateId =
   | "lead_qualifier"
+  | "quote"
   | "feedback"
   | "event"
+  | "waitlist"
+  | "booking"
+  | "support"
   | "applications"
   | "blank";
 
 /** What the wizard asks in its second question, and what each answer starts. */
-export type FormPurpose = "leads" | "feedback" | "event" | "applications" | "other";
+export type FormPurpose =
+  | "leads"
+  | "booking"
+  | "support"
+  | "feedback"
+  | "event"
+  | "applications"
+  | "other";
 
 type TemplateBody = {
   readonly name: string;
@@ -510,6 +521,542 @@ const BLANK: Record<Locale, TemplateBody> = {
   },
 };
 
+
+/** Someone asking what a job would cost. The scored part is not politeness —
+ *  it is budget and timing, because those are what decide whether a quote is
+ *  worth writing this week. */
+const QUOTE: Record<Locale, TemplateBody> = {
+  es: {
+    name: "Pedido de presupuesto",
+    description: "Junta lo necesario para cotizar sin una ida y vuelta de cinco mensajes.",
+    thankYou: "Recibido. Te mandamos el presupuesto en menos de 48 horas.",
+    steps: [
+      {
+        id: "st-what",
+        title: "¿Qué necesitás?",
+        fields: [
+          {
+            id: "fd-service",
+            type: "single_choice",
+            label: "¿Qué querés cotizar?",
+            required: true,
+            choices: [
+              { id: "ch-service", emoji: "🛠", label: "Un servicio puntual", points: 8 },
+              { id: "ch-project", emoji: "📦", label: "Un proyecto completo", points: 14 },
+              { id: "ch-recurring", emoji: "🔁", label: "Algo mensual o recurrente", points: 18 },
+              { id: "ch-unsure", emoji: "🤔", label: "Todavía no sé bien", points: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-budget",
+        title: "¿Con qué presupuesto contás?",
+        description: "Un rango alcanza. Sirve para no cotizarte algo que no va.",
+        fields: [
+          {
+            id: "fd-budget",
+            type: "single_choice",
+            label: "Presupuesto aproximado",
+            required: true,
+            choices: [
+              { id: "ch-b-none", label: "Todavía no lo definí", points: 2 },
+              { id: "ch-b-low", label: "Ajustado", points: 5 },
+              { id: "ch-b-mid", label: "Estándar para el rubro", points: 12 },
+              { id: "ch-b-high", label: "Sin problema si vale la pena", points: 18 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-when",
+        title: "¿Para cuándo?",
+        fields: [
+          {
+            id: "fd-when",
+            type: "single_choice",
+            label: "¿Cuándo querés empezar?",
+            required: true,
+            choices: [
+              { id: "ch-w-now", emoji: "🔥", label: "Ya", points: 14 },
+              { id: "ch-w-month", label: "Este mes", points: 9 },
+              { id: "ch-w-later", label: "Más adelante", points: 3 },
+              { id: "ch-w-info", label: "Sólo estoy averiguando", points: 0 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-detail",
+        title: "Contanos un poco más",
+        fields: [
+          {
+            id: "fd-detail",
+            type: "long_text",
+            label: "¿Qué hay que hacer?",
+            help: "Cuanto más concreto, más preciso el presupuesto.",
+            required: false,
+            placeholder: "Ej: necesito rediseñar la tienda online y conectar los pagos.",
+          },
+        ],
+      },
+    ],
+  },
+  en: {
+    name: "Quote request",
+    description: "Collects what a quote needs without five rounds of messages.",
+    thankYou: "Got it. Your quote is on its way within 48 hours.",
+    steps: [
+      {
+        id: "st-what",
+        title: "What do you need?",
+        fields: [
+          {
+            id: "fd-service",
+            type: "single_choice",
+            label: "What should we quote?",
+            required: true,
+            choices: [
+              { id: "ch-service", emoji: "🛠", label: "A one-off service", points: 8 },
+              { id: "ch-project", emoji: "📦", label: "A full project", points: 14 },
+              { id: "ch-recurring", emoji: "🔁", label: "Something monthly or recurring", points: 18 },
+              { id: "ch-unsure", emoji: "🤔", label: "Not sure yet", points: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-budget",
+        title: "What budget are you working with?",
+        description: "A range is enough. It stops us quoting something that was never going to fit.",
+        fields: [
+          {
+            id: "fd-budget",
+            type: "single_choice",
+            label: "Rough budget",
+            required: true,
+            choices: [
+              { id: "ch-b-none", label: "Haven't set one yet", points: 2 },
+              { id: "ch-b-low", label: "Tight", points: 5 },
+              { id: "ch-b-mid", label: "Standard for this kind of work", points: 12 },
+              { id: "ch-b-high", label: "Not an issue if it's worth it", points: 18 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-when",
+        title: "By when?",
+        fields: [
+          {
+            id: "fd-when",
+            type: "single_choice",
+            label: "When would you start?",
+            required: true,
+            choices: [
+              { id: "ch-w-now", emoji: "🔥", label: "Right away", points: 14 },
+              { id: "ch-w-month", label: "This month", points: 9 },
+              { id: "ch-w-later", label: "Further out", points: 3 },
+              { id: "ch-w-info", label: "Just gathering information", points: 0 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-detail",
+        title: "Tell us a bit more",
+        fields: [
+          {
+            id: "fd-detail",
+            type: "long_text",
+            label: "What needs doing?",
+            help: "The more concrete this is, the closer the quote lands.",
+            required: false,
+            placeholder: "e.g. redesign the online store and wire up payments.",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+/** Booking a slot. The scoring is thin on purpose: nearly everyone filling
+ *  this in is already a customer, so the form's job is to collect a time, not
+ *  to rank anybody. */
+const BOOKING: Record<Locale, TemplateBody> = {
+  es: {
+    name: "Reserva de turno",
+    description: "Toma el turno, el servicio y la franja horaria antes de que llamen.",
+    thankYou: "Turno anotado. Te confirmamos por WhatsApp.",
+    steps: [
+      {
+        id: "st-service",
+        title: "¿Qué servicio querés?",
+        fields: [
+          {
+            id: "fd-service",
+            type: "single_choice",
+            label: "Servicio",
+            required: true,
+            choices: [
+              { id: "ch-s1", label: "Primer servicio", points: 8 },
+              { id: "ch-s2", label: "Segundo servicio", points: 8 },
+              { id: "ch-s3", label: "Otro — lo charlamos", points: 4 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-when",
+        title: "¿Cuándo te queda cómodo?",
+        fields: [
+          {
+            id: "fd-day",
+            type: "multi_choice",
+            label: "Días que te sirven",
+            help: "Elegí todos los que puedas: así encontramos turno antes.",
+            required: true,
+            choices: [
+              { id: "ch-mon", label: "Lunes", points: 2 },
+              { id: "ch-tue", label: "Martes", points: 2 },
+              { id: "ch-wed", label: "Miércoles", points: 2 },
+              { id: "ch-thu", label: "Jueves", points: 2 },
+              { id: "ch-fri", label: "Viernes", points: 2 },
+              { id: "ch-sat", label: "Sábado", points: 2 },
+            ],
+          },
+          {
+            id: "fd-time",
+            type: "single_choice",
+            label: "Franja horaria",
+            required: true,
+            choices: [
+              { id: "ch-morning", emoji: "🌅", label: "Mañana", points: 3 },
+              { id: "ch-afternoon", emoji: "🌤", label: "Tarde", points: 3 },
+              { id: "ch-evening", emoji: "🌙", label: "Después de las 18", points: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-notes",
+        title: "¿Algo que debamos saber?",
+        fields: [
+          {
+            id: "fd-notes",
+            type: "long_text",
+            label: "Comentarios",
+            required: false,
+            placeholder: "Opcional",
+          },
+        ],
+      },
+    ],
+  },
+  en: {
+    name: "Appointment booking",
+    description: "Takes the service and the times that work before anyone has to call.",
+    thankYou: "Booked. We'll confirm on WhatsApp.",
+    steps: [
+      {
+        id: "st-service",
+        title: "Which service?",
+        fields: [
+          {
+            id: "fd-service",
+            type: "single_choice",
+            label: "Service",
+            required: true,
+            choices: [
+              { id: "ch-s1", label: "First service", points: 8 },
+              { id: "ch-s2", label: "Second service", points: 8 },
+              { id: "ch-s3", label: "Something else — let's talk", points: 4 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-when",
+        title: "When suits you?",
+        fields: [
+          {
+            id: "fd-day",
+            type: "multi_choice",
+            label: "Days that work",
+            help: "Pick every one you can — it gets you a slot sooner.",
+            required: true,
+            choices: [
+              { id: "ch-mon", label: "Monday", points: 2 },
+              { id: "ch-tue", label: "Tuesday", points: 2 },
+              { id: "ch-wed", label: "Wednesday", points: 2 },
+              { id: "ch-thu", label: "Thursday", points: 2 },
+              { id: "ch-fri", label: "Friday", points: 2 },
+              { id: "ch-sat", label: "Saturday", points: 2 },
+            ],
+          },
+          {
+            id: "fd-time",
+            type: "single_choice",
+            label: "Time of day",
+            required: true,
+            choices: [
+              { id: "ch-morning", emoji: "🌅", label: "Morning", points: 3 },
+              { id: "ch-afternoon", emoji: "🌤", label: "Afternoon", points: 3 },
+              { id: "ch-evening", emoji: "🌙", label: "After 6pm", points: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-notes",
+        title: "Anything we should know?",
+        fields: [
+          {
+            id: "fd-notes",
+            type: "long_text",
+            label: "Notes",
+            required: false,
+            placeholder: "Optional",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+/** A complaint or a problem. Here the score is severity, not sales value: a
+ *  broken order that already got paid for is the one that should reach a human
+ *  first, which is exactly what a hot rating does — see `recordSubmission`. */
+const SUPPORT: Record<Locale, TemplateBody> = {
+  es: {
+    name: "Soporte y reclamos",
+    description: "Ordena los problemas por urgencia y manda los graves directo a una persona.",
+    thankYou: "Lo tenemos. Te respondemos por el mismo canal.",
+    steps: [
+      {
+        id: "st-topic",
+        title: "¿Qué pasó?",
+        fields: [
+          {
+            id: "fd-topic",
+            type: "single_choice",
+            label: "Tipo de problema",
+            required: true,
+            choices: [
+              { id: "ch-order", emoji: "📦", label: "Un pedido", points: 10 },
+              { id: "ch-payment", emoji: "💳", label: "Un pago o cobro", points: 16 },
+              { id: "ch-product", emoji: "🔧", label: "El producto o servicio falla", points: 14 },
+              { id: "ch-other", emoji: "❓", label: "Otra cosa", points: 5 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-urgency",
+        title: "¿Qué tan urgente es?",
+        fields: [
+          {
+            id: "fd-urgency",
+            type: "single_choice",
+            label: "Urgencia",
+            required: true,
+            choices: [
+              { id: "ch-blocked", emoji: "🚨", label: "Estoy sin poder usarlo", points: 18 },
+              { id: "ch-annoying", label: "Molesta pero puedo seguir", points: 8 },
+              { id: "ch-question", label: "Es más una consulta", points: 2 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-order",
+        title: "¿Tenés el número de pedido?",
+        // Sólo a quien dijo que el problema es un pedido o un pago: pedirle un
+        // número de orden a quien tiene una consulta general no ayuda a nadie.
+        showIf: { fieldId: "fd-topic", equals: ["ch-order", "ch-payment"] },
+        fields: [
+          {
+            id: "fd-order",
+            type: "text",
+            label: "Número de pedido",
+            required: false,
+            placeholder: "Ej: A-10432",
+          },
+        ],
+      },
+      {
+        id: "st-detail",
+        title: "Contanos qué pasó",
+        fields: [
+          {
+            id: "fd-detail",
+            type: "long_text",
+            label: "Descripción",
+            required: true,
+            placeholder: "Qué esperabas que pasara y qué pasó en su lugar.",
+          },
+        ],
+      },
+    ],
+  },
+  en: {
+    name: "Support and complaints",
+    description: "Sorts problems by urgency and sends the serious ones straight to a person.",
+    thankYou: "We have it. We'll reply on the same channel.",
+    steps: [
+      {
+        id: "st-topic",
+        title: "What happened?",
+        fields: [
+          {
+            id: "fd-topic",
+            type: "single_choice",
+            label: "Kind of problem",
+            required: true,
+            choices: [
+              { id: "ch-order", emoji: "📦", label: "An order", points: 10 },
+              { id: "ch-payment", emoji: "💳", label: "A payment or charge", points: 16 },
+              { id: "ch-product", emoji: "🔧", label: "The product or service is failing", points: 14 },
+              { id: "ch-other", emoji: "❓", label: "Something else", points: 5 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-urgency",
+        title: "How urgent is it?",
+        fields: [
+          {
+            id: "fd-urgency",
+            type: "single_choice",
+            label: "Urgency",
+            required: true,
+            choices: [
+              { id: "ch-blocked", emoji: "🚨", label: "I can't use it at all", points: 18 },
+              { id: "ch-annoying", label: "Annoying, but I can carry on", points: 8 },
+              { id: "ch-question", label: "More of a question", points: 2 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-order",
+        title: "Do you have the order number?",
+        showIf: { fieldId: "fd-topic", equals: ["ch-order", "ch-payment"] },
+        fields: [
+          {
+            id: "fd-order",
+            type: "text",
+            label: "Order number",
+            required: false,
+            placeholder: "e.g. A-10432",
+          },
+        ],
+      },
+      {
+        id: "st-detail",
+        title: "Tell us what happened",
+        fields: [
+          {
+            id: "fd-detail",
+            type: "long_text",
+            label: "Description",
+            required: true,
+            placeholder: "What you expected, and what happened instead.",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+/** Interest before there is anything to sell. Scored on how ready the person
+ *  is to pay, so the launch email has an order to go out in. */
+const WAITLIST: Record<Locale, TemplateBody> = {
+  es: {
+    name: "Lista de espera",
+    description: "Junta interesados antes del lanzamiento y los ordena por quién compra primero.",
+    thankYou: "Estás en la lista. Te avisamos apenas abramos.",
+    steps: [
+      {
+        id: "st-interest",
+        title: "¿Qué te interesa?",
+        fields: [
+          {
+            id: "fd-interest",
+            type: "single_choice",
+            label: "¿Qué te trajo hasta acá?",
+            required: true,
+            choices: [
+              { id: "ch-i-solve", emoji: "🎯", label: "Tengo justo este problema", points: 16 },
+              { id: "ch-i-compare", label: "Estoy comparando opciones", points: 10 },
+              { id: "ch-i-curious", emoji: "👀", label: "Curiosidad", points: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-ready",
+        title: "¿Cuándo lo usarías?",
+        fields: [
+          {
+            id: "fd-ready",
+            type: "single_choice",
+            label: "Si abriéramos mañana…",
+            required: true,
+            choices: [
+              { id: "ch-r-now", emoji: "🔥", label: "Lo compro ya", points: 18 },
+              { id: "ch-r-trial", label: "Lo pruebo primero", points: 10 },
+              { id: "ch-r-later", label: "Más adelante", points: 3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  en: {
+    name: "Waitlist",
+    description: "Collects interest before launch and ranks it by who buys first.",
+    thankYou: "You're on the list. We'll write the moment we open.",
+    steps: [
+      {
+        id: "st-interest",
+        title: "What brings you here?",
+        fields: [
+          {
+            id: "fd-interest",
+            type: "single_choice",
+            label: "What caught your attention?",
+            required: true,
+            choices: [
+              { id: "ch-i-solve", emoji: "🎯", label: "I have exactly this problem", points: 16 },
+              { id: "ch-i-compare", label: "Comparing options", points: 10 },
+              { id: "ch-i-curious", emoji: "👀", label: "Curiosity", points: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "st-ready",
+        title: "When would you use it?",
+        fields: [
+          {
+            id: "fd-ready",
+            type: "single_choice",
+            label: "If we opened tomorrow…",
+            required: true,
+            choices: [
+              { id: "ch-r-now", emoji: "🔥", label: "I'd buy straight away", points: 18 },
+              { id: "ch-r-trial", label: "I'd try it first", points: 10 },
+              { id: "ch-r-later", label: "Further down the line", points: 3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 export const FORM_TEMPLATES: readonly FormTemplate[] = [
   {
     id: "lead_qualifier",
@@ -522,6 +1069,38 @@ export const FORM_TEMPLATES: readonly FormTemplate[] = [
     // one lands warm — see the points above.
     scoring: { hot: 28, warm: 12 },
     body: LEAD_QUALIFIER,
+  },
+  {
+    id: "quote",
+    emoji: "💸",
+    // Same purpose as the qualifier, listed after it: a business that picked
+    // "captar clientes" is recommended the qualifier, and finds this one card
+    // below when what they actually want is a price request.
+    purpose: "leads",
+    titleKey: "forms.template.quote",
+    blurbKey: "forms.template.quoteBlurb",
+    scoring: { hot: 34, warm: 16 },
+    body: QUOTE,
+  },
+  {
+    id: "booking",
+    emoji: "📅",
+    purpose: "booking",
+    titleKey: "forms.template.booking",
+    blurbKey: "forms.template.bookingBlurb",
+    scoring: { hot: 18, warm: 10 },
+    body: BOOKING,
+  },
+  {
+    id: "support",
+    emoji: "🛟",
+    purpose: "support",
+    titleKey: "forms.template.support",
+    blurbKey: "forms.template.supportBlurb",
+    // Severity, not value: "can't use it at all" plus a payment problem lands
+    // hot, which is what puts it in front of a person.
+    scoring: { hot: 30, warm: 14 },
+    body: SUPPORT,
   },
   {
     id: "feedback",
@@ -541,6 +1120,15 @@ export const FORM_TEMPLATES: readonly FormTemplate[] = [
     blurbKey: "forms.template.eventBlurb",
     scoring: { hot: 15, warm: 8 },
     body: EVENT,
+  },
+  {
+    id: "waitlist",
+    emoji: "⏳",
+    purpose: "event",
+    titleKey: "forms.template.waitlist",
+    blurbKey: "forms.template.waitlistBlurb",
+    scoring: { hot: 30, warm: 14 },
+    body: WAITLIST,
   },
   {
     id: "applications",

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { createDocumentStore } from "./doc-store";
 import { getBlob, putBlob, removeBlob } from "./blob-store";
+import { blobPrefix } from "./business-scope";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { deleteFromDrive, downloadFromDrive, isDriveConfigured, uploadToDrive } from "./google-drive";
@@ -91,6 +92,8 @@ function normalize(parsed: Partial<MediaStore>): MediaStore {
 // blob is not something to keep in a document that is read whole.
 const mediaStore = createDocumentStore<MediaStore>({
   id: "media",
+  // Per business: the photos one business sends are not the other's. See lib/business-scope.ts.
+  scoped: true,
   file: STORE_FILE,
   empty: emptyStore,
   normalize,
@@ -219,7 +222,9 @@ export async function addAsset(input: {
   const extension = dot > 0 ? input.name.slice(dot).toLowerCase() : "";
   // The stored basename is derived from the id, never from the uploaded
   // name: an uploaded "../../.ssh/authorized_keys" must not escape BLOB_DIR.
-  const file = `${id}${extension.replace(/[^a-z0-9.]/g, "")}`;
+  // The business prefix keeps one business's bytes out of another's namespace;
+  // the metadata that names this file is already per business.
+  const file = `${await blobPrefix()}${id}${extension.replace(/[^a-z0-9.]/g, "")}`;
 
   // Connected Google account wins, same as Sheets and Calendar: try Drive
   // first, and only write to disk if it isn't connected or the upload fails

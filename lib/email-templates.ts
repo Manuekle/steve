@@ -117,6 +117,8 @@ type EmailTemplateStore = { custom: Record<string, CustomTemplate> };
 
 const templateStore = createDocumentStore<EmailTemplateStore>({
   id: "email-templates",
+  // Per business: a template is written in one business's voice. See lib/business-scope.ts.
+  scoped: true,
   file: join(CUSTOM_DIR, "custom-templates.json"),
   empty: () => ({ custom: {} }),
   normalize: (parsed) => ({ custom: parsed.custom ?? {} }),

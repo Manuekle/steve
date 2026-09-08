@@ -184,7 +184,7 @@ export function AdsScreen() {
       subtitle={t("ads.subtitle")}
       actions={
         <Select value={datePreset} onValueChange={setDatePreset}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger aria-label={t("common.filterByPeriod")} className="w-[160px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

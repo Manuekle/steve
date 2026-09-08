@@ -219,6 +219,29 @@ the UI is the intended way to rotate them.
 
 Changing any database value requires restarting the agent.
 
+## More than one business
+
+An installation can hold several businesses, switched from the top of the
+sidebar (and managed on **Cuenta**). Each one keeps its own contacts, chats,
+deals, agents, automations, forms, knowledge base, media library, email
+templates, payment records and setup answers. The account and its password, the
+model provider keys, the connected accounts and the plan are the
+installation's, shared by all of them.
+
+One business is active at a time, for the whole installation rather than per
+browser session: the Eve runtime answers WhatsApp in a process that has no
+session to read, and a per-session choice would leave the agent replying for
+one business while the owner looked at another. The same is true of anything
+that arrives from outside — Meta's webhooks, an automation's webhook URL, a
+payment provider's callback — all of it lands in whichever business is active.
+If two businesses each need their own inbound number answered at the same
+time, that is still two installations.
+
+The first business keeps every key and file path it had before this existed
+(`business`, `~/.steve/business.json`, …); a second gets `business::<id>` and
+`~/.steve/businesses/<id>/`. There is no migration step. See
+`lib/business-scope.ts`.
+
 ## Model selection
 
 The catalog is never hardcoded. `lib/provider-catalog.ts` fetches it live from
@@ -234,7 +257,7 @@ Server-side calls name a task, never a model:
 | -------------- | ----------------------------------- | ------------------------ |
 | `chat`         | web chat and messaging channels     | value tier, high volume  |
 | `automation`   | `/api/automations/assistant`        | writes a flow that runs unattended |
-| `agent_design` | `/api/agents/optimize`              | same, for an agent's prompt |
+| `agent_design` | `/api/agents/optimize`, `/api/agents/assistant` | designing an agent: the one-shot config, and the builder's interview |
 | `quick`        | titles, classification, extraction  | cheapest that works      |
 
 Picks at the Gateway's published prices (USD per million in/out):
@@ -377,6 +400,7 @@ continue to resume compatible parked sessions normally.
 - Database backup retention and off-host replication are operator responsibilities.
 - Docker sandbox CPU and memory quotas are not exposed by Eve's built-in Docker backend.
 - Basic auth is appropriate for a controlled reference deployment, not multi-tenant identity.
+- One business is active per installation, so inbound webhooks and channels always answer for that one.
 - Model provider availability, policy, retention, and cost remain external dependencies.
 
 ## Project layout

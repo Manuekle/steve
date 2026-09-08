@@ -7,10 +7,11 @@ export type ChannelId = "web" | "whatsapp" | "instagram";
 
 /**
  * Where a contact came from. A superset of the messaging channels: a lead can
- * also arrive through a form on the site, which is not somewhere you can reply
- * but is still an origin the inbox has to be able to draw.
+ * also arrive through a form on the site, or through a phone call the voice
+ * agent answered. Neither is somewhere you can reply, but both are origins the
+ * inbox has to be able to draw.
  */
-export type ContactChannel = ChannelId | "form";
+export type ContactChannel = ChannelId | "form" | "voice";
 
 export type ChannelStatus = "connected" | "disconnected" | "error";
 
@@ -188,6 +189,55 @@ export type FormResponse = {
   readonly updatedAt: string;
 };
 
+// ── Deals ──────────────────────────────────────────────────────────
+//
+// The money. Everything else in this app knows who a contact is, what channel
+// they came from and how warm a form said they were — and then stops. A deal
+// is the part where that becomes an amount somebody is trying to close.
+//
+// Deliberately separate from `ContactStatus`. That field is a conversation
+// state (`waiting_human` is how the agent escalates), and it belongs to the
+// inbox. A person can be `closed` in the inbox and still have an open deal, or
+// be mid-conversation with three of them. One contact, many deals.
+
+/** The stages, in order. `won` and `lost` are terminal. */
+export type DealStage =
+  | "lead"
+  | "qualified"
+  | "meeting"
+  | "proposal"
+  | "negotiation"
+  | "won"
+  | "lost";
+
+export type Deal = {
+  readonly id: string;
+  /** The person this is with. A deal without a contact is a note. */
+  readonly contactId: string;
+  readonly title: string;
+  /** In whole currency units — 1500.5 is 1500.50, not 150050 cents. Stored as
+   *  written because these are quotes an operator types, not settled ledger
+   *  amounts; the payments store is where exact money lives. */
+  readonly value: number;
+  /** ISO 4217. Per deal rather than per account: a business that quotes in two
+   *  currencies is normal, and one account-wide code would quietly mislabel
+   *  half its pipeline. Totals are reported per currency for the same reason. */
+  readonly currency: string;
+  readonly stage: DealStage;
+  /** When the operator expects to know either way. Drives the forecast. */
+  readonly expectedCloseAt?: string;
+  readonly notes?: string;
+  /** Free text, matching `Contact.source` — "form:presupuesto", "whatsapp". */
+  readonly source?: string;
+  /** Why it was lost. Only meaningful on a `lost` deal, and the one field
+   *  that turns a pile of losses into something you can act on. */
+  readonly lostReason?: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  /** Set when the deal first reached `won` or `lost`, cleared if it reopens. */
+  readonly closedAt?: string;
+};
+
 export type AutomationTrigger = "keyword" | "schedule" | "new_chat" | "no_reply" | "webhook";
 
 export type AutomationStatus = "active" | "paused" | "draft";
@@ -336,7 +386,16 @@ export type CalendarEvent = {
 };
 
 // Agent types
-export type AgentStatus = "active" | "inactive";
+/**
+ * `draft` is where an agent starts now: created from the list, opened in the
+ * builder, and not yet answering anybody. Without it the only way to make a
+ * new agent was a form that had to be complete before it existed at all —
+ * and the builder needs something to save into from the first keystroke.
+ *
+ * Only `active` answers a channel; `draft` and `inactive` are both "off", and
+ * are kept apart so the list can say "never turned on" instead of "paused".
+ */
+export type AgentStatus = "active" | "inactive" | "draft";
 
 /**
  * The voice half of an agent.
@@ -362,6 +421,22 @@ export type AgentVoice = {
   readonly syncedAt?: string;
   /** ElevenLabs phone number id routed to this agent, if any. */
   readonly phoneNumberId?: string;
+  /**
+   * The mirror's webhook tools, by tool name to ElevenLabs tool id.
+   *
+   * Kept per agent rather than per account because the tool URL carries the
+   * agent id: that is what tells the endpoint which local agent is calling,
+   * and therefore which capabilities it is allowed to use. Stored so a re-sync
+   * updates the same tools instead of leaving a trail of orphans on the
+   * ElevenLabs account. See lib/voice-tools.ts.
+   */
+  readonly toolIds?: Readonly<Record<string, string>>;
+  /**
+   * Why the last sync attached no tools, when it attached none. The mirror is
+   * still created and can still hold a conversation — it just cannot book,
+   * remind or save anything, which is invisible until someone tries.
+   */
+  readonly toolsWarning?: string;
 };
 
 /** One turn in a saved call transcript, mirroring the shape ElevenLabs sends
@@ -496,6 +571,49 @@ export type ChannelConversation = {
   readonly prospect?: ProspectAssessment;
 };
 
+/**
+ * The structured half of an agent, filled in by the builder.
+ *
+ * `systemPrompt` stays the artifact the runtime reads — persona.ts injects it
+ * verbatim and the ElevenLabs mirror is synced from it — but a free-text box
+ * is a terrible thing to hand somebody who has never written a prompt. The
+ * brief is what they actually answer: who the agent is, what it is for, how it
+ * should sound, what it must never do, when to fetch a human. Composing that
+ * into the prompt (lib/agent-brief.ts) is this app's job, not theirs.
+ *
+ * Nothing here repeats the business itself — name, hours, prices and policies
+ * reach every conversation through agent/instructions/business-profile.ts and
+ * search_knowledge. Restating them in each agent's prompt would be a second
+ * copy that goes stale the day the first one is edited.
+ */
+export type AgentBrief = {
+  /** One line: the job. "Recepcionista de la clínica". */
+  readonly role: string;
+  /** What a good conversation ends with — the outcome the owner wants. */
+  readonly goal: string;
+  /** Who is on the other side. */
+  readonly audience: string;
+  /** How it should sound, in the owner's words. */
+  readonly tone: string;
+  /** ISO 639-1, or "auto" to mirror whatever the customer writes in. */
+  readonly language: string;
+  /** What it opens with, when the channel gives it the first word. */
+  readonly greeting: string;
+  /** Standing rules — the things it should always do. */
+  readonly rules: readonly string[];
+  /** Hard limits — the things it must never do or promise. */
+  readonly avoid: readonly string[];
+  /** When to stop and fetch a person. */
+  readonly handoff: string;
+  /**
+   * Set once someone edits the composed prompt by hand. From then on the
+   * brief stops overwriting it: an owner who rewrote a paragraph should not
+   * lose it because they later changed the tone field.
+   */
+  readonly promptCustomized?: boolean;
+  readonly updatedAt?: string;
+};
+
 export type Agent = {
   readonly id: string;
   readonly name: string;
@@ -504,6 +622,9 @@ export type Agent = {
   readonly tools: string[];
   readonly createdAt: string;
   readonly status: AgentStatus;
+  /** Absent on agents made before the builder existed, and on any hired
+   *  straight from a template — their prompt is the whole definition. */
+  readonly brief?: AgentBrief;
   /** Model id this agent runs on. Absent means "whatever the app picks for
    *  the task", which is the right default for most agents. */
   readonly model?: string | null;
@@ -512,7 +633,16 @@ export type Agent = {
 };
 
 // Reminder types
-export type ReminderStatus = "pending" | "sent" | "cancelled";
+/**
+ * `failed` is what a reminder that came due and could not be delivered gets.
+ *
+ * It used to get `sent`, whatever happened: a contact on a channel with no
+ * outbound transport (a form lead, a phone caller), a WhatsApp number outside
+ * the 24h window with no approved template, a token Meta refused — all three
+ * came out the other side marked delivered, with a green badge, and nobody
+ * ever knew the person had not been reminded. See agent/schedules/reminders.ts.
+ */
+export type ReminderStatus = "pending" | "sent" | "failed" | "cancelled";
 
 export type Reminder = {
   readonly id: string;

@@ -113,10 +113,7 @@ export function TutorialVideoDialog({
           <TutorialPlayer id={id} />
         </div>
 
-        <div className="flex items-center justify-between gap-4 px-6 py-4">
-          <p className="max-w-[60ch] text-xs leading-relaxed text-muted-foreground">
-            {t("settings.tutorial.footnote")}
-          </p>
+        <div className="flex items-center justify-end gap-4 px-6 py-4">
           <DialogClose asChild>
             <Button size="sm" variant="secondary">
               {t("settings.tutorial.close")}
@@ -156,9 +153,9 @@ export function TutorialTrigger({
             aria-label={label}
             onClick={() => setOpen(true)}
             className={cn(
-              "grid size-8 shrink-0 place-items-center rounded-[11px] text-muted-foreground/60",
+              "grid size-8 shrink-0 place-items-center rounded-[11px] text-muted-foreground",
               "transition-colors duration-150 hover:bg-muted hover:text-foreground",
-              "focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-hidden",
+              "focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
               className,
             )}
           >

@@ -6,7 +6,6 @@ import {
   Delete02Icon,
   DownloadCircle01Icon,
   LegalDocument01Icon,
-  Loading03Icon,
   SecurityCheckIcon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import { useConfirmDialog } from "@/components/confirm-dialog";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import type { BusinessIdentity, LegalPage, LegalPageKind } from "@/lib/business-profile-store";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Terms and privacy, the two pages every business is asked for and nobody has
@@ -221,7 +221,7 @@ function LegalPageEditor({
           onClick={() => void importFromUrl()}
         >
           {busy === "import" ? (
-            <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={2} className="animate-spin" />
+            <Spinner size={14} strokeWidth={2} />
           ) : (
             <HugeiconsIcon icon={DownloadCircle01Icon} size={14} strokeWidth={1.75} />
           )}
@@ -251,7 +251,7 @@ function LegalPageEditor({
           onClick={() => void save()}
         >
           {busy === "save" ? (
-            <HugeiconsIcon icon={Loading03Icon} size={14} strokeWidth={2} className="animate-spin" />
+            <Spinner size={14} strokeWidth={2} />
           ) : null}
           {t("common.save")}
         </Button>

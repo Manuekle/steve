@@ -121,6 +121,7 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
       "connections.google.unlockCalendar",
       "connections.google.unlockDrive",
       "connections.google.unlockGmail",
+      "connections.google.unlockSearchConsole",
     ],
     appDocsUrl: "https://console.cloud.google.com/apis/credentials",
     apiHosts: ["googleapis.com"],
@@ -135,6 +136,11 @@ export const OAUTH_CONNECTIONS: readonly OAuthConnection[] = [
         "https://www.googleapis.com/auth/drive.file",
         "https://www.googleapis.com/auth/drive.readonly",
         "https://www.googleapis.com/auth/gmail.send",
+        // Read-only Search Console, for the SEO panel. Adding a scope does not
+        // retro-fit an existing grant: an account connected before this line
+        // keeps its narrower token until it reconnects, which is why
+        // lib/search-console.ts checks the stored scopes before it calls.
+        "https://www.googleapis.com/auth/webmasters.readonly",
       ],
       scopeSeparator: " ",
       // Without `access_type=offline` Google returns no refresh token, and

@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { CheckIcon, Loading03Icon } from "@hugeicons/core-free-icons";
+import { CheckIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useCallback, useState, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { formatUSD, monthlyEquivalent, priceFor, type BillingPeriod } from "@/li
 import { ENTITY } from "@/app/landing/_components/legal-page";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
 import { useT } from "@/lib/i18n/provider";
+import { Spinner } from "@/components/ui/spinner";
 
 /* Precios en USD: Pro $79/mes o $790/año (100K AI Credits/mes), Managed
    $249/mes o $2490/año (500K AI Credits/mes) — el pago anual sale el
@@ -138,7 +139,7 @@ function PlanPrice({
     return (
       <div className="mt-6 rounded-xl border border-dashed border-muted-foreground/40 px-4 py-3">
         <p className="font-medium text-sm text-muted-foreground">{t("pricing.priceTbd")}</p>
-        <p className="mt-0.5 text-[12px] text-muted-foreground/70">{t("pricing.priceTbdHint")}</p>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">{t("pricing.priceTbdHint")}</p>
       </div>
     );
   }
@@ -168,7 +169,7 @@ function PlanPrice({
       </p>
       <p className="mt-1 text-[13px] text-muted-foreground">{t(billed.periodKey)}</p>
       {perMonth !== null ? (
-        <p className="mt-1 text-[12px] text-muted-foreground/70">
+        <p className="mt-1 text-[12px] text-muted-foreground">
           {t("pricing.annualNote", { amount: formatUSD(perMonth) })}
         </p>
       ) : null}
@@ -345,7 +346,7 @@ function ContactSalesDialog() {
 
             <Button type="submit" className="w-full" disabled={status === "submitting"}>
               {status === "submitting" ? (
-                <HugeiconsIcon icon={Loading03Icon} size={15} strokeWidth={2} className="animate-spin" />
+                <Spinner size={15} strokeWidth={2} />
               ) : null}
               {status === "submitting"
                 ? t("pricing.contactModal.form.submitting")

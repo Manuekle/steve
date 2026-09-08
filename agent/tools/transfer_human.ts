@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { upsertChat, upsertContact } from "../../lib/business-store";
+import { toMessagingChannel } from "../../lib/contact-channel";
 import { assertToolAllowed } from "../../lib/agent-scope";
 
 export default defineTool({
@@ -26,7 +27,7 @@ export default defineTool({
       lastMessage,
       source: "handoff",
     });
-    const channel = contact.channel === "form" ? "web" : contact.channel;
+    const channel = toMessagingChannel(contact.channel);
     await upsertChat({
       title: contact.name,
       channel,
