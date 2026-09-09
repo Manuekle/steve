@@ -4,7 +4,7 @@
 // Two locales: es (default) and en.
 // Registry files export translation keys — the catalog resolves them at render.
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export type CatalogLocale = "es" | "en";
 
@@ -977,20 +977,23 @@ const CatalogI18nContext = createContext<CatalogI18nContextValue | undefined>(un
 const CATALOG_LOCALE_KEY = "senka-catalog-locale";
 
 function getInitialLocale(): CatalogLocale {
-  if (typeof window === "undefined") return "es";
-  try {
-    const stored = localStorage.getItem(CATALOG_LOCALE_KEY);
-    if (stored === "es" || stored === "en") {
-      currentLocale = stored;
-      return stored;
-    }
-  } catch {}
-  currentLocale = "es";
   return "es";
 }
 
 export function CatalogI18nProvider({ children }: { readonly children: ReactNode }) {
   const [locale, setLocaleState] = useState<CatalogLocale>(getInitialLocale);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(CATALOG_LOCALE_KEY);
+      if (stored === "en" || stored === "es") {
+        if (stored !== "es") {
+          currentLocale = stored;
+          setLocaleState(stored);
+        }
+      }
+    } catch {}
+  }, []);
 
   // `currentLocale` is kept in step by `getInitialLocale` and by `setLocale`
   // below, not by an assignment in the render body: a render React throws

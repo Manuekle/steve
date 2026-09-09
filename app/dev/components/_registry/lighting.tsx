@@ -80,14 +80,15 @@ export function lighting(_locale?: string): Section {
             title: ct("lighting.lightBar.demo.title"),
             desc: ct("lighting.lightBar.demo.desc"),
             code: `<div className="relative">
-  <LightBar className="-top-2 inset-x-[18%]" drop="14rem" />
+  <LightBar className="inset-x-[14%] top-0 z-10" drop="14rem" gap="0px" intensity={0.9} />
   <div className="lp-cap p-6">…</div>
 </div>`,
             surface: "page",
             render: (
               <Stage className="p-10">
                 <div className="relative mx-auto max-w-[22rem]">
-                  <LightBar className="-top-2.5 inset-x-[18%]" drop="14rem" />
+                  <LightBar className="inset-x-[14%] top-0 z-10" drop="14rem" gap="0px"
+                    intensity={0.9} />
                   <div className="lp-cap flex-col p-6">
                     <p className="font-medium text-sm">Fig 0.1</p>
                     <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">

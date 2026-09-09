@@ -242,9 +242,7 @@ function CapabilityCard({
   const wide = Boolean(span);
 
   return (
-    <div
-      className={`lp-cap group h-full flex-col ${wide ? "lg:flex-row lg:items-stretch" : ""}`}
-    >
+    <div className={`lp-line group h-full flex-col ${wide ? "lg:flex-row lg:items-stretch" : ""}`}>
       {/* Copy first in the DOM, and first on the page. A wide card reads left
           to right — the sentence, then the picture of it — and a narrow one
           reads top to bottom for the same reason. Stacking a wide card the way
@@ -257,9 +255,12 @@ function CapabilityCard({
         // different heights, which is the first thing the eye picks up and the
         // last thing anyone can explain. Every heading in the grid starts on
         // the same line; the scene is what centres.
-        className={`relative z-20 flex-none px-7 pt-7 pb-3 ${
-          wide ? "lg:w-[38%] lg:pr-2 lg:pb-7" : ""
-        }`}
+        //
+        // No horizontal inset any more. The card's edge is a drawn rule now
+        // rather than a border around a surface, and type inset from a rule
+        // reads as a hanging indent — the heading has to start where the line
+        // starts. The gap between columns is the grid's, not the card's.
+        className={`relative z-20 flex-none pt-6 pb-3 ${wide ? "lg:w-[38%] lg:pr-6 lg:pb-7" : ""}`}
       >
         <h3 className="font-medium text-[15px] tracking-tight text-foreground">{title}</h3>
         <p className="mt-2.5 max-w-[42ch] text-[14px] leading-relaxed text-muted-foreground">
@@ -275,9 +276,7 @@ function CapabilityCard({
         {scene}
       </div>
 
-      {href ? (
-        <Link aria-label={title} className="lp-focus absolute inset-0 z-30 rounded-2xl" href={href} />
-      ) : null}
+      {href ? <Link aria-label={title} className="lp-focus absolute inset-0 z-30" href={href} /> : null}
     </div>
   );
 }
@@ -309,7 +308,7 @@ export function CapabilitiesSection() {
 
             Below `lg` this is untouched: no spans, no shuffle, no fixed rows. */}
         <div
-          className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:[grid-template-rows:repeat(3,minmax(0,1fr))]"
+          className="mt-14 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 lg:[grid-template-rows:repeat(3,minmax(0,1fr))]"
           onBlurCapture={() => setHeld(false)}
           onFocusCapture={() => setHeld(true)}
           onMouseEnter={() => setHeld(true)}

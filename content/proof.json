@@ -1,0 +1,58 @@
+{
+  "$comment": [
+    "The proof section on the landing page — the rail of clients, the globe they sit on,",
+    "and the quote that rotates beside it.",
+    "",
+    "Both lists start empty on purpose: an empty list renders a placeholder that says so,",
+    "and nothing invented ships in the meantime. Fill them in and the placeholders go away.",
+    "",
+    "clients[]      id     a short slug, unique. Letters, digits and dashes.",
+    "               name   the wordmark on the rail, and the label on the globe.",
+    "               lat    latitude, -90 to 90 (north is positive).",
+    "               lng    longitude, -180 to 180 (east is positive).",
+    "                      e.g. Buenos Aires is lat -34.6, lng -58.4.",
+    "               logo   optional. A path under public/, e.g. \"/logos/casa-lima.svg\".",
+    "                      Without one the rail sets the name as a wordmark, which is the",
+    "                      right answer for a client who has no mark worth reproducing.",
+    "",
+    "               The rail repeats a short list until it is wider than the screen, so",
+    "                      three clients loop without a gap. Six or more stop repeating.",
+    "",
+    "testimonials[] quote  what they said, in the language they said it in — a real quote",
+    "                      is published in its own words, so this is not translated.",
+    "               role   the business and what they do: «Tienda de indumentaria · 2 locales».",
+    "               name   optional. Leave it out for a customer who agreed to be quoted but",
+    "                      not named — the role stands as the attribution on its own.",
+    "               avatar optional. A path under public/, e.g. \"/people/lucia.jpg\".",
+    "                      Without one the card sets initials on the same plate the app uses",
+    "                      for a contact with no photo.",
+    "",
+    "               One quote is on screen at a time and they rotate. Two is enough for that",
+    "                      to be a rotation; below that the card just holds the one it has."
+  ],
+  "clients": [
+    {
+      "id": "casa-lima",
+      "name": "Casa Lima",
+      "lat": -34.6037,
+      "lng": -58.3816
+    },
+    {
+      "id": "norte-textil",
+      "name": "Norte Textil",
+      "lat": -31.4201,
+      "lng": -64.1888
+    }
+  ],
+  "testimonials": [
+    {
+      "quote": "Pasamos de responder en horas a responder en minutos. El bot resuelve lo repetitivo y nosotros cerramos la venta.",
+      "role": "Casa Lima · Retail · 3 locales",
+      "name": "Lucía Fernández"
+    },
+    {
+      "quote": "Centralizamos WhatsApp e Instagram en un solo lugar. Con la base de conocimiento el agente contesta solo lo que sabe.",
+      "role": "Norte Textil · E-commerce · Córdoba"
+    }
+  ]
+}

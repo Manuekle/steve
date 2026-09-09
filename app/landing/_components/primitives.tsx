@@ -135,7 +135,7 @@ export function SectionIntro({
         <TextReveal
           as="h2"
           blur={6}
-          className="mt-4 text-balance font-heading font-semibold font-cooper text-[clamp(2.25rem,5vw,3.5rem)] text-foreground leading-[1.02] tracking-[-0.03em]"
+          className="mt-4 text-balance font-heading font-semibold font-cooper text-[clamp(2.25rem,5vw,3.5rem)] text-foreground leading-[1.25] tracking-[-0.03em] overflow-visible pb-[0.12em]"
           stagger={0.045}
           text={title as string[]}
           whileInView
@@ -143,7 +143,7 @@ export function SectionIntro({
         />
       </Reveal>
       <Reveal delay={70} className="flex flex-col justify-end">
-        <p className="max-w-[46ch] text-[17px] leading-relaxed text-muted-foreground">{body}</p>
+        <p className="max-w-[46ch] text-[17px] leading-relaxed tracking-[-0.03em] text-muted-foreground text-wrap-balance">{body}</p>
         {cta ? (
           <a
             href={cta.href}

@@ -12,6 +12,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 
 // Lenis' own expo-out curve — the canonical smooth-scroll easing. Kept as a
@@ -92,17 +93,20 @@ function resolveTop(
   return el.offsetTop + offset;
 }
 
-/** Pushes Lenis' live scroll state into the shared motion values. */
+/** Pushes Lenis' live scroll state into the shared motion values, and the
+ *  instance itself up to the provider. */
 function LenisBridge({
   scrollY,
   progress,
   velocity,
   lenisRef,
+  onInstance,
 }: {
   scrollY: MotionValue<number>;
   progress: MotionValue<number>;
   velocity: MotionValue<number>;
   lenisRef: { current: Lenis | null };
+  onInstance: (instance: Lenis | null) => void;
 }) {
   const lenis = useLenis((instance) => {
     scrollY.set(instance.scroll);
@@ -111,10 +115,12 @@ function LenisBridge({
   });
   useEffect(() => {
     lenisRef.current = lenis ?? null;
+    onInstance(lenis ?? null);
     return () => {
       lenisRef.current = null;
+      onInstance(null);
     };
-  }, [lenis, lenisRef]);
+  }, [lenis, lenisRef, onInstance]);
   return null;
 }
 
@@ -193,9 +199,25 @@ export function SmoothScroll({
   // disabled and lets LenisBridge feed the values instead.
   useNativeScrollSync(!!reduce, nativeSource, scrollY, progress, velocity);
 
+  /**
+   * The instance is state, not `lenisRef.current` read inside the memo.
+   *
+   * It was the ref, and the consequence was that `api.lenis` was `null` for
+   * every consumer, always: the memo runs on the first render, when the ref is
+   * still empty, and `lenisRef` filling in later is not something a memo can
+   * see. The type says "Lenis instance, or null on the reduced-motion path",
+   * and there was no path on which it was anything but null — so the marketing
+   * header's `lenis.stop()` was a no-op and its mobile menu could not lock the
+   * page.
+   *
+   * The ref stays: `scrollTo` reads it during a callback, where the current
+   * value is what is wanted and a re-render is not.
+   */
+  const [lenis, setLenis] = useState<Lenis | null>(null);
+
   const api = useMemo<SmoothScrollApi>(
-    () => ({ lenis: lenisRef.current, scrollY, progress, velocity, scrollTo }),
-    [scrollY, progress, velocity, scrollTo],
+    () => ({ lenis, scrollY, progress, velocity, scrollTo }),
+    [lenis, scrollY, progress, velocity, scrollTo],
   );
 
   if (reduce) {
@@ -229,6 +251,7 @@ export function SmoothScroll({
           progress={progress}
           velocity={velocity}
           lenisRef={lenisRef}
+          onInstance={setLenis}
         />
         {children}
       </ReactLenis>

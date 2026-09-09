@@ -201,5 +201,5 @@ Write-Host "  2. Start the app:" -ForegroundColor White
 Write-Host "     cd $installDir && pnpm dev" -ForegroundColor White
 Write-Host ""
 Write-Host "  3. Open in browser:" -ForegroundColor White
-Write-Host "     http://localhost:3001" -ForegroundColor Green
+Write-Host "     http://localhost:3000" -ForegroundColor Green
 Write-Host ""

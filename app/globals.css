@@ -2,28 +2,88 @@
 @source "../node_modules/streamdown/dist/*.js";
 
 /* ── Self-hosted fonts ────────────────────────────────────────────── */
+/* Split latin / latin-ext with `unicode-range`, the way Google Fonts ships
+   its own files. The full variable faces are 344 KB (Inter) and 364 KB
+   (Saans, which was still a raw .ttf) — three quarters of that is Cyrillic,
+   Greek, IPA and symbol coverage that two locales, `es` and `en`, never ask
+   for. The browser downloads a `unicode-range` face only when the page
+   actually contains a glyph inside its range, so the latin file is the only
+   one a Spanish or English page fetches, and the extended one still exists
+   for the accented names that arrive through the CRM.
+
+   The originals stay in `public/fonts` unreferenced: they are the masters
+   these subsets are cut from, and `scripts/build-font-subsets.sh` recuts
+   them. */
+
+/* latin — the only face a Spanish or English page loads. */
 @font-face {
   font-family: "Inter";
-  src: url("/fonts/inter/InterVariable.woff2") format("woff2-variations");
+  src: url("/fonts/inter/InterVariable-latin.woff2") format("woff2-variations");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2190-2193,
+    U+2212, U+2215, U+FEFF, U+FFFD, U+2264-2265, U+00D7, U+00F7, U+2713-2714,
+    U+2717, U+25CF, U+25A0, U+221E, U+2605-2606;
+}
+
+/* latin-ext — fetched only if a page contains one of these glyphs. */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/InterVariable-latinext.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 @font-face {
   font-family: "Inter";
-  src: url("/fonts/inter/InterVariable-Italic.woff2") format("woff2-variations");
+  src: url("/fonts/inter/InterVariable-Italic-latin.woff2") format("woff2-variations");
   font-weight: 100 900;
   font-style: italic;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2190-2193,
+    U+2212, U+2215, U+FEFF, U+FFFD, U+2264-2265, U+00D7, U+00F7, U+2713-2714,
+    U+2717, U+25CF, U+25A0, U+221E, U+2605-2606;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/InterVariable-Italic-latinext.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 @font-face {
   font-family: "Saans";
-  src: url("/fonts/saans/SaansVF.ttf") format("truetype-variations");
+  src: url("/fonts/saans/SaansVF-latin.woff2") format("woff2-variations");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2190-2193,
+    U+2212, U+2215, U+FEFF, U+FFFD, U+2264-2265, U+00D7, U+00F7, U+2713-2714,
+    U+2717, U+25CF, U+25A0, U+221E, U+2605-2606;
+}
+
+@font-face {
+  font-family: "Saans";
+  src: url("/fonts/saans/SaansVF-latinext.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 @theme inline {
@@ -1892,9 +1952,22 @@ textarea {
   --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ── Sliding panel ───────────────────────────────────────────────────
+   Side docks travel on X, dropdowns on Y; one class covers both so the open
+   and close halves always share a timing.
+
+   ── Do not put a `backdrop-filter` on this element ───────────────────
+   It transitions `filter`, and an element with a `filter` becomes a backdrop
+   root: its own `backdrop-filter` then samples an empty backdrop and blurs
+   nothing. Both mobile menus in this app had `backdrop-blur` on the panel
+   itself and neither one has ever frosted anything — what they had was a 95%
+   background you could read the page through, which on a menu is not a design
+   choice, it is the page showing through the menu.
+
+   The fix at both call sites is an opaque panel. If a frost is ever actually
+   wanted here, it goes on a child layer, which is the same split
+   `.lp-header-blur` and `.lp-veil` already use and for the same reason. */
 .t-panel-slide {
-  /* Side docks travel on X, dropdowns on Y; one class covers both so the
-     open and close halves always share a timing. */
   transform: translate(var(--panel-translate-x, 0px), var(--panel-translate-y));
   opacity: 0;
   filter: blur(var(--panel-blur));
@@ -1903,13 +1976,20 @@ textarea {
     transform var(--panel-close-dur) var(--panel-ease),
     opacity   var(--panel-close-dur) var(--panel-ease),
     filter    var(--panel-close-dur) var(--panel-ease);
-  will-change: transform, opacity, filter;
 }
 .t-panel-slide[data-open="true"] {
   transform: translate(0, 0);
   opacity: 1;
   filter: blur(0);
   pointer-events: auto;
+  /* Only while open. It used to sit on the base rule, so every panel in the
+     app held a compositor layer for the whole life of the page to pay for a
+     transition that runs twice a session — and the marketing header's is a
+     full-width 460px sheet mounted on every page. Asking for the layer on the
+     open state still covers the close, because the property is read when the
+     transition starts and the element only leaves this state by starting
+     one. */
+  will-change: transform, opacity, filter;
   transition:
     transform var(--panel-open-dur) var(--panel-ease),
     opacity   var(--panel-open-dur) var(--panel-ease),
@@ -1918,6 +1998,21 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .t-panel-slide { transition: none !important; }
+}
+
+/* The page holds still behind an open mobile menu. Without it the sheet stays
+   pinned to the header while the whole document slides under it, which reads
+   as the menu having come detached — and with Lenis driving the scroll it
+   keeps its momentum after the menu closes. `overflow: hidden` on the root is
+   what Lenis' own `.lenis-stopped` does; this is that, tied to the menu rather
+   than to Lenis, so it works on the reduced-motion path where there is no
+   Lenis instance at all.
+
+   Mobile-only in practice: both menus are `lg:hidden`, so this never runs on a
+   viewport wide enough to have a scrollbar whose removal would shift the
+   layout. */
+html[data-menu-open] {
+  overflow: hidden;
 }
 
 /* ── Automation flow canvas ──────────────────────────────────────── */
@@ -2413,14 +2508,14 @@ html:has(.lp) body {
 
 @font-face {
   font-family: "Cooper";
-  src: url("/fonts/cooper/CooperLtBT_400-s.p.0ayak-z9t8l45.woff2") format("woff2");
+  src: url("/fonts/cooper/CooperLtBT_400-latin.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Cooper";
-  src: url("/fonts/cooper/CooperLtBT_500-s.p.268aeup1v2w88.woff2") format("woff2");
+  src: url("/fonts/cooper/CooperLtBT_500-latin.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -3215,6 +3310,67 @@ html.lenis body {
   pointer-events: none;
 }
 
+/* The other card: a rule and what sits under it.
+
+   `.lp-cap` is the app's KPI tile, and it earns its four layers where it holds
+   something the eye has to be led into — a number, a screenshot, a scene that
+   resolves under the cursor. Three sections were using it to hold a sentence,
+   and a filled box around a sentence is packaging: six hundred pixels of
+   surface, radius and sheen doing the work one hairline does.
+
+   So the same card with the box taken off. It keeps what a card is structurally
+   — a stacking context, a crop for the scenes that deliberately run past their
+   edge — and drops what a card looks like. `border-top` is the whole of the
+   chrome; the type below it sits straight on the page.
+
+   No `flex-direction` here, and no padding, for the reason `.lp-cap` gives:
+   this file is outside `@layer`, so it beats Tailwind's utilities whatever the
+   order. Direction and inset are the caller's, and here they matter more than
+   usual — a linear card's copy has to line up with the rail the heading sits
+   on, which means the leftmost one in a row carries no left inset at all. */
+.lp-line {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  text-decoration: none;
+}
+
+/* Hover draws the rule in. The line is the card now, so the line is also the
+   whole of the answer to a pointer: no lift, no shadow, no surface changing
+   colour under the text. It sits on top of the border rather than replacing it
+   — the border stays put and this paints over it — so nothing reflows by a
+   pixel when it arrives.
+
+   `z-index: 40` is `.lp-cap::after`'s: same reasoning, that this is the card's
+   own edge and nothing the card contains paints over it. */
+.lp-line::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  height: 1px;
+  width: 0;
+  background: var(--foreground);
+  transition: width 520ms var(--lp-ease);
+  pointer-events: none;
+}
+.lp-line:hover::before {
+  width: 100%;
+}
+
+/* A linear card that is only there to be read — the counterpart of
+   `.lp-cap-still`. */
+.lp-line-still:hover::before {
+  width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-line::before { transition: none; }
+}
+
 /* The stage. Scenes deliberately overflow it — a panel that runs off the edge
    is what stops a drawing reading as an icon centred in a box — and the card's
    `overflow: hidden` is what crops them. */
@@ -3248,29 +3404,126 @@ html.lenis body {
    material rather than each inventing its own. All three derive from the app's
    tokens; none of them names a colour. */
 
-/* A raised plate — the thing an icon sits on. The app's own inset bevel plus a
-   drop, which is what separates it from the panel behind it.
+/* The scene material is glass, not painted surface.
 
-   The drop was 10px at 12% and it read as a smudge under every icon in the
-   section — twelve plates each casting a soft grey blob is what made the grid
-   look muddy rather than crisp. Tightened to the weight the app's own plates
-   carry: a 1px seat, not a shadow. */
-.lp-plate {
-  background: var(--muted);
-  box-shadow:
-    var(--shadow-inset),
-    0 1px 2px oklch(0 0 0 / 0.06);
+   It used to be the app's own furniture scaled down: `--muted` plates with the
+   inset bevel and a drop, `--card` panels with a double edge. That is the
+   right material for the product's chrome, where a panel has to be legible
+   against whatever a page puts behind it. On the landing it made every scene
+   read as a screenshot of a light UI dimmed down — twelve grey rectangles
+   floating on a black page, each one a shade the page does not otherwise use.
+
+   What replaced it is what the section actually looked like in the reference:
+   near-black glass, a hairline you have to look for, one specular edge along
+   the top where the light lands, and nothing else. The fill is a fraction of a
+   percent of white over the page's own ground rather than a colour of its own,
+   so a scene sits *in* the page instead of on it, and the only bright thing in
+   a card is the thing the card is about.
+
+   Every value is an alpha over the ground, declared per theme. Nothing here
+   uses `color-mix(…, transparent)`: the build folds that to full alpha (see
+   the note above the dark-mode block). */
+.lp {
+  --lp-glass: oklch(0 0 0 / 0.022);
+  --lp-glass-edge: oklch(0 0 0 / 0.08);
+  --lp-glass-edge-lit: oklch(0 0 0 / 0.16);
+  /* The specular. On light it is white catching the top edge; on dark it is
+     the same gesture at a twelfth of the strength, because a bright lip on a
+     near-black surface is the whole difference between glass and a hole. */
+  --lp-glass-sheen: oklch(1 0 0 / 0.55);
+  --lp-glass-lit: oklch(0 0 0 / 0.04);
+  --lp-halo: oklch(0 0 0 / 0.12);
+  /* The specular itself — the bright line along the top of the one object a
+     scene lights. It is the brightest thing in a scene by a wide margin, and
+     that is the point: the reference reads as expensive because one edge in
+     the frame is nearly white and everything else is within a few percent of
+     the ground. */
+  --lp-spec: oklch(1 0 0 / 0.9);
+  --lp-dot: oklch(0 0 0 / 0.09);
+  --lp-figure-line: oklch(0 0 0 / 0.12);
+  --lp-figure-lip: oklch(1 0 0 / 0.5);
+}
+.lp.dark,
+.dark .lp {
+  --lp-glass: oklch(1 0 0 / 0.022);
+  --lp-glass-edge: oklch(1 0 0 / 0.06);
+  --lp-glass-edge-lit: oklch(1 0 0 / 0.14);
+  --lp-glass-sheen: oklch(1 0 0 / 0.055);
+  --lp-glass-lit: oklch(1 0 0 / 0.045);
+  --lp-halo: oklch(1 0 0 / 0.2);
+  --lp-spec: oklch(1 0 0 / 0.32);
+  --lp-dot: oklch(1 0 0 / 0.055);
+  --lp-figure-line: oklch(1 0 0 / 0.1);
+  --lp-figure-lip: oklch(1 0 0 / 0.06);
 }
 
-/* A recessed panel — a row, a card, a field. It takes the same double edge the
-   card does, one step quieter: without the inner lip a panel sitting on a card
-   that has one reads as a flat sticker on a bevelled surface. */
-.lp-panel {
-  border: 1px solid var(--border);
-  background: var(--card);
+/* The plate an icon sits on. A ring rather than a border, so a plate can be
+   sized by its caller without the hairline changing what `size-8` means. */
+.lp-plate {
+  background-color: var(--lp-glass);
+  background-image: linear-gradient(180deg, var(--lp-glass-sheen), transparent 45%);
+  box-shadow: inset 0 0 0 1px var(--lp-glass-edge);
+}
+
+/* The lit plate — one per scene, the object the light is on.
+
+   This is where six accent hues used to live: blue for knowledge, violet for
+   the bot, amber for the calendar, and so on. Colour was doing the job of
+   saying "this one" on a page that is otherwise entirely monochrome, and six
+   pastel chips scattered through a black section is the single loudest thing
+   the landing had. Light says "this one" better, and it says it in the page's
+   own vocabulary: the same plate, one step brighter at the edge, with a bloom
+   behind it. `[data-tint]` still selects it — the scenes name which plate is
+   the hero and no longer name a colour for it. */
+.lp-plate[data-tint] {
+  background-color: var(--lp-glass-lit);
+  color: var(--foreground);
   box-shadow:
-    0 1px 2px oklch(0 0 0 / 0.05),
-    inset 0 0 0 1px var(--lp-cap-lip);
+    inset 0 0 0 1px var(--lp-glass-edge-lit),
+    inset 0 1px 0 var(--lp-spec),
+    0 0 28px -6px var(--lp-halo);
+}
+
+/* Light pooling on the surface behind an object. Positioned and sized by the
+   caller; this is only the gradient. Closest-side so the falloff is a circle
+   at any aspect ratio the caller asks for, and it stops at 72% rather than
+   100% because a radial that reaches its own edge has a visible rim. */
+.lp-bloom {
+  background: radial-gradient(closest-side, var(--lp-halo), transparent 70%);
+  /* Blurred, and that is not belt and braces over a gradient that already
+     fades: a radial ramp still has mathematically straight isolines, and at
+     this size the eye finds them — the disc reads as a grey blob with an edge
+     rather than as light. One static blur costs one composite and is what
+     turns the shape into atmosphere. */
+  filter: blur(16px);
+}
+
+/* The fine dot grid on the screens inside scenes — a texture, at the density
+   where it reads as material rather than as a pattern. */
+.lp-dots {
+  background-image: radial-gradient(var(--lp-dot) 1px, transparent 1px);
+  background-size: 5px 5px;
+}
+
+/* A number drawn as an edge rather than as ink: the figure is cut out of the
+   dark and lit along its stroke, which is what makes a numeral read as part of
+   the surface instead of as text sitting on it. The lip is the same specular
+   the panels carry, one pixel down, so it catches the light from the same
+   direction everything else in the scene does. */
+.lp-figure {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--lp-figure-line);
+  text-shadow: 0 1px 0 var(--lp-figure-lip);
+}
+
+
+/* A panel — a row, a card, a field. Same glass as the plate, at the same
+   weight: a scene is one material, and the difference between a row and the
+   plate inside it is the light on them, not two thicknesses of surface. */
+.lp-panel {
+  border: 1px solid var(--lp-glass-edge);
+  background-color: var(--lp-glass);
+  background-image: linear-gradient(180deg, var(--lp-glass-sheen), transparent 40%);
 }
 
 /* The washes that fade a scene into the card at the edges it runs off. Both
@@ -3622,8 +3875,21 @@ html.lenis body {
    places that genuinely do invert are the ones that are not beams: the cursor
    light, which is a hand shading a white card rather than a lamp, and the
    corner marks, which are ink. Both have tokens of their own for exactly that
-   reason. */
-.lp {
+   reason.
+
+   ── Why `:root` and not `.lp` ────────────────────────────────────────
+   These started scoped to the marketing wrapper, on the reasoning that this is
+   a landing-page rig and a fixture that lit up anywhere would be an invitation
+   to put a beam behind an inbox. That was right about where the *fixtures*
+   belong and wrong about where the *values* do: the public surface is not just
+   the landing. The four pages built on `PageHeader` and the four auth screens
+   are the same product seen by the same visitor, and a token that only
+   resolves inside one subtree leaves every other public page either unlit or
+   carrying a second copy of the scale.
+
+   Scoping is still a matter of taste rather than of plumbing, and taste says
+   what it said before: nothing inside `(app)` uses any of this. */
+:root {
   /* The tube: an object, not the light. Grey on light because a white line on
      a near-white page is nothing and a black one is a rule rather than a lamp. */
   --lp-beam-core: oklch(0.66 0 0 / 0.5);
@@ -3658,8 +3924,8 @@ html.lenis body {
   --lp-lumen-bloom: oklch(0 0 0 / 0.18);
 }
 
-.lp.dark,
-.dark .lp {
+:root.dark,
+.dark {
   --lp-beam-core: oklch(1 0 0 / 0.92);
   --lp-beam-core-dim: oklch(1 0 0 / 0.28);
   --lp-beam-hot: oklch(1 0 0);
@@ -3993,6 +4259,349 @@ html.lenis body {
   pointer-events: none;
 }
 
+/* ── Footer ──────────────────────────────────────────────────────────
+   The page's last surface, and a surface rather than a band: a rounded panel
+   inset from the page edges, with the closing call to action as a second panel
+   inside it and the wordmark set enormous across the foot.
+
+   The inset matters more than it looks. A full-bleed footer is the page
+   running out; a panel with page showing on all four sides is the page having
+   ended, which is the difference between a document that stops and one that
+   closes. It is also the only place on the marketing surface where the page
+   ground is visible *around* something, so the footer is the one object here
+   with an outside. */
+/* No surface of its own: the page ground runs straight through it.
+ 
+   It had one — `--card`, rounded, inset from the page edges — and it was a
+   panel with a border, then a panel without one, and both were the same
+   mistake at different volumes. A footer is not an object sitting on the page,
+   it is where the page stops. Give it edges and the eye has to read a
+   rectangle before it can read the content; take them away and the only two
+   things with edges down here are the one that needs them (the call to
+   action) and the one that has none by design (the wordmark running off the
+   bottom). Which is the composition.
+
+   `overflow: hidden` stays, and it is now the only thing this rule is for: it
+   is what crops the wordmark. */
+.lp-footer {
+  position: relative;
+  overflow: hidden;
+}
+
+/* The card the closing CTA sits in — the one object down here that is an
+   object. `--card` on `--background` now rather than `--muted` on `--card`:
+   with the footer gone transparent this sits on the page, so it takes the step
+   every other card on the page takes.
+
+   Still no border. The lip is an *inner* hairline a pixel inside the edge,
+   which is the app's own double-edge and reads as a bevel rather than as an
+   outline — the thing a 1240px stroke could not do and a 1120px one can,
+   because at this size the eye takes the shadow first. */
+.lp-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px var(--lp-cap-lip);
+}
+
+/* The sheen and the bevel — the two things that were missing and the reason
+   the card read as flat.
+ 
+   Every other card on this page is four things stacked: a surface, an inner
+   lip, a diagonal wash from a bright corner to a dark one, and a highlight
+   along the top edge that fades at both ends. This one had the first two. A
+   surface with no wash is a rectangle of one colour, and no amount of light
+   *around* an object fixes an object that is not catching any: the tube above
+   it was lighting the air and the card underneath was staying the same grey
+   from corner to corner.
+
+   Same two tokens the product's own KPI tiles use, so when that tile changes
+   this changes with it. */
+.lp-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--kpi-sheen);
+  pointer-events: none;
+}
+
+.lp-cta::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  z-index: 2;
+  height: 1px;
+  background: var(--kpi-edge);
+  pointer-events: none;
+}
+
+/* ── Sparks ──────────────────────────────────────────────────────────
+   Four-point stars that flare up and go out again, scattered across the whole
+   panel rather than only the part with the orbit in it.
+
+   They were round dots before, fading on opacity. A dot that fades is dust; a
+   dot is also the one shape that cannot look like it is *emitting*, because
+   light coming off a point source is what the four spikes of a star glyph are
+   a drawing of. Hence the shape, and hence the two things that go with it:
+   they scale as they flare, because a spark that arrives at full size has not
+   arrived, and they glow, because a shape at 100% opacity with nothing around
+   it is a sticker.
+
+   The glow is a `drop-shadow`, which takes the element's own alpha — so the
+   bloom is star-shaped, four-armed, exactly like the thing casting it. A
+   `box-shadow` would have bloomed the square box the star sits in.
+
+   `opacity` and `scale` only. Both are compositor properties, so a couple of
+   dozen of these are a couple of dozen values pushed to the GPU rather than a
+   couple of dozen elements being laid out again — which is what a `width` or a
+   `top` animation would have cost, times sixty frames. */
+.lp-spark {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  color: var(--lp-spark-ink);
+  filter:
+    drop-shadow(0 0 3px var(--lp-spark-glow))
+    drop-shadow(0 0 8px var(--lp-spark-glow));
+  animation: lp-spark var(--lp-spark-dur, 5s) ease-in-out infinite;
+}
+
+.lp-spark svg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes lp-spark {
+  0%,
+  100% {
+    opacity: 0;
+    scale: 0.35;
+  }
+  /* Up fast, down slow. A spark that fades in as gradually as it fades out is
+     a pulse; the asymmetry is what makes it read as catching alight. */
+  22% {
+    opacity: var(--lp-spark-peak, 1);
+    scale: 1;
+  }
+  60% {
+    opacity: calc(var(--lp-spark-peak, 1) * 0.35);
+    scale: 0.8;
+  }
+}
+
+:root {
+  --lp-spark-ink: oklch(0.32 0 0);
+  --lp-spark-glow: oklch(0.32 0 0 / 0.35);
+}
+:root.dark,
+.dark {
+  --lp-spark-ink: oklch(1 0 0);
+  --lp-spark-glow: oklch(1 0 0 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Held at their peak rather than hidden: a still field of stars is a
+     texture, and the drawing is better with it than without. */
+  .lp-spark {
+    animation: none;
+    opacity: var(--lp-spark-peak, 1);
+    scale: 1;
+  }
+}
+
+/* ── The foot wordmark ───────────────────────────────────────────────
+   The name, set as large as the panel will take and cropped by its bottom
+   edge.
+
+   Cropped on purpose: a word that fits is a logo, and a word that runs past
+   the edge is the page signing off. It is also what keeps it from competing —
+   at this size a fully visible wordmark is the loudest thing on the page, and
+   two thirds of one at four per cent contrast is a watermark.
+
+   A flat wash, and it stays a flat wash. It was engraved for a while — a face
+   a step off the page ground with a dark lip inside the top of every stroke
+   and a light one under the bottom — and the effect that is convincing at
+   16px is not the same effect at 416: at that size the two lips are five and
+   six pixels of hard grey outline, so what you get is not a letter cut into a
+   surface, it is a letter with a bevel drawn round it. The debossed look needs
+   a texture to be pressed into and this page has none.
+
+   `background-clip: text` rather than a flat colour, because at 26rem a flat
+   fill is a grey slab: the ramp gives the letterforms a top edge to catch the
+   light on. The fallback declaration above it is a plain colour, so a browser
+   without the clip gets a quieter watermark rather than nothing. */
+.lp-footmark {
+  /* In flow with a negative bottom margin, not absolutely positioned. Absolute
+     meant nothing below reserved its height, so the crop had to be faked with a
+     spacer sized in `vw` — two numbers that have to agree and cannot, because
+     one is a font size and the other is a box. In flow the word sizes the box
+     and the margin decides how much of it the footer's `overflow: hidden`
+     takes off. */
+  margin-top: 3.5rem;
+  margin-bottom: -0.24em;
+  pointer-events: none;
+  user-select: none;
+  text-align: center;
+  font-family: var(--font-cooper);
+  font-weight: 400;
+  /* Sized to fill the panel, not to be a large word. At the 1240px the footer
+     caps out at, five characters of Cooper come to about 0.58em each, so the
+     width the type has to be is the panel over ~2.9 — which is where the 33vw
+     and the 26rem ceiling come from. */
+  font-size: clamp(4rem, 33vw, 26rem);
+  line-height: 0.72;
+  letter-spacing: -0.045em;
+  color: var(--lp-footmark-ink);
+  background-image: linear-gradient(
+    180deg,
+    var(--lp-footmark-hi) 0%,
+    var(--lp-footmark-ink) 55%,
+    transparent 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root {
+  --lp-footmark-ink: oklch(0 0 0 / 0.05);
+  --lp-footmark-hi: oklch(0 0 0 / 0.1);
+}
+:root.dark,
+.dark {
+  --lp-footmark-ink: oklch(1 0 0 / 0.035);
+  --lp-footmark-hi: oklch(1 0 0 / 0.075);
+}
+
+/* There was a `.lp-spectral` here: a blurred copy of a heading behind itself,
+   clipped to the letterforms and run through the three channel hues.
+
+   The argument for it was that the colours were already in the frame, and the
+   argument was sound and the result was not. A spectrum blurred to 22px under
+   type does not read as light coming off the words — it reads as a colour
+   fringe, the thing a badly converted JPEG does, and a page whose whole case
+   is that it has one neutral overhead lamp cannot then have one heading lit by
+   a prism. The reference it came from puts that treatment on two characters at
+   400px on pure black with nothing else on the screen; on a three-line
+   sentence inside a lit card beside a colour illustration it is the fourth
+   thing competing in one rectangle.
+
+   The heading is `--foreground` again. `.lp-lumen` is the effect that survived
+   this round and it is one class away if that line ever wants it. */
+
+/* ── Channel arc ─────────────────────────────────────────────────────
+   The illustration beside the closing CTA: the mark at the centre of three
+   rings, with the channel tiles sitting on them.
+
+   The rings are the section's claim drawn rather than written — senka in the
+   middle, the places people already write to you arriving from outside — and
+   they are hairlines rather than filled shapes so the whole thing weighs
+   nothing next to the copy it sits beside. */
+/* ── The orbits ──────────────────────────────────────────────────────
+   Circles, and turning.
+
+   Round rather than the 42% squircle the rest of the interface is drawn in:
+   a squircle that rotates wobbles, because its radius is not constant, and the
+   whole point of these is that something travels along them. A ring you can
+   put a moving object on has one radius.
+
+   This is the one thing in the rig that loops, and it is a deliberate
+   exception rather than a lapse. The rule the lighting obeys — a light that
+   pulses is a notification, a light that holds still is a room — is about
+   *light*. These are not lights: they are the channels arriving, which is a
+   thing that happens over time and is the one claim on the page that is
+   actually about motion. They run slow enough (45-75s a lap) that you notice
+   them only if you stay. */
+/* A ring that catches the light rather than a hairline circle.
+ 
+   A flat 1px border is the same value all the way round, which is what a
+   diagram does; a real ring under an overhead lamp is bright where it faces
+   the light and gone where it turns away. So the stroke is a conic gradient
+   masked to a one-pixel donut: `radial-gradient(farthest-side, …)` cuts the
+   centre out, and what is left is a circle whose brightness sweeps.
+ 
+   Started from 210deg, so the bright arc sits up and to the left — the same
+   direction the tube above the card is throwing from. */
+.lp-arc {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 210deg,
+    var(--lp-hairline) 0deg,
+    var(--lp-beam-1) 70deg,
+    var(--lp-hairline-strong) 150deg,
+    var(--lp-hairline) 250deg,
+    var(--lp-hairline) 360deg
+  );
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 calc(100% - 1px));
+  -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - 1px), #000 calc(100% - 1px));
+}
+
+/* The arm. Sized to the ring it rides, centred on the same point, and turning
+   at its own rate — the outer ones slower, which is the only thing that stops
+   three concentric circles reading as one rotating disc. */
+.lp-orbit {
+  position: absolute;
+  pointer-events: none;
+  animation: lp-orbit var(--lp-orbit-dur, 60s) linear infinite;
+}
+
+/* The tile, parked at twelve o'clock on the arm; the arm's rotation carries it
+   round. `--lp-orbit-from` is a head start in degrees, so the three do not
+   leave the gate in a line. */
+.lp-orbit-tile {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% -50%;
+}
+
+/* And the counter-turn. The arm rotates the tile with it, so a logo three
+   quarters of the way round would be upside down; the same animation played
+   backwards on the child cancels exactly that and nothing else. Same duration
+   and same delay, or the two drift apart over a lap and the icon lists. */
+.lp-orbit-upright {
+  display: block;
+  animation: lp-orbit var(--lp-orbit-dur, 60s) linear infinite reverse;
+}
+
+@keyframes lp-orbit {
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Stopped, not hidden. The resting frame is three tiles sitting on three
+     rings, which is the drawing the motion was decorating. */
+  .lp-orbit,
+  .lp-orbit-upright {
+    animation: none;
+  }
+}
+
+/* The tile a channel mark sits in: the app's plate, at the size the arc wants,
+   and carrying the same double edge every other surface here does. */
+.lp-arc-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px var(--lp-cap-lip);
+}
+
 /* ── Brand glow ──────────────────────────────────────────────────────
    The channel marks, lit in their own colour.
 
@@ -4018,7 +4627,7 @@ html.lenis body {
    The air behind is a third of the intensity of the mark itself. A coloured
    radial as strong as the logo turns a row of three into a row of three
    traffic lights. */
-.lp {
+:root {
   /* How hard the brand light is driven. Lower on a white page: a saturated
      bloom on near-white does not read as light, it reads as a print
      registration error.
@@ -4030,8 +4639,8 @@ html.lenis body {
      fixture, further away. */
   --lp-brand-i: 0.55;
 }
-.lp.dark,
-.dark .lp {
+:root.dark,
+.dark {
   --lp-brand-i: 1;
 }
 
@@ -4181,4 +4790,6 @@ html.lenis body {
     --btn-destructive-focus-ring: oklch(0.58 0.18 22);
   }
 }
+
+
 

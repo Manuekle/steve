@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SenkaMark } from "@/components/icons/senka-mark";
+import { useSmoothScroll } from "@/components/motion/smooth-scroll";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth/use-session";
 import { useActiveSection, useStuckHeader } from "@/lib/hooks/use-reveal";
@@ -15,11 +16,12 @@ import { Shell } from "./primitives";
 
 /**
  * Every section on the landing that carries an `id`, in document order. The
- * nav and the scroll-spy read the same list, so a section can no longer end
- * up anchorable but unreachable from the header — which is what had happened
- * to Meta Ads.
+ * nav, the scroll-spy and the footer read the same list, so a section can no
+ * longer end up anchorable but unreachable — which is what had happened to
+ * Meta Ads — and the footer cannot drift out of step with the bar at the top
+ * of the same page.
  */
-const LINKS = [
+export const LINKS = [
   { id: "bandeja", labelKey: "nav.inbox" },
   { id: "automatizaciones", labelKey: "nav.automations" },
   { id: "agentes", labelKey: "landing.header.linkAgents" },
@@ -33,7 +35,7 @@ const LINKS = [
 const SECTION_IDS = LINKS.map((link) => link.id);
 
 /** Marketing pages of their own, reached from anywhere. */
-const PAGES = [
+export const PAGES = [
   { href: "/pricing", labelKey: "landing.header.linkPricing" },
   { href: "/guide", labelKey: "landing.header.linkGuide" },
 ] as const;
@@ -46,7 +48,13 @@ const PAGES = [
 export function Wordmark({ className }: { readonly className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <SenkaMark />
+      {/* Milled, not flat. The mark sits on the page ground here — header and
+          footer — so the `--lp-lumen-*` ramp reads: bright at the cap line,
+          falling to the baseline, under the same overhead light every other
+          object on the marketing surface is under. The word beside it stays
+          plain: a milled logotype is a chrome effect, a milled mark next to
+          plain type is a lockup. */}
+      <SenkaMark metal />
       <span className="font-semibold text-lg leading-none tracking-tight">
         <span className="text-foreground">senka</span>
       </span>
@@ -101,6 +109,64 @@ export function LandingHeader() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
+
+  /**
+   * The page holds still while the sheet is open.
+   *
+   * It did not, and that was the worst of the mobile bugs: the menu is pinned
+   * to a fixed header, so a stray touch scrolled the whole document underneath
+   * it and the sheet looked like it had come unstuck from the page. With Lenis
+   * driving the scroll it was worse — the momentum carried on after the menu
+   * closed, so you landed somewhere you never asked for.
+   *
+   * It takes both halves, and neither one is sufficient:
+   *
+   * `overflow: hidden` on the root — set through a `data-menu-open` attribute
+   * so the rule lives in the stylesheet — is what stops the native path, which
+   * is what a reader on `prefers-reduced-motion` gets, since `SmoothScroll`
+   * hands them plain scrolling and there is no Lenis instance at all.
+   *
+   * `lenis.stop()` is what stops the other one. Lenis does not scroll the
+   * document by scrolling it: it listens for wheel and touch, and writes the
+   * offset itself. `overflow: hidden` is invisible to that — the menu locked
+   * the page in every browser except the one the page actually ships with,
+   * which is the sort of fix that looks done and is not.
+   */
+  const { lenis } = useSmoothScroll();
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const root = document.documentElement;
+    root.dataset.menuOpen = "";
+    lenis?.stop();
+    return () => {
+      delete root.dataset.menuOpen;
+      lenis?.start();
+    };
+  }, [menuOpen, lenis]);
+
+  /**
+   * Closed by anything that makes it stale: a route change, and the viewport
+   * crossing into the width where the sheet is `lg:hidden`.
+   *
+   * The second one is not theoretical. `data-open` stayed `true` through a
+   * rotation or a resize, so the panel was still open — inert-free, tabbable,
+   * `pointer-events: auto` — sitting invisibly under the desktop header, and
+   * it came back the instant the window narrowed again with the burger showing
+   * a close icon for a menu the reader never opened.
+   */
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const wide = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => {
+      if (wide.matches) setMenuOpen(false);
+    };
+    wide.addEventListener("change", onChange);
+    return () => wide.removeEventListener("change", onChange);
+  }, []);
 
   return (
     <header className="lp-header" ref={headerRef}>
@@ -177,9 +243,33 @@ export function LandingHeader() {
             aria-controls="lp-menu"
             aria-label={menuOpen ? t("nav.closeMenu") : t("nav.menu")}
             onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
-            className="lp-focus -mr-2 inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground lg:hidden"
+            className="lp-focus -mr-2 relative inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground lg:hidden"
           >
-            <HugeiconsIcon icon={menuOpen ? Cancel01Icon : Menu01Icon} size={18} strokeWidth={1.75} />
+            {/* Both glyphs, stacked and cross-faded, rather than one swapped
+                on state. Swapping is a hard cut on the frame the click lands,
+                against a sheet that takes 400ms to arrive — the button was
+                already showing the close icon while the menu was still on its
+                way in. They turn as they trade, which is the same 45° the
+                landing's accordions use to make a plus into a cross. */}
+            {(
+              [
+                [Menu01Icon, !menuOpen],
+                [Cancel01Icon, menuOpen],
+              ] as const
+            ).map(([icon, shown], index) => (
+              <span
+                aria-hidden="true"
+                // biome-ignore lint/suspicious/noArrayIndexKey: two fixed glyphs
+                key={index}
+                className="absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-[var(--panel-open-dur)] ease-[var(--panel-ease)]"
+                style={{
+                  opacity: shown ? 1 : 0,
+                  transform: shown ? "rotate(0deg)" : "rotate(-45deg)",
+                }}
+              >
+                <HugeiconsIcon icon={icon} size={18} strokeWidth={1.75} />
+              </span>
+            ))}
           </button>
         </div>
       </Shell>
@@ -194,8 +284,17 @@ export function LandingHeader() {
           stop, no screen reader, no click. The stylesheet only sets
           `pointer-events: none`, which would have left every link in there
           reachable by keyboard on a page that shows no menu. */}
+      {/* Opaque, and no `backdrop-blur`. It had `bg-background/95` plus
+          `backdrop-blur-xl` and frosted precisely nothing: `.t-panel-slide`
+          transitions `filter`, an element with a filter is a backdrop root,
+          and a backdrop root's own `backdrop-filter` samples an empty
+          backdrop. What shipped was a 95% sheet with the page legible straight
+          through it — the hero headline reading through the menu items.
+
+          A full-width mobile sheet wants to be solid anyway; the shadow is
+          what lifts it off the page now that the blur is not pretending to. */}
       <div
-        className="t-panel-slide border-border border-b bg-background/95 backdrop-blur-xl lg:hidden"
+        className="t-panel-slide border-border border-b bg-background shadow-[var(--shadow-float)] lg:hidden"
         data-open={menuOpen}
         id="lp-menu"
         inert={!menuOpen}

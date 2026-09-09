@@ -37,9 +37,13 @@ export function LandingHero() {
           arriving: it enters above the fold, opens over the headline, and has
           run out by the time it reaches the buttons.
 
-          Anchored left of centre, not centred, because the composition is:
-          the headline is pinned to the left rail and a beam centred on the
-          viewport would light the empty half.
+          Anchored to the RAIL, not to the viewport. The rail is centred and
+          capped at 1120px, so where the headline sits moves with the window
+          and a percentage `left` does not: the same beam that lands on the
+          copy at 1440px lands on empty page at 1000. The wrapper tracks the
+          rail, so `left-0` means the left edge of the column at every width —
+          which is the composition, since the headline is pinned there and a
+          beam centred on the viewport lights the empty half.
 
           `top-0` and not a negative offset. The hero clips — that is what
           keeps its grid and its beam off the band below — so a cone starting
@@ -53,10 +57,12 @@ export function LandingHero() {
         className="lp-glow"
         style={{ top: "-14rem", width: "min(1100px, 130vw)", height: "44rem" }}
       />
-      <Spotlight
-        className="top-0 left-[-6%] h-[44rem] w-[min(62rem,116vw)] sm:left-[2%]"
-        intensity={1}
-      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 mx-auto w-full max-w-[1120px] px-6 sm:px-8"
+      >
+        <Spotlight className="top-0 left-0 h-[44rem] w-[min(46rem,110%)]" intensity={1} />
+      </div>
 
       <Shell className="relative">
         <Reveal>
@@ -83,18 +89,30 @@ export function LandingHero() {
         {/* On mount, not on view: this line is above the fold on every device,
             so an in-view trigger fires at the same instant anyway and only
             costs an observer. `delay` keeps it a beat behind the badge. */}
+        {/* Milled. This is the largest type on the site and the one line the
+            whole page is built to deliver, so it is the one that earns the
+            ramp — bright at the cap line, falling to the baseline, under the
+            beam that is already pointed at it. Anywhere else on the landing a
+            metallic headline would be chrome; here it is the light the
+            composition already claims to have, landing on the letters.
+
+            `unitClassName`, not `className`: the ramp is a clipped background
+            and every word here composites on its own to animate. On the
+            wrapper the headline would be invisible for the length of its own
+            entrance. */}
         <TextReveal
           as="h1"
           blur={6}
-          className="mt-8 max-w-[24ch] text-balance font-heading font-semibold font-cooper text-[clamp(2.75rem,6.6vw,4.25rem)] text-foreground leading-[1.02] tracking-[-0.03em]"
+          className="mt-8 max-w-[24ch] text-balance font-heading font-semibold font-cooper text-[clamp(2.75rem,6.6vw,4.25rem)] leading-[1.25] tracking-[-0.03em] overflow-visible pb-[0.12em]"
           delay={0.12}
           stagger={0.04}
           text={t("landing.hero.title")}
+          unitClassName="lp-lumen overflow-visible"
           yOffset="24%"
         />
 
         <Reveal delay={120}>
-          <p className="mt-7 max-w-[52ch] text-[17px] leading-relaxed text-muted-foreground">
+          <p className="mt-7 max-w-[52ch] text-[17px] leading-relaxed tracking-[-0.03em] text-muted-foreground text-wrap-balance">
             {t("landing.hero.subtitle")}
           </p>
         </Reveal>

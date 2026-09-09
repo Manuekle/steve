@@ -3,27 +3,16 @@
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { CheckIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import { useCallback, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
+import { Halo, LightBar } from "@/app/landing/_components/lighting";
 import { DigitPop, Disclosure, Reveal, Shell } from "@/app/landing/_components/primitives";
 import { formatUSD, monthlyEquivalent, priceFor, type BillingPeriod } from "@/lib/plans";
-import { ENTITY } from "@/app/landing/_components/legal-page";
+import { SalesContactDialog } from "@/app/landing/_components/sales-contact-dialog";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
 import { useT } from "@/lib/i18n/provider";
-import { Spinner } from "@/components/ui/spinner";
 
 /* Precios en USD: Pro $79/mes o $790/año (100K AI Credits/mes), Managed
    $249/mes o $2490/año (500K AI Credits/mes) — el pago anual sale el
@@ -165,7 +154,11 @@ function PlanPrice({
   return (
     <div className="mt-6">
       <p className="font-heading font-semibold font-cooper text-3xl tracking-[-0.03em]">
-        <DigitPop groupKey={`${nameKey}-${billed.periodKey}`} text={formatUSD(billed.amount)} />
+        <DigitPop
+          groupKey={`${nameKey}-${billed.periodKey}`}
+          luminous
+          text={formatUSD(billed.amount)}
+        />
       </p>
       <p className="mt-1 text-[13px] text-muted-foreground">{t(billed.periodKey)}</p>
       {perMonth !== null ? (
@@ -177,200 +170,24 @@ function PlanPrice({
   );
 }
 
-type DemoRequestStatus = "idle" | "submitting" | "success" | "error";
-
 /**
- * Enterprise's CTA: a modal form instead of a link, because a $9,990 one-time
- * sale isn't a self-serve checkout. Posts to /api/demo-request, which emails
- * the same `ENTITY.email` the legal pages gate on — still unset on a fresh
- * checkout of this repo, so the dialog falls back to the identical dashed
- * «definir …» placeholder those pages use rather than collecting a lead
- * nobody will read.
+ * The card itself, and the fixture over the one the badge calls «Más elegido».
  *
- * `website` is a honeypot: an off-screen field a real visitor never fills.
- * The server-side check lives in app/api/demo-request/route.ts; a filled
- * honeypot still gets `{ ok: true }` back so a bot has no signal to learn
- * from.
- */
-function ContactSalesDialog() {
-  const t = useT();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
-  const [message, setMessage] = useState("");
-  const [website, setWebsite] = useState("");
-  const [status, setStatus] = useState<DemoRequestStatus>("idle");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const onOpenChange = useCallback((next: boolean) => {
-    setOpen(next);
-    // Reopening starts clean — otherwise a second inquiry reopens showing
-    // the first one's confirmation screen instead of an empty form.
-    if (next) {
-      setStatus("idle");
-      setErrorMessage(null);
-    }
-  }, []);
-
-  const submit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      setStatus("submitting");
-      setErrorMessage(null);
-      try {
-        const res = await fetch("/api/demo-request", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ name, email, company, message, website }),
-        });
-        if (res.ok) {
-          setStatus("success");
-          return;
-        }
-        const body = (await res.json().catch(() => null)) as { code?: string } | null;
-        setStatus("error");
-        setErrorMessage(
-          body?.code === "invalid_field"
-            ? t("pricing.contactModal.form.errorInvalidEmail")
-            : body?.code === "rate_limited"
-              ? t("pricing.contactModal.form.errorRateLimited")
-              : t("pricing.contactModal.form.errorGeneric"),
-        );
-      } catch {
-        setStatus("error");
-        setErrorMessage(t("pricing.contactModal.form.errorGeneric"));
-      }
-    },
-    [name, email, company, message, website, t],
-  );
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
-          {t("pricing.cta.contactSales")}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t("pricing.contactModal.title")}</DialogTitle>
-          <DialogDescription>{t("pricing.contactModal.body")}</DialogDescription>
-        </DialogHeader>
-
-        {!ENTITY.email ? (
-          <div className="rounded-xl border border-dashed border-muted-foreground/40 px-4 py-3">
-            <p className="text-sm text-muted-foreground">
-              {t("legal.entityUndefined", { label: t("legal.entityEmail") })}
-            </p>
-          </div>
-        ) : status === "success" ? (
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
-            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-              {t("pricing.contactModal.form.successTitle")}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("pricing.contactModal.form.successBody", { email: ENTITY.email })}
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="space-y-3">
-            <div>
-              <label htmlFor="demo-name" className="mb-1.5 block text-sm font-medium">
-                {t("pricing.contactModal.form.name")}
-              </label>
-              <Input
-                id="demo-name"
-                required
-                maxLength={200}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                disabled={status === "submitting"}
-              />
-            </div>
-            <div>
-              <label htmlFor="demo-email" className="mb-1.5 block text-sm font-medium">
-                {t("pricing.contactModal.form.email")}
-              </label>
-              <Input
-                id="demo-email"
-                type="email"
-                required
-                maxLength={320}
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                disabled={status === "submitting"}
-              />
-            </div>
-            <div>
-              <label htmlFor="demo-company" className="mb-1.5 block text-sm font-medium">
-                {t("pricing.contactModal.form.company")}
-              </label>
-              <Input
-                id="demo-company"
-                required
-                maxLength={200}
-                value={company}
-                onChange={(event) => setCompany(event.target.value)}
-                disabled={status === "submitting"}
-              />
-            </div>
-            <div>
-              <label htmlFor="demo-message" className="mb-1.5 block text-sm font-medium">
-                {t("pricing.contactModal.form.message")}
-              </label>
-              <Textarea
-                id="demo-message"
-                rows={3}
-                maxLength={4000}
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                disabled={status === "submitting"}
-              />
-            </div>
-
-            {/* Honeypot — invisible and unreachable by tab, so no sighted or
-                keyboard visitor ever touches it. */}
-            <input
-              type="text"
-              name="website"
-              value={website}
-              onChange={(event) => setWebsite(event.target.value)}
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-              className="pointer-events-none absolute -left-[9999px] h-0 w-0 opacity-0"
-            />
-
-            {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
-
-            <Button type="submit" className="w-full" disabled={status === "submitting"}>
-              {status === "submitting" ? (
-                <Spinner size={15} strokeWidth={2} />
-              ) : null}
-              {status === "submitting"
-                ? t("pricing.contactModal.form.submitting")
-                : t("pricing.contactModal.form.submit")}
-            </Button>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/**
- * The card itself, and the beam around the one the badge calls «Más elegido».
+ * `.lp-cap`, the same card the landing's pricing band and its capability grid
+ * are built from, rather than a hand-rolled `rounded-2xl border bg-card`.
+ * Three copies of one card is how three surfaces stop matching on the next
+ * edit — and this one had already drifted: it carried a permanent
+ * `--shadow-elevated`, which is the app's *hover* depth applied to a card
+ * nobody is pointing at.
  *
- * `Beam` renders a wrapper `<div>` around its child, so the card's `h-full`
- * has to move onto that wrapper or the emphasised column stops matching its
- * neighbours' height. The package pins the wrapper to `position: relative`
- * from a stylesheet injected after Tailwind's, which is why the layout goes
- * through `style` rather than `className` — on equal specificity the later
- * rule wins, and an inline declaration is what outranks it.
- *
- * The metal is left to `useTheme()`: the marketing surface follows the app's
- * theme now, so the beam and the card it rings are always on the same ground.
+ * The emphasis is a strip light above it and a pool below, exactly as on the
+ * landing. It used to be `Beam` — a mono ring pulsing on a loop around the
+ * card's edge. That was the right call on a page with no light in it, and it
+ * is the wrong one now for the reason the rig is built on: a light that pulses
+ * is a notification, and this is the only thing on the whole public surface
+ * that would still be moving on its own. A visitor arriving here from a lit
+ * landing should recognise the lamp, not meet a second idea about how
+ * emphasis works.
  */
 function PlanShell({
   children,
@@ -379,35 +196,27 @@ function PlanShell({
   readonly children: ReactNode;
   readonly emphasis?: boolean;
 }) {
-  const card = (
-    <div
-      className={
-        emphasis
-          ? "flex h-full w-full flex-col rounded-2xl border border-input bg-card p-6 shadow-[var(--shadow-elevated)] sm:p-7"
-          : "flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:p-7"
-      }
-    >
-      {children}
-    </div>
-  );
-
-  if (!emphasis) return card;
-
   return (
-    <Beam
-      colorVariant="mono"
-      borderRadius={16}
-      size="pulse-outside"
-      strength={0.9}
-      // The ring is a 1px `::after` on the wrapper's own edge, under a wrapper
-      // that clips to `overflow: hidden`. An opaque child at the same radius
-      // covers it exactly — which is what a full-bleed `bg-card` was doing.
-      // One pixel of padding is the whole fix: the ring draws on the outer
-      // edge, the card sits just inside it.
-      style={{ display: "flex", height: "100%", padding: "1px", width: "100%" }}
-    >
-      {card}
-    </Beam>
+    <div className="relative h-full">
+      {/* Rendered before the card and with no z-index, so the card's opaque
+          surface takes the half of the cone that would otherwise wash down
+          over the plan name. The fixture's box sits on the card's top edge —
+          `LightBar` lifts its own tube out of it. */}
+      {emphasis ? (
+        <>
+          <LightBar className="inset-x-[14%] top-0 z-10"
+            drop="14rem"
+            gap="0px"
+            intensity={0.9} />
+          <Halo className="-inset-x-8 -bottom-10 h-32" />
+        </>
+      ) : null}
+      <div
+        className={`lp-cap h-full w-full flex-col p-6 sm:p-7 ${emphasis ? "border-input" : ""}`}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -426,7 +235,11 @@ export function Pricing() {
 
       <section className="py-20 sm:py-24">
         <Shell>
-          <Reveal className="mb-8 flex justify-center">
+          {/* `mb-14`, not `mb-8`. Same reason as the landing band: the emphasised
+              card carries a fixture, and at the old spacing its tube and halo
+              landed a dozen pixels under the billing toggle — a control and a
+              light fighting for one band of the composition. */}
+          <Reveal className="mb-14 flex justify-center">
             <SlidingTabs
               value={billing}
               onValueChange={(value) => setBilling(value as BillingPeriod)}
@@ -475,7 +288,12 @@ export function Pricing() {
 
                   <div className="mt-8">
                     {plan.nameKey === "pricing.enterprise.name" ? (
-                      <ContactSalesDialog />
+                      <SalesContactDialog
+                        source="pricing"
+                        titleKey="pricing.contactModal.title"
+                        bodyKey="pricing.contactModal.body"
+                        triggerLabelKey="pricing.cta.contactSales"
+                      />
                     ) : plan.cta ? (
                       <Button asChild variant={plan.emphasis ? "default" : "outline"} className="w-full">
                         <Link href={plan.cta.href}>{t(plan.cta.labelKey)}</Link>
@@ -496,7 +314,7 @@ export function Pricing() {
               cost of the model is the one thing that would make the rest of
               this page untrustworthy. */}
           <Reveal delay={140}>
-            <div className="mt-10 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:p-7">
+            <div className="lp-cap lp-cap-still mt-10 flex-col p-6 sm:p-7">
               <h2 className="font-medium text-base tracking-tight">{t("pricing.alwaysPay.title")}</h2>
               <p className="mt-2 max-w-[70ch] text-[15px] leading-relaxed text-muted-foreground">
                 {t("pricing.alwaysPay.body")}
@@ -505,7 +323,7 @@ export function Pricing() {
           </Reveal>
 
           <Reveal delay={150}>
-            <div className="mt-4 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)] sm:p-7">
+            <div className="lp-cap lp-cap-still mt-4 flex-col p-6 sm:p-7">
               <h2 className="font-medium text-base tracking-tight">{t("pricing.enterpriseTerms.title")}</h2>
               <p className="mt-2 max-w-[70ch] text-[15px] leading-relaxed text-muted-foreground">
                 {t("pricing.enterpriseTerms.body")}

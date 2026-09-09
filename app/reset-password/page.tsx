@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthBackdrop } from "@/app/_components/auth-backdrop";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon, EyeIcon, EyeOffIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
@@ -174,8 +175,8 @@ export default function ResetPasswordPage() {
   const t = useT();
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
-      <div aria-hidden="true" className="auth-glow" />
-      <div aria-hidden="true" className="auth-grid" />
+      {/* Backdrop, under everything and inert. */}
+      <AuthBackdrop />
 
       <div className="relative w-full max-w-[25rem]">
         <h1 className="text-balance text-center font-cooper text-[2rem] leading-[1.08] tracking-[-0.03em]">

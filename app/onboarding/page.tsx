@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthBackdrop } from "@/app/_components/auth-backdrop";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   ArrowRight02Icon,
@@ -112,8 +113,8 @@ export default function OnboardingPage() {
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
-      <div aria-hidden="true" className="auth-glow" />
-      <div aria-hidden="true" className="auth-grid" />
+      {/* Backdrop, under everything and inert. */}
+      <AuthBackdrop />
 
       <div className="relative w-full max-w-[34rem]">
         <p className="text-center font-mono text-[11px] text-muted-foreground uppercase tracking-[0.14em]">

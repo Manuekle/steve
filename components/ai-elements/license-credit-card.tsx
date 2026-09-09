@@ -275,7 +275,7 @@ export function LicenseCreditCard({
               <div className="relative flex h-full flex-col justify-between p-5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
-                    <SenkaMark className={cn("h-[18px] w-[15px]", iconColor)} />
+                    <SenkaMark className={cn("h-[18px] w-auto", iconColor)} />
                     <span className={cn("font-heading text-[14px] leading-none font-semibold tracking-tight", textPrimary)}>
                       senka
                     </span>
@@ -345,7 +345,7 @@ export function LicenseCreditCard({
                 </div>
 
                 <div className="flex justify-end px-5 pb-5">
-                  <SenkaMark className={cn("h-[15px] w-[13px]", iconGhost)} />
+                  <SenkaMark className={cn("h-[15px] w-auto", iconGhost)} />
                 </div>
               </div>
             </motion.div>

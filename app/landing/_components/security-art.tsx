@@ -39,7 +39,7 @@ import {
   WebhookIcon,
 } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
-import { at, Chip, Mono, Plate, Row, Scene, SwapPlate } from "./scene-kit";
+import { at, Bloom, Brackets, Chip, Figure, Mono, Plate, Row, Scene, SwapPlate } from "./scene-kit";
 
 // ── 01 · Tu base de datos ───────────────────────────────────────────
 
@@ -53,9 +53,13 @@ import { at, Chip, Mono, Plate, Row, Scene, SwapPlate } from "./scene-kit";
 export function DatabaseScene() {
   return (
     <Scene>
+      {/* On the connection, because that is the claim: the light is on the
+          host name, and the tables under it are just what fills. */}
+      <Bloom className="-top-2 left-2 h-28 w-48" />
+
       <div className="space-y-2">
         <Row>
-          <Plate active className="size-7" icon={Database01Icon} />
+          <Plate active className="size-7" icon={Database01Icon} tint="blue" />
           <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             postgres://localhost
           </Mono>
@@ -63,7 +67,7 @@ export function DatabaseScene() {
         <div className="flex gap-1.5">
           {[0, 1, 2].map((row) => (
             <span
-              className="h-6 flex-1 rounded-md bg-muted/70 opacity-50 transition-opacity duration-500 group-hover:opacity-100"
+              className="h-6 flex-1 rounded-md bg-[var(--lp-glass)] opacity-50 shadow-[inset_0_0_0_1px_var(--lp-glass-edge)] transition-opacity duration-500 group-hover:opacity-100"
               key={row}
               style={at(row * 90)}
             />
@@ -86,12 +90,18 @@ export function DatabaseScene() {
 export function SandboxScene() {
   return (
     <Scene>
+      {/* The light is on the code, and it stops at the globe — which is the
+          whole guarantee drawn as lighting: one object in the beam, the other
+          one out of it. */}
+      <Bloom className="-translate-x-1/2 -translate-y-1/2 top-[2rem] left-[calc(50%-1.6rem)] h-28 w-28" />
+
       <div className="flex flex-col items-center gap-3">
-        <div className="flex items-center gap-3">
-          <Plate active className="size-10 rounded-xl" icon={SourceCodeIcon} size={18} />
-          <span className="relative flex size-10 items-center justify-center">
-            <span className="lp-plate flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-opacity duration-500 group-hover:opacity-30">
-              <HugeiconsIcon icon={GlobalIcon} size={18} strokeWidth={1.75} />
+        <div className="relative flex items-center gap-5 px-5 py-2">
+          <Brackets className="inset-x-0 inset-y-0" />
+          <Plate active className="size-12 rounded-xl" icon={SourceCodeIcon} size={21} tint="violet" />
+          <span className="relative flex size-12 items-center justify-center">
+            <span className="lp-plate flex size-12 items-center justify-center rounded-xl text-muted-foreground transition-opacity duration-500 group-hover:opacity-30">
+              <HugeiconsIcon icon={GlobalIcon} size={21} strokeWidth={1.75} />
             </span>
             <span
               className="absolute inset-0 flex items-center justify-center text-foreground opacity-0 transition-opacity duration-500 group-hover:opacity-100"
@@ -125,20 +135,32 @@ export function SandboxScene() {
 export function WebhookScene() {
   return (
     <Scene>
+      {/* Low and under the second row: the signature check is the half that
+          matters, so the light is where the digests meet. */}
+      <Bloom className="-bottom-6 left-0 h-32 w-56 opacity-50 transition-opacity duration-700 group-hover:opacity-100" />
+
       <div className="space-y-2">
         <Row>
-          <Plate active className="size-7" icon={WebhookIcon} />
+          <Plate active className="size-7" icon={WebhookIcon} tint="emerald" />
           <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             POST /api/webhooks
           </Mono>
         </Row>
-        <Row className="transition-colors duration-500 group-hover:border-input">
-          <SwapPlate className="size-7" delay={220} from={LockKeyIcon} to={Tick02Icon} />
-          <span className="min-w-0 flex-1">
-            <Mono className="block truncate text-muted-foreground">
-              sha256=a3f1…
-            </Mono>
-            <span className="relative mt-1 block h-3.5">
+        {/* The digest at display size, cut out of the dark. It is the thing
+            being compared, so it is drawn as the object of the scene rather
+            than as a 10px label in a row — the same move the payments card
+            makes with its amount, for the same reason. */}
+        <div className="relative pt-2">
+          <span className="flex items-center gap-3">
+            <SwapPlate className="size-7" delay={220} from={LockKeyIcon} to={Tick02Icon} />
+            <Mono className="text-muted-foreground">sha256</Mono>
+          </span>
+
+          <span className="block">
+            <Figure className="mt-1 block truncate font-mono text-[1.75rem] tracking-[-0.02em]" muted>
+              a3f1…
+            </Figure>
+            <span className="relative mt-2 block h-3.5">
               <Mono className="absolute inset-0 text-muted-foreground transition-opacity duration-500 group-hover:opacity-0">
                 verificando…
               </Mono>
@@ -150,7 +172,7 @@ export function WebhookScene() {
               </Mono>
             </span>
           </span>
-        </Row>
+        </div>
       </div>
     </Scene>
   );
@@ -167,8 +189,15 @@ export function WebhookScene() {
 export function KeysScene() {
   return (
     <Scene>
-      <div className="flex flex-col items-center gap-3">
-        <Plate active className="size-10 rounded-xl" icon={AuthorizedIcon} size={18} />
+      {/* The sparsest scene in either grid — one object and one path — so it
+          is the one composed most like the reference: a single thing, lit from
+          directly above, with the frame marked around it and nothing else in
+          the light. */}
+      <div className="relative flex flex-col items-center gap-3 py-2">
+        <Brackets className="-inset-x-6 -inset-y-1" />
+        <Bloom className="-translate-x-1/2 -top-6 left-1/2 h-28 w-36" />
+
+        <Plate active className="size-10 rounded-xl" icon={AuthorizedIcon} size={18} tint="amber" />
         <Chip
           className="text-muted-foreground opacity-60 transition-all duration-500 group-hover:text-muted-foreground group-hover:opacity-100"
           style={at(140)}
@@ -198,6 +227,10 @@ export function AllowlistScene() {
 
   return (
     <Scene>
+      {/* On the host that passes. The refused one sits outside the light,
+          which is the same argument the copy makes. */}
+      <Bloom className="-top-4 left-0 h-28 w-52" />
+
       <div className="space-y-2">
         {hosts.map((host, index) => (
           <Row
@@ -209,6 +242,7 @@ export function AllowlistScene() {
               className="size-7"
               delay={180 + index * 90}
               from={GlobalIcon}
+              tint="cyan"
               to={host.allowed ? Tick02Icon : Cancel01Icon}
             />
             <Mono
@@ -247,9 +281,11 @@ export function TracesScene() {
 
   return (
     <Scene>
+      <Bloom className="-translate-y-1/2 top-[0.9rem] left-[-1rem] h-24 w-32" />
+
       <div className="space-y-2.5">
         <div className="flex items-center gap-3">
-          <Plate active className="size-7" icon={SourceCodeIcon} />
+          <Plate active className="size-7" icon={SourceCodeIcon} tint="rose" />
           <Mono className="text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             OpenTelemetry
           </Mono>
@@ -258,7 +294,7 @@ export function TracesScene() {
           {spans.map((span, index) => (
             <span className="block h-2" key={span.left} style={{ paddingLeft: `${span.left}%` }}>
               <span
-                className="block h-full origin-left scale-x-0 rounded-full bg-muted-foreground/30 transition-transform duration-500 group-hover:scale-x-100"
+                className="block h-full origin-left scale-x-0 rounded-full bg-foreground/20 transition-all duration-500 group-hover:scale-x-100 group-hover:bg-foreground/45"
                 style={{ ...at(index * 90), width: `${span.width}%` }}
               />
             </span>

@@ -6,7 +6,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { createHighlighter, type Highlighter } from "shiki";
+import type { Highlighter } from "shiki";
 import { cn } from "@/lib/utils";
 
 export type AgentCodeLanguage =
@@ -43,12 +43,30 @@ const DARK_THEME = "github-dark-high-contrast";
 let agentCodeHighlighter: Promise<Highlighter> | null = null;
 const tokenCache = new Map<string, AgentCodeTokenLines>();
 
+/**
+ * Shiki is imported here rather than at the top of the file, and that is the
+ * whole reason this function exists in the shape it does.
+ *
+ * A static `import { createHighlighter } from "shiki"` puts the grammars for
+ * bash, diff, json, tsx and typescript plus two themes — the better part of a
+ * megabyte before compression — into whatever chunk imports this module. That
+ * chunk is not a code viewer: `tool-result.tsx` renders one, and the landing
+ * page's hero mockup renders `tool-result.tsx`, so every visitor downloaded a
+ * syntax highlighter to look at a marketing page.
+ *
+ * Nothing about the timing changes. `useAgentCodeTokens` already paints the
+ * code unhighlighted and swaps the tokens in when the highlighter resolves —
+ * it was always asynchronous, the bytes just arrived earlier than they were
+ * needed. Now they arrive when the first code block mounts.
+ */
 function getAgentCodeHighlighter() {
   if (!agentCodeHighlighter) {
-    agentCodeHighlighter = createHighlighter({
-      themes: [LIGHT_THEME, DARK_THEME],
-      langs: ["bash", "diff", "json", "tsx", "typescript"],
-    });
+    agentCodeHighlighter = import("shiki").then(({ createHighlighter }) =>
+      createHighlighter({
+        themes: [LIGHT_THEME, DARK_THEME],
+        langs: ["bash", "diff", "json", "tsx", "typescript"],
+      }),
+    );
   }
   return agentCodeHighlighter;
 }

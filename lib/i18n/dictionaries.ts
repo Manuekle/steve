@@ -1873,6 +1873,10 @@ const es: Dictionary = {
   "landing.footer.colAgents": "Agentes",
   "landing.footer.colSystem": "Sistema",
   "landing.footer.colLegal": "Legal",
+  "landing.footer.rights": "Todos los derechos reservados.",
+  "landing.footer.colSections": "En esta página",
+  "landing.footer.colResources": "Recursos",
+  "landing.footer.stackLabel": "Sobre qué corre",
   "landing.footer.linkTerms": "Términos",
   "landing.footer.linkPrivacy": "Privacidad",
   "landing.footer.linkGuide": "Instalación y configuración",
@@ -2061,17 +2065,19 @@ const es: Dictionary = {
   "landing.capabilities.shopify.body":
     "Responde «¿dónde está mi pedido?» con el estado real, los items y el seguimiento. Sólo lectura: nunca toca un pedido.",
 
-  // ── Landing: testimonials ──
-  "landing.testimonials.titleLine1": "Lo que dicen",
-  "landing.testimonials.titleLine2": "los que ya lo usan",
-  "landing.testimonials.body":
-    "Negocios que atienden por WhatsApp e Instagram todos los días, y que dejaron de perder el mensaje que llegó a las once de la noche.",
-  "landing.testimonials.sampleBadge": "Muestra",
-  "landing.testimonials.sampleNote":
-    "Los testimonios de abajo son de muestra: están para ver la sección armada. Reemplazalos por los reales en TESTIMONIALS, en section-testimonials.tsx, y poné SAMPLES en false.",
-  "landing.testimonials.empty": "Todavía no hay testimonios cargados",
-  "landing.testimonials.emptyHint":
-    "Agregalos en TESTIMONIALS, en app/landing/_components/section-testimonials.tsx.",
+  // ── Landing: proof (clients + testimonials, one section) ──
+  "landing.proof.titleLine1": "Negocios de todo tipo,",
+  "landing.proof.titleLine2": "en todos lados",
+  "landing.proof.body":
+    "Desde tiendas de barrio hasta operaciones con varias sucursales. Esto es lo que dicen los que ya atienden WhatsApp e Instagram con senka todos los días.",
+  "landing.proof.clientsLabel": "Negocios que ya lo usan",
+  "landing.proof.emptyClients":
+    "Todavía no hay clientes cargados. Agregá cada uno con su nombre, sus coordenadas y —si tiene— su logo en:",
+  "landing.proof.emptyTestimonials":
+    "Todavía no hay testimonios cargados. Agregá cada uno con la frase y el rubro del negocio en:",
+  "landing.proof.cta": "Contactanos",
+  "landing.proof.contactModal.title": "Contactanos",
+  "landing.proof.contactModal.body": "Contanos sobre tu negocio y te respondemos.",
 
   // ── Landing: pricing band ──
   "landing.pricing.titleLine1": "Precios claros,",
@@ -5142,6 +5148,10 @@ const en: Dictionary = {
   "landing.footer.colAgents": "Agents",
   "landing.footer.colSystem": "System",
   "landing.footer.colLegal": "Legal",
+  "landing.footer.rights": "All rights reserved.",
+  "landing.footer.colSections": "On this page",
+  "landing.footer.colResources": "Resources",
+  "landing.footer.stackLabel": "What it runs on",
   "landing.footer.linkTerms": "Terms",
   "landing.footer.linkPrivacy": "Privacy",
   "landing.footer.linkGuide": "Install & configure",
@@ -5328,17 +5338,19 @@ const en: Dictionary = {
   "landing.capabilities.shopify.body":
     "Answers “where is my order?” with the real status, the items and the tracking. Read-only: it never touches an order.",
 
-  // ── Landing: testimonials ──
-  "landing.testimonials.titleLine1": "What the people",
-  "landing.testimonials.titleLine2": "already using it say",
-  "landing.testimonials.body":
-    "Businesses answering on WhatsApp and Instagram every day, who stopped losing the message that came in at eleven at night.",
-  "landing.testimonials.sampleBadge": "Sample",
-  "landing.testimonials.sampleNote":
-    "The quotes below are samples — they're here so the section can be seen assembled. Replace them with the real ones in TESTIMONIALS, in section-testimonials.tsx, and set SAMPLES to false.",
-  "landing.testimonials.empty": "No testimonials loaded yet",
-  "landing.testimonials.emptyHint":
-    "Add them to TESTIMONIALS, in app/landing/_components/section-testimonials.tsx.",
+  // ── Landing: proof (clients + testimonials, one section) ──
+  "landing.proof.titleLine1": "Businesses of every kind,",
+  "landing.proof.titleLine2": "everywhere",
+  "landing.proof.body":
+    "From corner shops to multi-branch operations. This is what the people already answering WhatsApp and Instagram with senka every day have to say.",
+  "landing.proof.clientsLabel": "Businesses already using it",
+  "landing.proof.emptyClients":
+    "No clients loaded yet. Add each one with its name, its coordinates and — if it has one — its logo in:",
+  "landing.proof.emptyTestimonials":
+    "No testimonials yet. Add each one with the quote and the kind of business in:",
+  "landing.proof.cta": "Contact us",
+  "landing.proof.contactModal.title": "Contact us",
+  "landing.proof.contactModal.body": "Tell us about your business and we'll get back to you.",
 
   // ── Landing: pricing band ──
   "landing.pricing.titleLine1": "Clear pricing,",

@@ -230,7 +230,10 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
         <div className={cn("flex h-14 shrink-0 items-center", collapsed ? "justify-center px-2" : "gap-2.5 px-5")}>
           {!collapsed ? (
             <div className="flex items-center gap-2">
-              <SenkaMark />
+              {/* Milled, like the marketing lockup — the sidebar mark is on
+                  the app ground, which is the same ground the ramp is tuned
+                  for. */}
+              <SenkaMark metal />
               <span className="text-lg font-semibold">
                 <span className="text-foreground">senka</span>
               </span>
@@ -369,7 +372,10 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
           ) : null}
 
           <nav
-            className="t-panel-slide absolute inset-x-0 top-14 z-20 flex flex-col gap-1 border-b border-border bg-card/95 p-3 shadow-lg backdrop-blur-sm"
+            // Opaque: `.t-panel-slide` transitions `filter`, which makes this a
+            // backdrop root, so its own `backdrop-blur` was sampling an empty
+            // backdrop and frosting nothing. See the note on the class.
+            className="t-panel-slide absolute inset-x-0 top-14 z-20 flex flex-col gap-1 border-b border-border bg-card p-3 shadow-lg"
             style={{ "--panel-translate-y": "-10px" } as CSSProperties}
             data-open={mobileMenuOpen}
           >

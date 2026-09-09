@@ -26,6 +26,19 @@ import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import type { CSSProperties, ReactNode } from "react";
 
 /**
+ * Which plate in a scene is the lit one.
+ *
+ * These six names were six accent hues — blue for knowledge, amber for the
+ * calendar, one per card. The scenes are monochrome now and `[data-tint]`
+ * selects the *lit* plate rather than a colour: a brighter edge and a bloom
+ * behind it, which is how the reference says "this one" on a black page. The
+ * names survive because each scene still has exactly one hero plate and the
+ * word at the call site still means the same thing; what changed is what the
+ * stylesheet does with it.
+ */
+export type Tint = "amber" | "blue" | "cyan" | "emerald" | "rose" | "violet";
+
+/**
  * The stage's contents.
  *
  * In flow, not absolutely positioned. It used to be `absolute inset-0`, which
@@ -44,7 +57,12 @@ import type { CSSProperties, ReactNode } from "react";
  * with the heading above it.
  */
 export function Scene({ children }: { readonly children: ReactNode }) {
-  return <div className="flex h-full w-full flex-col justify-center px-7">{children}</div>;
+  // `relative` and a stacking context of its own: every scene has a `Bloom`
+  // sitting behind its contents at `-z-10`, and without something to be
+  // negative *inside*, that lands behind the card and disappears.
+  return (
+    <div className="relative isolate flex h-full w-full flex-col justify-center px-7">{children}</div>
+  );
 }
 
 /** Shorthand for the one inline style every animated part of a scene needs. */
@@ -53,26 +71,30 @@ export function at(ms: number): CSSProperties {
 }
 
 /**
- * The raised plate an icon sits on — `--muted` with the app's inset bevel and
- * a drop, the same treatment the sidebar and the KPI cards use. `active` lifts
- * it to full contrast on hover, for the one plate a scene is about.
+ * The plate an icon sits on — glass with a hairline ring and a specular along
+ * its top edge. `active` lifts the glyph to full contrast on hover, for the
+ * one plate a scene is about; `tint` marks the plate the light is on.
  */
 export function Plate({
   active,
   className = "",
   icon,
   size = 14,
+  tint,
 }: {
   readonly active?: boolean;
   readonly className?: string;
   readonly icon: IconSvgElement;
   readonly size?: number;
+  /** Colours the plate — the one hero icon a card is allowed to light up. */
+  readonly tint?: Tint;
 }) {
   return (
     <span
       className={`lp-plate flex shrink-0 items-center justify-center rounded-[10px] transition-colors duration-500 ${
-        active ? "text-muted-foreground group-hover:text-foreground" : "text-muted-foreground"
+        tint ? "" : active ? "text-muted-foreground group-hover:text-foreground" : "text-muted-foreground"
       } ${className}`}
+      data-tint={tint}
     >
       <HugeiconsIcon icon={icon} size={size} strokeWidth={1.75} />
     </span>
@@ -90,12 +112,16 @@ export function SwapPlate({
   delay = 0,
   from,
   size = 14,
+  tint,
   to,
 }: {
   readonly className?: string;
   readonly delay?: number;
   readonly from: IconSvgElement;
   readonly size?: number;
+  /** Colours the resting ("from") plate only — the "to" state already has its
+   *  own tick/cross meaning and stays neutral. */
+  readonly tint?: Tint;
   readonly to: IconSvgElement;
 }) {
   return (
@@ -104,6 +130,7 @@ export function SwapPlate({
         className="absolute inset-0 transition-opacity duration-500 group-hover:opacity-0"
         icon={from}
         size={size}
+        tint={tint}
       />
       <span
         className="lp-plate absolute inset-0 flex items-center justify-center rounded-[10px] text-foreground opacity-0 transition-opacity duration-500 group-hover:opacity-100"
@@ -111,6 +138,85 @@ export function SwapPlate({
       >
         <HugeiconsIcon icon={to} size={size} strokeWidth={2} />
       </span>
+    </span>
+  );
+}
+
+/**
+ * Light pooling on the surface behind an object.
+ *
+ * Every scene has one, and only one. The reference the section is drawn from
+ * is a black page with a single lamp in it: what makes those images read as
+ * expensive is not the objects, it is that all of them are lit from the same
+ * place and only one of them is in the light. A scene with two blooms in it
+ * has no subject.
+ *
+ * Sized and placed by the caller because "where the light is" is the one
+ * compositional decision each scene has to make for itself. It is behind
+ * everything (`-z-10` against the scene's own stacking context) and it never
+ * takes the pointer.
+ */
+export function Bloom({ className = "", style }: { readonly className?: string; readonly style?: CSSProperties }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`lp-bloom pointer-events-none absolute -z-10 rounded-full ${className}`}
+      style={style}
+    />
+  );
+}
+
+/**
+ * The number a scene is about, drawn as an edge rather than as ink.
+ *
+ * The one thing the reference does that a UI screenshot never does: a figure
+ * at display size, cut out of the dark, legible only because its stroke
+ * catches the light. It is decoration with a value in it — the amount, the
+ * score, the status code — so it carries the meaning the card would otherwise
+ * spend a label on.
+ *
+ * `aria-hidden` when the same number is already in the copy beside it; the
+ * caller decides, because sometimes this *is* the only place it appears.
+ */
+export function Figure({
+  children,
+  className = "",
+  muted,
+}: {
+  readonly children: ReactNode;
+  readonly className?: string;
+  /** Hide it from the accessibility tree — the value is stated elsewhere. */
+  readonly muted?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden={muted ? "true" : undefined}
+      className={`lp-figure select-none font-heading text-[clamp(3rem,7vw,4.5rem)] leading-none tracking-[-0.04em] ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Four corner ticks around a region — the drafting mark that says "this is the
+ * frame", without drawing the frame. A full hairline box around a scene is a
+ * second card inside the card; four corners is the same statement at a
+ * quarter of the ink.
+ */
+export function Brackets({ className = "" }: { readonly className?: string }) {
+  const corners = [
+    "top-0 left-0 border-t border-l",
+    "top-0 right-0 border-t border-r",
+    "bottom-0 left-0 border-b border-l",
+    "bottom-0 right-0 border-b border-r",
+  ];
+
+  return (
+    <span aria-hidden="true" className={`pointer-events-none absolute inset-0 ${className}`}>
+      {corners.map((corner) => (
+        <span className={`absolute size-2.5 border-[var(--lp-glass-edge-lit)] ${corner}`} key={corner} />
+      ))}
     </span>
   );
 }

@@ -47,6 +47,21 @@ export interface TextRevealProps {
   once?: boolean;
   whileInView?: boolean;
   children?: ReactNode;
+  /**
+   * A class on every animated unit, not on the wrapper.
+   *
+   * For anything that has to be applied per glyph-group rather than around the
+   * text — `.lp-lumen`, whose milled ramp is a `background-clip: text` and so
+   * is painted by the element that declares it and masked by *its own* text.
+   * On the wrapper, every unit inside it animates opacity and a blur, which
+   * composites each one separately and puts it outside that paint: the words
+   * come out with the transparent fill and nothing behind them, and a milled
+   * headline is invisible for the length of its own entrance. On the unit the
+   * clip and the animation are the same element.
+   *
+   * Same lesson as `DigitPop`'s `luminous`, and the same fix.
+   */
+  unitClassName?: string;
 }
 
 const DEFAULT_SPRING = { stiffness: 140, damping: 26, mass: 1.2 };
@@ -81,6 +96,7 @@ export function TextReveal({
   once = true,
   whileInView = false,
   children,
+  unitClassName,
 }: TextRevealProps) {
   /* JSX resolves a union of tags by intersecting their props, which makes the
      ref type impossible to satisfy (an HTMLDivElement is not an HTMLSpanElement).
@@ -140,7 +156,10 @@ export function TextReveal({
               // `whitespace-pre` is load-bearing: a unit's trailing space is
               // inside an inline-block and would otherwise collapse to zero
               // width, running every word together.
-              className="inline-block whitespace-pre will-change-transform"
+              className={cn("inline-block whitespace-pre will-change-transform", unitClassName)}
+              // `.lp-lumen` draws its bloom from `attr(data-text)`; anything
+              // else ignores it.
+              data-text={unit}
             >
               {unit}
             </motion.span>

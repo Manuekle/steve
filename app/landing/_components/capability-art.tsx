@@ -53,7 +53,7 @@ import {
   WebhookIcon,
 } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
-import { at, Chip, Mono, Plate, Row, Scene, SwapPlate } from "./scene-kit";
+import { at, Bloom, Brackets, Chip, Figure, Mono, Plate, Row, Scene, SwapPlate } from "./scene-kit";
 
 // ── 01 · Conocimiento propio ────────────────────────────────────────
 
@@ -72,8 +72,12 @@ export function KnowledgeScene() {
 
   return (
     <Scene>
+      {/* The light is on the answer, not on the question: the bloom sits over
+          the first result, which is the row the scene is arguing about. */}
+      <Bloom className="top-8 left-0 h-32 w-64 opacity-70 transition-opacity duration-700 group-hover:opacity-100" />
+
       <Row>
-        <Plate active className="size-8" icon={Search01Icon} />
+        <Plate active className="size-8" icon={Search01Icon} tint="blue" />
         <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
           ¿hacen devoluciones?
         </Mono>
@@ -134,12 +138,19 @@ export function KnowledgeScene() {
 export function HandoffScene() {
   return (
     <Scene>
+      {/* One bloom, and it moves. The handoff is a transfer, so the light
+          travels the same distance the conversation does — it starts over the
+          bot and ends over the person. Two blooms, one per plate, would say
+          both are lit and the card would have no subject. */}
+      <Bloom className="-translate-x-1/2 -translate-y-1/2 top-[2.1rem] left-[calc(50%-2.6rem)] h-32 w-32 transition-[translate] duration-700 group-hover:translate-x-[calc(-50%+5.2rem)]" />
+
       <div className="flex flex-col items-center gap-4">
         <div className="flex items-center gap-4">
           <Plate
             className="size-11 rounded-xl transition-opacity duration-500 group-hover:opacity-40"
             icon={BotIcon}
             size={19}
+            tint="violet"
           />
           <HugeiconsIcon
             className="text-muted-foreground transition-transform duration-500 group-hover:translate-x-1"
@@ -180,23 +191,31 @@ export function CalendarScene() {
 
   return (
     <Scene>
-      <div className="lp-panel rounded-xl px-4 py-3.5">
+      {/* Under the cell that gets taken, not over the whole week. */}
+      <Bloom className="bottom-8 left-[46%] h-24 w-40" />
+
+      <div className="lp-panel relative rounded-xl px-4 py-3.5">
+        {/* The grain of the surface the week is printed on. It is the one
+            texture in the section, and it is here because a calendar is the
+            one scene that is mostly empty rectangle: without it the panel is a
+            flat swatch with dots of ink on it. */}
+        <span aria-hidden="true" className="lp-dots pointer-events-none absolute inset-0 rounded-xl opacity-40" />
         <div className="flex items-center gap-3">
-          <Plate active className="size-8" icon={Calendar03Icon} />
+          <Plate active className="size-8" icon={Calendar03Icon} tint="amber" />
           <Mono className="truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
             esta semana
           </Mono>
           <Mono className="ml-auto shrink-0 text-muted-foreground">10:30</Mono>
         </div>
 
-        <div className="mt-4 grid grid-cols-7 gap-1.5">
+        <div className="relative mt-4 grid grid-cols-7 gap-1.5">
           {rows.map((row) =>
             cols.map((col) => {
               const isTaken = col === taken.col && row === taken.row;
               return (
                 <span className="relative h-4" key={`${row}-${col}`}>
                   <span
-                    className={`absolute inset-0 rounded-[4px] bg-muted-foreground/15 transition-opacity duration-500 ${
+                    className={`absolute inset-0 rounded-[4px] bg-[var(--lp-glass)] shadow-[inset_0_0_0_1px_var(--lp-glass-edge)] transition-opacity duration-500 ${
                       isTaken ? "group-hover:opacity-0" : ""
                     }`}
                   />
@@ -244,8 +263,12 @@ export function LeadsScene() {
 
   return (
     <Scene>
+      {/* On the campaign row: the leads fall out of it, so that is where the
+          light enters the scene. */}
+      <Bloom className="-top-4 left-4 h-32 w-56 opacity-80 transition-opacity duration-700 group-hover:opacity-100" />
+
       <Row>
-        <Plate active className="size-8" icon={MetaIcon} />
+        <Plate active className="size-8" icon={MetaIcon} tint="rose" />
         <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
           Retargeting · carrito abandonado
         </Mono>
@@ -293,20 +316,29 @@ export function PaymentsScene() {
   return (
     <Scene>
       <Row>
-        <Plate active className="size-8" icon={Link01Icon} />
+        <Plate active className="size-8" icon={Link01Icon} tint="emerald" />
         <Mono className="min-w-0 flex-1 truncate text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
           pago.mercadopago.com/…
         </Mono>
         <Mono className="shrink-0 text-muted-foreground">enviado</Mono>
       </Row>
 
-      <Row className="mt-2.5 transition-colors duration-500 group-hover:border-input">
-        <SwapPlate className="size-8" delay={220} from={Wallet01Icon} to={Tick02Icon} />
-        <span className="min-w-0 flex-1">
-          <Mono className="block truncate text-foreground">$ 24.500</Mono>
-          {/* Both statuses stacked in a fixed slot rather than swapped in flow,
-              so the row does not change height mid-fade. */}
-          <span className="relative mt-1 block h-3.5">
+      {/* The amount is the scene, so it is drawn at the size the thing
+          deserves rather than as another 10px mono label in another row. Two
+          rows of identical furniture was the card saying "here is a list";
+          one row and a figure is the card saying "this arrived". */}
+      <div className="relative mt-6 flex items-end gap-4">
+        <Bloom className="-bottom-8 -left-8 h-40 w-56 opacity-40 transition-opacity duration-700 group-hover:opacity-100" />
+
+        <span className="min-w-0">
+          <Figure className="block text-[clamp(2.25rem,5vw,3.25rem)]">
+            <span className="mr-1 align-top text-[0.42em] leading-[2.2]">$</span>
+            24.500
+          </Figure>
+
+          {/* Both statuses stacked in a fixed slot rather than swapped in
+              flow, so nothing changes height mid-fade. */}
+          <span className="relative mt-3 block h-3.5">
             <Mono className="absolute inset-0 text-muted-foreground transition-opacity duration-500 group-hover:opacity-0">
               esperando el pago…
             </Mono>
@@ -318,7 +350,9 @@ export function PaymentsScene() {
             </Mono>
           </span>
         </span>
-      </Row>
+
+        <SwapPlate className="mb-1.5 size-9" delay={220} from={Wallet01Icon} size={16} to={Tick02Icon} />
+      </div>
     </Scene>
   );
 }
@@ -338,13 +372,17 @@ export function VoiceScene() {
 
   return (
     <Scene>
+      {/* The lamp is the microphone: the waveform is lit from its end, which
+          is why the bloom sits on the plate and not under the bars. */}
+      <Bloom className="-translate-y-1/2 top-1/2 left-[-1.5rem] h-32 w-32" />
+
       <div className="flex items-center gap-4">
-        <Plate active className="size-11 rounded-xl" icon={Mic01Icon} size={19} />
+        <Plate active className="size-11 rounded-xl" icon={Mic01Icon} size={19} tint="cyan" />
 
         <div className="flex h-11 flex-1 items-center justify-between gap-1">
           {bars.map((height, index) => (
             <span
-              className="w-1 origin-center scale-y-[0.55] rounded-full bg-muted-foreground/60 transition-transform duration-500 group-hover:scale-y-100"
+              className="w-1 origin-center scale-y-[0.55] rounded-full bg-foreground/25 transition-all duration-500 group-hover:scale-y-100 group-hover:bg-foreground/70"
               // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, positional waveform
               key={index}
               style={{ ...at(index * 35), height: `${height}%` }}
@@ -369,27 +407,34 @@ export function VoiceScene() {
 export function CrmScene() {
   return (
     <Scene>
+      {/* Over the second column — where the card is going, not where it is. */}
+      <Bloom className="top-2 left-[50%] h-28 w-32" />
+
       <div className="flex justify-center gap-2.5">
         {[0, 1, 2].map((column) => (
           <div
-            className="flex h-[5.5rem] w-[5rem] flex-col gap-2 rounded-xl bg-muted/60 p-2"
+            className="flex h-[5.5rem] w-[5rem] flex-col gap-2 rounded-xl bg-[var(--lp-glass)] p-2 shadow-[inset_0_0_0_1px_var(--lp-glass-edge)]"
             key={column}
           >
             {/* Headings of different widths, so three columns do not read as
                 three copies of one column. */}
             <span
-              className="h-[3px] rounded-full bg-muted-foreground/25"
+              className="h-[3px] rounded-full bg-foreground/20"
               style={{ width: [22, 28, 18][column] }}
             />
-            {column === 2 ? <span className="lp-plate h-6 rounded-lg" /> : null}
+            {column === 2 ? <span className="lp-plate h-6 rounded-lg opacity-70" /> : null}
             {column === 0 ? (
               /* One column is 5rem plus a 0.625rem gap, so the travel is
                  exactly 5.625rem — stated, not eyeballed, or the card lands
                  between two columns. It is also the only one at full contrast:
                  the eye needs one thing to follow, not three. */
-              <span className="lp-panel relative z-10 h-6 rounded-lg transition-transform duration-500 group-hover:translate-x-[5.625rem]" />
+              <span
+                className="relative z-10 h-6 rounded-lg bg-[var(--lp-glass-lit)] shadow-[inset_0_0_0_1px_var(--lp-glass-edge-lit),0_0_18px_-6px_var(--lp-halo)] transition-transform duration-500 group-hover:translate-x-[5.625rem]"
+              />
             ) : null}
-            {column === 1 ? <span className="h-6 rounded-lg bg-card/70" /> : null}
+            {column === 1 ? (
+              <span className="h-6 rounded-lg bg-[var(--lp-glass)] opacity-60" />
+            ) : null}
           </div>
         ))}
       </div>
@@ -416,6 +461,8 @@ export function ProspectScene() {
 
   return (
     <Scene>
+      <Bloom className="-top-2 left-2 h-28 w-48" />
+
       <div className="space-y-2">
         {threads.map((thread, index) => (
           <Row key={thread.who} style={at(index * 90)}>
@@ -426,7 +473,7 @@ export function ProspectScene() {
             {/* A fixed slot, so two chips of different lengths do not shuffle
                 the rows as they arrive. */}
             <span className="relative h-6 w-[6.5rem] shrink-0">
-              <span className="absolute inset-y-0 right-0 h-[3px] w-10 translate-y-2.5 rounded-full bg-muted-foreground/20 transition-opacity duration-500 group-hover:opacity-0" />
+              <span className="absolute inset-y-0 right-0 h-[3px] w-10 translate-y-2.5 rounded-full bg-foreground/12 transition-opacity duration-500 group-hover:opacity-0" />
               <Chip
                 className="absolute inset-y-0 right-0 translate-y-1 text-muted-foreground opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100"
                 style={at(160 + index * 90)}
@@ -456,7 +503,13 @@ export function ApiScene() {
     <Scene>
       {/* A measure on the full-width card. Left to stretch, the wire ran the
           whole row and the request crossing it read as a loading bar. */}
-      <div className="mx-auto w-full max-w-[30rem]">
+      <div className="relative mx-auto w-full max-w-[30rem]">
+        {/* The measured region, marked the way a drawing marks one: four
+            corners rather than a box. What is between them is the claim —
+            two systems and one call. */}
+        <Brackets className="-inset-x-3 -top-3 bottom-9" />
+        <Bloom className="-right-2 top-0 h-28 w-32 opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
+
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-center gap-2">
             <Plate active className="size-12 rounded-xl" icon={Blockchain05Icon} size={21} />

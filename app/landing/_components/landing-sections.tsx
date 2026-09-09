@@ -6,15 +6,11 @@ import {
   Layers01Icon,
   Shield01Icon,
   WebhookIcon,
-  ZapIcon,
 } from "@hugeicons/core-free-icons";
-import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { ChromaticTextReveal } from "@/components/motion/chromatic-text-reveal";
 import { TextReveal } from "@/components/motion/text-reveal";
 import { AnthropicLogo, GeminiLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
-import { useSession } from "@/lib/auth/use-session";
-import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/provider";
 import { AdsScreen, FlowScreen, InboxScreen } from "./app-screens";
 import { AgentsScreen } from "./screen-agents";
@@ -27,7 +23,7 @@ import {
   WhatsAppMark,
 } from "./brand-marks";
 import { MercadoPagoBrandIcon } from "@/components/icons/connection-icons";
-import { BrandGlow, GlowMark, Halo, Spotlight } from "./lighting";
+import { BrandGlow } from "./lighting";
 import { AgentOverlay, ConversationOverlay } from "./overlays";
 import { SECURITY_ART } from "./security-art";
 import {
@@ -209,29 +205,44 @@ export function Principles() {
           yOffset="24%"
         />
 
-        {/* Three cards, not one box cut into thirds.
+        {/* Rules, not cards.
 
-            The old grid drew its dividers by showing a `bg-border` parent
-            through 1px gaps, inside a single rounded outline. That is a table,
-            and it is the one surface treatment the product never uses: the app
-            has cards — `--card`, a hairline, `--shadow-soft` and the inset
-            bevel — and this section was the only place on the page pretending
-            it had something else. `lp-cap` is that card, the same one the
-            capability grid and the self-hosted section use, so all three grids
-            answer the cursor the same way. */}
-        <div className="mt-14 grid gap-4 sm:grid-cols-3">
+            The section used to be three `lp-cap` cards — the app's KPI tile,
+            with its surface, its radius, its double edge and its sheen. That
+            tile earns its weight where it holds something: a number, a
+            screenshot, a scene the cursor resolves. Here it holds a sentence,
+            and a filled box around a sentence is packaging.
+
+            What is left is the measurement itself: `.lp-line` puts a hairline
+            over each column, the columns sit flush so those three hairlines
+            read as one rule across the row, a vertical hairline separates
+            them, and the container closes the block underneath. The columns
+            are the same width they were, so the rhythm of the section does not
+            move — only the box around it goes.
+
+            The leftmost column carries no left inset: its heading has to start
+            on the same rail as the section's own, or the whole row reads as
+            indented from the page. */}
+        <div className="mt-14 grid border-border border-b sm:grid-cols-3">
           {PRINCIPLES.map((principle, index) => (
-            <Reveal key={principle.titleKey} delay={index * 70}>
-              <div className="lp-cap group h-full flex-col p-6 sm:p-7">
-                <div className="lp-plate flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-500 group-hover:text-foreground">
-                  <HugeiconsIcon icon={principle.icon} size={16} strokeWidth={1.75} />
-                </div>
-                <FigureLabel>
-                  <span className="mt-5 block">{principle.figure}</span>
-                </FigureLabel>
-                <h3 className="mt-2 font-medium text-lg tracking-tight">{t(principle.titleKey)}</h3>
-                <p className="mt-2.5 text-[15px] leading-relaxed text-muted-foreground">{t(principle.bodyKey)}</p>
+            <Reveal
+              key={principle.titleKey}
+              className="lp-line group flex-col py-8 sm:border-border sm:border-l sm:px-7 sm:py-9 sm:first:border-l-0 sm:first:pl-0 sm:last:pr-0"
+              delay={index * 70}
+            >
+              <div className="flex items-center justify-between">
+                <FigureLabel>{principle.figure}</FigureLabel>
+                <HugeiconsIcon
+                  className="text-muted-foreground transition-colors duration-500 group-hover:text-foreground"
+                  icon={principle.icon}
+                  size={16}
+                  strokeWidth={1.5}
+                />
               </div>
+              <h3 className="mt-5 font-medium text-lg tracking-tight">{t(principle.titleKey)}</h3>
+              <p className="mt-2.5 text-[15px] text-muted-foreground leading-relaxed">
+                {t(principle.bodyKey)}
+              </p>
             </Reveal>
           ))}
         </div>
@@ -688,8 +699,13 @@ function StackCard({
 }) {
   return (
     <div aria-hidden={echo ? "true" : undefined} className="lp-rail-card w-[19rem] sm:w-[21rem]">
-      <div className="lp-cap group h-full flex-col">
-        <div className="relative z-20 order-last flex-none px-7 pt-1 pb-7">
+      {/* Same linear card the principles and the capability grid use: a rule
+          across the top and the guarantee under it, no surface. On a rail it
+          reads better than the box did — six boxes sliding past each other
+          were six edges crossing the two hazes at the ends, and what is left
+          moving now is six measurements. */}
+      <div className="lp-line group h-full flex-col">
+        <div className="relative z-20 order-last flex-none pt-1 pb-7">
           <h3 className="font-medium text-[15px] tracking-tight text-foreground">{title}</h3>
           <p className="mt-2.5 text-[14px] leading-relaxed text-muted-foreground">{body}</p>
         </div>
@@ -771,97 +787,8 @@ export function SelfHostedSection() {
     </section>
   );
 }
-
-// ── Prefooter ───────────────────────────────────────────────────────
-
-export function ClosingSection() {
-  const t = useT();
-  const session = useSession();
-
-  return (
-    <section className="relative overflow-hidden border-border border-t">
-      {/* The page closes under the same lamp it opened under. The bloom at the
-          foot was already here and it was doing the hero's old job — light
-          with no source — so the beam is the other half of it: it comes down
-          the section's centre line, lands on the mark, and the bloom below is
-          what it leaves on the floor.
-
-          Centred, unlike the hero's. The closing block is centred copy, and a
-          beam aimed off to one side of a centred column is the one arrangement
-          that reads as a mistake rather than as a composition. */}
-      <Spotlight
-        className="top-0 left-1/2 h-[34rem] w-[min(52rem,110vw)] -translate-x-1/2"
-        intensity={0.9}
-      />
-      {/* The floor. This was `.lp-glow` — the same wide neutral bloom the hero
-          opens with — hung 22rem below the section's own foot. The section
-          clips, so two thirds of it was outside and the clip fell a third of
-          the way down the ellipse, above its brightest point: a hard edge the
-          full width of the page, sitting exactly on the border between this
-          section and the footer.
-
-          A `Halo` sized to end inside the section has no edge to show, because
-          a radial gradient is already transparent at its own bounds. And it is
-          the right piece now regardless: the beam above explains where this
-          light comes from, which is the thing `.lp-glow` never could. */}
-      <Halo className="inset-x-0 bottom-0 h-64" />
-      <Shell className="relative py-28 text-center sm:py-36">
-        <Reveal>
-          {/* The one literal light source on the page, finally switched on.
-              It is a bolt in a recessed plate, and it has been a grey glyph in
-              a grey box for the whole life of this section — the icon that
-              means "this is fast" rendered at `--muted-foreground`, which is
-              the colour the page uses for things it is not asking you to look
-              at.
-
-              `GlowMark` and not a `drop-shadow`, because the silhouette is the
-              whole argument: a bolt's light is bolt-shaped close in and round
-              further out, and stacking the glyph at three radii is what
-              produces that. A single shadow gives you the round part only,
-              which is why an icon with a drop shadow reads as an icon with a
-              shadow. */}
-          <div className="relative mx-auto w-fit">
-            <Halo className="-inset-10" />
-            <div className="lp-plate relative flex size-10 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]">
-              <GlowMark icon={ZapIcon} size={18} strokeWidth={1.75} />
-            </div>
-          </div>
-        </Reveal>
-        <TextReveal
-          as="h2"
-          blur={6}
-          className="mx-auto mt-8 max-w-[16ch] text-balance font-heading font-semibold font-cooper text-[clamp(2.25rem,5.5vw,3.75rem)] text-foreground leading-[1.02] tracking-[-0.03em]"
-          stagger={0.045}
-          text={t("landing.closing.title")}
-          whileInView
-          yOffset="24%"
-        />
-        <Reveal delay={120}>
-          <p className="mx-auto mt-6 max-w-[44ch] text-[17px] leading-relaxed text-muted-foreground">
-            {t("landing.closing.body")}
-          </p>
-        </Reveal>
-        <Reveal delay={180}>
-          {/* `Button`, not two hand-rolled anchors reading `--btn-*` directly.
-              A button reimplemented from the raw tokens is the thing that
-              silently stops matching the app the next time the button system
-              changes — which is exactly what had happened here. */}
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg">
-              <Link href={session.signedIn ? "/dashboard" : "/login"}>
-                {session.signedIn
-                  ? t("landing.cta.openApp")
-                  : session.claimed
-                    ? t("landing.cta.signIn")
-                    : t("landing.cta.install")}
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/pricing">{t("landing.cta.pricing")}</Link>
-            </Button>
-          </div>
-        </Reveal>
-      </Shell>
-    </section>
-  );
-}
+// The closing call to action used to live here as `ClosingSection`: a
+// full-bleed band with a beam down its centre, sitting immediately above a
+// footer that then said nothing. It is `ClosingPanel` in `landing-footer.tsx`
+// now — one ending instead of two, and on every marketing page rather than
+// only this one.

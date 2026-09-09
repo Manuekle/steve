@@ -9,7 +9,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { type Ref, useEffect, useRef } from "react";
-import { ToolResult, ToolResultOutput } from "@/components/agents/tool-result";
+import { ToolResult } from "@/components/agents/tool-result";
 import { StreamingResponse } from "@/components/agents/streaming-response";
 import {
   Command,
@@ -18,7 +18,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputSubmit,
@@ -41,6 +41,7 @@ import {
   useStreamedWords,
   useTypewriter,
 } from "./demo-cursor";
+import { MockJson } from "./mock-json";
 import { AppChrome } from "./screen-chrome";
 
 /**
@@ -311,7 +312,14 @@ export function ChatScreen() {
               <>
                 <Message from="user">
                   <MessageContent>
-                    <MessageResponse>{userText}</MessageResponse>
+                    {/* The app puts `MessageResponse` here, because a real
+                        turn can contain Markdown. This one is a single
+                        sentence out of the dictionary, and `MessageResponse`
+                        is Streamdown — Shiki, KaTeX and Mermaid — which is
+                        most of a megabyte of parser for a line of prose, on
+                        the one screen that is above the fold. Plain text
+                        renders identically inside the pill. */}
+                    {userText}
                   </MessageContent>
                 </Message>
 
@@ -329,9 +337,9 @@ export function ChatScreen() {
                         title={t(listing === "running" ? "chat.toolRunning" : "chat.toolCompleted")}
                         tool="list_automations"
                       >
-                        <ToolResultOutput language="json">
+                        <MockJson>
                           {t("landing.demo.chat.toolList")}
-                        </ToolResultOutput>
+                        </MockJson>
                       </ToolResult>
 
                       {proposing ? (
@@ -346,9 +354,9 @@ export function ChatScreen() {
                           )}
                           tool="propose_automation"
                         >
-                          <ToolResultOutput language="json">
+                          <MockJson>
                             {t("landing.demo.chat.toolProposal")}
-                          </ToolResultOutput>
+                          </MockJson>
                         </ToolResult>
                       ) : null}
 

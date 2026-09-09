@@ -29,6 +29,10 @@ type DemoRequestBody = {
   /** Honeypot: a real visitor never fills a field named this convincingly
    *  and hidden off-screen. A bot filling every input does. */
   readonly website?: unknown;
+  /** Which form sent this — only changes the email subject below. Anything
+   *  but `"clients"` is treated as the original Enterprise form, so old
+   *  clients that never send this field keep today's subject. */
+  readonly source?: unknown;
 };
 
 function cleanString(value: unknown, max: number): string | null {
@@ -71,11 +75,12 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
   if (!company) return apiError("missing_field", { field: "company" });
 
   const message = cleanString(body.message, MAX_LEN.message) ?? "";
+  const subject = body.source === "clients" ? `Consulta — ${company}` : `Enterprise demo — ${company}`;
 
   const result = await sendAppEmail({
     to: ENTITY.email,
     replyTo: email,
-    subject: `Enterprise demo — ${company}`,
+    subject,
     text: [
       `Name: ${name}`,
       `Email: ${email}`,

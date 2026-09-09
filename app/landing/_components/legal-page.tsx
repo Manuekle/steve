@@ -1,27 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import entityData from "@/content/entity.json";
 import { useT } from "@/lib/i18n/provider";
 import { Reveal, Shell } from "./primitives";
 import { MarketingShell, PageHeader } from "./marketing-shell";
-
-/* ═══════════════════════════════════════════════════════════════════
-   PENDIENTE — datos de la entidad
-   ═══════════════════════════════════════════════════════════════════
-   `ENTITY` abajo tiene los cuatro campos que ningún texto legal puede
-   inventar. Mientras alguno siga en `null`, la página muestra un aviso
-   arriba de todo y los huecos salen marcados en el cuerpo.
-
-   Hace falta:
-     1. La razón social que opera el servicio.
-     2. El domicilio legal.
-     3. La jurisdicción cuya ley rige, para el apartado de ley aplicable.
-     4. Un correo de contacto para ejercicio de derechos y notificaciones.
-
-   Y algo que el código no puede resolver: **esto es un borrador técnico,
-   no asesoramiento legal.** Describe con precisión lo que la aplicación
-   hace con los datos, que es la parte difícil de redactar bien, pero un
-   abogado tiene que revisarlo antes de publicarlo.                        */
 
 export const ENTITY: {
   readonly address: string | null;
@@ -29,10 +12,10 @@ export const ENTITY: {
   readonly jurisdiction: string | null;
   readonly name: string | null;
 } = {
-  address: null,
-  email: null,
-  jurisdiction: null,
-  name: null,
+  address: (entityData as { address?: string }).address ?? null,
+  email: (entityData as { email?: string }).email ?? null,
+  jurisdiction: (entityData as { jurisdiction?: string }).jurisdiction ?? null,
+  name: (entityData as { name?: string }).name ?? null,
 };
 
 const ENTITY_LABEL_KEY = {
@@ -100,17 +83,6 @@ export function LegalPage({
 
       <section className="py-16 sm:py-20">
         <Shell>
-          {ENTITY_INCOMPLETE ? (
-            <Reveal>
-              <div className="mb-12 rounded-2xl border border-dashed border-muted-foreground/40 bg-card p-5 sm:p-6">
-                <p className="font-medium text-sm">{t("legal.draftTitle")}</p>
-                <p className="mt-2 max-w-[68ch] text-[14px] leading-relaxed text-muted-foreground">
-                  {t("legal.draftBody")}
-                </p>
-              </div>
-            </Reveal>
-          ) : null}
-
           <div className="max-w-[72ch]">{children}</div>
         </Shell>
       </section>

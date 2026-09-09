@@ -7,7 +7,6 @@ import {
   AgentsSection,
   AutomationSection,
   ChannelBand,
-  ClosingSection,
   InboxSection,
   Principles,
   SelfHostedSection,
@@ -16,7 +15,7 @@ import { LandingLocaleSwap } from "./locale-swap";
 import { MarketingShell } from "./marketing-shell";
 import { CapabilitiesSection } from "./section-capabilities";
 import { PricingSection } from "./section-pricing";
-import { TestimonialsSection } from "./section-testimonials";
+import { ProofSection } from "./section-proof";
 
 /**
  * The landing page: the section order, and nothing else. The dark wrapper,
@@ -46,11 +45,19 @@ export function Landing() {
         <AdsSection />
         <SelfHostedSection />
         {/* Proof, then price, then the objections. In that order because each
-            one is the question the previous section leaves you with. */}
-        <TestimonialsSection />
+            one is the question the previous section leaves you with.
+
+            Proof is one section, not two. The wall of quotes and the globe of
+            clients were separate and consecutive, which made the page say
+            "people use this" twice in a row with different furniture. */}
+        <ProofSection />
         <PricingSection />
         <Faq />
-        <ClosingSection />
+        {/* The closing call to action lives in the footer now. It was a
+            full-bleed band here, immediately above a footer that then said
+            nothing — two endings in a row, the second one weaker, which is
+            most of why the footer read as generic. One ending, and every
+            marketing page gets it rather than only this one. */}
       </LandingLocaleSwap>
     </MarketingShell>
   );

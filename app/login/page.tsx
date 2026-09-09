@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthBackdrop } from "@/app/_components/auth-backdrop";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { SenkaMark } from "@/components/icons/senka-mark";
 import { ArrowLeft02Icon, EyeIcon, EyeOffIcon } from "@hugeicons/core-free-icons";
@@ -210,15 +211,14 @@ function LoginForm() {
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
       {/* Backdrop, under everything and inert. */}
-      <div aria-hidden="true" className="auth-glow" />
-      <div aria-hidden="true" className="auth-grid" />
+      <AuthBackdrop />
 
       <div className="relative w-full max-w-[25rem]">
         {/* The mark, in the same rounded tile the favicon uses, so the tab and
             the page agree. A padlock said "this is locked", which the heading
             says better and in words. */}
         <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-foreground shadow-[var(--shadow-soft)] p-1">
-          <SenkaMark className="size-8 text-background" />
+          <SenkaMark className="h-8 w-auto text-background" />
         </div>
 
         <h1 className="mt-7 text-balance text-center font-cooper text-[2rem] leading-[1.08] tracking-[-0.03em]">

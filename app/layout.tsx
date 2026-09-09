@@ -1,3 +1,4 @@
+import Script from "next/script";
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
@@ -33,18 +34,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Sets the theme class before the browser paints anything.
- *
- * This has to be a raw inline <script>, not `next/script`. In the App Router
- * a `beforeInteractive` script is not inlined into the HTML — it is pushed
- * onto `self.__next_s` and replayed by the Next runtime once the framework
- * bundle has loaded. That is long after first paint, so every full page load
- * in dark mode rendered the light palette first and then snapped to dark: the
- * white flash. A plain inline script runs during head parsing, before any
- * paint, which is the whole point of it.
- *
- * `color-scheme` goes on too, so the parts the page does not paint itself —
- * the canvas behind it, scrollbars, form controls — start out dark as well.
+ * Sets theme class before paint.
+ * Uses `next/script` with `beforeInteractive` to avoid React hydration
+ * script warning while still running before framework bundle.
+ * `color-scheme` set too for canvas/scrollbars.
  */
 const themeInitScript = `
 (function() {
@@ -72,7 +65,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
 
       <body suppressHydrationWarning>
