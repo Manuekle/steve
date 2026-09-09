@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-const TEST_DIR = join(tmpdir(), `steve-blob-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-blob-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -40,7 +40,7 @@ vi.mock("aws4fetch", () => ({
 const S3_ENV: Record<string, string> = {
   S3_ENDPOINT: "https://proj.storage.supabase.co/storage/v1/s3",
   S3_REGION: "us-east-1",
-  S3_BUCKET: "steve",
+  S3_BUCKET: "senka",
   S3_ACCESS_KEY_ID: "key",
   S3_SECRET_ACCESS_KEY: "secret",
 };
@@ -76,7 +76,7 @@ describe("backend selection", () => {
     await blobs.putBlob("media/a.png", new Uint8Array([1, 2]), "image/png");
 
     expect(await blobs.blobBackend()).toBe("disk");
-    expect([...(await readFile(join(TEST_DIR, ".steve", "media", "a.png")))]).toEqual([1, 2]);
+    expect([...(await readFile(join(TEST_DIR, ".senka", "media", "a.png")))]).toEqual([1, 2]);
     expect(awsFetch).not.toHaveBeenCalled();
     expect(dbWrite).not.toHaveBeenCalled();
   });
@@ -89,7 +89,7 @@ describe("backend selection", () => {
 
     expect(await blobs.blobBackend()).toBe("database");
     expect(dbWrite).toHaveBeenCalledWith("media/a.png", new Uint8Array([1, 2]));
-    expect(existsSync(join(TEST_DIR, ".steve", "media", "a.png"))).toBe(false);
+    expect(existsSync(join(TEST_DIR, ".senka", "media", "a.png"))).toBe(false);
   });
 
   it("prefers the bucket over both", async () => {
@@ -102,7 +102,7 @@ describe("backend selection", () => {
 
     expect(await blobs.blobBackend()).toBe("s3");
     const [url, init] = awsFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://proj.storage.supabase.co/storage/v1/s3/steve/media/a.png");
+    expect(url).toBe("https://proj.storage.supabase.co/storage/v1/s3/senka/media/a.png");
     expect(init.method).toBe("PUT");
     expect((init.headers as Record<string, string>)["content-type"]).toBe("image/png");
     expect(dbWrite).not.toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe("backend selection", () => {
   // Half a bucket is worse than none: the next upload would land elsewhere
   // and everything already stored would stop being findable.
   it("ignores a half-configured bucket rather than guessing", async () => {
-    configure({ S3_ENDPOINT: S3_ENV.S3_ENDPOINT, S3_BUCKET: "steve" });
+    configure({ S3_ENDPOINT: S3_ENV.S3_ENDPOINT, S3_BUCKET: "senka" });
     const blobs = await load();
 
     expect(await blobs.blobBackend()).toBe("disk");

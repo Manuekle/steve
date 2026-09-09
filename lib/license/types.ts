@@ -21,7 +21,7 @@ export type LicensePayload = {
    */
   readonly maintenanceUntil: string;
   /**
-   * The installation this license was issued for — `~/.steve/installation-id`
+   * The installation this license was issued for — `~/.senka/installation-id`
    * on the customer's machine at the time they requested it, see
    * `lib/license/installation.ts`. Absent on licenses issued before this
    * field existed, and on any license issued without an activation exchange;

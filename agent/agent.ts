@@ -7,7 +7,7 @@ import { claimChatModelSync, warmChatModelCache } from "../lib/chat-model-store"
 import { billingSourceForProvider, checkCreditGate } from "../lib/credit-gate";
 
 // The model comes from Settings → Modelo de IA, which persists to
-// ~/.steve/credentials.json. Three routes are supported:
+// ~/.senka/credentials.json. Three routes are supported:
 //
 //   gateway   — a bare model id string, routed by Eve through the Vercel AI
 //               Gateway and authenticated with AI_GATEWAY_API_KEY.
@@ -35,7 +35,7 @@ await Promise.all([warmCredentialCache(), warmChatModelCache()]);
 const fallbackModel = resolveLanguageModel();
 
 if (process.env.NODE_ENV !== "production") {
-  console.log(`[steve] model provider: ${resolveProvider()} · ${resolveModelId()}`);
+  console.log(`[senka] model provider: ${resolveProvider()} · ${resolveModelId()}`);
 }
 
 /**
@@ -57,7 +57,7 @@ function creditsExhaustedModel(reason: string): LanguageModel {
   };
   return {
     specificationVersion: "v2",
-    provider: "steve",
+    provider: "senka",
     modelId: "credits-exhausted",
     supportedUrls: {},
     doGenerate: fail,
@@ -67,7 +67,7 @@ function creditsExhaustedModel(reason: string): LanguageModel {
 
 // Per-conversation model choice, made in the chat's model picker.
 //
-// The picker cannot reach into Eve, so it writes to ~/.steve/chat-models.json
+// The picker cannot reach into Eve, so it writes to ~/.senka/chat-models.json
 // and this resolver reads it back by session id (see lib/chat-model-store).
 // Resolving on `step.started` is what lets a direct OpenAI/Anthropic pick
 // work at all: session- and turn-scoped selections must serialize to a model

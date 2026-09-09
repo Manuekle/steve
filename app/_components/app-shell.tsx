@@ -23,7 +23,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { useSound } from "@/components/sound-provider";
 import { SoundToggle } from "@/components/sound-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
-import { SteveMark } from "@/components/icons/steve-mark";
+import { SenkaMark } from "@/components/icons/senka-mark";
 import { NotificationBadge } from "@/components/ai-elements/notification-badge";
 import { SidebarNotifications } from "@/components/ai-elements/sidebar-notifications";
 import { SidebarStatus } from "@/components/ai-elements/sidebar-status";
@@ -37,7 +37,7 @@ import { useT } from "@/lib/i18n/provider";
 import { usePolling } from "@/lib/use-polling";
 import { cn } from "@/lib/utils";
 
-const COLLAPSED_KEY = "steve:sidebar-collapsed";
+const COLLAPSED_KEY = "senka:sidebar-collapsed";
 
 export function AppShell({ children }: { readonly children: ReactNode }) {
   const t = useT();
@@ -230,10 +230,9 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
         <div className={cn("flex h-14 shrink-0 items-center", collapsed ? "justify-center px-2" : "gap-2.5 px-5")}>
           {!collapsed ? (
             <div className="flex items-center gap-2">
-              <SteveMark />
+              <SenkaMark />
               <span className="text-lg font-semibold">
-                <span className="text-muted-foreground">st</span>
-                <span className="text-foreground">eve</span>
+                <span className="text-foreground">senka</span>
               </span>
             </div>
           ) : null}
@@ -336,8 +335,7 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
         <div className="relative md:hidden">
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
             <span className="text-lg font-semibold">
-              <span className="text-muted-foreground">st</span>
-              <span className="text-foreground">eve</span>
+              <span className="text-foreground">senka</span>
             </span>
             <button
               type="button"

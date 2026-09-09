@@ -67,7 +67,7 @@ const CHANNELS: readonly { readonly label: string; readonly mark: ReactNode }[] 
 const PROVIDERS: readonly { readonly label: string; readonly mark: ReactNode }[] = [
   { label: "Anthropic", mark: <AnthropicLogo size={20} /> },
   { label: "OpenAI", mark: <OpenAiLogo size={20} /> },
-  { label: "Gemini", mark: <GeminiLogo size={20} /> },
+  { label: "Gemini", mark: <GeminiLogo size={20} className="grayscale" /> },
   { label: "Vercel AI Gateway", mark: <VercelLogo size={18} /> },
 ];
 
@@ -304,7 +304,7 @@ export function InboxSection() {
     <FeatureSection
       id="bandeja"
       figure="Fig 01"
-      url="localhost:3000/inbox"
+      url="senka.ai/inbox"
       label={t("landing.features.inbox.label")}
       hint={t("landing.features.inbox.hint")}
       title={[t("landing.features.inbox.titleLine1"), t("landing.features.inbox.titleLine2")]}
@@ -436,7 +436,7 @@ export function AutomationSection() {
       id="automatizaciones"
       figure="Fig 02"
       footer={<AutomationConnectors />}
-      url="localhost:3000/automations/atencion-primera-linea"
+      url="senka.ai/automations/atencion-primera-linea"
       label={t("landing.features.automation.label")}
       hint={t("landing.features.automation.hint")}
       title={[t("landing.features.automation.titleLine1"), t("landing.features.automation.titleLine2")]}
@@ -487,7 +487,7 @@ export function AgentsSection() {
     <FeatureSection
       id="agentes"
       figure="Fig 03"
-      url="localhost:3000/agents"
+      url="senka.ai/agents"
       label={t("landing.features.agents.label")}
       hint={t("landing.features.agents.hint")}
       title={[t("landing.features.agents.titleLine1"), t("landing.features.agents.titleLine2")]}
@@ -522,7 +522,7 @@ export function AdsSection() {
     <FeatureSection
       id="ads"
       figure="Fig 05"
-      url="localhost:3000/ads"
+      url="senka.ai/ads"
       label={t("nav.ads")}
       hint={t("landing.features.ads.hint")}
       title={[t("landing.features.ads.titleLine1"), t("landing.features.ads.titleLine2")]}

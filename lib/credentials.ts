@@ -9,10 +9,10 @@ import {
   updateDocument as dbUpdateDocument,
 } from "./doc-store";
 
-// Credential store for Steve.
+// Credential store for Senka.
 //
 // Two backends: Postgres when WORKFLOW_POSTGRES_URL is set — which a deploy
-// with no writable filesystem requires — and ~/.steve/credentials.json
+// with no writable filesystem requires — and ~/.senka/credentials.json
 // otherwise, so a single-host install still needs nothing but a directory.
 // Every read falls back to the matching environment variable in both, so env
 // vars keep working exactly as before, and on a platform where they are the
@@ -27,7 +27,7 @@ import {
 // read must `await warmCredentialCache()` first, or accept the environment
 // alone.
 
-const CREDENTIALS_DIR = join(homedir(), ".steve");
+const CREDENTIALS_DIR = join(homedir(), ".senka");
 const CREDENTIALS_FILE = join(CREDENTIALS_DIR, "credentials.json");
 
 // In-memory cache for sync reads. In file mode it is loaded lazily and
@@ -495,7 +495,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
     id: "oauth-apps",
     label: "Apps OAuth (conexiones)",
     description:
-      "Solo para instalaciones propias. Son las credenciales de la aplicación, no de tu cuenta: quien usa Steve se conecta con su cuenta desde Conexiones y nunca ve estos valores. Registrá una app en cada proveedor y pegá el par acá una sola vez. En un despliegue gestionado ya vienen por variables de entorno.",
+      "Solo para instalaciones propias. Son las credenciales de la aplicación, no de tu cuenta: quien usa Senka se conecta con su cuenta desde Conexiones y nunca ve estos valores. Registrá una app en cada proveedor y pegá el par acá una sola vez. En un despliegue gestionado ya vienen por variables de entorno.",
     fields: [
       {
         key: "GOOGLE_OAUTH_CLIENT_ID",
@@ -836,7 +836,7 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         key: "S3_BUCKET",
         label: "Bucket",
         required: false,
-        placeholder: "steve",
+        placeholder: "senka",
         help: "El bucket donde se guardan los archivos. Tiene que existir ya.",
         pattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$",
         title: "Minúsculas, números, guiones y puntos",

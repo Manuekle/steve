@@ -1,4 +1,4 @@
-// Meta Marketing API client for Steve.
+// Meta Marketing API client for Senka.
 // Proxies requests through the server to avoid CORS and keep tokens private.
 
 import { getCredentialSync } from "./credentials";

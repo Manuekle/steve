@@ -51,7 +51,7 @@ export async function fetchPageText(
     const res = await fetch(url, {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       redirect: "follow",
-      headers: { "user-agent": "Mozilla/5.0 (compatible; SteveBusinessProfiler/1.0)" },
+      headers: { "user-agent": "Mozilla/5.0 (compatible; SenkaBusinessProfiler/1.0)" },
     });
     if (!res.ok) return { error: `HTTP ${res.status}` };
 

@@ -13,7 +13,7 @@ import { messageToAgentContent } from "../../lib/chat-media";
 // durable eve sessions; the agent's reply is posted back to the same
 // WhatsApp conversation.
 //
-// Credentials are read from the local credential store (~/.steve/credentials.json)
+// Credentials are read from the local credential store (~/.senka/credentials.json)
 // with fallback to environment variables. The webhook is served at
 // POST /eve/v1/whatsapp (and GET for verification).
 //
@@ -36,10 +36,10 @@ const channel =
   token && appSecret && phoneNumberId && verifyToken
     ? (() => {
         const { bot, channel, send } = chatSdkChannel({
-          userName: "steve",
+          userName: "senka",
           // The adapter must be handed the credentials, not left to find
-          // them: its own fallback is process.env, and Steve keeps these in
-          // ~/.steve/credentials.json so they can be rotated from Settings.
+          // them: its own fallback is process.env, and Senka keeps these in
+          // ~/.senka/credentials.json so they can be rotated from Settings.
           // Without this the guard above passes on the store's values and the
           // adapter then throws on the environment's missing ones, which took
           // the whole Eve server down at boot the moment WhatsApp was fully

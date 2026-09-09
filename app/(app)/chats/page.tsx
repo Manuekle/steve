@@ -23,7 +23,7 @@ import type { ChatSummary, ChannelId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { usePolling } from "@/lib/use-polling";
 
-const CHAT_STORAGE_KEY = "steve:eve-chat:v1";
+const CHAT_STORAGE_KEY = "senka:eve-chat:v1";
 
 /** The Eve session the main chat page would reopen right now, if any. */
 function openSessionId(): string | undefined {

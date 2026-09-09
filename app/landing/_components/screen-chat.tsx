@@ -259,7 +259,7 @@ export function ChatScreen() {
                 )}
               />
             </span>
-            <span className="truncate font-medium text-sm">steve</span>
+            <h2 className="truncate font-medium text-sm">senka</h2>
           </span>
 
           <span className="flex min-w-0 items-center gap-2">
@@ -364,10 +364,7 @@ export function ChatScreen() {
               </>
             ) : (
               <div className="flex flex-col items-center gap-6 text-center">
-                <p className="font-semibold text-4xl">
-                  <span className="text-muted-foreground">st</span>
-                  <span className="text-foreground">eve</span>
-                </p>
+                <h2 className="font-semibold text-4xl text-foreground">senka</h2>
                 <p className="max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
                   {t("chat.tagline")}
                 </p>

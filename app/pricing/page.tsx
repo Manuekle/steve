@@ -4,9 +4,9 @@ import { Pricing } from "./_components/pricing";
 
 export const metadata: Metadata = marketingMetadata({
   path: "/pricing",
-  title: "Precios — steve",
+  title: "Precios — senka",
   description:
-    "steve corre en tu servidor con tus claves, así que no hay licencia ni asientos. Lo que se cobra es el soporte y el hosting, si los querés.",
+    "senka corre en tu servidor con tus claves, así que no hay licencia ni asientos. Lo que se cobra es el soporte y el hosting, si los querés.",
 });
 
 export default function PricingPage() {

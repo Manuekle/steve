@@ -11,7 +11,7 @@ export default defineDynamic({
           "their ideal-customer profile written down.",
         `# What the agent is missing
 
-Every other sales skill is only as good as what this account has told Steve.
+Every other sales skill is only as good as what this account has told Senka.
 This one audits that and says exactly what to add and where.
 
 ## When to use

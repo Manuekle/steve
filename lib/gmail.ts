@@ -50,7 +50,7 @@ export async function sendGmailEmail(options: GmailSendOptions): Promise<EmailSe
     "MIME-Version: 1.0",
   ].filter((line): line is string => Boolean(line));
 
-  const boundary = `steve_${Date.now()}`;
+  const boundary = `senka_${Date.now()}`;
   let body: string;
   if (options.html && options.text) {
     headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);

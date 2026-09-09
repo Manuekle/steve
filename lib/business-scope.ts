@@ -57,7 +57,7 @@ function empty(): Registry {
 
 const registryStore = createDocumentStore<Registry>({
   id: "businesses",
-  file: join(homedir(), ".steve", "businesses.json"),
+  file: join(homedir(), ".senka", "businesses.json"),
   empty,
   normalize: (parsed) => {
     const businesses =
@@ -184,7 +184,7 @@ export async function scopedDocumentId(id: string): Promise<string> {
   return businessId === DEFAULT_BUSINESS_ID ? id : `${id}::${businessId}`;
 }
 
-/** `~/.steve/business.json` → `~/.steve/businesses/b-abc/business.json`. */
+/** `~/.senka/business.json` → `~/.senka/businesses/b-abc/business.json`. */
 export async function scopedFile(file: string): Promise<string> {
   const businessId = await activeBusinessId();
   if (businessId === DEFAULT_BUSINESS_ID) return file;

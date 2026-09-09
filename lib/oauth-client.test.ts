@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { OAUTH_CONNECTIONS, getConnectionDefinition } from "./connections";
 import { buildAuthorizeUrl, challengeFor, createVerifier, redirectUriFor } from "./oauth-client";
 
-const ORIGIN = "https://steve.example";
+const ORIGIN = "https://senka.example";
 
 describe("buildAuthorizeUrl", () => {
   it("sends Google offline so a refresh token comes back", () => {
@@ -21,7 +21,7 @@ describe("buildAuthorizeUrl", () => {
     expect(url.origin + url.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth");
     expect(url.searchParams.get("client_id")).toBe("client-123");
     expect(url.searchParams.get("redirect_uri")).toBe(
-      "https://steve.example/api/connections/google/callback",
+      "https://senka.example/api/connections/google/callback",
     );
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("state")).toBe("state-abc");

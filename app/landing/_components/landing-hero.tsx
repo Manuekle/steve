@@ -109,7 +109,7 @@ export function LandingHero() {
             label="Chat"
             hint={t("landing.hero.frameHint")}
             overlays={null}
-            url="localhost:3000"
+            url="senka.ai"
           >
             <ChatScreen />
           </ScreenFrame>

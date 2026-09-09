@@ -27,7 +27,7 @@ const COPY = {
 
 function storedLocale(): "es" | "en" {
   try {
-    const stored = localStorage.getItem("steve-locale");
+    const stored = localStorage.getItem("senka-locale");
     if (stored === "es" || stored === "en") return stored;
     return navigator.language.split("-")[0] === "en" ? "en" : "es";
   } catch {

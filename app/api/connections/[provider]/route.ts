@@ -10,7 +10,7 @@ import { invalidateProviderReports } from "@/lib/provider-catalog";
 //
 // Local only, and deliberately so: revoking an OAuth grant is the provider's
 // own screen, and doing it from here would decide on the operator's behalf
-// that a disconnect means a revoke. What this guarantees is that Steve stops
+// that a disconnect means a revoke. What this guarantees is that Senka stops
 // holding the token or key.
 
 export const DELETE = withApiErrors(async function DELETE(

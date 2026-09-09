@@ -15,7 +15,7 @@ import { getTemplateSource } from "./email-templates";
  * Built-in templates are real modules in this repo, so they are imported and
  * rendered directly — no compilation, no evaluation. Custom templates are
  * `.tsx` files the operator writes in the editor and that live under
- * `~/.steve/email-templates/`, so those have to be compiled and run here.
+ * `~/.senka/email-templates/`, so those have to be compiled and run here.
  *
  * The trust boundary: that source is already code on the operator's own
  * machine, written by the one account that can reach this app (every route

@@ -1,15 +1,15 @@
 # syntax=docker/dockerfile:1.7
 #
-# Enterprise self-hosted images for steve — two runtime targets built from
+# Enterprise self-hosted images for senka — two runtime targets built from
 # one source tree: `eve` (the agent host, port 3000) and `web` (the Next.js
 # UI, port 3001). They mirror the two systemd services the Ansible path
-# already installs — deploy/roles/app/templates/steve.service.j2 and
-# deploy/roles/frontend/templates/steve-web.service.j2 — same processes,
+# already installs — deploy/roles/app/templates/senka.service.j2 and
+# deploy/roles/frontend/templates/senka-web.service.j2 — same processes,
 # same ports, packaged as containers instead of systemd units.
 #
 # Build:
-#   docker build --target eve -t steve-eve .
-#   docker build --target web -t steve-web .
+#   docker build --target eve -t senka-eve .
+#   docker build --target web -t senka-web .
 # Or build both through docker-compose.enterprise.yml.
 #
 # The `eve` image needs a route to a Docker daemon to create sandbox

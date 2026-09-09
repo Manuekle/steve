@@ -17,7 +17,7 @@
 //   Mercado Pago  our own opaque id, sent as the preference's
 //                 `external_reference` and echoed back on the payment.
 //
-// Kept in ~/.steve/payments.json with the same 0600 mode and atomic rename as
+// Kept in ~/.senka/payments.json with the same 0600 mode and atomic rename as
 // the other stores here. It holds amounts and payer emails, not card data —
 // no processor ever hands that to an integrator, and this app never asks.
 
@@ -26,7 +26,7 @@ import { homedir } from "node:os";
 import { randomBytes } from "node:crypto";
 import { createDocumentStore } from "./doc-store";
 
-const STORE_FILE = join(homedir(), ".steve", "payments.json");
+const STORE_FILE = join(homedir(), ".senka", "payments.json");
 
 export type PaymentProvider = "stripe" | "mercadopago";
 
@@ -54,7 +54,7 @@ export type PaymentRecord = {
 
 type PaymentStore = { payments: PaymentRecord[] };
 
-// Postgres when one is configured, ~/.steve/payments.json (0600) otherwise.
+// Postgres when one is configured, ~/.senka/payments.json (0600) otherwise.
 const paymentStore = createDocumentStore<PaymentStore>({
   id: "payments",
   // Per business: a payment link belongs to the business that sent it. See lib/business-scope.ts.
@@ -67,7 +67,7 @@ const paymentStore = createDocumentStore<PaymentStore>({
 
 /** An opaque reference for providers that let us choose one. */
 export function newPaymentReference(): string {
-  return `steve_${randomBytes(12).toString("hex")}`;
+  return `senka_${randomBytes(12).toString("hex")}`;
 }
 
 export async function listPayments(): Promise<PaymentRecord[]> {

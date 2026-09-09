@@ -34,7 +34,7 @@ beforeEach(async () => {
 describe("the first business", () => {
   it("keeps the row keys and file paths it already had", async () => {
     expect(await scope.scopedDocumentId("business")).toBe("business");
-    expect(await scope.scopedFile("/home/x/.steve/business.json")).toBe("/home/x/.steve/business.json");
+    expect(await scope.scopedFile("/home/x/.senka/business.json")).toBe("/home/x/.senka/business.json");
     expect(await scope.blobPrefix()).toBe("");
   });
 
@@ -51,8 +51,8 @@ describe("a second business", () => {
 
     expect(await scope.activeBusinessId()).toBe(entry.id);
     expect(await scope.scopedDocumentId("business")).toBe(`business::${entry.id}`);
-    expect(await scope.scopedFile("/home/x/.steve/knowledge.json")).toBe(
-      `/home/x/.steve/businesses/${entry.id}/knowledge.json`,
+    expect(await scope.scopedFile("/home/x/.senka/knowledge.json")).toBe(
+      `/home/x/.senka/businesses/${entry.id}/knowledge.json`,
     );
     // Two segments, not three: blob ids are `<area>/<name>` and no deeper.
     expect(await scope.blobPrefix()).toBe(`${entry.id}__`);

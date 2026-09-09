@@ -4,8 +4,8 @@
     daemon_reload: true
   become: true
 
-- name: Restart steve
+- name: Restart senka
   ansible.builtin.systemd:
-    name: steve
+    name: senka
     state: restarted
   become: true

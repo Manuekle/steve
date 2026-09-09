@@ -1,4 +1,4 @@
-// Simple i18n system for steve. Two locales: es (default) and en.
+// Simple i18n system for senka. Two locales: es (default) and en.
 // Usage: const t = useTranslations(); t("dashboard.title")
 
 export type Locale = "es" | "en";
@@ -150,7 +150,7 @@ const es: Dictionary = {
   "dashboard.messages": "mensajes",
   "dashboard.never": "nunca",
   "dashboard.emptyTitle": "Todo listo para empezar",
-  "dashboard.emptyDescription": "Steve está configurado. Creá tu primera conversación o automatización para ver datos aquí.",
+  "dashboard.emptyDescription": "Senka está configurado. Creá tu primera conversación o automatización para ver datos aquí.",
   "dashboard.emptyStartChat": "Nuevo chat",
   "dashboard.emptyCreateAutomation": "Crear automatización",
   "dashboard.emptyConfigureChannels": "Configurar canales",
@@ -271,7 +271,7 @@ const es: Dictionary = {
   "automations.messagePlaceholder": "Escribe el mensaje que se enviará automáticamente…",
   "automations.promptLabel": "Prompt para la IA",
   "automations.promptPlaceholder": "Ej: Responde con el horario de atención y opciones disponibles",
-  "automations.promptHelp": "El agente Steve generará una respuesta usando este prompt como guía.",
+  "automations.promptHelp": "El agente Senka generará una respuesta usando este prompt como guía.",
   "automations.duration": "Duración",
   "automations.durationPlaceholder": "Ej: 5min, 30s, 1h",
   "automations.conditionLabel": "Condición",
@@ -688,7 +688,7 @@ const es: Dictionary = {
 
   // ── Onboarding ──
   "onboarding.step": "Paso {current} de {total}",
-  "onboarding.title": "Bienvenido a steve",
+  "onboarding.title": "Bienvenido a senka",
   "onboarding.subtitle": "Tres preguntas para dejar la instancia lista. Todas se pueden cambiar después en Configuración.",
   "onboarding.language": "Idioma",
   "onboarding.phone": "Tu número de teléfono",
@@ -1349,7 +1349,7 @@ const es: Dictionary = {
   "settings.license.copyAction": "Copiar",
   "settings.license.copied": "Copiado",
   "settings.license.pasteLabel": "Pegar token de licencia",
-  "settings.license.pastePlaceholder": "steve-2026.eyJsaWNlbnNlSWQi...",
+  "settings.license.pastePlaceholder": "senka-2026.eyJsaWNlbnNlSWQi...",
   "settings.license.saveAction": "Guardar licencia",
   "settings.license.saveError": "Ese token no es válido — revisá que esté completo y sin espacios de más.",
   "license.card.holder": "Titular",
@@ -1853,10 +1853,10 @@ const es: Dictionary = {
   "landing.cta.signIn": "Entrar",
   "landing.cta.pricing": "Ver precios",
   "landing.cta.settings": "Configuración",
-  "landing.cta.install": "Instalar steve",
+  "landing.cta.install": "Instalar senka",
 
   // ── Landing: header ──
-  "landing.header.homeAria": "steve — inicio",
+  "landing.header.homeAria": "senka — inicio",
   "landing.header.sectionsAria": "Secciones",
   "landing.header.linkAgents": "Agentes",
   "landing.header.linkCapabilities": "Capacidades",
@@ -1950,7 +1950,7 @@ const es: Dictionary = {
   "landing.features.agents.titleLine1": "Un agente",
   "landing.features.agents.titleLine2": "por cada trabajo",
   "landing.features.agents.body":
-    "steve es el que atiende, pero podés crear los tuyos: uno para ventas, otro para postventa, otro que sólo mire las campañas. Cada uno con sus instrucciones, su base de conocimiento y sus herramientas.",
+    "senka es el que atiende, pero podés crear los tuyos: uno para ventas, otro para postventa, otro que sólo mire las campañas. Cada uno con sus instrucciones, su base de conocimiento y sus herramientas.",
   "landing.features.agents.disclosure1.label": "Herramientas con permiso",
   "landing.features.agents.disclosure1.detail":
     "Antes de hacer algo que sale del chat, el agente pide aprobación y te muestra exactamente qué va a ejecutar.",
@@ -1983,7 +1983,7 @@ const es: Dictionary = {
   "landing.selfHosted.titleLine1": "O corré todo",
   "landing.selfHosted.titleLine2": "en tu propia casa",
   "landing.selfHosted.body":
-    "Con Enterprise, steve no es un servicio al que le mandás tus conversaciones: es una aplicación que instalás vos, con una licencia perpetua de pago único — no una suscripción a un servidor más caro. La única cosa que sale de tu servidor es la llamada al modelo que hayas configurado.",
+    "Con Enterprise, senka no es un servicio al que le mandás tus conversaciones: es una aplicación que instalás vos, con una licencia perpetua de pago único — no una suscripción a un servidor más caro. La única cosa que sale de tu servidor es la llamada al modelo que hayas configurado.",
   "landing.selfHosted.database.title": "Tu base de datos",
   "landing.selfHosted.database.body":
     "El estado durable de cada conversación vive en tu PostgreSQL. Podés consultarlo, respaldarlo y borrarlo vos.",
@@ -2153,8 +2153,8 @@ const es: Dictionary = {
   "landing.demo.ads.campaign4": "Prospección fría · AMBA",
 
   // ── Landing: agents demo ──
-  "landing.demo.agents.steveDescription": "Asistente de ventas y soporte para WhatsApp, Instagram y web.",
-  "landing.demo.agents.stevePrompt":
+  "landing.demo.agents.senkaDescription": "Asistente de ventas y soporte para WhatsApp, Instagram y web.",
+  "landing.demo.agents.senkaPrompt":
     "Atendés en castellano rioplatense, breve y sin vueltas. Respondé sólo con lo que esté cargado en Conocimiento; si no está, derivá el contacto a una persona y dejá una nota con lo que preguntó.",
   "landing.demo.agents.ventasName": "Ventas",
   "landing.demo.agents.ventasDescription": "Cierra los leads que entran por Meta Ads y agenda demos.",
@@ -2209,7 +2209,7 @@ const es: Dictionary = {
   "pricing.billing.annualBadge": "2 meses gratis",
   "pricing.annualNote": "Equivale a {amount} por mes",
   "pricing.pro.name": "Pro",
-  "pricing.pro.for": "Para el negocio que quiere usar steve sin administrar infraestructura.",
+  "pricing.pro.for": "Para el negocio que quiere usar senka sin administrar infraestructura.",
   "pricing.pro.feature1": "100.000 AI Credits por mes",
   "pricing.pro.feature2": "WhatsApp, Instagram y chat web",
   "pricing.pro.feature3": "Agentes y automatizaciones ilimitados",
@@ -2243,13 +2243,13 @@ const es: Dictionary = {
     "Pro y Managed incluyen AI Credits en el precio — 100.000 en Pro, 500.000 en Managed — que cubren el consumo normal del agente sin que factures nada aparte. Si preferís, podés conectar tu propia clave de Anthropic, OpenAI o el AI Gateway desde Conexiones: ahí el proveedor te factura directo a vos, sin recargo nuestro, y no gastás créditos. Enterprise siempre usa tus propias claves — no incluye créditos, porque no hay límite que imponerte.",
   "pricing.enterpriseTerms.title": "Sobre la licencia Enterprise",
   "pricing.enterpriseTerms.body":
-    "Es una licencia de uso interno perpetua, no un alquiler: comprás el derecho a correr la versión que adquiriste para siempre, incluso si en el futuro no renovás nada. Los $9990 incluyen 12 meses de actualizaciones y soporte; pasado ese período, tu instalación sigue funcionando igual — lo único que cambia es que dejás de recibir versiones nuevas hasta renovar el mantenimiento. La licencia es para uso interno de tu negocio, incluso si con ella atendés a tus propios clientes (por ejemplo, un ecommerce respondiendo WhatsApp e Instagram de los suyos). No incluye el derecho a revender, sublicenciar, redistribuir steve, ofrecerlo como servicio gestionado a terceros, ni operar una instalación para atender a múltiples empresas externas — para eso existe una licencia Partner/OEM aparte.",
+    "Es una licencia de uso interno perpetua, no un alquiler: comprás el derecho a correr la versión que adquiriste para siempre, incluso si en el futuro no renovás nada. Los $9990 incluyen 12 meses de actualizaciones y soporte; pasado ese período, tu instalación sigue funcionando igual — lo único que cambia es que dejás de recibir versiones nuevas hasta renovar el mantenimiento. La licencia es para uso interno de tu negocio, incluso si con ella atendés a tus propios clientes (por ejemplo, un ecommerce respondiendo WhatsApp e Instagram de los suyos). No incluye el derecho a revender, sublicenciar, redistribuir senka, ofrecerlo como servicio gestionado a terceros, ni operar una instalación para atender a múltiples empresas externas — para eso existe una licencia Partner/OEM aparte.",
   "pricing.faq.q1": "¿Puedo cambiar de plan más adelante?",
   "pricing.faq.a1":
     "Sí. Pasar de Pro a Managed es inmediato: es la misma aplicación y los mismos datos, sólo cambia el servicio alrededor. Pasar de una suscripción a Enterprise (o al revés) es una migración de infraestructura, y te ayudamos con el volcado de la base en cualquiera de los dos sentidos.",
   "pricing.faq.q2": "¿Pro y Managed tienen límites de mensajes o de contactos?",
   "pricing.faq.a2":
-    "No los pone steve. Los límites que vas a encontrar son los de la API de Meta; si tu volumen crece, Managed suma recursos dedicados en vez de imponerte un tope.",
+    "No los pone senka. Los límites que vas a encontrar son los de la API de Meta; si tu volumen crece, Managed suma recursos dedicados en vez de imponerte un tope.",
   "pricing.faq.q3": "¿Qué pasa con mis datos si dejo de pagar?",
   "pricing.faq.a3":
     "Antes de dar de baja la instancia te entregamos un volcado completo de tu PostgreSQL, y con eso podés seguir andando en tu propio servidor — incluso pasarte a Enterprise si preferís no depender de una suscripción.",
@@ -2274,7 +2274,7 @@ const es: Dictionary = {
   // ── Terms ──
   "terms.title": "Términos y condiciones",
   "terms.lede":
-    "steve está disponible por suscripción — en Pro y Managed lo alojamos y operamos nosotros — o como licencia de pago único con Enterprise, para quien prefiere instalarlo y operarlo en su propia infraestructura. Estas condiciones cubren los tres planes.",
+    "senka está disponible por suscripción — en Pro y Managed lo alojamos y operamos nosotros — o como licencia de pago único con Enterprise, para quien prefiere instalarlo y operarlo en su propia infraestructura. Estas condiciones cubren los tres planes.",
   "terms.updated": "28 de agosto de 2026",
   "terms.whoWeAre.title": "Quiénes somos",
   "terms.whoWeAre.p1a": "El software lo publica ",
@@ -2293,7 +2293,7 @@ const es: Dictionary = {
     "Para conectar WhatsApp, Instagram o Meta Ads hace falta tu propia app de Meta, y para que el agente responda hace falta tu propia clave de un proveedor de modelo. Esas relaciones son tuyas: se rigen por las condiciones de cada proveedor, se facturan directamente a vos, y si alguno suspende tu cuenta o cambia su API, la función que dependa de ella deja de estar disponible.",
   "terms.acceptableUse.title": "Uso aceptable",
   "terms.acceptableUse.body":
-    "No podés usar steve para enviar mensajes no solicitados en masa, para hacerte pasar por otra persona u organización, para tratar datos que no tenés derecho a tratar, ni para nada que la ley aplicable prohíba.",
+    "No podés usar senka para enviar mensajes no solicitados en masa, para hacerte pasar por otra persona u organización, para tratar datos que no tenés derecho a tratar, ni para nada que la ley aplicable prohíba.",
   "terms.warranties.title": "Garantías",
   "terms.warranties.p1":
     "El software se entrega «tal cual». No garantizamos que esté libre de errores ni que las respuestas del modelo sean correctas. Tampoco que funcione ininterrumpidamente: en Pro y Managed, sobre infraestructura que operamos nosotros; en Enterprise, sobre la tuya, que no controlamos.",
@@ -2323,7 +2323,7 @@ const es: Dictionary = {
   // ── Privacy ──
   "privacy.title": "Qué pasa con los datos",
   "privacy.lede":
-    "En Pro y Managed, steve es un servicio que alojamos y operamos nosotros. En Enterprise, es una aplicación que instalás vos, y no un servicio al que le mandás tus conversaciones. Esta página explica qué se guarda, dónde, y qué sale hacia terceros en cada caso.",
+    "En Pro y Managed, senka es un servicio que alojamos y operamos nosotros. En Enterprise, es una aplicación que instalás vos, y no un servicio al que le mandás tus conversaciones. Esta página explica qué se guarda, dónde, y qué sale hacia terceros en cada caso.",
   "privacy.updated": "28 de agosto de 2026",
   "privacy.whoProcesses.title": "Quién trata los datos",
   "privacy.whoProcesses.p1a": "El software lo publica ",
@@ -2369,7 +2369,7 @@ const es: Dictionary = {
   "guide.updated": "29 de agosto de 2026",
   "guide.audience.title": "Para quién es esta guía",
   "guide.audience.body":
-    "Hay dos formas de usar steve y esta guía es solo para una. En Pro y Managed la instancia la alojamos y operamos nosotros: no instalás Node, Docker, PostgreSQL, el sandbox ni OpenTelemetry, entrás a tu cuenta y listo. La base de datos es nuestra y es una sola para todas las cuentas — no elegís Postgres ni ves Configuración → Base de datos, porque no hay nada tuyo que configurar ahí. Lo único que cargás son las credenciales de tus propias integraciones: WhatsApp, Stripe, Shopify y demás. En Enterprise, en cambio, corrés todo en tu infraestructura bajo licencia perpetua: la base es tuya (contenedor local o alojada, como prefieras), las claves son tuyas y la administración también. Lo que sigue es esa segunda vía.",
+    "Hay dos formas de usar senka y esta guía es solo para una. En Pro y Managed la instancia la alojamos y operamos nosotros: no instalás Node, Docker, PostgreSQL, el sandbox ni OpenTelemetry, entrás a tu cuenta y listo. La base de datos es nuestra y es una sola para todas las cuentas — no elegís Postgres ni ves Configuración → Base de datos, porque no hay nada tuyo que configurar ahí. Lo único que cargás son las credenciales de tus propias integraciones: WhatsApp, Stripe, Shopify y demás. En Enterprise, en cambio, corrés todo en tu infraestructura bajo licencia perpetua: la base es tuya (contenedor local o alojada, como prefieras), las claves son tuyas y la administración también. Lo que sigue es esa segunda vía.",
   "guide.requirements.title": "Requisitos",
   "guide.requirements.body":
     "Node.js 24, Corepack con pnpm 10.33.2, y una clave de modelo con cupo disponible — del AI Gateway de Vercel, de OpenAI, de Anthropic o de Google Gemini. Docker solo hace falta si querés que PostgreSQL corra en tu propia máquina; apuntando la aplicación a una base alojada (Supabase, Neon, RDS) no se usa.",
@@ -2386,10 +2386,10 @@ const es: Dictionary = {
     "Abrí ese .env antes de seguir: reemplazá las dos contraseñas de ejemplo y mantené POSTGRES_PASSWORD idéntica a la contraseña dentro de WORKFLOW_POSTGRES_URL. Ninguna clave de API va en el archivo: la del modelo y las de las integraciones se cargan después desde Configuración y Conexiones.",
   "guide.localInstall.p3": "Levantá la base de datos, migrala y arrancá la aplicación:",
   "guide.localInstall.p4":
-    "Abrí http://localhost:3000 y cargá desde ahí la clave del proveedor de IA y las de tus integraciones. Se guardan en ~/.steve/credentials.json, se rotan y se borran desde la misma pantalla, y toman efecto sin reiniciar.",
+    "Abrí http://localhost:3000 y cargá desde ahí la clave del proveedor de IA y las de tus integraciones. Se guardan en ~/.senka/credentials.json, se rotan y se borran desde la misma pantalla, y toman efecto sin reiniciar.",
   "guide.liveSetup.title": "Verificación en vivo — Instalación (/setup)",
   "guide.liveSetup.p1":
-    "Esta pantalla dentro de la aplicación revisa en vivo si la máquina donde corre tiene todo lo que hace falta: versión de Node, si Docker está instalado y corriendo, el contenedor steve-postgres, si WORKFLOW_POSTGRES_URL es alcanzable, si la base tiene sus tablas, la clave del modelo elegido, los embeddings, y el .env. Cada falla muestra el comando exacto que la resuelve.",
+    "Esta pantalla dentro de la aplicación revisa en vivo si la máquina donde corre tiene todo lo que hace falta: versión de Node, si Docker está instalado y corriendo, el contenedor senka-postgres, si WORKFLOW_POSTGRES_URL es alcanzable, si la base tiene sus tablas, la clave del modelo elegido, los embeddings, y el .env. Cada falla muestra el comando exacto que la resuelve.",
   "guide.liveSetup.p2":
     "La misma pantalla mueve configuración entre máquinas: podés importar un .env, un .txt o un JSON arrastrándolo o pegando el texto, y exportar todo lo guardado como .env agrupado o como JSON. La exportación incluye secretos en texto plano, y la pantalla lo avisa antes de que hagas clic.",
   "guide.database.title": "Base de datos",
@@ -2397,7 +2397,7 @@ const es: Dictionary = {
     "PostgreSQL es la única base de datos que usa la aplicación, y hay dos formas de dársela. En tu propia máquina, docker-compose.yml la levanta en el puerto 5544 del host para no chocar con otro Postgres local, y POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB y POSTGRES_HOST_PORT configuran ese contenedor. Apuntando a una base alojada — Supabase, Neon, RDS — Docker no participa: alcanza con poner su cadena de conexión en WORKFLOW_POSTGRES_URL, y esos campos POSTGRES_* dejan de aplicar. Con Supabase, usá la cadena del pooler (Project settings → Database → Connection pooling) y conservá el ?sslmode=require. La aplicación deduce cuál de los dos casos es leyendo el host de la URL, así que Instalación (/setup) omite los chequeos de Docker y del contenedor cuando la base es remota. Todo esto se edita desde Configuración → Base de datos; una variable de entorno real siempre gana sobre un valor guardado ahí, y cambiar cualquiera requiere reiniciar el agente.",
   "guide.aiModel.title": "Modelo de IA",
   "guide.aiModel.body":
-    "Por defecto la aplicación llama a los modelos a través del AI Gateway de Vercel con AI_GATEWAY_API_KEY. Como alternativa, OPENAI_API_KEY, ANTHROPIC_API_KEY o GOOGLE_GENERATIVE_AI_API_KEY llaman al proveedor directamente; AI_PROVIDER elige entre las cuatro rutas y, si lo dejás sin definir, se infiere de la clave que encuentre. Todas se pueden cargar y rotar en cualquier momento desde Configuración → Modelo de IA, y quedan guardadas en ~/.steve/credentials.json. Los embeddings del Conocimiento (RAG) son la excepción: siempre corren por OpenAI o por el Gateway, así que una instalación que solo tenga clave de Anthropic o de Gemini necesita además una de esas dos. Además, cada conversación tiene su propio selector de modelo en el encabezado del chat.",
+    "Por defecto la aplicación llama a los modelos a través del AI Gateway de Vercel con AI_GATEWAY_API_KEY. Como alternativa, OPENAI_API_KEY, ANTHROPIC_API_KEY o GOOGLE_GENERATIVE_AI_API_KEY llaman al proveedor directamente; AI_PROVIDER elige entre las cuatro rutas y, si lo dejás sin definir, se infiere de la clave que encuentre. Todas se pueden cargar y rotar en cualquier momento desde Configuración → Modelo de IA, y quedan guardadas en ~/.senka/credentials.json. Los embeddings del Conocimiento (RAG) son la excepción: siempre corren por OpenAI o por el Gateway, así que una instalación que solo tenga clave de Anthropic o de Gemini necesita además una de esas dos. Además, cada conversación tiene su propio selector de modelo en el encabezado del chat.",
   "guide.channels.title": "Canales de mensajería",
   "guide.channels.body":
     "El chat web funciona sin configurar nada. WhatsApp e Instagram necesitan una app de Meta, creada en developers.facebook.com: WhatsApp pide el token de acceso, el secreto de la app, el ID del número y un token de verificación; Instagram, que no depende de una página de Facebook, pide su propio token, su propio secreto —distinto del de la app—, el ID de cuenta y un token de verificación, y la cuenta tiene que ser profesional. El estado de cada canal (conectado o con datos faltantes) se ve en vivo en el panel, y las credenciales se cargan desde Configuración.",
@@ -2701,7 +2701,7 @@ const es: Dictionary = {
   "forms.detail.webhookTitle": "Webhook",
   "forms.detail.webhookDescription":
     "Cada respuesta se envía por POST en JSON a esta URL, incluidas las incompletas. Dejalo vacío para desactivarlo.",
-  "forms.detail.webhookPlaceholder": "https://tu-endpoint.com/steve",
+  "forms.detail.webhookPlaceholder": "https://tu-endpoint.com/senka",
   "forms.detail.webhookSaved": "Guardado",
   "forms.detail.webhookHint":
     "Tiene que ser HTTPS y un host público. El campo `response.id` es estable entre pasos: usalo como clave para actualizar en lugar de acumular una fila por paso.",
@@ -2942,7 +2942,7 @@ const es: Dictionary = {
   "connections.setUpAppHint":
     "Para conectar cuentas de {provider} primero hay que registrar la app OAuth en su consola y pegar acá el Client ID y el Client Secret. Recién entonces aparece el botón Conectar.",
   "connections.oauthAppDialogDescription":
-    "Credenciales de la aplicación, no de tu cuenta. Se guardan localmente y nunca salen de esta instalación; quien use Steve se conecta después con su propia cuenta.",
+    "Credenciales de la aplicación, no de tu cuenta. Se guardan localmente y nunca salen de esta instalación; quien use Senka se conecta después con su propia cuenta.",
   "connections.manualDialogTitle": "Clave de {provider}",
   "connections.manualDialogDescription": "Se guarda localmente, igual que en Configuración — nunca sale de esta instalación.",
   "connections.connectedBanner": "{provider} quedó conectado.",
@@ -2985,14 +2985,14 @@ const es: Dictionary = {
   "connections.twilio.reason": "Twilio autentica con Account SID y auth token.",
   "connections.smtp.description": "Correo saliente de las automatizaciones.",
   "connections.smtp.reason": "SMTP es usuario y contraseña por definición.",
-  "connections.anthropic.description": "Tu propia clave para Claude — el consumo lo paga tu cuenta, no tus créditos de Steve.",
+  "connections.anthropic.description": "Tu propia clave para Claude — el consumo lo paga tu cuenta, no tus créditos de Senka.",
   "connections.anthropic.reason": "Anthropic autentica con una clave de API, sin OAuth de usuario.",
-  "connections.openai.description": "Tu propia clave para OpenAI — el consumo lo paga tu cuenta, no tus créditos de Steve.",
+  "connections.openai.description": "Tu propia clave para OpenAI — el consumo lo paga tu cuenta, no tus créditos de Senka.",
   "connections.openai.reason": "OpenAI autentica con una clave de API, sin OAuth de usuario.",
   "connections.fromEnv": "desde el entorno",
-  "connections.gemini.description": "Tu propia clave para Google Gemini — el consumo lo paga tu cuenta, no tus créditos de Steve.",
+  "connections.gemini.description": "Tu propia clave para Google Gemini — el consumo lo paga tu cuenta, no tus créditos de Senka.",
   "connections.gemini.reason": "Google AI Studio autentica con una clave de API, sin OAuth de usuario.",
-  "connections.aiGateway.description": "Tu propia clave del AI Gateway de Vercel — el consumo lo paga tu cuenta, no tus créditos de Steve.",
+  "connections.aiGateway.description": "Tu propia clave del AI Gateway de Vercel — el consumo lo paga tu cuenta, no tus créditos de Senka.",
   "connections.aiGateway.reason": "El AI Gateway autentica con una clave de API, sin OAuth de usuario.",
   "connections.salesforce.description": "CRM de ventas: leads, contactos y oportunidades desde la conversación.",
   "connections.salesforce.unlockLeads": "Leads",
@@ -3006,10 +3006,10 @@ const es: Dictionary = {
   "aiUsage.renewsOn": "Se renueva el {date}",
   "aiUsage.noPlanBody": "Sin plan con créditos incluidos todavía. Conectá tu propia clave en Conexiones para seguir usando el agente.",
   "aiUsage.enterpriseBody": "Enterprise no tiene límite de créditos — self-hosted y con tus propias claves.",
-  "aiUsage.enterpriseNote": "El uso se sigue midiendo abajo para que tengas visibilidad, pero nada de esto te lo cobra Steve: pagás directo a cada proveedor con tus propias claves.",
+  "aiUsage.enterpriseNote": "El uso se sigue midiendo abajo para que tengas visibilidad, pero nada de esto te lo cobra Senka: pagás directo a cada proveedor con tus propias claves.",
   "aiUsage.costsTitle": "Costos",
-  "aiUsage.costsDescription": "Lo que gastaron tus créditos de Steve, separado de lo que estimamos que tus propias claves le costaron al proveedor.",
-  "aiUsage.steveCredits": "Pagado con AI Credits",
+  "aiUsage.costsDescription": "Lo que gastaron tus créditos de Senka, separado de lo que estimamos que tus propias claves le costaron al proveedor.",
+  "aiUsage.senkaCredits": "Pagado con AI Credits",
   "aiUsage.byokEstimated": "Uso estimado con tu propia clave",
   "aiUsage.costsNote": "El costo con tu propia clave es una estimación nuestra — el proveedor factura directo a tu cuenta, así que el monto final puede diferir un poco.",
   "aiUsage.trendCallsTitle": "Llamadas por día",
@@ -3421,7 +3421,7 @@ const en: Dictionary = {
   "dashboard.messages": "messages",
   "dashboard.never": "never",
   "dashboard.emptyTitle": "All set to start",
-  "dashboard.emptyDescription": "Steve is configured. Start a conversation or create an automation to see data here.",
+  "dashboard.emptyDescription": "Senka is configured. Start a conversation or create an automation to see data here.",
   "dashboard.emptyStartChat": "New chat",
   "dashboard.emptyCreateAutomation": "Create automation",
   "dashboard.emptyConfigureChannels": "Configure channels",
@@ -3542,7 +3542,7 @@ const en: Dictionary = {
   "automations.messagePlaceholder": "Type the message that will be sent automatically…",
   "automations.promptLabel": "AI prompt",
   "automations.promptPlaceholder": "E.g: Respond with business hours and available options",
-  "automations.promptHelp": "Agent Steve will generate a response using this prompt as a guide.",
+  "automations.promptHelp": "Agent Senka will generate a response using this prompt as a guide.",
   "automations.duration": "Duration",
   "automations.durationPlaceholder": "E.g: 5min, 30s, 1h",
   "automations.conditionLabel": "Condition",
@@ -3957,7 +3957,7 @@ const en: Dictionary = {
 
   // ── Onboarding ──
   "onboarding.step": "Step {current} of {total}",
-  "onboarding.title": "Welcome to steve",
+  "onboarding.title": "Welcome to senka",
   "onboarding.subtitle": "Three questions to get the instance ready. All of them can be changed later in Settings.",
   "onboarding.language": "Language",
   "onboarding.phone": "Your phone number",
@@ -4618,7 +4618,7 @@ const en: Dictionary = {
   "settings.license.copyAction": "Copy",
   "settings.license.copied": "Copied",
   "settings.license.pasteLabel": "Paste license token",
-  "settings.license.pastePlaceholder": "steve-2026.eyJsaWNlbnNlSWQi...",
+  "settings.license.pastePlaceholder": "senka-2026.eyJsaWNlbnNlSWQi...",
   "settings.license.saveAction": "Save license",
   "settings.license.saveError": "That token isn't valid — check it's complete, with no extra whitespace.",
   "license.card.holder": "Holder",
@@ -5122,10 +5122,10 @@ const en: Dictionary = {
   "landing.cta.signIn": "Sign in",
   "landing.cta.pricing": "See pricing",
   "landing.cta.settings": "Settings",
-  "landing.cta.install": "Install steve",
+  "landing.cta.install": "Install senka",
 
   // ── Landing: header ──
-  "landing.header.homeAria": "steve — home",
+  "landing.header.homeAria": "senka — home",
   "landing.header.sectionsAria": "Sections",
   "landing.header.linkAgents": "Agents",
   "landing.header.linkCapabilities": "Capabilities",
@@ -5218,7 +5218,7 @@ const en: Dictionary = {
   "landing.features.agents.titleLine1": "One agent",
   "landing.features.agents.titleLine2": "for every job",
   "landing.features.agents.body":
-    "steve is the one that answers, but you can create your own: one for sales, one for after-sales, one that only watches campaigns. Each with its own instructions, knowledge base and tools.",
+    "senka is the one that answers, but you can create your own: one for sales, one for after-sales, one that only watches campaigns. Each with its own instructions, knowledge base and tools.",
   "landing.features.agents.disclosure1.label": "Tools that ask permission",
   "landing.features.agents.disclosure1.detail":
     "Before doing anything that leaves the chat, the agent asks for approval and shows you exactly what it's about to run.",
@@ -5251,7 +5251,7 @@ const en: Dictionary = {
   "landing.selfHosted.titleLine1": "Or run it all",
   "landing.selfHosted.titleLine2": "in your own house",
   "landing.selfHosted.body":
-    "With Enterprise, steve isn't a service you send your conversations to — it's an application you install, under a perpetual license, one-time purchase, not a subscription to a pricier server. The only thing that leaves your server is the call to the model you've configured.",
+    "With Enterprise, senka isn't a service you send your conversations to — it's an application you install, under a perpetual license, one-time purchase, not a subscription to a pricier server. The only thing that leaves your server is the call to the model you've configured.",
   "landing.selfHosted.database.title": "Your database",
   "landing.selfHosted.database.body":
     "The durable state of every conversation lives in your PostgreSQL. You can query it, back it up and delete it yourself.",
@@ -5420,8 +5420,8 @@ const en: Dictionary = {
   "landing.demo.ads.campaign4": "Cold prospecting · AMBA",
 
   // ── Landing: agents demo ──
-  "landing.demo.agents.steveDescription": "Sales and support assistant for WhatsApp, Instagram and web.",
-  "landing.demo.agents.stevePrompt":
+  "landing.demo.agents.senkaDescription": "Sales and support assistant for WhatsApp, Instagram and web.",
+  "landing.demo.agents.senkaPrompt":
     "Keep replies short and direct. Answer only with what's loaded in Knowledge; if it isn't there, hand the contact off to a person and leave a note with what they asked.",
   "landing.demo.agents.ventasName": "Sales",
   "landing.demo.agents.ventasDescription": "Closes leads coming from Meta Ads and books demos.",
@@ -5476,7 +5476,7 @@ const en: Dictionary = {
   "pricing.billing.annualBadge": "2 months free",
   "pricing.annualNote": "Works out to {amount} a month",
   "pricing.pro.name": "Pro",
-  "pricing.pro.for": "For businesses that want to use steve without managing infrastructure.",
+  "pricing.pro.for": "For businesses that want to use senka without managing infrastructure.",
   "pricing.pro.feature1": "100,000 AI Credits per month",
   "pricing.pro.feature2": "WhatsApp, Instagram and web chat",
   "pricing.pro.feature3": "Unlimited agents and automations",
@@ -5507,7 +5507,7 @@ const en: Dictionary = {
   "pricing.enterprise.feature8": "Perpetual license: no subscription, no shutoff when it lapses",
   "pricing.enterpriseTerms.title": "About the Enterprise license",
   "pricing.enterpriseTerms.body":
-    "It's a perpetual internal-use license, not a rental: you buy the right to run the version you got, forever, even if you never renew anything again. The $9,990 includes 12 months of updates and support; after that, your install keeps working exactly the same — the only thing that changes is you stop receiving new versions until you renew maintenance. The license is for your own business's internal use, including using it to serve your own customers (an ecommerce business answering its customers' WhatsApp and Instagram, for example). It doesn't include the right to resell, sublicense, or redistribute steve, offer it as a managed service to third parties, or run one install to serve multiple outside companies — that's a separate Partner/OEM license.",
+    "It's a perpetual internal-use license, not a rental: you buy the right to run the version you got, forever, even if you never renew anything again. The $9,990 includes 12 months of updates and support; after that, your install keeps working exactly the same — the only thing that changes is you stop receiving new versions until you renew maintenance. The license is for your own business's internal use, including using it to serve your own customers (an ecommerce business answering its customers' WhatsApp and Instagram, for example). It doesn't include the right to resell, sublicense, or redistribute senka, offer it as a managed service to third parties, or run one install to serve multiple outside companies — that's a separate Partner/OEM license.",
   "pricing.alwaysPay.title": "How AI usage is paid for",
   "pricing.alwaysPay.body":
     "Pro and Managed include AI Credits in the price — 100,000 on Pro, 500,000 on Managed — that cover normal agent usage with nothing billed separately. If you'd rather, connect your own Anthropic, OpenAI, or AI Gateway key from Connections: the provider then bills you directly, with no markup from us, and you don't spend credits. Enterprise always uses your own keys — no credits included, because there's no limit to impose.",
@@ -5516,7 +5516,7 @@ const en: Dictionary = {
     "Yes. Moving from Pro to Managed is immediate — it's the same application and the same data, only the service around it changes. Moving from a subscription to Enterprise (or back) is an infrastructure migration, and we help with the database dump either way.",
   "pricing.faq.q2": "Do Pro and Managed have message or contact limits?",
   "pricing.faq.a2":
-    "steve doesn't impose any. The limits you'll run into are Meta's API limits; if your volume grows, Managed adds dedicated resources instead of a cap.",
+    "senka doesn't impose any. The limits you'll run into are Meta's API limits; if your volume grows, Managed adds dedicated resources instead of a cap.",
   "pricing.faq.q3": "What happens to my data if I stop paying?",
   "pricing.faq.a3":
     "Before we take the instance down, we hand you a complete dump of your PostgreSQL, and you can keep running on your own server with it — even move to Enterprise if you'd rather not depend on a subscription.",
@@ -5541,7 +5541,7 @@ const en: Dictionary = {
   // ── Terms ──
   "terms.title": "Terms and conditions",
   "terms.lede":
-    "steve is available by subscription — on Pro and Managed we host and operate it — or as a one-time license with Enterprise, for whoever would rather install and operate it on their own infrastructure. These terms cover all three plans.",
+    "senka is available by subscription — on Pro and Managed we host and operate it — or as a one-time license with Enterprise, for whoever would rather install and operate it on their own infrastructure. These terms cover all three plans.",
   "terms.updated": "August 28, 2026",
   "terms.whoWeAre.title": "Who we are",
   "terms.whoWeAre.p1a": "The software is published by ",
@@ -5560,7 +5560,7 @@ const en: Dictionary = {
     "Connecting WhatsApp, Instagram or Meta Ads requires your own Meta app, and for the agent to respond it needs your own model provider key. Those relationships are yours: they're governed by each provider's own terms, billed directly to you, and if any of them suspends your account or changes its API, the feature that depends on it stops being available.",
   "terms.acceptableUse.title": "Acceptable use",
   "terms.acceptableUse.body":
-    "You can't use steve to send unsolicited bulk messages, to impersonate another person or organization, to process data you have no right to process, or for anything applicable law prohibits.",
+    "You can't use senka to send unsolicited bulk messages, to impersonate another person or organization, to process data you have no right to process, or for anything applicable law prohibits.",
   "terms.warranties.title": "Warranties",
   "terms.warranties.p1":
     "The software is provided “as is.” We don't warrant that it's error-free or that the model's answers are correct. Nor that it runs uninterrupted: on Pro and Managed, on infrastructure we operate; on Enterprise, on yours, which we don't control.",
@@ -5590,7 +5590,7 @@ const en: Dictionary = {
   // ── Privacy ──
   "privacy.title": "What happens to your data",
   "privacy.lede":
-    "On Pro and Managed, steve is a service we host and operate. On Enterprise, it's an application you install yourself, not a service you send your conversations to. This page explains what's stored, where, and what leaves toward third parties in each case.",
+    "On Pro and Managed, senka is a service we host and operate. On Enterprise, it's an application you install yourself, not a service you send your conversations to. This page explains what's stored, where, and what leaves toward third parties in each case.",
   "privacy.updated": "August 28, 2026",
   "privacy.whoProcesses.title": "Who processes the data",
   "privacy.whoProcesses.p1a": "The software is published by ",
@@ -5636,7 +5636,7 @@ const en: Dictionary = {
   "guide.updated": "August 29, 2026",
   "guide.audience.title": "Who this guide is for",
   "guide.audience.body":
-    "There are two ways to run steve and this guide covers only one. On Pro and Managed we host and operate the instance: you install no Node, Docker, PostgreSQL, sandbox or OpenTelemetry — you sign in and you're done. The database is ours and there is a single one behind every account: you don't choose Postgres and you never see Settings → Database, because none of it is yours to configure. The only thing you supply is credentials for your own integrations — WhatsApp, Stripe, Shopify and the rest. On Enterprise you run everything on your own infrastructure under a perpetual licence: the database is yours (local container or hosted, your call), the keys are yours, and so is the operating. What follows is that second path.",
+    "There are two ways to run senka and this guide covers only one. On Pro and Managed we host and operate the instance: you install no Node, Docker, PostgreSQL, sandbox or OpenTelemetry — you sign in and you're done. The database is ours and there is a single one behind every account: you don't choose Postgres and you never see Settings → Database, because none of it is yours to configure. The only thing you supply is credentials for your own integrations — WhatsApp, Stripe, Shopify and the rest. On Enterprise you run everything on your own infrastructure under a perpetual licence: the database is yours (local container or hosted, your call), the keys are yours, and so is the operating. What follows is that second path.",
   "guide.requirements.title": "Requirements",
   "guide.requirements.body":
     "Node.js 24, Corepack with pnpm 10.33.2, Docker Engine or Docker Desktop, and an OpenAI or Anthropic API key with available quota.",
@@ -5653,10 +5653,10 @@ const en: Dictionary = {
     "Open that .env before continuing: replace both example passwords and keep POSTGRES_PASSWORD identical to the password inside WORKFLOW_POSTGRES_URL. No API key goes in the file — the model key and every integration key are set later from Settings and Connections.",
   "guide.localInstall.p3": "Start the database, migrate it, and start the app:",
   "guide.localInstall.p4":
-    "Open http://localhost:3000 and add your AI provider key and integration keys there. They are stored in ~/.steve/credentials.json, rotated and cleared from the same screen, and take effect without a restart.",
+    "Open http://localhost:3000 and add your AI provider key and integration keys there. They are stored in ~/.senka/credentials.json, rotated and cleared from the same screen, and take effect without a restart.",
   "guide.liveSetup.title": "Live verification — Setup (/setup)",
   "guide.liveSetup.p1":
-    "This in-app screen checks, live, whether the machine it's running on has everything it needs: Node version, whether Docker is installed and running, the steve-postgres container, whether WORKFLOW_POSTGRES_URL is reachable, whether the database has its tables, the selected model's key, embeddings, and the .env file. Every failure shows the exact command that fixes it.",
+    "This in-app screen checks, live, whether the machine it's running on has everything it needs: Node version, whether Docker is installed and running, the senka-postgres container, whether WORKFLOW_POSTGRES_URL is reachable, whether the database has its tables, the selected model's key, embeddings, and the .env file. Every failure shows the exact command that fixes it.",
   "guide.liveSetup.p2":
     "The same screen moves configuration between machines: you can import a .env, a .txt, or a JSON file by dropping it or pasting the text, and export everything saved as a grouped .env or as JSON. The export contains secrets in plain text, and the screen says so before you click.",
   "guide.database.title": "Database",
@@ -5664,7 +5664,7 @@ const en: Dictionary = {
     "PostgreSQL is the only database the app uses, and there are two ways to give it one. On your own machine, docker-compose.yml starts it on host port 5544 so it doesn't clash with another local Postgres, and POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB and POSTGRES_HOST_PORT configure that container. Pointed at a hosted database — Supabase, Neon, RDS — Docker plays no part: put its connection string in WORKFLOW_POSTGRES_URL and those POSTGRES_* fields stop applying. With Supabase, use the pooler string (Project settings → Database → Connection pooling) and keep the ?sslmode=require. The app works out which case it is from the URL's host, so Setup (/setup) skips the Docker and container checks when the database is remote. All of it is editable from Settings → Database; a real environment variable always beats a value stored there, and changing any of them needs an agent restart.",
   "guide.aiModel.title": "AI model",
   "guide.aiModel.body":
-    "By default the app reaches models through the Vercel AI Gateway with AI_GATEWAY_API_KEY. Alternatively OPENAI_API_KEY, ANTHROPIC_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY call the provider directly; AI_PROVIDER picks among the four routes and, left unset, is inferred from whichever key is present. All of them can be added and rotated at any time from Settings → AI model, and are stored in ~/.steve/credentials.json. Knowledge (RAG) embeddings are the exception: they always run through OpenAI or the Gateway, so an install carrying only an Anthropic or Gemini key needs one of those two as well. Each conversation also has its own model picker in the chat header.",
+    "By default the app reaches models through the Vercel AI Gateway with AI_GATEWAY_API_KEY. Alternatively OPENAI_API_KEY, ANTHROPIC_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY call the provider directly; AI_PROVIDER picks among the four routes and, left unset, is inferred from whichever key is present. All of them can be added and rotated at any time from Settings → AI model, and are stored in ~/.senka/credentials.json. Knowledge (RAG) embeddings are the exception: they always run through OpenAI or the Gateway, so an install carrying only an Anthropic or Gemini key needs one of those two as well. Each conversation also has its own model picker in the chat header.",
   "guide.channels.title": "Messaging channels",
   "guide.channels.body":
     "Web chat works with no setup. WhatsApp and Instagram need a Meta app, created at developers.facebook.com: WhatsApp needs an access token, app secret, phone number ID, and a verify token; Instagram, which doesn't depend on a Facebook page, needs its own token, its own secret — separate from the app's — an account ID, and a verify token, and the account must be a professional one. Each channel's status (connected or missing data) shows live in the dashboard, and credentials are set from Settings.",
@@ -5967,7 +5967,7 @@ const en: Dictionary = {
   "forms.detail.webhookTitle": "Webhook",
   "forms.detail.webhookDescription":
     "Every response is POSTed as JSON to this URL, partial ones included. Leave it empty to turn it off.",
-  "forms.detail.webhookPlaceholder": "https://your-endpoint.com/steve",
+  "forms.detail.webhookPlaceholder": "https://your-endpoint.com/senka",
   "forms.detail.webhookSaved": "Saved",
   "forms.detail.webhookHint":
     "HTTPS and a public host only. `response.id` is stable across steps — key on it to upsert rather than collecting one row per step.",
@@ -6208,7 +6208,7 @@ const en: Dictionary = {
   "connections.setUpAppHint":
     "Connecting a {provider} account needs an OAuth app registered in their console first — paste its client ID and client secret here, and the Connect button appears.",
   "connections.oauthAppDialogDescription":
-    "The application's credentials, not your account's. They stay on this install and never leave it; whoever uses Steve connects their own account afterwards.",
+    "The application's credentials, not your account's. They stay on this install and never leave it; whoever uses Senka connects their own account afterwards.",
   "connections.manualDialogTitle": "{provider} key",
   "connections.manualDialogDescription": "Saved locally, same as Settings — it never leaves this install.",
   "connections.connectedBanner": "{provider} is connected.",
@@ -6251,14 +6251,14 @@ const en: Dictionary = {
   "connections.twilio.reason": "Twilio authenticates with an Account SID and auth token.",
   "connections.smtp.description": "Outbound email for automations.",
   "connections.smtp.reason": "SMTP is a username and password by definition.",
-  "connections.anthropic.description": "Your own key for Claude — your account pays for usage, not your Steve credits.",
+  "connections.anthropic.description": "Your own key for Claude — your account pays for usage, not your Senka credits.",
   "connections.anthropic.reason": "Anthropic authenticates with an API key, no user OAuth.",
-  "connections.openai.description": "Your own key for OpenAI — your account pays for usage, not your Steve credits.",
+  "connections.openai.description": "Your own key for OpenAI — your account pays for usage, not your Senka credits.",
   "connections.openai.reason": "OpenAI authenticates with an API key, no user OAuth.",
   "connections.fromEnv": "from the environment",
-  "connections.gemini.description": "Your own key for Google Gemini — your account pays for usage, not your Steve credits.",
+  "connections.gemini.description": "Your own key for Google Gemini — your account pays for usage, not your Senka credits.",
   "connections.gemini.reason": "Google AI Studio authenticates with an API key, no user OAuth.",
-  "connections.aiGateway.description": "Your own key for Vercel's AI Gateway — your account pays for usage, not your Steve credits.",
+  "connections.aiGateway.description": "Your own key for Vercel's AI Gateway — your account pays for usage, not your Senka credits.",
   "connections.aiGateway.reason": "The AI Gateway authenticates with an API key, no user OAuth.",
   "connections.salesforce.description": "Sales CRM: leads, contacts and opportunities from the conversation.",
   "connections.salesforce.unlockLeads": "Leads",
@@ -6272,10 +6272,10 @@ const en: Dictionary = {
   "aiUsage.renewsOn": "Renews on {date}",
   "aiUsage.noPlanBody": "No plan with included credits yet. Connect your own key in Connections to keep using the agent.",
   "aiUsage.enterpriseBody": "Enterprise has no credit limit — self-hosted, with your own keys.",
-  "aiUsage.enterpriseNote": "Usage is still measured below for your own visibility, but none of it is billed by Steve — you pay each provider directly with your own keys.",
+  "aiUsage.enterpriseNote": "Usage is still measured below for your own visibility, but none of it is billed by Senka — you pay each provider directly with your own keys.",
   "aiUsage.costsTitle": "Costs",
-  "aiUsage.costsDescription": "What your Steve credits paid for, separate from what we estimate your own keys cost the provider.",
-  "aiUsage.steveCredits": "Paid with AI Credits",
+  "aiUsage.costsDescription": "What your Senka credits paid for, separate from what we estimate your own keys cost the provider.",
+  "aiUsage.senkaCredits": "Paid with AI Credits",
   "aiUsage.byokEstimated": "Estimated usage on your own key",
   "aiUsage.costsNote": "The cost on your own key is our estimate — the provider bills your account directly, so the final amount may differ slightly.",
   "aiUsage.trendCallsTitle": "Calls per day",

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Create the operator accounts a test install needs, against whichever backend
 // this install is configured for — Postgres when WORKFLOW_POSTGRES_URL is set,
-// ~/.steve/auth.json otherwise. Both go through the same `createAccount` the
+// ~/.senka/auth.json otherwise. Both go through the same `createAccount` the
 // signup form uses, so the hashing and the validation are the real ones.
 //
 // It does not invent passwords. A password this script generated would have to
@@ -49,7 +49,7 @@ registerHooks({
 });
 
 // Next.js loads .env for the app; a bare node script does not. Without this
-// the script quietly seeds ~/.steve/auth.json on an install whose accounts
+// the script quietly seeds ~/.senka/auth.json on an install whose accounts
 // live in Postgres — it would report success against the wrong backend, which
 // is the one outcome worth engineering away. Existing environment wins, so
 // `WORKFLOW_POSTGRES_URL=… node scripts/…` still points where you say.
@@ -102,7 +102,7 @@ const entries = raw.split(",").map((pair) => {
   return { email: pair.slice(0, at).trim(), password: pair.slice(at + 1) };
 });
 
-console.log(`backend: ${process.env.WORKFLOW_POSTGRES_URL ? "postgres" : "~/.steve/auth.json"}`);
+console.log(`backend: ${process.env.WORKFLOW_POSTGRES_URL ? "postgres" : "~/.senka/auth.json"}`);
 console.log(`accounts already present: ${(await hasAnyAccount()) ? "yes" : "none"}`);
 
 let failed = 0;

@@ -39,9 +39,9 @@ import {
 } from "@/components/ai-elements/model-picker";
 import { SuggestionChip } from "@/components/ui/suggestion-chip";
 
-const AGENT_NAME = "steve";
+const AGENT_NAME = "senka";
 const MONITORING_HREF = process.env.NEXT_PUBLIC_MONITORING_URL;
-const CHAT_STORAGE_KEY = "steve:eve-chat:v1";
+const CHAT_STORAGE_KEY = "senka:eve-chat:v1";
 
 // Tabs for the landing screen — each category shows different
 // starter prompts so the SlidingTabs pill has a real purpose. Both the
@@ -485,8 +485,7 @@ function ConnectedAgentSession({
       {isEmpty ? (
         <div className="flex flex-col items-center gap-6 text-center">
           <h1 className="text-4xl font-semibold sm:text-5xl">
-            <span className="text-muted-foreground">st</span>
-            <span className="text-foreground">eve</span>
+            <span className="text-foreground">senka</span>
           </h1>
           <p className="max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
             {t("chat.tagline")}
@@ -591,7 +590,7 @@ function BasicAuthForm({
   return (
     <div className="flex h-dvh items-center justify-center bg-background px-4 text-foreground">
       <section className="w-full max-w-sm rounded-2xl border border-border bg-card p-7 shadow-[var(--shadow-elevated)]">
-        <p className="text-xs font-medium uppercase text-muted-foreground">steve</p>
+        <p className="text-xs font-medium uppercase text-muted-foreground">senka</p>
         <h1 className="mt-3 text-2xl font-semibold">{t("auth.signIn")}</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           {t("auth.signInDescription")}

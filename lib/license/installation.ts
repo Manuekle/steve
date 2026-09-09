@@ -22,9 +22,9 @@ import { createDocumentStore } from "../doc-store";
 //
 // Generated lazily, not at some "setup" step — the id has to exist before
 // anyone has bought anything, so it can be shown in Settings and sent to
-// Steve as part of asking for a license in the first place.
+// Senka as part of asking for a license in the first place.
 
-const FILE = join(homedir(), ".steve", "installation.json");
+const FILE = join(homedir(), ".senka", "installation.json");
 
 type InstallationStore = { id: string | null };
 
@@ -37,7 +37,7 @@ const installationStore = createDocumentStore<InstallationStore>({
 
 /** The plain-text file this replaced. Read once, so an install that predates
  *  the change keeps the id its license was issued against. */
-const LEGACY_FILE = join(homedir(), ".steve", "installation-id");
+const LEGACY_FILE = join(homedir(), ".senka", "installation-id");
 
 let cached: string | null = null;
 

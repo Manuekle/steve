@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-const TEST_DIR = join(tmpdir(), `steve-conn-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-conn-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -65,7 +65,7 @@ describe("backend selection", () => {
   });
 
   it("reads through the database when one is configured", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     readDocument.mockResolvedValue({ google: { ...tokens, connectedAt: "2026-01-01T00:00:00Z" } });
     const store = await loadStore();
 
@@ -74,20 +74,20 @@ describe("backend selection", () => {
   });
 
   it("writes through the database and leaves no token file behind", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     const store = await loadStore();
 
     await store.saveConnection("google", tokens);
 
     expect(updateDocument.mock.calls[0][0]).toBe("connections");
-    expect(existsSync(join(TEST_DIR, ".steve", "connections.json"))).toBe(false);
+    expect(existsSync(join(TEST_DIR, ".senka", "connections.json"))).toBe(false);
   });
 
   it("imports existing tokens the first time the database is empty", async () => {
     const fileMode = await loadStore();
     await fileMode.saveConnection("google", tokens);
 
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockResolvedValue(false);
     const dbMode = await loadStore();
     await dbMode.getStoredConnection("google");
@@ -103,7 +103,7 @@ describe("backend selection", () => {
     const fileMode = await loadStore();
     await fileMode.saveConnection("google", tokens);
 
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockRejectedValue(new Error("ECONNREFUSED"));
     const store = await loadStore();
 
@@ -111,7 +111,7 @@ describe("backend selection", () => {
   });
 
   it("removes a connection on the database backend too", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     const state: Record<string, unknown> = { google: { ...tokens, connectedAt: "x" } };
     readDocument.mockImplementation(async () => state);
     updateDocument.mockImplementation(

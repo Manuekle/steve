@@ -18,8 +18,8 @@ type CodeEditorProps = {
   readonly readOnly?: boolean;
 };
 
-const LIGHT_THEME = "steve-email-light";
-const DARK_THEME = "steve-email-dark";
+const LIGHT_THEME = "senka-email-light";
+const DARK_THEME = "senka-email-dark";
 
 /**
  * Both themes are defined once per Monaco instance and then only switched
@@ -109,7 +109,7 @@ export function CodeEditor({ value, onChange, readOnly = false }: CodeEditorProp
 
   // Themes are defined before the editor exists, not after it mounts.
   // `@monaco-editor/react` applies the `theme` prop as soon as Monaco loads —
-  // which used to be before `onMount` had defined `steve-email-dark`, so on a
+  // which used to be before `onMount` had defined `senka-email-dark`, so on a
   // reload Monaco fell back to its own light theme and stayed there until the
   // next theme toggle.
   const handleBeforeMount: BeforeMount = useCallback((monaco) => {

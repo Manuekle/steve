@@ -4,9 +4,9 @@ import { Guide } from "./_components/guide";
 
 export const metadata: Metadata = marketingMetadata({
   path: "/guide",
-  title: "Instalación y configuración — steve",
+  title: "Instalación y configuración — senka",
   description:
-    "Qué hace falta para instalar steve, cómo arrancarlo en tu máquina, y dónde configurar cada canal, agente, base de conocimiento y automatización una vez que está corriendo.",
+    "Qué hace falta para instalar senka, cómo arrancarlo en tu máquina, y dónde configurar cada canal, agente, base de conocimiento y automatización una vez que está corriendo.",
 });
 
 export default function GuidePage() {

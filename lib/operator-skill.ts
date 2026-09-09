@@ -12,7 +12,7 @@ import { channelFromKind } from "./business-store";
 //
 // The plain-language rule and the one-question intake are adapted from the
 // Houston agent store (MIT, github.com/gethouston/houston). Everything about
-// tools and records is Steve's own.
+// tools and records is Senka's own.
 
 /**
  * Skills that belong to the business owner, not to the person messaging them.
@@ -60,7 +60,7 @@ export function operatorSkill(
 
 /**
  * The single most useful thing in Houston's prompts: the owner is not
- * technical, so the internal vocabulary never reaches the chat. Steve's
+ * technical, so the internal vocabulary never reaches the chat. Senka's
  * version bans a different list — this app's leaks are record ids and stage
  * slugs, not file paths.
  */
@@ -99,7 +99,7 @@ export const NO_INVENTION = `## What I never do
 
 /**
  * Houston's intake discipline: no onboarding wall, one question at a time,
- * and a ranked list of where the answer should come from. Steve's ranking is
+ * and a ranked list of where the answer should come from. Senka's ranking is
  * different because it has no file drop — the knowledge base is the good path.
  */
 export const INTAKE = `## What I need first

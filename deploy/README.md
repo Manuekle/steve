@@ -1,4 +1,4 @@
-# Deploy Steve to DigitalOcean with Ansible
+# Deploy Senka to DigitalOcean with Ansible
 
 This directory provisions one Ubuntu host and installs the self-hosted Eve
 reference stack. It is intended to make the runtime topology reproducible and
@@ -9,8 +9,8 @@ inspectable. It is not a high-availability or multi-tenant deployment design.
 ```text
 internet
   -> Caddy :80/:443
-     -> /eve/* and /.well-known/workflow/* -> steve.service :3000
-     -> all other app paths                -> steve-web.service :3001
+     -> /eve/* and /.well-known/workflow/* -> senka.service :3000
+     -> all other app paths                -> senka-web.service :3001
      -> optional monitoring domain         -> Beszel :8090
      -> optional trace domain              -> Jaeger :16686
 
@@ -29,14 +29,14 @@ root-equivalent and should be treated accordingly.
 - Ansible Core 2.19 or 2.20
 - Node.js 24 on the operator machine (used to validate dotenv before upload)
 - A DigitalOcean API token with permission to create droplets and SSH keys
-- A dedicated SSH key at `~/.ssh/steve_deploy`
+- A dedicated SSH key at `~/.ssh/senka_deploy`
 - A GitHub repository that the new host can read with a deploy key
 - A completed repository-root `.env`
 
 Create the operator key if needed:
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/steve_deploy
+ssh-keygen -t ed25519 -f ~/.ssh/senka_deploy
 ```
 
 Install the required collections:
@@ -66,7 +66,7 @@ existing volume, rotate the database role password inside PostgreSQL first,
 then update both environment values. Changing only the Compose variable does
 not alter an existing role and will make migrations fail authentication.
 
-The app role copies this file to `/opt/steve/.env` with mode `0600`. For a
+The app role copies this file to `/opt/senka/.env` with mode `0600`. For a
 larger deployment, replace this reference mechanism with your secret manager or
 Ansible Vault.
 
@@ -176,7 +176,7 @@ The playbook does not report success after health checks alone. It verifies:
 Run a real model, sandbox, stream, and follow-up smoke test after TLS is active:
 
 ```bash
-cd /opt/steve
+cd /opt/senka
 set -a && . ./.env && set +a
 SELF_HOST_URL="https://agent.example.com" \
 SELF_HOST_EXPECT_AUTH=1 \
@@ -192,7 +192,7 @@ Before every schema migration, the app role writes a custom-format PostgreSQL
 backup to:
 
 ```text
-/opt/steve-backups/workflow-<timestamp>.dump
+/opt/senka-backups/workflow-<timestamp>.dump
 ```
 
 The role validates each dump before publishing it and retains the latest 10 by
@@ -204,8 +204,8 @@ copy of its only database.
 
 ### Scheduled backups
 
-The `backup` role adds the schedule. It installs `/usr/local/bin/steve-backup`
-plus a `steve-backup.timer`, which each night dumps the database, verifies the
+The `backup` role adds the schedule. It installs `/usr/local/bin/senka-backup`
+plus a `senka-backup.timer`, which each night dumps the database, verifies the
 archive with `pg_restore --list` *inside the container* (the host has no
 `postgresql-client`), prunes to `backup_retention`, and — if you have set one —
 runs your offsite command. One backup also runs during the deploy itself, so a
@@ -228,10 +228,10 @@ The command receives the dump path as `$1`, so the reliable shape is a short
 script on the host that you name here:
 
 ```bash
-# /usr/local/bin/steve-offsite
+# /usr/local/bin/senka-offsite
 #!/usr/bin/env bash
 set -euo pipefail
-aws s3 cp "$1" "s3://my-bucket/steve/$(basename "$1")" --storage-class STANDARD_IA
+aws s3 cp "$1" "s3://my-bucket/senka/$(basename "$1")" --storage-class STANDARD_IA
 ```
 
 This is deliberately not a provider setting — the role should not decide where
@@ -240,8 +240,8 @@ your customer data lives, nor hold credentials for it.
 ### Restoring
 
 ```bash
-docker cp /opt/steve-backups/steve-<stamp>.dump steve-postgres:/tmp/restore.dump
-docker exec steve-postgres pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean /tmp/restore.dump
+docker cp /opt/senka-backups/senka-<stamp>.dump senka-postgres:/tmp/restore.dump
+docker exec senka-postgres pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean /tmp/restore.dump
 ```
 
 Restore into a scratch database first and read a row back. A dump that has
@@ -267,7 +267,7 @@ pnpm exec workflow cancel --status pending --confirm --backend @workflow/world-p
 This guard applies only to the incompatible pre-`0.20` cutover. Compatible
 sessions created on the current runtime remain active across ordinary restarts.
 
-For rollback, stop `steve.service`, restore the selected dump with `pg_restore`
+For rollback, stop `senka.service`, restore the selected dump with `pg_restore`
 using PostgreSQL's documented procedure, deploy the known-good Git SHA, and then
 start the service. Never restore over a running Eve worker.
 
@@ -286,11 +286,11 @@ make deploy REF=<branch-tag-or-sha>
 On the host:
 
 ```bash
-systemctl status steve steve-web
-journalctl -u steve -f
-journalctl -u steve-web -f
+systemctl status senka senka-web
+journalctl -u senka -f
+journalctl -u senka-web -f
 docker ps
-cd /opt/steve && pnpm observe
+cd /opt/senka && pnpm observe
 sudo ufw status
 ```
 

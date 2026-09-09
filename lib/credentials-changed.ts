@@ -13,7 +13,7 @@ import { useEffect } from "react";
 // component in the same document, and a reader that is not mounted has
 // nothing to refresh anyway.
 
-const EVENT = "steve:credentials-changed";
+const EVENT = "senka:credentials-changed";
 
 /** Announce that the credential store changed. Safe to call on the server —
  *  it simply does nothing there. */

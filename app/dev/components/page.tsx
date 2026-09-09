@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Catalog } from "./_components/catalog";
 
 export const metadata: Metadata = {
-  title: "Component catalog — steve",
+  title: "Component catalog — senka",
   description:
     "Every component in the app with live variants and API docs. Dev only.",
   // Belt and braces: the route 404s outside development, but nothing is lost

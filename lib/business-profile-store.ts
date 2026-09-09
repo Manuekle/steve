@@ -18,13 +18,13 @@ import { randomUUID } from "node:crypto";
  *
  * Same shape and directory as `onboarding/store.ts` and `business-store.ts`:
  * one JSON file, written through a temp file and a rename. Logo bytes sit
- * beside it in ~/.steve/business/ — a JSON store is the wrong place for an
+ * beside it in ~/.senka/business/ — a JSON store is the wrong place for an
  * image, and the file name carries a fresh id per upload so a replaced logo
  * never shows through a cached URL.
  */
 
-const FILE = join(homedir(), ".steve", "business-profile.json");
-const BLOB_DIR = join(homedir(), ".steve", "business");
+const FILE = join(homedir(), ".senka", "business-profile.json");
+const BLOB_DIR = join(homedir(), ".senka", "business");
 
 export type BusinessProfile = {
   readonly name: string;
@@ -128,7 +128,7 @@ function normalizeIdentity(parsed: Partial<BusinessIdentity> | undefined): Busin
   return { ...emptyIdentity(), ...(parsed ?? {}) };
 }
 
-// Postgres when one is configured, ~/.steve/business-profile.json otherwise.
+// Postgres when one is configured, ~/.senka/business-profile.json otherwise.
 const profileStore = createDocumentStore<Store>({
   id: "business-profile",
   // Per business: the identity, the AI profile and the logo are what one business is. See lib/business-scope.ts.
@@ -195,7 +195,7 @@ export async function getBusinessIdentity(): Promise<BusinessIdentity> {
 export async function getBusinessIdentityById(businessId: string): Promise<BusinessIdentity> {
   if (businessId === DEFAULT_BUSINESS_ID) return getBusinessIdentity();
 
-  // File path: ~/.steve/businesses/{id}/business-profile.json
+  // File path: ~/.senka/businesses/{id}/business-profile.json
   try {
     const filePath = join(dirname(FILE), "businesses", businessId, basename(FILE));
     const raw = await readFile(filePath, "utf-8");
@@ -297,7 +297,7 @@ export async function readBusinessLogo(): Promise<{ bytes: Uint8Array; logo: Bus
     const bytes = new Uint8Array(await readFile(join(BLOB_DIR, identity.logo.file)));
     return { bytes, logo: identity.logo };
   } catch {
-    // The pointer outlived the file — a wiped ~/.steve/business, a restore
+    // The pointer outlived the file — a wiped ~/.senka/business, a restore
     // from a JSON-only backup. Report "no logo" rather than a broken read.
     return null;
   }

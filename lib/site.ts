@@ -32,7 +32,7 @@ export const SITE_URL_IS_CONFIGURED =
   Boolean(process.env.VERCEL_PROJECT_PRODUCTION_URL) ||
   Boolean(process.env.VERCEL_URL);
 
-export const SITE_NAME = "steve";
+export const SITE_NAME = "senka";
 
 /**
  * The card rendered by `app/opengraph-image.tsx`.
@@ -47,7 +47,7 @@ export const SITE_NAME = "steve";
  * what crawlers require.
  */
 const OG_IMAGE = {
-  alt: "steve — el sistema de atención para tu negocio y tus agentes",
+  alt: "senka — el sistema de atención para tu negocio y tus agentes",
   height: 630,
   url: "/opengraph-image",
   width: 1200,

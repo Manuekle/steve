@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
  * cannot read out loud.
  */
 
-const TEST_DIR = join(tmpdir(), `steve-voice-tools-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-voice-tools-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");

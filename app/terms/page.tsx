@@ -4,9 +4,9 @@ import { Terms } from "./_components/terms";
 
 export const metadata: Metadata = marketingMetadata({
   path: "/terms",
-  title: "Términos — steve",
+  title: "Términos — senka",
   description:
-    "Condiciones de uso de steve: qué se te licencia, qué responsabilidades quedan de tu lado al autoalojarlo, y qué cubre el soporte.",
+    "Condiciones de uso de senka: qué se te licencia, qué responsabilidades quedan de tu lado al autoalojarlo, y qué cubre el soporte.",
 });
 
 export default function TermsPage() {

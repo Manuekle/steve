@@ -9,7 +9,7 @@ import {
   useSpring,
   useTransform,
 } from "motion/react";
-import { SteveMark } from "@/components/icons/steve-mark";
+import { SenkaMark } from "@/components/icons/senka-mark";
 import { useTheme } from "@/components/theme-provider";
 import { SPRING_MOUSE } from "@/lib/ease";
 import { useHoverCapable } from "@/lib/hooks/use-hover-capable";
@@ -274,9 +274,9 @@ export function LicenseCreditCard({
               <div className="relative flex h-full flex-col justify-between p-5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
-                    <SteveMark className={cn("h-[18px] w-[15px]", iconColor)} />
+                    <SenkaMark className={cn("h-[18px] w-[15px]", iconColor)} />
                     <span className={cn("font-heading text-[14px] leading-none font-semibold tracking-tight", textPrimary)}>
-                      steve
+                      senka
                     </span>
                   </span>
                   <p className={cn("truncate text-[11px]", textSubtle)}>
@@ -344,7 +344,7 @@ export function LicenseCreditCard({
                 </div>
 
                 <div className="flex justify-end px-5 pb-5">
-                  <SteveMark className={cn("h-[15px] w-[13px]", iconGhost)} />
+                  <SenkaMark className={cn("h-[15px] w-[13px]", iconGhost)} />
                 </div>
               </div>
             </motion.div>

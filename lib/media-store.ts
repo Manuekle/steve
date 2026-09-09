@@ -18,16 +18,16 @@ import { deleteFromDrive, downloadFromDrive, isDriveConfigured, uploadToDrive } 
 // both: a knowledge document carries a `folder_id` pointing at this list, so
 // the Conocimiento page shows one folder tree over documents and media.
 //
-// Metadata always sits in ~/.steve/media.json. The bytes sit in the
+// Metadata always sits in ~/.senka/media.json. The bytes sit in the
 // connected Google account's Drive when one is connected (see
 // lib/google-drive.ts — `drive.file` scope, so it only ever sees files this
-// app created), and in ~/.steve/media/ otherwise. An asset already on disk
+// app created), and in ~/.senka/media/ otherwise. An asset already on disk
 // stays on disk even after Google gets connected; only new uploads move.
 // Embeddings are kept in their own array so listing a folder (every page
 // load) never walks the vectors.
 
-const STORE_FILE = join(homedir(), ".steve", "media.json");
-const BLOB_DIR = join(homedir(), ".steve", "media");
+const STORE_FILE = join(homedir(), ".senka", "media.json");
+const BLOB_DIR = join(homedir(), ".senka", "media");
 
 export type MediaKind = "image" | "video" | "audio" | "file";
 
@@ -87,7 +87,7 @@ function normalize(parsed: Partial<MediaStore>): MediaStore {
   };
 }
 
-// Postgres when one is configured, ~/.steve/media.json otherwise. Only the
+// Postgres when one is configured, ~/.senka/media.json otherwise. Only the
 // catalogue lives here; the bytes are handled separately below, because a
 // blob is not something to keep in a document that is read whole.
 const mediaStore = createDocumentStore<MediaStore>({

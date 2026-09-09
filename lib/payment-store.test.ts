@@ -6,8 +6,8 @@ import { tmpdir } from "node:os";
 // Same isolation trick lib/media-store.test.ts uses: the store reads
 // homedir() at module scope, so homedir has to point at a temp directory
 // before the module is imported — otherwise this would write into the real
-// ~/.steve/payments.json.
-const TEST_DIR = join(tmpdir(), `steve-payments-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+// ~/.senka/payments.json.
+const TEST_DIR = join(tmpdir(), `senka-payments-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");

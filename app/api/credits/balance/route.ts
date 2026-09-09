@@ -9,7 +9,7 @@ import { readBillingState } from "@/lib/billing-store";
 // Usage. Enterprise gets a distinct shape from Pro/Managed: it never carries
 // included credits (self-hosted + BYOK by design — see lib/credit-gate.ts),
 // so there is no "X / Y credits" to show, only that usage is metered without
-// a limit Steve imposes.
+// a limit Senka imposes.
 
 export const GET = withApiErrors(async function GET() {
   const [organizationId, license, billing] = await Promise.all([

@@ -2,7 +2,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: steve-postgres
+    container_name: senka-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-world}"
@@ -13,7 +13,7 @@ services:
     ports:
       - "127.0.0.1:${POSTGRES_HOST_PORT:-5544}:5432"
     volumes:
-      - steve-pgdata:/var/lib/postgresql/data
+      - senka-pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
@@ -24,7 +24,7 @@ services:
   # Start with `docker compose --profile observability up -d`.
   jaeger:
     image: jaegertracing/all-in-one:1.60
-    container_name: steve-jaeger
+    container_name: senka-jaeger
     restart: unless-stopped
     profiles: ["observability"]
     environment:
@@ -34,4 +34,4 @@ services:
       - "127.0.0.1:4318:4318"   # OTLP HTTP receiver
 
 volumes:
-  steve-pgdata:
+  senka-pgdata:

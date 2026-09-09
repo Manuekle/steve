@@ -11,7 +11,7 @@ export default defineDynamic({
           "or the standard steps for a recurring problem.",
         `# Turn a repeated case into a playbook
 
-In Steve a playbook is an automation. This skill finds the case that repeats
+In Senka a playbook is an automation. This skill finds the case that repeats
 and drafts the automation for it.
 
 ## The one thing to be honest about
@@ -53,7 +53,7 @@ ${INBOX_NOTE}
 3. **Read how it is handled today.** Open two or three of the threads and take
    the answer that was actually sent. The automation should send what already
    works, not a rewrite of it.
-4. **Pick the trigger honestly.** Steve has five:
+4. **Pick the trigger honestly.** Senka has five:
    - **keyword** — the customer's message contains one of a list of words. Good
      for a narrow, unambiguous ask. Bad for anything a word cannot identify.
    - **new_chat** — the first message of a conversation.

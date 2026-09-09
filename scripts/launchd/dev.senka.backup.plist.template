@@ -5,7 +5,7 @@
   Not committed with real paths: launchd needs absolutes and they are specific
   to one machine and one checkout. `scripts/install-backup-agent.sh` fills
   __REPO__ and __HOME__ in and writes the result to
-  ~/Library/LaunchAgents/dev.steve.backup.plist.
+  ~/Library/LaunchAgents/dev.senka.backup.plist.
 
   Scheduling caveat, stated rather than papered over: this is a laptop.
   StartCalendarInterval fires once when the machine is awake at or after the
@@ -17,7 +17,7 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>dev.steve.backup</string>
+  <string>dev.senka.backup</string>
 
   <key>ProgramArguments</key>
   <array>
@@ -48,9 +48,9 @@
   </dict>
 
   <key>StandardOutPath</key>
-  <string>__HOME__/steve-backups/backup.log</string>
+  <string>__HOME__/senka-backups/backup.log</string>
   <key>StandardErrorPath</key>
-  <string>__HOME__/steve-backups/backup.log</string>
+  <string>__HOME__/senka-backups/backup.log</string>
 
   <key>RunAtLoad</key>
   <false/>

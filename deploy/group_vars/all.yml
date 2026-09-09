@@ -1,11 +1,11 @@
 ---
-# Configuration for the single-host Steve reference deployment.
+# Configuration for the single-host Senka reference deployment.
 #
 # Secrets are not committed:
 #   - The DigitalOcean API token comes from the DO_API_TOKEN env var at
 #     provision time (export it, or pass -e do_api_token=...).
 #   - The app's runtime secrets live in your local ../.env, which deploy.yml
-#     rsyncs verbatim to /opt/steve/.env on the droplet.
+#     rsyncs verbatim to /opt/senka/.env on the droplet.
 
 # DigitalOcean API token. Defaults to the DO_API_TOKEN environment variable.
 do_api_token: "{{ lookup('env', 'DO_API_TOKEN') }}"
@@ -18,28 +18,28 @@ local_env_file: "{{ playbook_dir }}/../.env"
 # (`next build` needs ~1.5GB) coexist on this box. 2GB OOMs/struggles during
 # the Next build; 4GB is comfortable. The frontend role also adds a swapfile as
 # a safety margin. Bump higher (s-4vcpu-8gb) if you add more services.
-do_droplet_name: "steve-poc"
+do_droplet_name: "senka-poc"
 do_region: "nyc3"
 do_size: "s-2vcpu-4gb"
 do_image: "ubuntu-24-04-x64"
 # Name under which your local public key is uploaded to DigitalOcean so the
 # first root login works (key-only). Must be unique within your DO account.
-do_ssh_key_name: "steve-deploykey-{{ lookup('env', 'USER') | default('local', true) }}"
+do_ssh_key_name: "senka-deploykey-{{ lookup('env', 'USER') | default('local', true) }}"
 # Local public key used for the initial root login and the deploy user.
 # Uses a dedicated, passphrase-less deploy key so Ansible can authenticate
 # non-interactively (the default ~/.ssh/id_ed25519 is passphrase-protected).
-# Generate with: ssh-keygen -t ed25519 -N "" -f ~/.ssh/steve_deploy
-local_ssh_pubkey_path: "~/.ssh/steve_deploy.pub"
+# Generate with: ssh-keygen -t ed25519 -N "" -f ~/.ssh/senka_deploy
+local_ssh_pubkey_path: "~/.ssh/senka_deploy.pub"
 
 # --- App ------------------------------------------------------------------
 app_user: "deploy"
-app_dir: "/opt/steve"
-eve_state_dir: "/home/{{ app_user }}/.local/state/steve"
-workflow_backup_dir: "/opt/steve-backups"
+app_dir: "/opt/senka"
+eve_state_dir: "/home/{{ app_user }}/.local/state/senka"
+workflow_backup_dir: "/opt/senka-backups"
 # This repository. The default used to name the upstream this codebase came
-# from (vercel-labs/steve), so a deploy run against it silently shipped
+# from (vercel-labs/senka), so a deploy run against it silently shipped
 # upstream's code instead of this fork's.
-app_repo: "git@github.com:Manuekle/steve.git"
+app_repo: "git@github.com:Manuekle/senka.git"
 # Branch, tag, or commit SHA to deploy. Override per-run with:
 #   ansible-playbook deploy.yml -e git_ref=<ref>
 git_ref: "origin/main"
@@ -61,7 +61,7 @@ backup_enabled: true
 # systemd OnCalendar. Daily at 03:20 UTC, with a randomised delay in the unit.
 backup_schedule: "*-*-* 03:20:00"
 backup_retention: 14
-postgres_container: "steve-postgres"
+postgres_container: "senka-postgres"
 # Run one backup during the deploy, so a broken backup path fails the deploy
 # rather than being discovered the night you need it.
 backup_verify_on_deploy: true
@@ -73,12 +73,12 @@ backup_verify_on_deploy: true
 # Name a command here. It is invoked with the dump's path as "$1", so the
 # reliable shape is a short script on the host:
 #
-#   # /usr/local/bin/steve-offsite
+#   # /usr/local/bin/senka-offsite
 #   #!/usr/bin/env bash
 #   set -euo pipefail
-#   aws s3 cp "$1" "s3://my-bucket/steve/$(basename "$1")" --storage-class STANDARD_IA
+#   aws s3 cp "$1" "s3://my-bucket/senka/$(basename "$1")" --storage-class STANDARD_IA
 #
-#   backup_offsite_command: "/usr/local/bin/steve-offsite"
+#   backup_offsite_command: "/usr/local/bin/senka-offsite"
 #
 # Deliberately not a provider setting: this role should not decide where
 # someone's customer data lives, nor hold credentials for it.

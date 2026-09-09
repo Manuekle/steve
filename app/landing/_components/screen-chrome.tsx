@@ -228,7 +228,7 @@ export function AppChrome({
                     aria-hidden was not an option: these mockups are deliberately
                     interactive, and hiding focusable content from the
                     accessibility tree is worse than the heading noise. */}
-                <p className="font-semibold text-2xl">{title}</p>
+                <h2 className="font-semibold text-2xl ">{title}</h2>
                 {subtitle ? <p className="mt-1 text-muted-foreground text-sm">{subtitle}</p> : null}
               </div>
               {actions}

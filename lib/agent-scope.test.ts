@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 // Same isolation trick lib/business-store.test.ts uses: the store reads
 // homedir() at module scope, so it has to point somewhere disposable before
 // either module is imported.
-const TEST_DIR = join(tmpdir(), `steve-scope-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-scope-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");

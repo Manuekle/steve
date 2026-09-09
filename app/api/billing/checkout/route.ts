@@ -54,7 +54,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
       mode,
       successUrl,
       cancelUrl,
-      plan: { name: `steve ${plan.id}`, amount: plan.amount, currency: "usd" },
+      plan: { name: `senka ${plan.id}`, amount: plan.amount, currency: "usd" },
       // The webhook's only way to know which plan a checkout.session.completed
       // event is for — see lib/stripe.ts's verifyStripeWebhookSignature and
       // app/api/billing/webhook/route.ts.

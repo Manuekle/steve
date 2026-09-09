@@ -58,7 +58,15 @@ export function FlowScreen() {
   return (
     // Same window as `AppChrome`: this screen builds its own shell for the
     // full-bleed canvas, so it carries the same fixed height and clip.
-    <div className="flex h-[38rem] overflow-hidden bg-background text-foreground lg:h-[42rem]">
+    <div
+      className="relative flex h-[38rem] overflow-hidden bg-background text-foreground lg:h-[42rem]"
+      // `inert` bloquea TODA interacción en el subtree: hover, click, focus,
+      // context menu. Los children con pointer-events-auto son ignorados.
+      // Los portales (ContextMenu) nunca se abren porque el evento trigger
+      // nunca llega al handler.
+      // @ts-expect-error — inert es soportado en todos los browsers modernos
+      inert={true}
+    >
       <MockSidebar active="/automations" />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -67,7 +75,7 @@ export function FlowScreen() {
           <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {/* Mockup chrome, not a page heading — see screen-chrome.tsx. */}
-            <p className="truncate text-sm font-semibold tracking-tight">{t("landing.demo.flow.title")}</p>
+            <h2 className="truncate text-sm font-semibold tracking-tight">{t("landing.demo.flow.title")}</h2>
             <StatusBadge status="draft" />
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -114,6 +122,7 @@ export function FlowScreen() {
           />
         </div>
       </div>
+
     </div>
   );
 }

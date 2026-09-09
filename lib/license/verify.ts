@@ -14,7 +14,7 @@ import type { LicenseInfo, LicensePayload, LicenseStatus } from "./types";
 // — the same three-part shape as a compact JWS, minus the header, because
 // there is exactly one algorithm (Ed25519) and negotiating it would be
 // ceremony with nothing on the other end to negotiate with. Nothing here
-// makes a network call: a self-hosted install with no route to Steve's
+// makes a network call: a self-hosted install with no route to Senka's
 // servers must verify a license exactly as well as one with a route to
 // everywhere. See docs/commercial-licensing.md for the full design.
 

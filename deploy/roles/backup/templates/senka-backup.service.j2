@@ -1,6 +1,6 @@
 # Managed by Ansible (backup role). Do not edit by hand.
 [Unit]
-Description=steve database backup
+Description=senka database backup
 After=docker.service
 Requires=docker.service
 
@@ -8,7 +8,7 @@ Requires=docker.service
 Type=oneshot
 User={{ app_user }}
 Group={{ app_user }}
-ExecStart=/usr/local/bin/steve-backup
+ExecStart=/usr/local/bin/senka-backup
 # The dump is IO-bound and must never compete with a live request.
 Nice=10
 IOSchedulingClass=idle

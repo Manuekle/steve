@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 // "the second business cannot read the first one's contacts" are not the same
 // claim, and only the second one is the promise being made to the owner.
 
-const TEST_DIR = join(tmpdir(), `steve-scope-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-scope-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -88,7 +88,7 @@ describe("two businesses on one installation", () => {
 
     // The path an install that predates multi-business has always used. A
     // migration here would be a migration nobody asked for.
-    expect(existsSync(join(TEST_DIR, ".steve", "business.json"))).toBe(true);
+    expect(existsSync(join(TEST_DIR, ".senka", "business.json"))).toBe(true);
 
     const second = await scope.createBusiness("Clínica Norte");
     await store.createAgent({
@@ -98,6 +98,6 @@ describe("two businesses on one installation", () => {
       tools: [],
       model: null,
     });
-    expect(existsSync(join(TEST_DIR, ".steve", "businesses", second.id, "business.json"))).toBe(true);
+    expect(existsSync(join(TEST_DIR, ".senka", "businesses", second.id, "business.json"))).toBe(true);
   });
 });

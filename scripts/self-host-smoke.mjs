@@ -36,7 +36,7 @@ const health = await client.health();
 assert.equal(health.status, "ready");
 
 const info = await client.info();
-assert.equal(info.agent.name, "steve");
+assert.equal(info.agent.name, "senka");
 
 const session = client.session();
 const first = await (

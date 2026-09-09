@@ -35,7 +35,7 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/store";
  *   scoring, and it is rate-limited — see app/api/f/[slug]/route.ts.
  *
  *   `/api/demo-request`, the Enterprise "contact sales" form on /pricing — a
- *   prospect evaluating steve has no account yet either. Same rate-limit
+ *   prospect evaluating senka has no account yet either. Same rate-limit
  *   shape as `/api/f/<slug>`; see app/api/demo-request/route.ts.
  *
  *   `/api/billing/webhook`, because Stripe calls it directly and carries no

@@ -48,7 +48,7 @@
 
 - name: Generate a dedicated GitHub deploy key
   community.crypto.openssh_keypair:
-    path: "/home/{{ app_user }}/.ssh/steve_deploy"
+    path: "/home/{{ app_user }}/.ssh/senka_deploy"
     type: ed25519
     owner: "{{ app_user }}"
     group: "{{ app_user }}"
@@ -67,7 +67,7 @@
       Host github.com
         HostName github.com
         User git
-        IdentityFile ~/.ssh/steve_deploy
+        IdentityFile ~/.ssh/senka_deploy
         IdentitiesOnly yes
         StrictHostKeyChecking accept-new
 
@@ -90,7 +90,7 @@
         Repository: {{ app_repo }}
         Open its Settings -> Deploy keys -> Add deploy key page.
 
-      Title: steve-droplet
+      Title: senka-droplet
       Key (leave "Allow write access" UNCHECKED):
 
       {{ deploy_key.public_key }}
@@ -124,7 +124,7 @@
     accept_hostkey: true
   become: true
   become_user: "{{ app_user }}"
-  notify: Restart steve
+  notify: Restart senka
 
 - name: Ensure app dir ownership
   ansible.builtin.file:
@@ -231,7 +231,7 @@
     group: "{{ app_user }}"
     mode: "0600"
   become: true
-  notify: Restart steve
+  notify: Restart senka
 
 # --- Dependencies ---------------------------------------------------------
 - name: Create the persistent Eve deployment state directory
@@ -304,7 +304,7 @@
 
 - name: Check whether the old Eve service is active
   when: eve_crosses_replay_cutover | bool
-  ansible.builtin.command: systemctl is-active steve
+  ansible.builtin.command: systemctl is-active senka
   become: true
   register: old_eve_service
   changed_when: false
@@ -315,7 +315,7 @@
     - eve_crosses_replay_cutover | bool
     - old_eve_service.stdout | trim in ['active', 'activating', 'reloading']
   ansible.builtin.systemd:
-    name: steve
+    name: senka
     state: stopped
   become: true
 
@@ -357,7 +357,7 @@
 
 - name: Wait for Postgres to accept connections
   ansible.builtin.command:
-    cmd: docker exec steve-postgres pg_isready
+    cmd: docker exec senka-postgres pg_isready
   register: pg_ready
   retries: 20
   delay: 3
@@ -385,9 +385,9 @@
       partial="{{ workflow_backup_path }}.partial"
       rm -f "$partial"
       trap 'rm -f "$partial"' ERR
-      docker exec steve-postgres sh -c \
+      docker exec senka-postgres sh -c \
         'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --file=/tmp/workflow-pre-migrate.dump && pg_restore --list /tmp/workflow-pre-migrate.dump >/dev/null'
-      docker cp steve-postgres:/tmp/workflow-pre-migrate.dump "$partial"
+      docker cp senka-postgres:/tmp/workflow-pre-migrate.dump "$partial"
       mv "$partial" "{{ workflow_backup_path }}"
       trap - ERR
     chdir: "{{ app_dir }}"
@@ -416,7 +416,7 @@
   when: eve_crosses_replay_cutover | bool
   ansible.builtin.command:
     cmd: >-
-      docker exec steve-postgres sh -c
+      docker exec senka-postgres sh -c
       'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc
       "select to_regclass('"'"'workflow.workflow_runs'"'"')"'
   register: workflow_runs_table
@@ -428,7 +428,7 @@
     - workflow_runs_table.stdout | trim | length > 0
   ansible.builtin.command:
     cmd: >-
-      docker exec steve-postgres sh -c
+      docker exec senka-postgres sh -c
       'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc
       "select count(*) from workflow.workflow_runs where status in ('"'"'pending'"'"', '"'"'running'"'"')"'
   register: incompatible_active_runs
@@ -490,22 +490,22 @@
   environment: "{{ pnpm_env }}"
   register: eve_build
   changed_when: true
-  notify: Restart steve
+  notify: Restart senka
 
 # --- systemd service ------------------------------------------------------
-- name: Install the steve systemd unit
+- name: Install the senka systemd unit
   ansible.builtin.template:
-    src: steve.service.j2
-    dest: /etc/systemd/system/steve.service
+    src: senka.service.j2
+    dest: /etc/systemd/system/senka.service
     mode: "0644"
   become: true
   notify:
     - Reload systemd
-    - Restart steve
+    - Restart senka
 
-- name: Enable and start the steve service
+- name: Enable and start the senka service
   ansible.builtin.systemd:
-    name: steve
+    name: senka
     enabled: true
     state: started
     daemon_reload: true
@@ -514,9 +514,9 @@
 # `eve start` serves one fixed .output/ build. After a rebuild the running host
 # must be restarted to pick up the new build (a notify handler only fires when
 # the unit file changes, not when .output/ changes). Mirror the frontend role.
-- name: Restart steve to serve the fresh eve build
+- name: Restart senka to serve the fresh eve build
   ansible.builtin.systemd:
-    name: steve
+    name: senka
     state: restarted
   become: true
   when: eve_build is changed

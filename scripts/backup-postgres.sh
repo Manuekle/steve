@@ -11,7 +11,7 @@
 # file in $ENV_FILES that defines it. It is never echoed — it carries the
 # database password.
 #
-#   BACKUP_DIR            where dumps go            (default ~/steve-backups)
+#   BACKUP_DIR            where dumps go            (default ~/senka-backups)
 #   BACKUP_RETENTION      how many to keep          (default 14)
 #   BACKUP_OFFSITE_DIR    copy each dump here too   (see "Offsite")
 #   BACKUP_OFFSITE_COMMAND  run this with the dump path as $1
@@ -68,7 +68,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BACKUP_DIR="${BACKUP_DIR:-$HOME/steve-backups}"
+BACKUP_DIR="${BACKUP_DIR:-$HOME/senka-backups}"
 BACKUP_RETENTION="${BACKUP_RETENTION:-14}"
 ENV_FILES="${ENV_FILES:-.env.prod:.env.local:.env}"
 IMAGE="postgres:17"
@@ -107,7 +107,7 @@ log "target ${host}"
 
 mkdir -p "$BACKUP_DIR"; chmod 700 "$BACKUP_DIR"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-target="$BACKUP_DIR/steve-${stamp}.dump"
+target="$BACKUP_DIR/senka-${stamp}.dump"
 partial="${target}.partial"
 cleanup() { rm -f "$partial" "${envfile:-}"; }
 trap cleanup EXIT
@@ -128,7 +128,7 @@ done
 # Only what the app owns. `postgres` on a managed instance also carries the
 # provider's schemas — Supabase keeps auth, storage and realtime there — which
 # this app does not own and must not haul around in its backups.
-schemas=(--schema=steve --schema=workflow --schema=credits)
+schemas=(--schema=senka --schema=workflow --schema=credits)
 
 if [ -n "$pgdump" ]; then
   log "dumping with $("$pgdump" --version)"
@@ -147,7 +147,7 @@ else
   printf 'PGURL=%s\n' "$url" > "$envfile"
   docker run --rm --env-file "$envfile" -v "$BACKUP_DIR:/out" \
     -e "OUTFILE=/out/$(basename "$partial")" "$IMAGE" \
-    sh -c 'pg_dump "$PGURL" --format=custom --no-owner --no-acl --schema=steve --schema=workflow --schema=credits --file="$OUTFILE"' \
+    sh -c 'pg_dump "$PGURL" --format=custom --no-owner --no-acl --schema=senka --schema=workflow --schema=credits --file="$OUTFILE"' \
     2>&1 | sed 's/^/  /' || fail "pg_dump failed"
   docker run --rm -v "$BACKUP_DIR:/out" "$IMAGE" \
     pg_restore --list "/out/$(basename "$partial")" >/dev/null 2>&1 \
@@ -173,7 +173,7 @@ if [ -n "${BACKUP_OFFSITE_DIR:-}" ]; then
       offsite_done=1
       while IFS= read -r old_remote; do
         rm -f "$old_remote" && log "pruned offsite $(basename "$old_remote")"
-      done < <(ls -1 "$BACKUP_OFFSITE_DIR"/steve-*.dump 2>/dev/null | sort -r | tail -n "+$((BACKUP_RETENTION + 1))")
+      done < <(ls -1 "$BACKUP_OFFSITE_DIR"/senka-*.dump 2>/dev/null | sort -r | tail -n "+$((BACKUP_RETENTION + 1))")
     else
       rm -f "$tmp" 2>/dev/null || true
       log "ERROR: could not copy to ${BACKUP_OFFSITE_DIR}"
@@ -208,8 +208,8 @@ fi
 removed=0
 while IFS= read -r old; do
   rm -f "$old"; log "pruned $(basename "$old")"; removed=$((removed + 1))
-done < <(ls -1 "$BACKUP_DIR"/steve-*.dump 2>/dev/null | sort -r | tail -n "+$((BACKUP_RETENTION + 1))")
-kept="$(ls -1 "$BACKUP_DIR"/steve-*.dump 2>/dev/null | wc -l | tr -d ' ')"
+done < <(ls -1 "$BACKUP_DIR"/senka-*.dump 2>/dev/null | sort -r | tail -n "+$((BACKUP_RETENTION + 1))")
+kept="$(ls -1 "$BACKUP_DIR"/senka-*.dump 2>/dev/null | wc -l | tr -d ' ')"
 log "done — ${kept} kept, ${removed} pruned, retention ${BACKUP_RETENTION}"
 
 # Last, so a failed copy still leaves a good local dump and a pruned directory

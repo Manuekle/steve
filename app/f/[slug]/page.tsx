@@ -17,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const form = await getFormBySlug(slug);
-  if (!form || form.status !== "published") return { title: "steve" };
+  if (!form || form.status !== "published") return { title: "senka" };
   return {
     title: form.name,
     description: form.description || undefined,

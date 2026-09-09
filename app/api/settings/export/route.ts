@@ -18,7 +18,7 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
     return new NextResponse(JSON.stringify(stored, null, 2) + "\n", {
       headers: {
         "content-type": "application/json; charset=utf-8",
-        "content-disposition": `attachment; filename="steve-config-${stamp}.json"`,
+        "content-disposition": `attachment; filename="senka-config-${stamp}.json"`,
         "cache-control": "no-store",
       },
     });
@@ -27,7 +27,7 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
   // Grouped and commented, so the exported file reads like .env.example
   // rather than an alphabetized dump.
   const lines = [
-    "# Steve — configuración exportada",
+    "# Senka — configuración exportada",
     `# ${new Date().toISOString()}`,
     "# Contiene credenciales en texto plano. Guardalo en un lugar seguro.",
   ];
@@ -43,7 +43,7 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
   return new NextResponse(lines.join("\n") + "\n", {
     headers: {
       "content-type": "text/plain; charset=utf-8",
-      "content-disposition": `attachment; filename="steve-config-${stamp}.env"`,
+      "content-disposition": `attachment; filename="senka-config-${stamp}.env"`,
       "cache-control": "no-store",
     },
   });

@@ -4,7 +4,7 @@ import { Landing } from "./_components/landing";
 
 export const metadata: Metadata = marketingMetadata({
   path: "/",
-  title: "steve — el sistema de atención para tu negocio y tus agentes",
+  title: "senka — el sistema de atención para tu negocio y tus agentes",
   description:
     "WhatsApp, Instagram y Meta Ads en una sola bandeja. Los agentes responden lo que saben y te pasan el resto. Autoalojado, con tus claves y tu base de datos.",
 });

@@ -38,10 +38,10 @@ function useMockAgents(t: (key: string) => string): readonly {
   return [
     {
       active: true,
-      description: t("landing.demo.agents.steveDescription"),
-      id: "steve",
-      name: "steve",
-      systemPrompt: t("landing.demo.agents.stevePrompt"),
+      description: t("landing.demo.agents.senkaDescription"),
+      id: "senka",
+      name: "senka",
+      systemPrompt: t("landing.demo.agents.senkaPrompt"),
       time: t("landing.demo.agents.time2h"),
       tools: ["search_knowledge", "update_contact", "create_reminder", "handoff_human"],
     },

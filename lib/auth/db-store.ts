@@ -7,7 +7,7 @@ import { promisify } from "node:util";
  * PostgreSQL-backed auth store for production deployments.
  *
  * Mirrors the interface of lib/auth/store.ts but stores accounts and sessions
- * in PostgreSQL instead of ~/.steve/auth.json. The schema is applied lazily
+ * in PostgreSQL instead of ~/.senka/auth.json. The schema is applied lazily
  * (CREATE SCHEMA IF NOT EXISTS) on first use — no separate migration step.
  *
  * Security properties preserved from the file-based store:
@@ -39,24 +39,24 @@ function getPool(): Pool {
   return sharedPool();
 }
 
-// These live in `steve`, next to the document and blob tables, and not in a
+// These live in `senka`, next to the document and blob tables, and not in a
 // schema called `auth` — which is where they used to be, and which is a name
 // this app does not get to own.
 //
 // On Supabase, `auth` is GoTrue's: it already holds `auth.users`,
-// `steve.sessions` and twenty more tables, and the database role cannot create
-// anything in it. `CREATE TABLE IF NOT EXISTS steve.sessions` against that is
+// `senka.sessions` and twenty more tables, and the database role cannot create
+// anything in it. `CREATE TABLE IF NOT EXISTS senka.sessions` against that is
 // the worst possible outcome — not an error, a no-op, leaving every session
 // query pointed at GoTrue's table, which has none of these columns. Any
-// managed Postgres is free to reserve a name like that; `steve` is ours.
+// managed Postgres is free to reserve a name like that; `senka` is ours.
 //
 // Installs that predate this keep their accounts: `migrateFromLegacySchema`
 // below moves them once, and only from a table whose shape proves it is one
 // of ours.
 const SCHEMA_SQL = `
-CREATE SCHEMA IF NOT EXISTS steve;
+CREATE SCHEMA IF NOT EXISTS senka;
 
-CREATE TABLE IF NOT EXISTS steve.accounts (
+CREATE TABLE IF NOT EXISTS senka.accounts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text NOT NULL UNIQUE,
   password_hash text NOT NULL,
@@ -74,25 +74,25 @@ CREATE TABLE IF NOT EXISTS steve.accounts (
 
 -- CREATE TABLE IF NOT EXISTS is a no-op on an install that already has this
 -- table, so the new column needs its own statement to actually reach it.
-ALTER TABLE steve.accounts ADD COLUMN IF NOT EXISTS role text;
+ALTER TABLE senka.accounts ADD COLUMN IF NOT EXISTS role text;
 
-CREATE TABLE IF NOT EXISTS steve.sessions (
+CREATE TABLE IF NOT EXISTS senka.sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  account_email text NOT NULL REFERENCES steve.accounts(email) ON DELETE CASCADE,
+  account_email text NOT NULL REFERENCES senka.accounts(email) ON DELETE CASCADE,
   token_hash text NOT NULL UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_steve_sessions_token_hash ON steve.sessions (token_hash);
-CREATE INDEX IF NOT EXISTS idx_steve_sessions_expires_at ON steve.sessions (expires_at);
-CREATE INDEX IF NOT EXISTS idx_steve_sessions_account_email ON steve.sessions (account_email);
+CREATE INDEX IF NOT EXISTS idx_senka_sessions_token_hash ON senka.sessions (token_hash);
+CREATE INDEX IF NOT EXISTS idx_senka_sessions_expires_at ON senka.sessions (expires_at);
+CREATE INDEX IF NOT EXISTS idx_senka_sessions_account_email ON senka.sessions (account_email);
 `;
 
 /**
  * Move accounts out of the old `auth` schema, once.
  *
- * Deliberately narrow. It runs only when `steve.accounts` is empty, and only
- * against an `steve.accounts` that has this app's own columns — on Supabase
+ * Deliberately narrow. It runs only when `senka.accounts` is empty, and only
+ * against an `senka.accounts` that has this app's own columns — on Supabase
  * that table does not exist at all, and `auth.users` (which does) will never
  * match. Sessions are not carried over: they are cheap to re-make and a
  * logged-in browser signing in again is a smaller cost than getting this
@@ -100,7 +100,7 @@ CREATE INDEX IF NOT EXISTS idx_steve_sessions_account_email ON steve.sessions (a
  */
 async function migrateFromLegacySchema(): Promise<void> {
   const pool = getPool();
-  const already = await pool.query("SELECT 1 FROM steve.accounts LIMIT 1");
+  const already = await pool.query("SELECT 1 FROM senka.accounts LIMIT 1");
   if ((already.rowCount ?? 0) > 0) return;
 
   const legacy = await pool.query(
@@ -111,7 +111,7 @@ async function migrateFromLegacySchema(): Promise<void> {
   if ((legacy.rowCount ?? 0) < 3) return;
 
   await pool.query(
-    `INSERT INTO steve.accounts
+    `INSERT INTO senka.accounts
        (email, password_hash, password_salt, reset_token_hash, reset_token_expires_at, created_at)
      SELECT email, password_hash, password_salt, reset_token_hash, reset_token_expires_at, created_at
        FROM auth.accounts
@@ -162,13 +162,13 @@ function newSessionToken(): { token: string; tokenHash: string; expiresAt: Date 
 
 export async function hasAnyAccount(): Promise<boolean> {
   await ensureSchema();
-  const result = await getPool().query("SELECT 1 FROM steve.accounts LIMIT 1");
+  const result = await getPool().query("SELECT 1 FROM senka.accounts LIMIT 1");
   return result.rowCount! > 0;
 }
 
 export async function accountExists(email: string): Promise<boolean> {
   await ensureSchema();
-  const result = await getPool().query("SELECT 1 FROM steve.accounts WHERE email = $1", [
+  const result = await getPool().query("SELECT 1 FROM senka.accounts WHERE email = $1", [
     email.trim().toLowerCase(),
   ]);
   return (result.rowCount ?? 0) > 0;
@@ -189,7 +189,7 @@ export async function createAccount(
     await client.query("BEGIN");
 
     // Check for duplicate email
-    const existing = await client.query("SELECT 1 FROM steve.accounts WHERE email = $1", [normalised]);
+    const existing = await client.query("SELECT 1 FROM senka.accounts WHERE email = $1", [normalised]);
     if (existing.rowCount! > 0) {
       await client.query("ROLLBACK");
       return { ok: false, reason: "email_exists" };
@@ -201,7 +201,7 @@ export async function createAccount(
 
     // Insert account
     await client.query(
-      `INSERT INTO steve.accounts (email, password_hash, password_salt)
+      `INSERT INTO senka.accounts (email, password_hash, password_salt)
        VALUES ($1, $2, $3)`,
       [normalised, derived.toString("hex"), salt.toString("hex")],
     );
@@ -209,7 +209,7 @@ export async function createAccount(
     // Create session
     const session = newSessionToken();
     await client.query(
-      `INSERT INTO steve.sessions (account_email, token_hash, expires_at)
+      `INSERT INTO senka.sessions (account_email, token_hash, expires_at)
        VALUES ($1, $2, $3)`,
       [normalised, session.tokenHash, session.expiresAt],
     );
@@ -232,7 +232,7 @@ export async function login(
   await ensureSchema();
 
   const result = await getPool().query(
-    "SELECT password_hash, password_salt FROM steve.accounts WHERE email = $1",
+    "SELECT password_hash, password_salt FROM senka.accounts WHERE email = $1",
     [normalised],
   );
 
@@ -247,7 +247,7 @@ export async function login(
   // Create session
   const session = newSessionToken();
   await getPool().query(
-    `INSERT INTO steve.sessions (account_email, token_hash, expires_at)
+    `INSERT INTO senka.sessions (account_email, token_hash, expires_at)
      VALUES ($1, $2, $3)`,
     [normalised, session.tokenHash, session.expiresAt],
   );
@@ -264,12 +264,12 @@ export async function loginWithVerifiedEmail(email: string): Promise<{ token: st
   const normalised = email.trim().toLowerCase();
   await ensureSchema();
 
-  const existing = await getPool().query("SELECT 1 FROM steve.accounts WHERE email = $1", [normalised]);
+  const existing = await getPool().query("SELECT 1 FROM senka.accounts WHERE email = $1", [normalised]);
   if (existing.rowCount === 0) {
     const salt = randomBytes(16);
     const derived = await scrypt(randomBytes(32).toString("hex"), salt, KEY_LENGTH, SCRYPT);
     await getPool().query(
-      `INSERT INTO steve.accounts (email, password_hash, password_salt)
+      `INSERT INTO senka.accounts (email, password_hash, password_salt)
        VALUES ($1, $2, $3)
        ON CONFLICT (email) DO NOTHING`,
       [normalised, derived.toString("hex"), salt.toString("hex")],
@@ -278,7 +278,7 @@ export async function loginWithVerifiedEmail(email: string): Promise<{ token: st
 
   const session = newSessionToken();
   await getPool().query(
-    `INSERT INTO steve.sessions (account_email, token_hash, expires_at)
+    `INSERT INTO senka.sessions (account_email, token_hash, expires_at)
      VALUES ($1, $2, $3)`,
     [normalised, session.tokenHash, session.expiresAt],
   );
@@ -291,7 +291,7 @@ export async function startPasswordReset(email: string): Promise<string | null> 
   await ensureSchema();
 
   const result = await getPool().query(
-    "SELECT id FROM steve.accounts WHERE email = $1",
+    "SELECT id FROM senka.accounts WHERE email = $1",
     [normalised],
   );
   if (result.rowCount === 0) return null;
@@ -300,7 +300,7 @@ export async function startPasswordReset(email: string): Promise<string | null> 
   const expiresAt = new Date(Date.now() + RESET_TOKEN_HOURS * 3_600_000);
 
   await getPool().query(
-    `UPDATE steve.accounts
+    `UPDATE senka.accounts
        SET reset_token_hash = $1, reset_token_expires_at = $2
      WHERE email = $3`,
     [hashToken(token), expiresAt, normalised],
@@ -324,7 +324,7 @@ export async function resetPassword(
     const now = new Date();
 
     const result = await client.query(
-      `SELECT id, email FROM steve.accounts
+      `SELECT id, email FROM senka.accounts
        WHERE reset_token_hash IS NOT NULL
          AND reset_token_hash = $1
          AND reset_token_expires_at > $2`,
@@ -342,7 +342,7 @@ export async function resetPassword(
 
     // Update password, clear reset token
     await client.query(
-      `UPDATE steve.accounts
+      `UPDATE senka.accounts
          SET password_hash = $1, password_salt = $2,
              reset_token_hash = NULL, reset_token_expires_at = NULL
        WHERE id = $3`,
@@ -351,7 +351,7 @@ export async function resetPassword(
 
     // Drop all other sessions on this account
     await client.query(
-      "DELETE FROM steve.sessions WHERE account_email = $1",
+      "DELETE FROM senka.sessions WHERE account_email = $1",
       [account.email],
     );
 
@@ -380,7 +380,7 @@ export async function changePassword(
     await client.query("BEGIN");
 
     const result = await client.query(
-      "SELECT id, password_hash, password_salt FROM steve.accounts WHERE email = $1",
+      "SELECT id, password_hash, password_salt FROM senka.accounts WHERE email = $1",
       [normalised],
     );
     if (result.rowCount === 0) {
@@ -400,7 +400,7 @@ export async function changePassword(
     const derivedNew = await scrypt(newPassword, newSalt, KEY_LENGTH, SCRYPT);
 
     await client.query(
-      `UPDATE steve.accounts
+      `UPDATE senka.accounts
          SET password_hash = $1, password_salt = $2
        WHERE id = $3`,
       [derivedNew.toString("hex"), newSalt.toString("hex"), account.id],
@@ -409,7 +409,7 @@ export async function changePassword(
     // Keep current session, drop all others
     const currentTokenHash = hashToken(currentToken);
     await client.query(
-      `DELETE FROM steve.sessions
+      `DELETE FROM senka.sessions
        WHERE account_email = $1 AND token_hash != $2`,
       [normalised, currentTokenHash],
     );
@@ -432,7 +432,7 @@ export async function verifySession(token: string | undefined): Promise<boolean>
 
   const wanted = hashToken(token);
   const result = await getPool().query(
-    "SELECT 1 FROM steve.sessions WHERE token_hash = $1 AND expires_at > now()",
+    "SELECT 1 FROM senka.sessions WHERE token_hash = $1 AND expires_at > now()",
     [wanted],
   );
   return result.rowCount! > 0;
@@ -444,7 +444,7 @@ export async function getSessionAccountEmail(token: string | undefined): Promise
 
   const wanted = hashToken(token);
   const result = await getPool().query(
-    "SELECT account_email FROM steve.sessions WHERE token_hash = $1 AND expires_at > now()",
+    "SELECT account_email FROM senka.sessions WHERE token_hash = $1 AND expires_at > now()",
     [wanted],
   );
   return result.rows[0]?.account_email ?? null;
@@ -455,13 +455,13 @@ export async function destroySession(token: string | undefined): Promise<void> {
   await ensureSchema();
 
   const wanted = hashToken(token);
-  await getPool().query("DELETE FROM steve.sessions WHERE token_hash = $1", [wanted]);
+  await getPool().query("DELETE FROM senka.sessions WHERE token_hash = $1", [wanted]);
 }
 
 // ── Migration from file-based store ──────────────────────────────────────────
 
 /**
- * One-time migration: reads ~/.steve/auth.json, inserts all accounts and
+ * One-time migration: reads ~/.senka/auth.json, inserts all accounts and
  * sessions into PostgreSQL. Safe to re-run (idempotent on email uniqueness).
  * Returns the number of accounts migrated.
  */
@@ -477,7 +477,7 @@ export async function migrateFromFileStore(
     for (const account of fileStore.accounts) {
       try {
         await client.query(
-          `INSERT INTO steve.accounts (email, password_hash, password_salt, created_at)
+          `INSERT INTO senka.accounts (email, password_hash, password_salt, created_at)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (email) DO NOTHING`,
           [account.email, account.hash, account.salt, account.createdAt],
@@ -492,7 +492,7 @@ export async function migrateFromFileStore(
     for (const session of fileStore.sessions) {
       try {
         await client.query(
-          `INSERT INTO steve.sessions (account_email, token_hash, created_at, expires_at)
+          `INSERT INTO senka.sessions (account_email, token_hash, created_at, expires_at)
            VALUES ($1, $2, $3, $4)
            ON CONFLICT (token_hash) DO NOTHING`,
           [session.accountEmail, session.tokenHash, session.createdAt, session.expiresAt],
@@ -515,6 +515,6 @@ export async function migrateFromFileStore(
 /** Check if the DB has any accounts (for migration decision). */
 export async function dbHasAccounts(): Promise<boolean> {
   await ensureSchema();
-  const result = await getPool().query("SELECT 1 FROM steve.accounts LIMIT 1");
+  const result = await getPool().query("SELECT 1 FROM senka.accounts LIMIT 1");
   return result.rowCount! > 0;
 }

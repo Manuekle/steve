@@ -233,7 +233,7 @@ const ENTERPRISE_ONLY_GROUPS = new Set(["database"]);
 /** What GET and POST /api/settings both answer with. */
 type SettingsResponse = {
   readonly groups?: CredentialGroup[];
-  /** Set in ~/.steve/credentials.json — the only ones this app can clear. */
+  /** Set in ~/.senka/credentials.json — the only ones this app can clear. */
   readonly credentials?: Record<string, boolean>;
   /** Set anywhere, store or environment. */
   readonly configured?: Record<string, boolean>;
@@ -865,7 +865,7 @@ export default function SettingsPage() {
         {!loading ? (
           <div className="mt-10">
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {t("settings.footerText", { path: "~/.steve/credentials.json" })}
+              {t("settings.footerText", { path: "~/.senka/credentials.json" })}
             </p>
             {totalFields > 0 ? (
               <p className="mt-2 text-xs text-muted-foreground">

@@ -9,7 +9,7 @@ import type { AgentChatTurn, ChannelConversation } from "../../lib/types";
 /**
  * The conversation archive, from the owner's side.
  *
- * Steve already reads every real conversation on a schedule and records where
+ * Senka already reads every real conversation on a schedule and records where
  * it left the person commercially (lib/prospect.ts, agent/schedules/prospect.ts).
  * That assessment is the most useful thing this app knows about its own inbox
  * and, until now, nothing could read it back. This tool is that read.
@@ -43,7 +43,7 @@ const MAX_SNIPPETS = 3;
 export default defineTool({
   description:
     "Read the archive of real customer conversations (WhatsApp, Instagram, web chat) and " +
-    "the outcome Steve recorded for each: won, lost, negotiating, interested, no_response, " +
+    "the outcome Senka recorded for each: won, lost, negotiating, interested, no_response, " +
     "unqualified, support. `list` for the queue, `thread` for one conversation's actual " +
     "messages, `search` for what customers keep saying. Read-only, and only available in " +
     "the business owner's own console.",
@@ -88,7 +88,7 @@ export default defineTool({
       .boolean()
       .optional()
       .describe(
-        "action=list: keep only conversations Steve has not classified yet — usually too " +
+        "action=list: keep only conversations Senka has not classified yet — usually too " +
           "short to judge, never the same thing as unqualified.",
       ),
     limit: z

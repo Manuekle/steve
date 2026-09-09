@@ -14,7 +14,7 @@ import type { FormStep } from "@/lib/types";
  * caller from writing fields no screen owns.
  */
 
-const TEST_DIR = join(tmpdir(), `steve-forms-route-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-forms-route-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");

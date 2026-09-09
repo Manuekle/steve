@@ -16,7 +16,7 @@ import { createDocumentStore } from "../doc-store";
  * JSON file, written through a temp file and a rename.
  */
 
-const FILE = join(homedir(), ".steve", "onboarding.json");
+const FILE = join(homedir(), ".senka", "onboarding.json");
 
 // Re-exported so server callers have one import for the whole feature.
 export { CRMS, GOALS, INDUSTRIES, VOLUMES, crmHost } from "./options";
@@ -45,7 +45,7 @@ function empty(): Store {
   return { completedAt: null, profile: null, skippedAt: null };
 }
 
-// Postgres when one is configured, ~/.steve/onboarding.json otherwise.
+// Postgres when one is configured, ~/.senka/onboarding.json otherwise.
 const onboardingStore = createDocumentStore<Store>({
   id: "onboarding",
   // Per business: each business is set up on its own. See lib/business-scope.ts.

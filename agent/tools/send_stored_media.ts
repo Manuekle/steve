@@ -7,7 +7,7 @@ import { sendInstagramMediaBytes } from "../../lib/instagram-send";
 import { assertToolAllowed } from "../../lib/agent-scope";
 
 // The sending half of the media library. The bytes go straight from
-// ~/.steve/media to the platform's own media API — same path
+// ~/.senka/media to the platform's own media API — same path
 // generate_media.ts uses — so nothing has to be exposed on a public URL for
 // a locally hosted install to be able to send a photo.
 

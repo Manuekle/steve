@@ -1,8 +1,8 @@
-# ─── Steve Enterprise Installer (Windows) ───────────────────────────────────
+# ─── Senka Enterprise Installer (Windows) ───────────────────────────────────
 # Requires: PowerShell 5.1+, Docker Desktop, WinGet or manual Node.js install.
 #
 # Usage:
-#   irm https://raw.githubusercontent.com/Manuekle/steve/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/Manuekle/senka/main/install.ps1 | iex
 #   or: powershell -ExecutionPolicy Bypass -File install.ps1
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ function Write-Fail  { param($Msg) Write-Host "✘ $Msg" -ForegroundColor Red; e
 
 Write-Host ""
 Write-Host "═══════════════════════════════════════════" -ForegroundColor White
-Write-Host "  Steve Enterprise Installer (Windows)" -ForegroundColor White
+Write-Host "  Senka Enterprise Installer (Windows)" -ForegroundColor White
 Write-Host "═══════════════════════════════════════════" -ForegroundColor White
 Write-Host ""
 
@@ -89,7 +89,7 @@ try {
 
 # ── 4. Project directory ─────────────────────────────────────────────────────
 
-$installDir = if ($env:STEVE_INSTALL_DIR) { $env:STEVE_INSTALL_DIR } else { "$env:USERPROFILE\steve" }
+$installDir = if ($env:STEVE_INSTALL_DIR) { $env:STEVE_INSTALL_DIR } else { "$env:USERPROFILE\senka" }
 
 if (-not (Test-Path $installDir)) {
     Write-Info "Creating project at $installDir..."

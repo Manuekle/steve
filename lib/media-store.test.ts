@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 // homedir() at module scope, so homedir has to point at a temp directory
 // before the module is imported. The random suffix keeps parallel vitest
 // workers off each other's files.
-const TEST_DIR = join(tmpdir(), `steve-media-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-media-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -105,7 +105,7 @@ describe("assets", () => {
 
     expect(asset.file.startsWith(asset.id)).toBe(true);
     expect(asset.file).not.toContain("/");
-    expect(blobPath(asset)).toBe(join(TEST_DIR, ".steve", "media", asset.file));
+    expect(blobPath(asset)).toBe(join(TEST_DIR, ".senka", "media", asset.file));
     expect(new TextDecoder().decode(await readAssetBytes(asset))).toBe("png!");
   });
 

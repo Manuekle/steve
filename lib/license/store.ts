@@ -8,17 +8,17 @@ import type { LicenseInfo } from "./types";
 
 // Where a self-hosted install keeps its Enterprise license token.
 //
-// Same shape as lib/credentials.ts: a single file under ~/.steve, written
+// Same shape as lib/credentials.ts: a single file under ~/.senka, written
 // through a temp file and a rename so a crash mid-write can't corrupt it,
 // with an env var fallback (STEVE_LICENSE_KEY) for deployments that inject
 // config through their process manager instead of the Settings UI.
 
-const LICENSE_FILE = join(homedir(), ".steve", "license.json");
+const LICENSE_FILE = join(homedir(), ".senka", "license.json");
 
 type LicenseStore = { token: string | null };
 
-// Postgres when one is configured, ~/.steve/license.json otherwise. The old
-// plain-text ~/.steve/license.key is still read once, below, so an install
+// Postgres when one is configured, ~/.senka/license.json otherwise. The old
+// plain-text ~/.senka/license.key is still read once, below, so an install
 // that predates this keeps its license without anyone re-pasting it.
 const licenseStore = createDocumentStore<LicenseStore>({
   id: "license",
@@ -28,7 +28,7 @@ const licenseStore = createDocumentStore<LicenseStore>({
   fileMode: 0o600,
 });
 
-const LEGACY_FILE = join(homedir(), ".steve", "license.key");
+const LEGACY_FILE = join(homedir(), ".senka", "license.key");
 
 async function readToken(): Promise<string | null> {
   const stored = (await licenseStore.read()).token;

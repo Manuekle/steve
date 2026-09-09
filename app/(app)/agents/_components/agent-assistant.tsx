@@ -53,14 +53,14 @@ type Turn =
   | { readonly role: "error"; readonly text: string };
 
 /** Where one agent's interview lives between visits. */
-const chatKey = (agentId: string) => `steve:agent-builder-chat:${agentId}`;
+const chatKey = (agentId: string) => `senka:agent-builder-chat:${agentId}`;
 /**
  * What the owner typed into the create dialog, parked for the workspace to
  * pick up. It is the first thing they said about this agent, and asking them
  * to say it twice — once to create the thing, once to the interviewer — is the
  * kind of small stupidity that makes a builder feel like paperwork.
  */
-export const seedKey = (agentId: string) => `steve:agent-builder-seed:${agentId}`;
+export const seedKey = (agentId: string) => `senka:agent-builder-seed:${agentId}`;
 const MAX_TURNS = 40;
 
 function loadTurns(agentId: string): Turn[] {

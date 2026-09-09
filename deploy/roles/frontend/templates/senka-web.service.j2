@@ -2,8 +2,8 @@
 # Next.js UI (withEve + useEveAgent). Caddy sends Eve protocol routes directly
 # to the agent and sends all other paths here.
 [Unit]
-Description=steve-web — Next.js UI for the eve agent
-After=network-online.target steve.service
+Description=senka-web — Next.js UI for the eve agent
+After=network-online.target senka.service
 Wants=network-online.target
 
 [Service]

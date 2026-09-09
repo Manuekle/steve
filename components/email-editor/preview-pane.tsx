@@ -804,7 +804,7 @@ function parseSender(from: string | null): {
   const display = angled?.[1]?.trim();
   const address = (angled?.[2] ?? raw).trim();
   const local = address.split("@")[0] ?? "";
-  const name = display || (local ? local.charAt(0).toUpperCase() + local.slice(1) : "Steve");
+  const name = display || (local ? local.charAt(0).toUpperCase() + local.slice(1) : "Senka");
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return {

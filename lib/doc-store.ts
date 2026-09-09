@@ -56,9 +56,9 @@ function getPool(): Pool {
 }
 
 const SCHEMA_SQL = `
-CREATE SCHEMA IF NOT EXISTS steve;
+CREATE SCHEMA IF NOT EXISTS senka;
 
-CREATE TABLE IF NOT EXISTS steve.documents (
+CREATE TABLE IF NOT EXISTS senka.documents (
   id text PRIMARY KEY,
   data jsonb NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -93,7 +93,7 @@ export type StoredDocumentId = DocumentId | `${DocumentId}::${string}`;
  *  DB and file mode, and to decide whether a file needs migrating in. */
 export async function hasDocument(id: StoredDocumentId): Promise<boolean> {
   await ensureSchema();
-  const result = await getPool().query("SELECT 1 FROM steve.documents WHERE id = $1", [id]);
+  const result = await getPool().query("SELECT 1 FROM senka.documents WHERE id = $1", [id]);
   return (result.rowCount ?? 0) > 0;
 }
 
@@ -101,7 +101,7 @@ export async function hasDocument(id: StoredDocumentId): Promise<boolean> {
 export async function readDocument<T>(id: StoredDocumentId): Promise<T | null> {
   await ensureSchema();
   const result = await getPool().query<{ data: T }>(
-    "SELECT data FROM steve.documents WHERE id = $1",
+    "SELECT data FROM senka.documents WHERE id = $1",
     [id],
   );
   return result.rows[0]?.data ?? null;
@@ -131,17 +131,17 @@ export async function updateDocument<TStore, TResult>(
     // The insert makes the row exist so `FOR UPDATE` has something to lock;
     // ON CONFLICT DO NOTHING keeps a concurrent first write from failing here.
     await client.query(
-      "INSERT INTO steve.documents (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
+      "INSERT INTO senka.documents (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
       [id, JSON.stringify(load(null))],
     );
     const locked = await client.query<{ data: Partial<TStore> }>(
-      "SELECT data FROM steve.documents WHERE id = $1 FOR UPDATE",
+      "SELECT data FROM senka.documents WHERE id = $1 FOR UPDATE",
       [id],
     );
     const store = load(locked.rows[0]?.data ?? null);
     const result = fn(store);
     await client.query(
-      "UPDATE steve.documents SET data = $2::jsonb, updated_at = now() WHERE id = $1",
+      "UPDATE senka.documents SET data = $2::jsonb, updated_at = now() WHERE id = $1",
       [id, JSON.stringify(store)],
     );
     await client.query("COMMIT");
@@ -164,7 +164,7 @@ export async function updateDocument<TStore, TResult>(
 export async function migrateFromFileStore<T>(id: StoredDocumentId, store: T): Promise<void> {
   await ensureSchema();
   await getPool().query(
-    "INSERT INTO steve.documents (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
+    "INSERT INTO senka.documents (id, data) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING",
     [id, JSON.stringify(store)],
   );
 }
@@ -333,7 +333,7 @@ export function createDocumentStore<T>(options: {
 // serves them, so nothing becomes public that was not public before.
 
 const BLOB_SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS steve.blobs (
+CREATE TABLE IF NOT EXISTS senka.blobs (
   id text PRIMARY KEY,
   bytes bytea NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
@@ -371,7 +371,7 @@ export async function blobsInDatabase(): Promise<boolean> {
 export async function writeBlob(id: string, bytes: Uint8Array): Promise<void> {
   await ensureBlobSchema();
   await getPool().query(
-    "INSERT INTO steve.blobs (id, bytes) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET bytes = EXCLUDED.bytes",
+    "INSERT INTO senka.blobs (id, bytes) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET bytes = EXCLUDED.bytes",
     [id, Buffer.from(bytes)],
   );
 }
@@ -380,7 +380,7 @@ export async function writeBlob(id: string, bytes: Uint8Array): Promise<void> {
 export async function readBlob(id: string): Promise<Uint8Array | null> {
   await ensureBlobSchema();
   const result = await getPool().query<{ bytes: Buffer }>(
-    "SELECT bytes FROM steve.blobs WHERE id = $1",
+    "SELECT bytes FROM senka.blobs WHERE id = $1",
     [id],
   );
   const row = result.rows[0];
@@ -392,7 +392,7 @@ export async function readBlob(id: string): Promise<Uint8Array | null> {
 export async function listBlobIds(prefix: string): Promise<string[]> {
   await ensureBlobSchema();
   const result = await getPool().query<{ id: string }>(
-    "SELECT id FROM steve.blobs WHERE id LIKE $1",
+    "SELECT id FROM senka.blobs WHERE id LIKE $1",
     [`${prefix}%`],
   );
   return result.rows.map((row) => row.id);
@@ -400,5 +400,5 @@ export async function listBlobIds(prefix: string): Promise<string[]> {
 
 export async function deleteBlob(id: string): Promise<void> {
   await ensureBlobSchema();
-  await getPool().query("DELETE FROM steve.blobs WHERE id = $1", [id]);
+  await getPool().query("DELETE FROM senka.blobs WHERE id = $1", [id]);
 }

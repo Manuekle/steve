@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="public/logos/steve.svg" alt="steve" width="120" style="border-radius: 24px;" />
+  <img src="public/logos/senka.svg" alt="senka" width="120" style="border-radius: 24px;" />
 </p>
 
-<h1 align="center">steve</h1>
+<h1 align="center">senka</h1>
 
 <p align="center">
   <strong>the service system for your business and your agents</strong><br/>
@@ -15,7 +15,7 @@
 
 ---
 
-Steve is a service and sales agent built with [Eve](https://eve.dev) and deployed on a self-hosted Node.js host. It shows how to run Eve without Vercel-managed runtime infrastructure:
+Senka is a service and sales agent built with [Eve](https://eve.dev) and deployed on a self-hosted Node.js host. It shows how to run Eve without Vercel-managed runtime infrastructure:
 
 - PostgreSQL stores durable Workflow state.
 - Docker isolates model-authored Python and blocks sandbox network egress.
@@ -85,7 +85,7 @@ the Workflow 5 beta protocol, while that package's `latest` tag is Workflow 4.
 ## Installation
 
 For the complete installation guide with platform-specific instructions (macOS,
-Linux, Windows), visit **[steve.dev/guide](https://steve.dev/guide)**.
+Linux, Windows), visit **[senka.ai/guide](https://senka.ai/guide)**.
 
 ### Quick start (manual)
 
@@ -103,7 +103,7 @@ Edit `.env` before continuing:
 No API key goes in `.env`. The model provider (Vercel AI Gateway, OpenAI,
 Anthropic, Google Gemini) and every integration key are set from the running
 app — **Configuración → Modelo de IA** and **Conexiones** — and persisted to
-`~/.steve/credentials.json`, where they can be rotated and cleared without a
+`~/.senka/credentials.json`, where they can be rotated and cleared without a
 restart. `.env` holds only what has to exist before the app boots.
 
 Start and migrate PostgreSQL:
@@ -179,7 +179,7 @@ tools are disabled. The agent also has explicit per-session token budgets.
 **Instalación** (`/setup`) answers "does this machine have what the project
 needs?" for someone who has never opened a terminal. Every requirement is
 checked live on the host — Node version, Docker installed and running, the
-`steve-postgres` container, TCP reachability of `WORKFLOW_POSTGRES_URL`,
+`senka-postgres` container, TCP reachability of `WORKFLOW_POSTGRES_URL`,
 whether the database has tables, the model key for the selected provider,
 embeddings, and `.env` — and each failure shows the one command that fixes it,
 with a copy button.
@@ -238,8 +238,8 @@ If two businesses each need their own inbound number answered at the same
 time, that is still two installations.
 
 The first business keeps every key and file path it had before this existed
-(`business`, `~/.steve/business.json`, …); a second gets `business::<id>` and
-`~/.steve/businesses/<id>/`. There is no migration step. See
+(`business`, `~/.senka/business.json`, …); a second gets `business::<id>` and
+`~/.senka/businesses/<id>/`. There is no migration step. See
 `lib/business-scope.ts`.
 
 ## Model selection
@@ -273,7 +273,7 @@ serves, with price and context window on each row. "Automático" leaves the
 per-task ranking in charge.
 
 The picker cannot reach into Eve, so the choice is written to
-`~/.steve/chat-models.json` and `agent/agent.ts` reads it back through
+`~/.senka/chat-models.json` and `agent/agent.ts` reads it back through
 `defineDynamic` on `step.started`, keyed by session id. `step.started` is the
 scope that matters: session- and turn-scoped selections must serialize to a
 model id string, which only the Gateway route can express, while `step.started`
@@ -295,7 +295,7 @@ with a positive balance but is only allowed part of the catalog. Vercel's free
 Gateway credits behave exactly this way, and the difference is invisible until
 a real request is made.
 
-Whatever the probe finds is written to `~/.steve/model-access.json`, and both
+Whatever the probe finds is written to `~/.senka/model-access.json`, and both
 the task ranking and the picker route around those models — a blocked model is
 shown struck through with the provider's own explanation rather than quietly
 dropped. Free-tier rate limits are bursty, so a probe can pass and a later turn
@@ -311,7 +311,7 @@ agent answers prices, policies, and procedures from them instead of guessing.
   PDF with no text layer is rejected with a message saying so.
 - Text is split into ~1200-character chunks with 200 characters of overlap,
   embedded with `text-embedding-3-small`, and stored in
-  `~/.steve/knowledge.json` alongside the other local stores.
+  `~/.senka/knowledge.json` alongside the other local stores.
 - Retrieval is an exact cosine-similarity scan over every chunk — no vector
   database to operate. Swapping in pgvector later means replacing
   `searchChunks()` in `lib/knowledge-store.ts`.
@@ -384,7 +384,7 @@ Node services, PostgreSQL, optional Beszel monitoring, optional Jaeger tracing,
 and Caddy. Start with [deploy/README.md](./deploy/README.md).
 
 Before each Workflow schema migration, Ansible writes a custom-format PostgreSQL
-backup under `/opt/steve-backups/`. Production-shaped unauthenticated and
+backup under `/opt/senka-backups/`. Production-shaped unauthenticated and
 authenticated requests are checked before a deployment is reported healthy.
 
 The one-time upgrade from Eve versions before `0.20` is guarded specially.

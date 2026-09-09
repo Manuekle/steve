@@ -2,7 +2,7 @@
 //
 // Two backends, chosen the same way lib/business-store.ts chooses: Postgres
 // when WORKFLOW_POSTGRES_URL is set (which a deploy with no writable
-// filesystem requires), otherwise ~/.steve/connections.json with a 0600 file
+// filesystem requires), otherwise ~/.senka/connections.json with a 0600 file
 // mode. The first DB access imports an existing file once.
 //
 // Either way these are live access tokens to someone's CRM and calendar: they
@@ -41,7 +41,7 @@ import {
   updateDocument as dbUpdateDocument,
 } from "./doc-store";
 
-const STORE_FILE = join(homedir(), ".steve", "connections.json");
+const STORE_FILE = join(homedir(), ".senka", "connections.json");
 
 export type StoredConnection = {
   readonly accessToken: string;
@@ -118,7 +118,7 @@ async function readStore(): Promise<ConnectionStore> {
  *
  * On Postgres the row lock inside the transaction is the serialisation, and it
  * holds across processes. On the file the in-process queue is all there is —
- * which is exactly the gap that makes two Steve processes racing over one
+ * which is exactly the gap that makes two Senka processes racing over one
  * token file worth moving off.
  */
 async function updateStore<T>(fn: (store: ConnectionStore) => T): Promise<T> {

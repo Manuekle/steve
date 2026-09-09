@@ -20,7 +20,7 @@ export default defineDynamic({
 
 A plan, not a launch. This agent cannot create a campaign, set a budget, send
 an email, or publish a post. What it produces is a spec the owner executes, and
-where a step can be automated inside Steve, a draft automation.
+where a step can be automated inside Senka, a draft automation.
 
 Shapes:
 
@@ -77,7 +77,7 @@ Always these parts, and nothing else:
 
 ## sequence
 
-For the automated half, be exact about what Steve can do:
+For the automated half, be exact about what Senka can do:
 
 1. list_automations first — including drafts. Half of these already exist,
    paused or never activated.

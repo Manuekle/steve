@@ -5,7 +5,7 @@ import { getInstallationId } from "@/lib/license/installation";
 
 // GET /api/license — current Enterprise license status, verified offline,
 // plus this machine's installation id (needed even with no license yet —
-// it's what the customer sends Steve to request one bound to this install).
+// it's what the customer sends Senka to request one bound to this install).
 // POST /api/license — saves a pasted license token, after verifying it.
 //
 // A license here only ever informs the Settings UI. Nothing in this route,

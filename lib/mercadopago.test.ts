@@ -134,11 +134,11 @@ describe("external_reference", () => {
       amount: "10",
       currency: "ars",
       productName: "x",
-      externalReference: "steve_deadbeef",
+      externalReference: "senka_deadbeef",
     });
 
     const [, init] = fetchMock.mock.calls[0];
-    expect(JSON.parse(init.body).external_reference).toBe("steve_deadbeef");
+    expect(JSON.parse(init.body).external_reference).toBe("senka_deadbeef");
   });
 
   it("is omitted when there is none, rather than sent empty", async () => {
@@ -162,7 +162,7 @@ describe("getPayment", () => {
       ok({
         id: 123,
         status: "approved",
-        external_reference: "steve_deadbeef",
+        external_reference: "senka_deadbeef",
         transaction_amount: 49.99,
         payer: { email: "buyer@example.com" },
       }),
@@ -175,7 +175,7 @@ describe("getPayment", () => {
     expect(payment).toEqual({
       id: "123",
       status: "approved",
-      externalReference: "steve_deadbeef",
+      externalReference: "senka_deadbeef",
       amount: "49.99",
       payerEmail: "buyer@example.com",
     });

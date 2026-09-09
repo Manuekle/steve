@@ -54,12 +54,12 @@ export function createState(): string {
 }
 
 /** One-shot cookies that carry the flow across the hop to the provider. */
-export const stateCookie = (provider: string) => `steve_oauth_state_${provider}`;
-export const verifierCookie = (provider: string) => `steve_oauth_verifier_${provider}`;
+export const stateCookie = (provider: string) => `senka_oauth_state_${provider}`;
+export const verifierCookie = (provider: string) => `senka_oauth_verifier_${provider}`;
 /** Where a login flow (unlike a Connection) stashes the page a bounced
  *  session was headed to — Google echoes back `code`/`state`, never a query
  *  param of ours, so this is the only way the callback can still know. */
-export const nextCookie = (provider: string) => `steve_oauth_next_${provider}`;
+export const nextCookie = (provider: string) => `senka_oauth_next_${provider}`;
 
 export function redirectUriFor(origin: string, id: string): string {
   return `${origin}/api/connections/${id}/callback`;

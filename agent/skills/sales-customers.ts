@@ -45,7 +45,7 @@ ${PIPELINE_NOTE}
 
 ## risk
 
-Steve has no product-usage signal, so I use the two honest ones it does have —
+Senka has no product-usage signal, so I use the two honest ones it does have —
 silence and history — and I say that is what I am using. I do not invent a
 health score out of nothing.
 

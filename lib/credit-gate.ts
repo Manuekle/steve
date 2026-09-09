@@ -5,7 +5,7 @@ import { getAccount } from "./credit-account";
 import type { AiProvider } from "./ai-provider";
 import { PROVIDER_CREDENTIAL_KEY as CATALOG_PROVIDER_KEY } from "./model-catalog";
 
-// Which pocket pays for one AI provider call, and whether Steve should let
+// Which pocket pays for one AI provider call, and whether Senka should let
 // it start at all. Two separate questions, both answered here because they
 // share the same inputs (the active license, and who put the active key
 // there):
@@ -24,7 +24,7 @@ const PROVIDER_CREDENTIAL_KEY = CATALOG_PROVIDER_KEY as Record<AiProvider, Crede
 /**
  * Enterprise short-circuits to BYOK unconditionally: a self-hosted install
  * has no vendor-supplied key at all — the operator and the end customer are
- * the same person, so there is no "Steve pays" pocket to distinguish from
+ * the same person, so there is no "Senka pays" pocket to distinguish from
  * (see docs' §9/§25 of the commercial spec this implements). Everywhere
  * else, the distinction is *who put the active key there*: a value saved
  * through Settings/Connections (`getStoredCredentials`, disk-backed) is the

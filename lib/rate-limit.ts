@@ -16,7 +16,7 @@ import type { NextRequest } from "next/server";
  * the instance count is a different thing from no limiter at all.
  *
  * If this app ever runs more than one instance, replace the map with a
- * `steve.rate_limits` table keyed the same way — the call sites do not change.
+ * `senka.rate_limits` table keyed the same way — the call sites do not change.
  */
 
 type Window = { count: number; resetAt: number };

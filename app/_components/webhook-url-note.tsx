@@ -26,7 +26,7 @@ export type WebhookChannel = "whatsapp" | "instagram";
  *
  * `localhost` and `127.0.0.1` are the obvious cases; `*.localhost` is the one
  * worth spelling out, because a local HTTPS proxy makes an origin that looks
- * every bit like production (`https://steve.localhost`) and satisfies every
+ * every bit like production (`https://senka.localhost`) and satisfies every
  * "is it configured, is it https" check while still being unreachable from
  * Meta's servers.
  */

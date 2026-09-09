@@ -55,7 +55,7 @@ export function Guide() {
               <p>{t("guide.quickInstall.p1")}</p>
               <div className="my-4 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <a
-                  href="https://raw.githubusercontent.com/Manuekle/steve/main/install.sh"
+                  href="https://raw.githubusercontent.com/Manuekle/senka/main/install.sh"
                   className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -66,7 +66,7 @@ export function Guide() {
                   {t("guide.quickInstall.macosLinux")}
                 </a>
                 <a
-                  href="https://raw.githubusercontent.com/Manuekle/steve/main/install.ps1"
+                  href="https://raw.githubusercontent.com/Manuekle/senka/main/install.ps1"
                   className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
                   target="_blank"
                   rel="noopener noreferrer"

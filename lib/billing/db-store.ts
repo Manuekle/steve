@@ -6,7 +6,7 @@ import { isPlanId, type CurrentPlan, type PlanId } from "../plans";
  * PostgreSQL-backed billing store for production deployments.
  *
  * Mirrors the interface of lib/billing-store.ts but stores subscription state
- * in PostgreSQL instead of ~/.steve/billing.json. The schema is applied lazily
+ * in PostgreSQL instead of ~/.senka/billing.json. The schema is applied lazily
  * on first use — no separate migration step.
  *
  * Single-row design: this app has one billing state per installation, not per
@@ -204,7 +204,7 @@ export function nextPeriodEnd(from: Date = new Date()): string {
 // ── Migration from file-based store ──────────────────────────────────────────
 
 /**
- * One-time migration: reads ~/.steve/billing.json, writes it to PostgreSQL.
+ * One-time migration: reads ~/.senka/billing.json, writes it to PostgreSQL.
  * Safe to re-run (overwrites the singleton row).
  */
 export async function migrateFromFileStore(

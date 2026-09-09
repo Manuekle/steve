@@ -3,7 +3,7 @@ import { getCredentialSync, type CredentialKey } from "./credentials";
 // Bridge the credential store into process.env.
 //
 // Eve, the AI SDK, and @workflow/world-postgres all read process.env directly
-// — none of them know the Settings page persists to ~/.steve/credentials.json.
+// — none of them know the Settings page persists to ~/.senka/credentials.json.
 // Without this, a value saved in the UI is silently ignored in favor of
 // whatever the shell happened to export.
 //

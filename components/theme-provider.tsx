@@ -19,7 +19,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const THEME_STORAGE_KEY = "steve-theme";
+const THEME_STORAGE_KEY = "senka-theme";
 
 export function ThemeProvider({ children }: { readonly children: ReactNode }) {
   // Initialize from the DOM class that the inline script in layout.tsx

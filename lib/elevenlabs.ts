@@ -4,7 +4,7 @@ import { getCredential, getCredentialSync } from "./credentials";
 //
 // Used by agent/tools/generate_media.ts (type: "audio") and, through it, by
 // the "send_audio" automation step. The key lives in the same local
-// credential store as every other secret (~/.steve/credentials.json, with an
+// credential store as every other secret (~/.senka/credentials.json, with an
 // ELEVENLABS_API_KEY env fallback), so it is configured from /settings and
 // never baked into the build.
 //

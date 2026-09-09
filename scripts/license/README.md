@@ -18,7 +18,7 @@ node scripts/license/issue-license.mjs generate-keypair
 ```
 
 Add the printed public key to `lib/license/keys.ts` under a new `keyId`
-(e.g. `"steve-2026"`). Store the private key in a secrets manager or an
+(e.g. `"senka-2026"`). Store the private key in a secrets manager or an
 encrypted vault outside this repository — losing it means re-keying every
 future license; leaking it means anyone can mint valid Enterprise licenses.
 
@@ -36,7 +36,7 @@ node scripts/license/issue-license.mjs issue \
   --email ops@acme.example \
   --edition enterprise \
   --maintenance-months 12 \
-  --key-id steve-2026 \
+  --key-id senka-2026 \
   --installation-id <the id they sent you> \
   --private-key-file /path/to/private.pem
 ```

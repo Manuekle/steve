@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // A throwaway home, so the test never reads or writes the developer's real
-// ~/.steve/credentials.json.
+// ~/.senka/credentials.json.
 // `require`, not `import`: vi.hoisted runs before the module's ESM imports are
 // evaluated — that is the whole point of it — so there is nothing else to read
 // `node:fs` with at this moment.
@@ -12,7 +12,7 @@ const home = vi.hoisted(() => {
   const { mkdtempSync: make } = require("node:fs") as typeof import("node:fs");
   const { tmpdir: temp } = require("node:os") as typeof import("node:os");
   const { join: at } = require("node:path") as typeof import("node:path");
-  return make(at(temp(), "steve-credentials-"));
+  return make(at(temp(), "senka-credentials-"));
 });
 /* eslint-enable @typescript-eslint/no-require-imports */
 
@@ -23,10 +23,10 @@ vi.mock("node:os", async (importOriginal) => {
 
 const { getCredentialSync, invalidateCredentialCache, saveCredentials } = await import("./credentials");
 
-const file = join(home, ".steve", "credentials.json");
+const file = join(home, ".senka", "credentials.json");
 
 function writeStoreDirectly(store: Record<string, string>): void {
-  mkdirSync(join(home, ".steve"), { recursive: true });
+  mkdirSync(join(home, ".senka"), { recursive: true });
   writeFileSync(file, JSON.stringify(store, null, 2) + "\n", "utf-8");
 }
 
@@ -71,7 +71,7 @@ describe("getCredentialSync", () => {
     writeStoreDirectly({ ANTHROPIC_API_KEY: "sk-ant-first" });
     expect(getCredentialSync("ANTHROPIC_API_KEY")).toBe("sk-ant-first");
 
-    mkdirSync(join(home, ".steve"), { recursive: true });
+    mkdirSync(join(home, ".senka"), { recursive: true });
     writeFileSync(file, "{ not json", "utf-8");
     expect(getCredentialSync("ANTHROPIC_API_KEY")).toBeUndefined();
   });

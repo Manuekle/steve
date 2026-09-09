@@ -16,7 +16,7 @@ import {
 //
 // This is a navigation, not a fetch: the Connect button is a link, so the
 // provider's consent screen opens as a real page on its own domain. Nothing
-// about the account is typed into Steve.
+// about the account is typed into Senka.
 //
 // Two one-shot cookies carry the flow across that hop. `state` is what makes
 // the callback refuse a code this app didn't ask for, and the PKCE verifier is

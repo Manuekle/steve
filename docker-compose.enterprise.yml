@@ -30,7 +30,7 @@
 #     docker compose -p globex -f docker-compose.enterprise.yml up -d
 #
 # Nothing reads the old names: app/api/setup/route.ts looks for
-# `steve-postgres`, but only when WORKFLOW_POSTGRES_URL resolves to a local
+# `senka-postgres`, but only when WORKFLOW_POSTGRES_URL resolves to a local
 # host. Here it points at the `postgres` service name, which
 # lib/postgres-target.ts classifies `remote`, so that check is skipped.
 #
@@ -47,7 +47,7 @@
 # acceptable trust boundary, and never expose port 3000 beyond loopback (the
 # reverse proxy is the one thing that should reach it).
 
-name: steve-enterprise
+name: senka-enterprise
 
 services:
   postgres:
@@ -58,7 +58,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-world}"
       POSTGRES_DB: "${POSTGRES_DB:-world}"
     volumes:
-      - steve-enterprise-pgdata:/var/lib/postgresql/data
+      - senka-enterprise-pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
@@ -81,13 +81,13 @@ services:
       # Everything the app keeps outside Postgres: contacts, chats, agents,
       # forms, automations, saved credentials, the license and the
       # installation id. lib/business-store.ts states the invariant —
-      # "both processes read ~/.steve/business.json" — so `eve` and `web`
+      # "both processes read ~/.senka/business.json" — so `eve` and `web`
       # must mount the *same* volume, not one each. Without it the agent
       # writes contacts the inbox cannot see, and every `up --build`
       # discards the lot: a new installation id breaks the license binding
       # and resets the credit ledger's organizationId.
       # Both images run as root, so $HOME is /root.
-      - steve-enterprise-data:/root/.steve
+      - senka-enterprise-data:/root/.senka
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,7 +116,7 @@ services:
       WORKFLOW_POSTGRES_URL: "postgres://${POSTGRES_USER:-world}:${POSTGRES_PASSWORD:-world}@postgres:5432/${POSTGRES_DB:-world}"
     volumes:
       # The same volume `eve` mounts — see the comment there.
-      - steve-enterprise-data:/root/.steve
+      - senka-enterprise-data:/root/.senka
     depends_on:
       postgres:
         condition: service_healthy
@@ -133,5 +133,5 @@ services:
   # operator can do.
 
 volumes:
-  steve-enterprise-pgdata:
-  steve-enterprise-data:
+  senka-enterprise-pgdata:
+  senka-enterprise-data:

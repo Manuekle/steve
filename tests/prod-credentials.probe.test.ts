@@ -21,7 +21,7 @@ describe.skipIf(!live)("credenciales de producción, desde local", () => {
 
   it("escribe, lee y borra un blob en el bucket real", async () => {
     const { putBlob, getBlob, removeBlob } = await import("../lib/blob-store");
-    const id = `media/steve-probe-${Date.now()}.txt`;
+    const id = `media/senka-probe-${Date.now()}.txt`;
     const bytes = new TextEncoder().encode("probe");
 
     await putBlob(id, bytes, "text/plain");
@@ -33,11 +33,11 @@ describe.skipIf(!live)("credenciales de producción, desde local", () => {
     expect(await getBlob(id)).toBeNull();
   });
 
-  // getCredential() y listAutomations() caen al archivo ~/.steve cuando la base
+  // getCredential() y listAutomations() caen al archivo ~/.senka cuando la base
   // no responde, así que verlos pasar no prueba nada por sí solo: existe un
-  // ~/.steve/credentials.json en esta máquina. doc-store es solo-Postgres, sin
+  // ~/.senka/credentials.json en esta máquina. doc-store es solo-Postgres, sin
   // fallback, así que es el que sirve de prueba.
-  it("el credential store sale de Postgres, no de ~/.steve", async () => {
+  it("el credential store sale de Postgres, no de ~/.senka", async () => {
     const { readDocument } = await import("../lib/doc-store");
     const store = await readDocument<Record<string, string>>("credentials");
     expect(store).not.toBeNull();

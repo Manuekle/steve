@@ -12,8 +12,8 @@ import { playWarning } from "@/lib/warning-cue";
  */
 export type CueName = SoundName | "warning";
 
-const ENABLED_KEY = "steve:sound-enabled";
-const VOLUME_KEY = "steve:sound-volume";
+const ENABLED_KEY = "senka:sound-enabled";
+const VOLUME_KEY = "senka:sound-volume";
 const DEFAULT_VOLUME = 0.35;
 
 type SoundContextValue = {

@@ -35,7 +35,7 @@ import type { Agent, AgentVoice } from "./types";
  */
 
 /** Header the endpoint checks. Not `authorization`: some proxies strip it. */
-export const VOICE_TOOL_SECRET_HEADER = "x-steve-voice-secret";
+export const VOICE_TOOL_SECRET_HEADER = "x-senka-voice-secret";
 
 /** Every voice tool this app knows how to run, in the order they are synced. */
 export type VoiceToolName =

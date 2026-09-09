@@ -47,8 +47,8 @@ jobs:
       # path was broken and green.
       - name: Build the container images
         run: |
-          docker build --target eve -t steve-eve:ci .
-          docker build --target web -t steve-web:ci .
+          docker build --target eve -t senka-eve:ci .
+          docker build --target web -t senka-web:ci .
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level high
 

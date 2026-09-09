@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 // Same isolation as lib/business-store.test.ts: point the file backend at a
-// temp dir so nothing here can touch the real ~/.steve/business.json.
-const TEST_DIR = join(tmpdir(), `steve-routing-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+// temp dir so nothing here can touch the real ~/.senka/business.json.
+const TEST_DIR = join(tmpdir(), `senka-routing-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -72,7 +72,7 @@ describe("backend selection", () => {
   });
 
   it("reads through the database when a connection string is set", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     readDocument.mockResolvedValue({ contacts: [{ id: "c1", name: "Ana" }] });
     const store = await loadStore();
 
@@ -83,7 +83,7 @@ describe("backend selection", () => {
   });
 
   it("fills in collections the stored document is missing", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     // A document written before a collection existed has no key for it; every
     // reader expects an array regardless.
     readDocument.mockResolvedValue({ contacts: [] });
@@ -94,7 +94,7 @@ describe("backend selection", () => {
   });
 
   it("writes through the database's own locking, not the in-process queue", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     updateDocument.mockImplementation(
       async (_id: string, load: (raw: unknown) => unknown, fn: (s: unknown) => unknown) =>
         fn(load(null)),
@@ -105,7 +105,7 @@ describe("backend selection", () => {
 
     expect(updateDocument).toHaveBeenCalled();
     // Nothing was written to disk: the file backend stayed out of it.
-    expect(existsSync(join(TEST_DIR, ".steve", "business.json"))).toBe(false);
+    expect(existsSync(join(TEST_DIR, ".senka", "business.json"))).toBe(false);
   });
 
   // An install that has been running on the file store must not come up empty
@@ -114,7 +114,7 @@ describe("backend selection", () => {
     const fileStore = await loadStore();
     await fileStore.upsertContact({ name: "Ana", channel: "whatsapp" });
 
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockResolvedValue(false);
     const dbStore = await loadStore();
     await dbStore.listContacts();
@@ -125,7 +125,7 @@ describe("backend selection", () => {
   });
 
   it("does not re-import once the database holds the document", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockResolvedValue(true);
     const store = await loadStore();
 
@@ -135,7 +135,7 @@ describe("backend selection", () => {
   });
 
   it("has nothing to import on a fresh install with no file", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockResolvedValue(false);
     const store = await loadStore();
 
@@ -149,7 +149,7 @@ describe("backend selection", () => {
     const fileStore = await loadStore();
     await fileStore.upsertContact({ name: "Ana", channel: "whatsapp" });
 
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockRejectedValue(new Error("ECONNREFUSED"));
     const store = await loadStore();
 
@@ -157,7 +157,7 @@ describe("backend selection", () => {
   });
 
   it("retries the database on a later call instead of caching the outage", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockRejectedValueOnce(new Error("ECONNREFUSED")).mockResolvedValue(true);
     readDocument.mockResolvedValue({ contacts: [{ id: "c1", name: "Ana" }] });
     const store = await loadStore();

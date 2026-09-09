@@ -21,8 +21,8 @@
 //
 // Ported from Houston's `ui/routines` (MIT, github.com/gethouston/houston),
 // whose preset/classify/next-fire shape this follows. The UTC conversion and
-// everything about Steve's own runner is new here: Houston stores a timezone
-// per routine, and Steve has one clock, UTC, and no field to put another in.
+// everything about Senka's own runner is new here: Houston stores a timezone
+// per routine, and Senka has one clock, UTC, and no field to put another in.
 
 /** The shapes the picker offers. `custom` means "a cron the presets cannot
  *  express", and it keeps the raw box for the person who does know. */

@@ -53,7 +53,7 @@ ${PIPELINE_NOTE}
      Name the person.
    - **Went quiet mid-problem** — no_response on conversations that had
      reached support.
-   - **Unassessed** — how many Steve has not classified, so the reader knows
+   - **Unassessed** — how many Senka has not classified, so the reader knows
      what the rest of the numbers exclude.
 4. **Compare against last time** if this conversation has an earlier review.
    If not, say this is the baseline. Never imply a trend from one reading.

@@ -18,12 +18,12 @@ import {
 //   S3        an S3-compatible bucket (Supabase Storage, R2, MinIO, AWS).
 //             Where bytes belong: object storage is priced and shaped for
 //             them, and a database is not.
-//   Postgres  `steve.blobs`. Correct, and fine for a few PDFs and logos, but
+//   Postgres  `senka.blobs`. Correct, and fine for a few PDFs and logos, but
 //             a database row is an expensive place to keep a video, and
 //             Supabase's own free tier gives a 500 MB database against 1 GB
 //             of storage. It stays as the fallback that makes a
 //             database-only deploy work at all.
-//   Disk      ~/.steve. The original, and still right for one host.
+//   Disk      ~/.senka. The original, and still right for one host.
 //
 // Callers do not choose. media-store and business-profile-store used to carry
 // their own `if (database) … else disk` branch each, which is how a third
@@ -44,8 +44,8 @@ type S3Config = {
 /** Root for the disk backend. Ids are `<area>/<basename>`, and the areas map
  *  to the directories the file layout already used. */
 const DISK_ROOTS: Readonly<Record<string, string>> = {
-  media: join(homedir(), ".steve", "media"),
-  profile: join(homedir(), ".steve", "business"),
+  media: join(homedir(), ".senka", "media"),
+  profile: join(homedir(), ".senka", "business"),
 };
 
 let s3Config: S3Config | null | undefined;

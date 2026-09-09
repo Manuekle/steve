@@ -14,7 +14,7 @@ import { createDocumentStore } from "./doc-store";
 // the picker can route around models this account cannot use instead of
 // discovering it again on the user's next message.
 
-const STORE_FILE = join(homedir(), ".steve", "model-access.json");
+const STORE_FILE = join(homedir(), ".senka", "model-access.json");
 
 export type ModelAccessStore = {
   /** model id → why it was refused, in the provider's own words. */
@@ -30,7 +30,7 @@ function normalize(parsed: Partial<ModelAccessStore>): ModelAccessStore {
   return { restricted: parsed.restricted ?? {}, checkedAt: parsed.checkedAt };
 }
 
-// Postgres when one is configured, ~/.steve/model-access.json otherwise.
+// Postgres when one is configured, ~/.senka/model-access.json otherwise.
 const accessStore = createDocumentStore<ModelAccessStore>({
   id: "model-access",
   file: STORE_FILE,

@@ -446,7 +446,7 @@ export function ProspectScene() {
 /**
  * Two systems and the call between them.
  *
- * steve on the left, whatever you already run on the right, a hairline
+ * senka on the left, whatever you already run on the right, a hairline
  * connecting them. On hover the request slides the length of the wire, the far
  * plate lights, and the response lands underneath as a status line. The
  * allowlist is the subject, so the route is spelled out rather than implied.
@@ -460,7 +460,7 @@ export function ApiScene() {
         <div className="flex items-center justify-between">
           <div className="flex flex-col items-center gap-2">
             <Plate active className="size-12 rounded-xl" icon={Blockchain05Icon} size={21} />
-            <Mono className="text-muted-foreground">steve</Mono>
+            <Mono className="text-muted-foreground">senka</Mono>
           </div>
 
           {/* The chip travels from the near end to `100% - its own width`, so

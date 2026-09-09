@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 // Same trick as business-store.test.ts: point homedir() at a temp dir so the
-// store writes there instead of the developer's real ~/.steve.
-const TEST_DIR = join(tmpdir(), `steve-profile-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+// store writes there instead of the developer's real ~/.senka.
+const TEST_DIR = join(tmpdir(), `senka-profile-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -110,7 +110,7 @@ describe("logo", () => {
     const first = await saveBusinessLogo({ bytes, mime: "image/png", extension: ".png" });
     await saveBusinessLogo({ bytes, mime: "image/webp", extension: ".webp" });
 
-    expect(existsSync(join(TEST_DIR, ".steve", "business", first.file))).toBe(false);
+    expect(existsSync(join(TEST_DIR, ".senka", "business", first.file))).toBe(false);
     expect((await getBusinessIdentity()).logo?.mime).toBe("image/webp");
   });
 

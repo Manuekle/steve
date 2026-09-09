@@ -4,7 +4,7 @@ import type { Pool, PoolClient } from "pg";
 // Postgres access for the AI-credits engine (model_pricing / credit_account /
 // credit_transaction / ai_usage), kept in its own `credits` schema in the
 // same database Eve's Workflow world already requires (WORKFLOW_POSTGRES_URL
-// is mandatory for self-hosted Steve — this adds no new infrastructure, only
+// is mandatory for self-hosted Senka — this adds no new infrastructure, only
 // a second schema Eve does not own or touch).
 //
 // The schema is applied lazily and idempotently (CREATE ... IF NOT EXISTS) on

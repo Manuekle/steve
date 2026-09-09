@@ -17,8 +17,8 @@
 #   monitoring - Beszel hub + agent (Docker)
 #   jaeger     - Jaeger all-in-one trace UI + OTLP receiver (Docker)
 #   caddy      - TLS reverse proxy: domain -> UI, status -> Beszel, jaeger -> Jaeger
-- name: Deploy the steve eve-agent host
-  hosts: steve
+- name: Deploy the senka eve-agent host
+  hosts: senka
   remote_user: "{{ app_user }}"
   become: false
   gather_facts: true
@@ -145,8 +145,8 @@
     - name: Deployment summary
       ansible.builtin.debug:
         msg:
-          - "Agent: systemd 'steve' on 127.0.0.1:{{ app_port }} (eve start)."
-          - "Web UI: systemd 'steve-web' on 127.0.0.1:{{ web_port }} (next start)."
+          - "Agent: systemd 'senka' on 127.0.0.1:{{ app_port }} (eve start)."
+          - "Web UI: systemd 'senka-web' on 127.0.0.1:{{ web_port }} (next start)."
           - >-
             {{ 'Public site: https://' + domain + '/'
                if (domain | default('') | length > 0)

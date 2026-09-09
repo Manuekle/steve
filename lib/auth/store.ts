@@ -24,7 +24,7 @@ import {
  *
  * When WORKFLOW_POSTGRES_URL is set, accounts and sessions live in PostgreSQL
  * (auth schema). When it is not — or on first boot before the DB is reachable —
- * the store falls back to ~/.steve/auth.json, the original file-based design.
+ * the store falls back to ~/.senka/auth.json, the original file-based design.
  *
  * On the first DB access, if the file exists and the DB is empty, data is
  * migrated automatically. After migration the file is kept as backup but all
@@ -94,7 +94,7 @@ async function usingDb(): Promise<boolean> {
 
 // ── File-based store (original logic, preserved) ─────────────────────────────
 
-const AUTH_FILE = join(homedir(), ".steve", "auth.json");
+const AUTH_FILE = join(homedir(), ".senka", "auth.json");
 
 const scrypt = promisify(scryptCallback) as (
   password: string,
@@ -108,7 +108,7 @@ const SCRYPT = { N: 16384, p: 1, r: 8 } as const;
 const KEY_LENGTH = 64;
 
 const SESSION_DAYS = 30;
-export const SESSION_COOKIE = "steve_session";
+export const SESSION_COOKIE = "senka_session";
 
 /** One hour: long enough to find the email, short enough to matter if it leaks. */
 const RESET_TOKEN_HOURS = 1;
@@ -439,7 +439,7 @@ export type ClaimState = "claimed" | "unclaimed" | "unknown";
  * "unclaimed install, let the first caller take it", so a few seconds of
  * database trouble opened registration to anyone who asked. On Vercel the
  * `createAccount` that followed then failed against the read-only filesystem,
- * which is luck rather than a design; where `~/.steve` is writable it would
+ * which is luck rather than a design; where `~/.senka` is writable it would
  * have created the account and issued the session.
  *
  * So this one reports "unknown" instead of guessing, and the gate fails

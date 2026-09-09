@@ -9,12 +9,12 @@ import { BUILTIN_TEMPLATES } from "@/components/email-templates";
  * operator has written in the editor.
  *
  * Built-ins are modules under `components/email-templates/`. Custom ones are
- * `.tsx` files under `~/.steve/email-templates/`, each beside a `.meta.json`
+ * `.tsx` files under `~/.senka/email-templates/`, each beside a `.meta.json`
  * holding the label, subject and sample values the editor needs before it has
  * compiled anything.
  */
 
-const CUSTOM_DIR = join(homedir(), ".steve", "email-templates");
+const CUSTOM_DIR = join(homedir(), ".senka", "email-templates");
 
 export type EmailTemplateMeta = {
   readonly id: string;

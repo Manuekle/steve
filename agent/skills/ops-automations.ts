@@ -18,7 +18,7 @@ export default defineDynamic({
           "having at all.",
         `# The playbooks
 
-An automation in Steve is a trigger plus steps. This skill audits the ones that
+An automation in Senka is a trigger plus steps. This skill audits the ones that
 exist and fixes the ones that are wrong.
 
 ## The sentence to get right

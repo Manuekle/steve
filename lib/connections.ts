@@ -1,4 +1,4 @@
-// The catalog of accounts Steve can connect to, and how each connection is made.
+// The catalog of accounts Senka can connect to, and how each connection is made.
 //
 // The distinction this file exists to draw: an OAuth connection is made by
 // signing into an account you already have — nobody copies a secret out of a
@@ -310,7 +310,7 @@ export const MANUAL_CONNECTIONS: readonly ManualConnection[] = [
   },
   // BYOK — bring your own AI provider key. Connecting one of these switches
   // that provider's calls to billing_source "BYOK" (see lib/credit-gate.ts):
-  // Steve stops paying for them, the customer's own account does. All four
+  // Senka stops paying for them, the customer's own account does. All four
   // share the "ai-provider" Settings group, the same one that already picks
   // which provider is active — a key can be saved here even for a provider
   // that isn't the active one, so switching providers later doesn't mean

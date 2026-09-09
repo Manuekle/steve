@@ -34,7 +34,7 @@ ${INBOX_NOTE}
 
 ## What counts as waiting
 
-Steve records where each conversation left the person. For support, the
+Senka records where each conversation left the person. For support, the
 signals that matter are, in order:
 
 1. **Flagged for a person.** A row with waitingForHuman, or a contact with
@@ -45,7 +45,7 @@ signals that matter are, in order:
    recently.
 3. **Gone quiet mid-problem.** Outcome no_response on a conversation that had
    reached support or interested. The bot stopped mattering and nobody noticed.
-4. **Unassessed.** Steve has not classified it yet, usually because it is too
+4. **Unassessed.** Senka has not classified it yet, usually because it is too
    short. Report these as "sin evaluar" — never as unqualified.
 
 ## Steps

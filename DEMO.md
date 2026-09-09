@@ -1,4 +1,4 @@
-# Demo: Steve on self-hosted Eve infrastructure
+# Demo: Senka on self-hosted Eve infrastructure
 
 This five-minute walkthrough demonstrates a durable Eve agent running on a
 regular Node.js host with PostgreSQL and Docker. Replace `<app-domain>` with the
@@ -12,7 +12,7 @@ The precise claim is:
 
 ## Before the demo
 
-1. Confirm `systemctl status steve steve-web` is healthy.
+1. Confirm `systemctl status senka senka-web` is healthy.
 2. Load `.env`, then run the smoke test:
 
    ```bash
@@ -68,7 +68,7 @@ Python work runs through the sandbox.
 Retrieve the session ID from the browser console:
 
 ```js
-JSON.parse(localStorage.getItem("steve:eve-chat:v1")).session.sessionId
+JSON.parse(localStorage.getItem("senka:eve-chat:v1")).session.sessionId
 ```
 
 Then inspect only that run tree:
@@ -104,4 +104,4 @@ are the substantive evidence.
 - Chart appears as text: ask the agent to return the computed Mermaid source in a fenced block.
 
 Signing out clears the browser's stored Eve cursor and event history. In local
-development, clear `steve:eve-chat:v1` from local storage to start over.
+development, clear `senka:eve-chat:v1` from local storage to start over.

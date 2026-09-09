@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { Agent, AgentVoice } from "./types";
 
-const TEST_DIR = join(tmpdir(), `steve-voice-tools-lib-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-voice-tools-lib-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -29,7 +29,7 @@ vi.mock("@elevenlabs/elevenlabs-js", () => ({
 
 // Set before the import below: lib/site.ts reads the environment once, at
 // module scope, so an origin assigned in `beforeEach` would arrive too late.
-process.env.NEXT_PUBLIC_SITE_URL = "https://steve.example.com";
+process.env.NEXT_PUBLIC_SITE_URL = "https://senka.example.com";
 
 const {
   VOICE_TOOLS,
@@ -119,9 +119,9 @@ describe("syncVoiceTools", () => {
     ];
     expect(toolConfig.name).toBe("check_availability");
     expect(toolConfig.apiSchema.url).toBe(
-      "https://steve.example.com/api/webhooks/elevenlabs/tools/agent_1/check_availability",
+      "https://senka.example.com/api/webhooks/elevenlabs/tools/agent_1/check_availability",
     );
-    expect(toolConfig.apiSchema.requestHeaders["x-steve-voice-secret"]).toMatch(/^[0-9a-f]{64}$/);
+    expect(toolConfig.apiSchema.requestHeaders["x-senka-voice-secret"]).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("updates the tools a previous sync created instead of duplicating them", async () => {
@@ -167,7 +167,7 @@ describe("syncVoiceTools", () => {
     delete process.env.VERCEL_URL;
     vi.resetModules();
     const fresh = await import("./voice-tools");
-    process.env.NEXT_PUBLIC_SITE_URL = "https://steve.example.com";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://senka.example.com";
 
     const result = await fresh.syncVoiceTools(agent(["calendar"]), {} as AgentVoice);
 

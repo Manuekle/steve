@@ -75,7 +75,7 @@ Five stages, and the leak is wherever the drop is worst:
 
 Name one leak, not five. Say what the drop is in numbers, what usually causes
 it, and the single change worth trying. Then say what you could not measure:
-Steve sees Meta's own click count and its own form data, and nothing in
+Senka sees Meta's own click count and its own form data, and nothing in
 between, so the click-to-start step is an estimate. Label it one.
 
 ## attribution

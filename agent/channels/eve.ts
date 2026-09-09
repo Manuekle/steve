@@ -22,14 +22,14 @@ function readCookie(request: Request, name: string): string | undefined {
 }
 
 /**
- * Someone already signed in to the Steve web app (email/password or Google —
+ * Someone already signed in to the Senka web app (email/password or Google —
  * see lib/auth/store.ts) shouldn't have to type a second, separate password
  * just to open the chat. Checked ahead of Basic auth, per eve's own guidance
  * for a browser app with its own session: "the route-auth entry for the eve
  * channel should verify your app session and return a user principal."
  *
  * Skips, not rejects, when there's no session — Basic auth (or a raw shared
- * link) still has to work for whoever isn't a Steve account holder.
+ * link) still has to work for whoever isn't a Senka account holder.
  */
 function appSession(): AuthFn<Request> {
   return async (request) => {

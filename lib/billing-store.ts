@@ -1,7 +1,7 @@
 // What plan this installation is on, and any downgrade waiting to take effect.
 //
 // When WORKFLOW_POSTGRES_URL is set, subscription state lives in PostgreSQL
-// (billing schema). Otherwise it falls back to ~/.steve/billing.json.
+// (billing schema). Otherwise it falls back to ~/.senka/billing.json.
 //
 // Stripe is the system of record for money; these stores only record what the
 // installation believes it is entitled to, and the one scheduled change the
@@ -18,7 +18,7 @@ import {
   dbHasBillingData,
 } from "./billing/db-store";
 
-const STORE_FILE = join(homedir(), ".steve", "billing.json");
+const STORE_FILE = join(homedir(), ".senka", "billing.json");
 
 export type PendingChange = {
   readonly to: PlanId;

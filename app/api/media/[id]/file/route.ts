@@ -5,7 +5,7 @@ import { apiError, withApiErrors } from "@/lib/api-error";
 // GET /api/media/:id/file — the raw bytes, so the library grid can show real
 // thumbnails and play videos instead of a generic file icon.
 //
-// The bytes live in ~/.steve/media and are never served from /public: the id
+// The bytes live in ~/.senka/media and are never served from /public: the id
 // is looked up in the store and the on-disk name comes from the record, so a
 // crafted path can't reach anything else on the filesystem.
 

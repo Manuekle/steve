@@ -13,9 +13,9 @@ import { recordUsage } from "../../lib/ai-usage";
 //
 // Known gap: step.completed carries no domain-level "which configured Agent
 // answered this" or "which dashboard user" identifier — HookContext only
-// exposes eve's own agent/nodeId (the runtime agent, not Steve's Agent
+// exposes eve's own agent/nodeId (the runtime agent, not Senka's Agent
 // entity from lib/types.ts) and the session id. agentId and userId are left
-// null here rather than guessed; a future pass can fill them in once Steve's
+// null here rather than guessed; a future pass can fill them in once Senka's
 // Agent-to-conversation binding is threaded through to this context.
 
 export default defineHook({

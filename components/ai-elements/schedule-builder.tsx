@@ -32,7 +32,7 @@ import {
 // the presets cannot express opens straight into it rather than being
 // silently rewritten.
 //
-// The other half of the job is honesty about the clock. Steve evaluates these
+// The other half of the job is honesty about the clock. Senka evaluates these
 // in UTC (`cronMatches` in lib/automation-engine.ts reads getUTCHours), so the
 // picker takes local time, stores UTC, and shows both — see lib/cron-builder.ts.
 

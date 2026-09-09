@@ -48,8 +48,8 @@ import { DockReopenButton } from "@/app/_components/dock-reopen-button";
 
 const DOCK_MIN = 320;
 const DOCK_MAX = 560;
-const DOCK_WIDTH_KEY = "steve:email-dock-width";
-const DOCK_OPEN_KEY = "steve:email-dock-open";
+const DOCK_WIDTH_KEY = "senka:email-dock-width";
+const DOCK_OPEN_KEY = "senka:email-dock-open";
 const PREVIEW_DEBOUNCE_MS = 350;
 
 type TemplateMeta = TemplateItem & {

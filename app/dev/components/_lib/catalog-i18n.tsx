@@ -868,7 +868,7 @@ interface CatalogI18nContextValue {
 
 const CatalogI18nContext = createContext<CatalogI18nContextValue | undefined>(undefined);
 
-const CATALOG_LOCALE_KEY = "steve-catalog-locale";
+const CATALOG_LOCALE_KEY = "senka-catalog-locale";
 
 function getInitialLocale(): CatalogLocale {
   if (typeof window === "undefined") return "es";

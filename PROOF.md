@@ -139,7 +139,7 @@ Run this against the systemd deployment, not `eve dev`:
 1. Start a request that produces more than one tool/model step.
 2. Record the Eve session ID and wait for at least one completed action.
 3. Run `make -C deploy demo-kill`.
-4. Wait for `steve.service` to restart and the client stream to reconnect.
+4. Wait for `senka.service` to restart and the client stream to reconnect.
 5. Run `make -C deploy demo-events SESSION=<session-id>`.
 
 The SQL helper joins events to runs where the run ID or `$eve.root` attribute
@@ -169,7 +169,7 @@ Both modes must route these prefixes to Eve:
 ```
 
 With Jaeger enabled, complete a turn and query the Jaeger UI for service
-`steve`. The trace should include an `ai.eve.turn` parent with AI SDK model and
+`senka`. The trace should include an `ai.eve.turn` parent with AI SDK model and
 tool spans. Prompt and output bodies should be absent unless their explicit
 OTel opt-in variables are true.
 

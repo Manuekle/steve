@@ -39,7 +39,7 @@ export type SetupCheck = {
 };
 
 /** Container name pinned in docker-compose.yml. */
-const POSTGRES_CONTAINER = "steve-postgres";
+const POSTGRES_CONTAINER = "senka-postgres";
 
 async function tryRun(file: string, args: string[], timeout = 8000) {
   try {

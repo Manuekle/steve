@@ -50,7 +50,7 @@ const GUARDRAILS = {
 
 /** Tag written on every mirror agent, so an account shared with other tools
  *  still shows which agents this app owns. */
-const OWNER_TAG = "steve";
+const OWNER_TAG = "senka";
 
 export type VoiceOption = {
   readonly voiceId: string;

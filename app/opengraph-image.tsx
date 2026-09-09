@@ -18,7 +18,7 @@ import { ImageResponse } from "next/og";
  * Only one weight exists in that fallback, so the hierarchy here is carried
  * by size and colour rather than by weight.
  */
-export const alt = "steve — el sistema de atención para tu negocio y tus agentes";
+export const alt = "senka — el sistema de atención para tu negocio y tus agentes";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

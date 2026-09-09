@@ -19,7 +19,7 @@ import { fireConfetti, fireConfettiFrom } from "@/lib/confetti";
  * milestone celebrates once per browser, then goes quiet and lets the ordinary
  * `success` cue do its job.
  */
-const STORAGE_PREFIX = "steve:celebrated:";
+const STORAGE_PREFIX = "senka:celebrated:";
 
 type CelebrateOptions = {
   /** Milestone key. Omit for moments that are a win every single time. */

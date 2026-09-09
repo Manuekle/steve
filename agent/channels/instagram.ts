@@ -12,7 +12,7 @@ import { messageToAgentContent } from "../../lib/chat-media";
 // a native Instagram integration that does NOT require a linked Facebook
 // Page — no Facebook Page is involved anywhere in this channel.
 //
-// Credentials are read from the local credential store (~/.steve/credentials.json)
+// Credentials are read from the local credential store (~/.senka/credentials.json)
 // with fallback to environment variables. The webhook is served at
 // POST /eve/v1/instagram (and GET for verification).
 //
@@ -94,9 +94,9 @@ const channel =
   appSecret && accessToken && accountId && verifyToken
     ? (() => {
         const { bot, channel, send } = chatSdkChannel({
-          userName: "steve",
+          userName: "senka",
           // Credentials passed explicitly: the adapter's own fallback is
-          // process.env, and Steve keeps these in the credential store so they
+          // process.env, and Senka keeps these in the credential store so they
           // can be rotated from Settings. See agent/channels/whatsapp.ts.
           adapters: {
             instagram: skipUnparsableDeliveries(

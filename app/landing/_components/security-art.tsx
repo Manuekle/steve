@@ -173,7 +173,7 @@ export function KeysScene() {
           className="text-muted-foreground opacity-60 transition-all duration-500 group-hover:text-muted-foreground group-hover:opacity-100"
           style={at(140)}
         >
-          ~/.steve · tu servidor
+          ~/.senka · tu servidor
         </Chip>
       </div>
     </Scene>

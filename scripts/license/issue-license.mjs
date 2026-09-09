@@ -4,14 +4,14 @@
 //
 // Reimplements the tiny token format from lib/license/verify.ts instead of
 // importing it, deliberately: this script has to run standalone, on
-// whatever machine Steve issues licenses from, without a `pnpm install` of
+// whatever machine Senka issues licenses from, without a `pnpm install` of
 // the whole app or a TypeScript toolchain.
 //
 //   node scripts/license/issue-license.mjs generate-keypair
 //   node scripts/license/issue-license.mjs issue \
 //     --company "Acme Ecommerce" --email ops@acme.example \
 //     --edition enterprise --maintenance-months 12 \
-//     --key-id steve-2026-dev --private-key-file ./private.pem \
+//     --key-id senka-2026-dev --private-key-file ./private.pem \
 //     --installation-id <id the customer copied from Settings > License>
 
 import { generateKeyPairSync, createPrivateKey, sign as cryptoSign, randomUUID } from "node:crypto";

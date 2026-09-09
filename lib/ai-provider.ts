@@ -16,7 +16,7 @@ export type { AiProvider };
 //
 // "gateway" routes through the Vercel AI Gateway (one key, whole catalog);
 // "openai" and "anthropic" call the provider directly with that provider's
-// own key. The choice lives in the same ~/.steve/credentials.json the
+// own key. The choice lives in the same ~/.senka/credentials.json the
 // Settings page writes, so switching providers never means editing .env.
 
 /** Neither Anthropic nor the Gemini route is wired for embeddings here, so
@@ -62,7 +62,7 @@ export function resolveModelId(provider: AiProvider = resolveProvider()): string
 /**
  * Mirror the stored keys into process.env. Eve, the AI SDK, and the Gateway
  * all read process.env directly — they have no idea the Settings page
- * persists credentials to ~/.steve/credentials.json — so a key saved in the
+ * persists credentials to ~/.senka/credentials.json — so a key saved in the
  * UI only takes effect once it lands here.
  */
 export function applyProviderEnv(): void {

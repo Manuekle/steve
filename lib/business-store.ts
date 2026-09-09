@@ -37,24 +37,24 @@ import { scopedDocumentId, scopedFile } from "./business-scope";
 // Shared by the Eve agent (tools/hooks/schedules) and Next.js API routes.
 //
 // Two backends, chosen once per process. With WORKFLOW_POSTGRES_URL set the
-// store lives in Postgres (`steve.business_store`), which is what a deploy
+// store lives in Postgres (`senka.business_store`), which is what a deploy
 // with no writable filesystem — Vercel, or any container with a read-only
 // root — requires, and what lets more than one process write safely. Without
-// it, ~/.steve/business.json, unchanged: a single-host install should not
+// it, ~/.senka/business.json, unchanged: a single-host install should not
 // have to run a database to try the app.
 //
 // Same routing as lib/auth/store.ts, including the one-time migration: the
 // first DB access on an install that already has a file imports it, and after
 // that the database is the source of truth.
 
-const STORE_FILE = join(homedir(), ".steve", "business.json");
+const STORE_FILE = join(homedir(), ".senka", "business.json");
 
 /**
  * Which business's store this call is about.
  *
- * The first business keeps `business` and ~/.steve/business.json, so an
+ * The first business keeps `business` and ~/.senka/business.json, so an
  * install that predates multi-business needs no migration; a second one gets
- * `business::<id>` and its own file under ~/.steve/businesses/<id>/. See
+ * `business::<id>` and its own file under ~/.senka/businesses/<id>/. See
  * lib/business-scope.ts.
  */
 async function target(): Promise<{ id: StoredDocumentId; file: string }> {

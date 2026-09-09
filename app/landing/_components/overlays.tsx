@@ -82,7 +82,7 @@ export function ConversationOverlay({
         {reply}
       </p>
       <p className="mt-2 text-[10px] text-muted-foreground">
-        {t("landing.overlay.repliedByPrefix")} <span className="text-foreground/80">steve</span> ·{" "}
+        {t("landing.overlay.repliedByPrefix")} <span className="text-foreground/80">senka</span> ·{" "}
         {t("landing.overlay.repliedBySuffix")}
       </p>
     </OverlayShell>
@@ -139,8 +139,7 @@ export function AgentOverlay({
     <OverlayShell className={cn("w-[20rem] p-3.5", className)} delay={delay}>
       <div className="flex items-center gap-2 border-border border-b pb-2.5">
         <span className="font-semibold text-xs">
-          <span className="text-muted-foreground">st</span>
-          <span className="text-foreground">eve</span>
+          <span className="text-foreground">senka</span>
         </span>
         <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">
           Claude Opus 5

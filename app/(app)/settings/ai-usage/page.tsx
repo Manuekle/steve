@@ -39,7 +39,7 @@ function channelLabel(channel: string | null, fallback: string): string {
 // did they go (provider / agent / channel), and — for anyone paying the
 // provider directly instead — roughly what that's costing. The credits
 // figure and the provider-cost figure are never conflated on screen: a BYOK
-// row shows an *estimate* of provider usage, never a Steve credit charge,
+// row shows an *estimate* of provider usage, never a Senka credit charge,
 // because BYOK by definition never touches the ledger (see
 // lib/credit-gate.ts).
 
@@ -296,7 +296,7 @@ export default function AiUsagePage() {
             <CardBody>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-border bg-muted/20 p-3">
-                  <p className="text-xs text-muted-foreground">{t("aiUsage.steveCredits")}</p>
+                  <p className="text-xs text-muted-foreground">{t("aiUsage.senkaCredits")}</p>
                   <p className="mt-1 text-lg font-semibold tabular-nums">{formatUsd(summary?.includedCost ?? 0)}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-muted/20 p-3">

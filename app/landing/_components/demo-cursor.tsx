@@ -1,7 +1,5 @@
 "use client";
 
-import { HugeiconsIcon } from "@/components/icons/icon";
-import { Cursor01Icon } from "@hugeicons/core-free-icons";
 import gsap from "gsap";
 import { type RefObject, useEffect, useRef, useState } from "react";
 
@@ -298,7 +296,12 @@ export function DemoCursor({
         className="relative block text-foreground drop-shadow-[0_1px_3px_oklch(0_0_0/0.35)]"
         ref={icon}
       >
-        <HugeiconsIcon icon={Cursor01Icon} size={22} strokeWidth={1.75} />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width={22} height={22}>
+          <polygon fill="#FFFFFF" points="8.2,20.9 8.2,4.9 19.8,16.5 13,16.5 12.6,16.6 "/>
+          <polygon fill="#FFFFFF" points="17.3,21.6 13.7,23.1 9,12 12.7,10.5 "/>
+          <rect x="12.5" y="13.6" transform="matrix(0.9221 -0.3871 0.3871 0.9221 -5.7605 6.5909)" width="2" height="8"/>
+          <polygon points="9.2,7.3 9.2,18.5 12.2,15.6 12.6,15.5 17.4,15.5 "/>
+        </svg>
       </span>
     </div>
   );

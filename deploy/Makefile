@@ -1,4 +1,4 @@
-# Convenience wrapper around the steve deployment playbooks.
+# Convenience wrapper around the senka deployment playbooks.
 #
 # Prereqs:
 #   export DO_API_TOKEN=dop_v1_...      # DigitalOcean API token
@@ -21,7 +21,7 @@ EXTRA          := $(if $(REF),-e git_ref=$(REF),)
 
 # Deploy SSH key. Use IdentitiesOnly so a loaded ssh-agent (e.g. corp keys)
 # doesn't exhaust auth attempts before this key is tried.
-SSH_KEY        ?= ~/.ssh/steve_deploy
+SSH_KEY        ?= ~/.ssh/senka_deploy
 SSH            := ssh -i $(SSH_KEY) -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
 
 export ANSIBLE_COLLECTIONS_PATH := $(COLLECTIONS_DIR)
@@ -38,8 +38,8 @@ help:
 	@echo "  make check       Syntax-check all playbooks"
 	@echo "  make ssh         SSH into the droplet as the deploy user"
 	@echo "  make status      Show service + container status on the droplet"
-	@echo "  make logs        Tail the steve (agent) logs on the droplet"
-	@echo "  make web-logs    Tail the steve-web (UI) logs on the droplet"
+	@echo "  make logs        Tail the senka (agent) logs on the droplet"
+	@echo "  make web-logs    Tail the senka-web (UI) logs on the droplet"
 	@echo "  make demo-kill   Kill the agent mid-run (durability demo; see DEMO.md)"
 	@echo "  make demo-events Show the durable event-log proof"
 	@echo "  make demo-restart  Restart the agent cleanly"
@@ -68,7 +68,7 @@ check:
 	done
 
 # --- droplet operations (read IP from the generated inventory) -------------
-IP = $(shell awk '/^\[steve\]/{getline; print $$1; exit}' inventory.ini 2>/dev/null)
+IP = $(shell awk '/^\[senka\]/{getline; print $$1; exit}' inventory.ini 2>/dev/null)
 
 ssh:
 	@test -n "$(IP)" || { echo "No droplet IP. Run 'make provision' first."; exit 1; }
@@ -76,15 +76,15 @@ ssh:
 
 status:
 	@test -n "$(IP)" || { echo "No droplet IP. Run 'make provision' first."; exit 1; }
-	$(SSH) deploy@$(IP) 'systemctl status steve steve-web --no-pager; echo; docker ps --format "table {{.Names}}\t{{.Status}}"'
+	$(SSH) deploy@$(IP) 'systemctl status senka senka-web --no-pager; echo; docker ps --format "table {{.Names}}\t{{.Status}}"'
 
 logs:
 	@test -n "$(IP)" || { echo "No droplet IP. Run 'make provision' first."; exit 1; }
-	$(SSH) deploy@$(IP) 'journalctl -u steve -f'
+	$(SSH) deploy@$(IP) 'journalctl -u senka -f'
 
 web-logs:
 	@test -n "$(IP)" || { echo "No droplet IP. Run 'make provision' first."; exit 1; }
-	$(SSH) deploy@$(IP) 'journalctl -u steve-web -f'
+	$(SSH) deploy@$(IP) 'journalctl -u senka-web -f'
 
 # --- demo helpers (see ../DEMO.md) -----------------------------------------
 # Hard-kill the Eve agent mid-run to demonstrate durable resume. systemd
@@ -92,19 +92,19 @@ web-logs:
 # Postgres event log without re-running completed steps.
 demo-kill:
 	@test -n "$(IP)" || { echo "No droplet IP."; exit 1; }
-	@$(SSH) deploy@$(IP) 'sudo systemctl kill --signal=SIGKILL --kill-who=all steve'
+	@$(SSH) deploy@$(IP) 'sudo systemctl kill --signal=SIGKILL --kill-who=all senka'
 	@echo "SIGKILLed the eve host. systemd (Restart=always) will bring it back;"
 	@echo "the in-flight run resumes from Postgres. Watch the UI, then: make demo-events"
 
 demo-restart:
 	@test -n "$(IP)" || { echo "No droplet IP."; exit 1; }
-	$(SSH) deploy@$(IP) 'sudo systemctl restart steve && echo restarted'
+	$(SSH) deploy@$(IP) 'sudo systemctl restart senka && echo restarted'
 
 # Scope the durable event log to one Eve session and its child runs.
 demo-events:
 	@test -n "$(IP)" || { echo "No droplet IP."; exit 1; }
 	@test -n "$(SESSION)" || { echo "Pass SESSION=<eve session id>."; exit 1; }
-	$(SSH) deploy@$(IP) 'docker exec steve-postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) \
+	$(SSH) deploy@$(IP) 'docker exec senka-postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) \
 	  -c "select e.type, count(*) from workflow.workflow_events e join workflow.workflow_runs r on r.id = e.run_id where r.id = '\''$(SESSION)'\'' or r.attributes->>'\''\$$eve.root'\'' = '\''$(SESSION)'\'' group by e.type order by e.type;" \
 	  -c "select id, name, status from workflow.workflow_runs where id = '\''$(SESSION)'\'' or attributes->>'\''\$$eve.root'\'' = '\''$(SESSION)'\'' order by created_at;"'
 

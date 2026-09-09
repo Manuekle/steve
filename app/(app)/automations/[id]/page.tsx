@@ -62,8 +62,8 @@ import { DockReopenButton } from "@/app/_components/dock-reopen-button";
 
 const DOCK_MIN = 340;
 const DOCK_MAX = 620;
-const DOCK_WIDTH_KEY = "steve:flow-dock-width";
-const DOCK_OPEN_KEY = "steve:flow-dock-open";
+const DOCK_WIDTH_KEY = "senka:flow-dock-width";
+const DOCK_OPEN_KEY = "senka:flow-dock-open";
 
 type SaveStatus = "idle" | "saving" | "saved";
 type DockTab = "assistant" | "step";

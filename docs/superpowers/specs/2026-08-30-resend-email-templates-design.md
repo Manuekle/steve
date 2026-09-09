@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-Add Resend as an email sending provider alongside existing SMTP, plus a visual email template editor inside Steve. Users can:
+Add Resend as an email sending provider alongside existing SMTP, plus a visual email template editor inside Senka. Users can:
 
 - Send transactional emails (lead notifications, reminders, invoices)
 - Send marketing emails (newsletters)
@@ -135,7 +135,7 @@ export default function WelcomeTemplate({
 
 ### 3.2 Custom Templates
 
-Location: `~/.steve/email-templates/`
+Location: `~/.senka/email-templates/`
 
 - Created/edited from the visual editor
 - Stored as `.tsx` files
@@ -222,7 +222,7 @@ export async function deleteCustomTemplate(id: string): Promise<void>;
 3. Renders with `renderToStaticMarkup` from React Email
 4. Returns HTML string
 
-**Security**: Only builtin templates and custom templates from `~/.steve/email-templates/` are accepted. No arbitrary code execution beyond template rendering.
+**Security**: Only builtin templates and custom templates from `~/.senka/email-templates/` are accepted. No arbitrary code execution beyond template rendering.
 
 ---
 

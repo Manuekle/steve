@@ -7,7 +7,7 @@ import { createDocumentStore } from "./doc-store";
 //
 // Eve resolves the model inside its own process, from a resolver that only
 // knows the session id — it cannot see the browser. So the picker writes its
-// choice here and the resolver reads it back: a ~/.steve file handoff between
+// choice here and the resolver reads it back: a ~/.senka file handoff between
 // the two processes, or a Postgres document where there is no shared disk.
 //
 // A brand-new chat has no session id until its first turn is under way, which
@@ -23,7 +23,7 @@ import { createDocumentStore } from "./doc-store";
 // a claim that does not land in time means the next turn re-claims the same
 // value. Nothing else in the app reads it.
 
-const STORE_FILE = join(homedir(), ".steve", "chat-models.json");
+const STORE_FILE = join(homedir(), ".senka", "chat-models.json");
 
 type ChatModelStore = {
   /** sessionId → model id. */

@@ -12,7 +12,7 @@ import type {
 // store layers app-level metadata (chat titles, automations, channel
 // status) on top of the eve sessions.
 
-const STORE_KEY = "steve:dashboard:v3";
+const STORE_KEY = "senka:dashboard:v3";
 
 type DashboardStore = {
   chats: ChatSummary[];

@@ -25,7 +25,7 @@ type Turn =
   | { readonly role: "assistant"; readonly summary: string; readonly plan: WorkflowPlan; readonly applied: boolean }
   | { readonly role: "error"; readonly text: string };
 
-/** One-tap starting points, same idea as the suggestion chips on Steve's own
+/** One-tap starting points, same idea as the suggestion chips on Senka's own
  *  chat — an empty composer is the hardest thing to answer. */
 const SUGGESTION_KEYS = [
   "assistant.suggestGreet",
@@ -34,7 +34,7 @@ const SUGGESTION_KEYS = [
 ] as const;
 
 /** Where one automation's conversation lives between visits. */
-const chatKey = (automationId: string) => `steve:flow-chat:${automationId}`;
+const chatKey = (automationId: string) => `senka:flow-chat:${automationId}`;
 /**
  * How many turns to keep. Each assistant turn carries a whole plan tree, so an
  * unbounded log would be the largest thing in localStorage by far.
@@ -222,7 +222,7 @@ export function FlowAssistant({
   );
 
   // Empty: the composer centres with a hero and one-tap starters, the same
-  // shape as Steve's own chat. Once there's a conversation it drops to the
+  // shape as Senka's own chat. Once there's a conversation it drops to the
   // bottom and the transcript takes the room.
   if (isEmpty) {
     return (
@@ -231,8 +231,7 @@ export function FlowAssistant({
           {/* Same wordmark as the main chat — this is the same agent, just
               pointed at one flow, so it should introduce itself the same way. */}
           <h2 className="text-3xl font-semibold tracking-tight">
-            <span className="text-muted-foreground">st</span>
-            <span className="text-foreground">eve</span>
+            <span className="text-foreground">senka</span>
           </h2>
           <p className="max-w-[34ch] text-balance text-[13px] leading-relaxed text-muted-foreground">
             {t("assistant.empty")}

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-const TEST_DIR = join(tmpdir(), `steve-cred-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-cred-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
@@ -58,23 +58,23 @@ describe("backend selection", () => {
 
     expect(hasDocument).not.toHaveBeenCalled();
     expect(await credentials.getCredential("RESEND_API_KEY")).toBe("re_file");
-    expect(existsSync(join(TEST_DIR, ".steve", "credentials.json"))).toBe(true);
+    expect(existsSync(join(TEST_DIR, ".senka", "credentials.json"))).toBe(true);
   });
 
   it("reads through the database when a connection string is set", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     readDocument.mockResolvedValue({ RESEND_API_KEY: "re_db" });
     const credentials = await loadCredentials();
 
     expect(await credentials.getCredential("RESEND_API_KEY")).toBe("re_db");
-    expect(existsSync(join(TEST_DIR, ".steve", "credentials.json"))).toBe(false);
+    expect(existsSync(join(TEST_DIR, ".senka", "credentials.json"))).toBe(false);
   });
 
   it("imports an existing file the first time the database is empty", async () => {
     const fileMode = await loadCredentials();
     await fileMode.saveCredentials({ RESEND_API_KEY: "re_file" });
 
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockResolvedValue(false);
     const dbMode = await loadCredentials();
     await dbMode.getCredential("RESEND_API_KEY");
@@ -88,7 +88,7 @@ describe("backend selection", () => {
     const fileMode = await loadCredentials();
     await fileMode.saveCredentials({ RESEND_API_KEY: "re_file" });
 
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     hasDocument.mockRejectedValue(new Error("ECONNREFUSED"));
     const dbMode = await loadCredentials();
 
@@ -100,7 +100,7 @@ describe("backend selection", () => {
 // sync reader can see before anything has read asynchronously.
 describe("environment fallback", () => {
   it("falls back to the environment when the database has no value", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     process.env.RESEND_API_KEY = "re_env";
     readDocument.mockResolvedValue({});
     const credentials = await loadCredentials();
@@ -109,7 +109,7 @@ describe("environment fallback", () => {
   });
 
   it("prefers a stored value over the environment", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     process.env.RESEND_API_KEY = "re_env";
     readDocument.mockResolvedValue({ RESEND_API_KEY: "re_db" });
     const credentials = await loadCredentials();
@@ -120,7 +120,7 @@ describe("environment fallback", () => {
 
 describe("sync reads in DB mode", () => {
   it("sees only the environment before the cache is warm", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     process.env.RESEND_API_KEY = "re_env";
     readDocument.mockResolvedValue({ RESEND_API_KEY: "re_db" });
     const credentials = await loadCredentials();
@@ -131,7 +131,7 @@ describe("sync reads in DB mode", () => {
   // What the channel modules do at import time, and the reason
   // warmCredentialCache exists at all.
   it("sees the stored value once the cache has been warmed", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     readDocument.mockResolvedValue({ RESEND_API_KEY: "re_db" });
     const credentials = await loadCredentials();
 
@@ -143,7 +143,7 @@ describe("sync reads in DB mode", () => {
   // In DB mode there is no file, and an absent file stamps as "" — which
   // would blank a warmed cache if the sync path still consulted it.
   it("does not let the missing file blank the warmed cache", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     readDocument.mockResolvedValue({ RESEND_API_KEY: "re_db" });
     const credentials = await loadCredentials();
     await credentials.warmCredentialCache();
@@ -153,7 +153,7 @@ describe("sync reads in DB mode", () => {
   });
 
   it("warms the cache on a save too, so the next sync read is current", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     readDocument.mockResolvedValue({});
     const credentials = await loadCredentials();
 
@@ -165,14 +165,14 @@ describe("sync reads in DB mode", () => {
 
 describe("saving", () => {
   it("writes through the database and never touches the file", async () => {
-    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/steve";
+    process.env.WORKFLOW_POSTGRES_URL = "postgres://test/senka";
     const credentials = await loadCredentials();
 
     await credentials.saveCredentials({ RESEND_API_KEY: "re_db" });
 
     expect(updateDocument).toHaveBeenCalled();
     expect(updateDocument.mock.calls[0][0]).toBe("credentials");
-    expect(existsSync(join(TEST_DIR, ".steve", "credentials.json"))).toBe(false);
+    expect(existsSync(join(TEST_DIR, ".senka", "credentials.json"))).toBe(false);
   });
 
   it("removes a key when saved empty, on either backend", async () => {

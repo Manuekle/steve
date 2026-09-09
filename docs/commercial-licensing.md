@@ -1,6 +1,6 @@
 # Modelo comercial y licencia Enterprise
 
-Referencia de arquitectura para el modelo comercial de steve: SaaS hospedado
+Referencia de arquitectura para el modelo comercial de senka: SaaS hospedado
 (Pro/Managed) + licencia Enterprise perpetua self-hosted. Escrito después de
 auditar el repo tal como está — no asume nada que el código no confirme.
 
@@ -10,13 +10,13 @@ auditar el repo tal como está — no asume nada que el código no confirme.
 
 - `README.md` ya declara la separación de negocio: este repositorio completo
   es lo que se vende como **Enterprise** — código fuente, instalación vía
-  Ansible (`deploy/`), dos servicios `systemd` (`steve` = eve, `steve-web` =
+  Ansible (`deploy/`), dos servicios `systemd` (`senka` = eve, `senka-web` =
   Next), Caddy delante. **Pro** y **Managed** son el mismo código operado por
   el vendor en infraestructura multi-tenant que *no vive en este repo* — eso
   es responsabilidad de un control plane hospedado separado.
 - Mono-tenant por diseño: `lib/auth/store.ts` es un owner único (scrypt +
   sesión), `lib/business-store.ts` y `lib/credentials.ts` son un JSON por
-  instalación en `~/.steve/`. No hay concepto de organización ni tenant en
+  instalación en `~/.senka/`. No hay concepto de organización ni tenant en
   ningún lado — coherente con "una instalación = un negocio", tanto para un
   cliente Enterprise como para una instancia Pro/Managed detrás del control
   plane hospedado.
@@ -57,7 +57,7 @@ auditar el repo tal como está — no asume nada que el código no confirme.
   verificador que sí pudiera bloquear el uso del software violaría
   exactamente la promesa offline-first que se pidió.
 
-## 4–5. Vercel/Steve Cloud vs. self-hosted
+## 4–5. Vercel/Senka Cloud vs. self-hosted
 
 Nada de lo agregado acopla a Vercel. `lib/license/*` usa únicamente
 `node:crypto` y el sistema de archivos — corre igual en Vercel, en un droplet
@@ -121,10 +121,10 @@ Archivos:
 - `lib/license/verify.ts` — `parseLicense`, `verifyLicense`,
   `deriveLicenseInfo`, `signLicense`. Puras, sin fs ni red.
 - `lib/license/installation.ts` — el id de esta instalación
-  (`~/.steve/installation-id`, UUID generado una vez en el primer arranque y
+  (`~/.senka/installation-id`, UUID generado una vez en el primer arranque y
   persistido). Separado de `verify.ts` a propósito: el verificador no toca
   el filesystem, y esto sí.
-- `lib/license/store.ts` — lee/escribe `~/.steve/license.key`, con fallback a
+- `lib/license/store.ts` — lee/escribe `~/.senka/license.key`, con fallback a
   `STEVE_LICENSE_KEY`, mismo patrón que `lib/credentials.ts`. Le pasa el
   installation id local a `deriveLicenseInfo()`.
 - `lib/license/verify.test.ts` — roundtrip, tamper detection, mantenimiento
@@ -143,12 +143,12 @@ esto — prueba que el token es auténtico, no que corre donde se emitió.
 **Diseño elegido**: binding por id de instalación, no por hardware. Un
 fingerprint de hardware se rompe con cualquier migración de VM, rebuild de
 contenedor, o clonado de disco — ninguno de esos casos debería invalidar una
-licencia perpetua. En cambio, `~/.steve/installation-id` es un UUID al azar,
+licencia perpetua. En cambio, `~/.senka/installation-id` es un UUID al azar,
 generado la primera vez que algo lo pide y persistido después — estable
 mientras la instalación exista, distinto si se reinstala desde cero.
 
 **Por qué esto no rompe offline-first**: el intercambio es un solo mensaje
-manual (el cliente copia su id desde Settings y se lo manda a Steve), no un
+manual (el cliente copia su id desde Settings y se lo manda a Senka), no un
 phone-home continuo. Una vez emitida, la licencia se verifica exactamente
 igual que antes — sin red. Y un desacuerdo entre `installationId` y el id
 local **nunca bloquea nada**: cambia `installationMatches` a `false`, que la
@@ -162,10 +162,10 @@ señal técnica que lo hace visible.
 
 ## 8. Flujo de activación
 
-1. El cliente instala steve (o lo recibe ya instalado) y abre **Settings ›
+1. El cliente instala senka (o lo recibe ya instalado) y abre **Settings ›
    Licencia Enterprise**, que ya muestra su `installationId` — no hace falta
    tener una licencia todavía para generarlo.
-2. Se lo manda a Steve. Steve emite el token con `issue-license.mjs
+2. Se lo manda a Senka. Senka emite el token con `issue-license.mjs
    --installation-id <ese id>` (clave privada fuera del repo).
 3. El cliente pega el token en la misma card
    (`components/ai-elements/license-card.tsx`).
@@ -242,8 +242,8 @@ Desktop, `docker build` + `docker compose up` contra un Postgres real) — no
 es solo diseño en papel.
 
 - **Dos imágenes**, reflejando los dos servicios `systemd` que ya existen
-  (`deploy/roles/app/templates/steve.service.j2` para eve,
-  `deploy/roles/frontend/templates/steve-web.service.j2` para Next):
+  (`deploy/roles/app/templates/senka.service.j2` para eve,
+  `deploy/roles/frontend/templates/senka-web.service.j2` para Next):
   [Dockerfile](../Dockerfile) multi-stage, targets `eve` y `web`, cada uno
   con solo lo que su proceso necesita en runtime.
 - **[docker-compose.enterprise.yml](../docker-compose.enterprise.yml)**
@@ -275,13 +275,13 @@ es solo diseño en papel.
   mismo. Solo correr esa imagen en un host donde ese nivel de acceso sea
   aceptable.
 - **Cómo esto evita entregar el repo**: las imágenes se construyen en CI de
-  Steve y se publican a un registro privado (Docker Hub privado, GHCR
+  Senka y se publican a un registro privado (Docker Hub privado, GHCR
   privado, o uno propio). El cliente Enterprise recibe únicamente
   `docker-compose.enterprise.yml`, sus variables de entorno, el token de
   licencia, y credenciales de `docker login` al registro — nunca `git clone`
   de este repositorio.
 - **Lo que esto no resuelve por sí solo**: la protección real depende de que
-  Steve efectivamente no entregue el repo — es una decisión operativa (quién
+  Senka efectivamente no entregue el repo — es una decisión operativa (quién
   tiene acceso al registro, quién tiene acceso al git remoto), no algo que el
   código pueda forzar. La cláusula de Términos (`terms.enterpriseLicense.*`)
   es el mecanismo legal que cubre el caso en que sí se entrega el fuente.
@@ -291,7 +291,7 @@ es solo diseño en papel.
   significa completar dominio real y email de ACME, algo que solo el
   operador que despliega puede decidir. Tampoco: pipeline de CI que
   construya y publique las imágenes, ni el onboarding al registro privado
-  por cliente — eso es proceso del lado de Steve, no código de este repo.
+  por cliente — eso es proceso del lado de Senka, no código de este repo.
   Tamaño de imagen sin optimizar (~1.7GB `eve`, ~500MB `web` con
   `node_modules` completo o standalone): funciona, pero admite recorte
   futuro si importa.
@@ -303,7 +303,7 @@ es solo diseño en papel.
   `app/guide/_components/guide.tsx`, copy en `lib/i18n/dictionaries.ts`
   (es + en) para landing/pricing/terms/guide/settings.
 - **Backend**: `lib/license/*`, `app/api/license/route.ts`.
-- **Database**: ninguno — el token vive en `~/.steve/license.key`, mismo
+- **Database**: ninguno — el token vive en `~/.senka/license.key`, mismo
   patrón de archivo que credenciales y auth. No hay tabla nueva.
 - **Deployment**: `Dockerfile`, `.dockerignore`, `docker-compose.enterprise.yml`,
   `output: "standalone"` en `next.config.ts` — build y boot verificados

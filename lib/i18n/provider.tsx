@@ -41,7 +41,7 @@ const I18nRootContext = createContext<Pick<I18nContextValue, "locale" | "setLoca
   undefined,
 );
 
-const LOCALE_STORAGE_KEY = "steve-locale";
+const LOCALE_STORAGE_KEY = "senka-locale";
 
 function getInitialLocale(): Locale {
   if (typeof window === "undefined") return DEFAULT_LOCALE;

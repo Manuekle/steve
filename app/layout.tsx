@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   // this — the auto-attached `opengraph-image`, and the `icon.svg` /
   // `apple-icon` links Next emits from the file convention.
   metadataBase: new URL(SITE_URL),
-  title: "steve — AI agent manager",
+  title: "senka — AI agent manager",
   description:
     "A self-hosted AI agent manager for the Meta ecosystem — WhatsApp, Instagram, and Meta Ads.",
 };
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 const themeInitScript = `
 (function() {
   try {
-    var stored = localStorage.getItem('steve-theme');
+    var stored = localStorage.getItem('senka-theme');
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     var theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
     var root = document.documentElement;

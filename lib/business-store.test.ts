@@ -10,10 +10,10 @@ import { tmpdir } from "node:os";
 // from Date.now(), and running in parallel vitest workers they can land on
 // the same millisecond — same path, same underlying business.json, and one
 // file's writes clobber the other's mid-test.
-const TEST_DIR = join(tmpdir(), `steve-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const TEST_DIR = join(tmpdir(), `senka-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 // We need to set HOME so the business-store reads from our test dir.
-// business-store uses homedir() → ~/.steve/business.json.
+// business-store uses homedir() → ~/.senka/business.json.
 // We mock homedir() to return our test dir.
 import { vi } from "vitest";
 
@@ -67,7 +67,7 @@ afterEach(() => {
 // data was destroyed by a clean write of the wrong thing.
 
 describe("business-store: an unreadable file", () => {
-  const storeFile = join(TEST_DIR, ".steve", "business.json");
+  const storeFile = join(TEST_DIR, ".senka", "business.json");
 
   it("starts empty when there is no file at all", async () => {
     await expect(listContacts()).resolves.toEqual([]);
@@ -75,18 +75,18 @@ describe("business-store: an unreadable file", () => {
 
   it("refuses to read a corrupt file as an empty account", async () => {
     await upsertContact({ name: "Marta", phone: "+5491100000", sessionId: "s-1", source: "web" });
-    mkdirSync(join(TEST_DIR, ".steve"), { recursive: true });
+    mkdirSync(join(TEST_DIR, ".senka"), { recursive: true });
     writeFileSync(storeFile, '{"contacts": [', "utf-8");
 
     await expect(listContacts()).rejects.toThrow(/no es JSON válido/);
   });
 
   // The salvage case Houston's json-salvage.ts exists for: a complete value
-  // followed by trailing bytes. Steve writes atomically so it cannot produce
+  // followed by trailing bytes. Senka writes atomically so it cannot produce
   // one itself, but an outside editor can — and it must still not silently
   // become an empty account.
   it("refuses a file with a valid prefix and trailing garbage", async () => {
-    mkdirSync(join(TEST_DIR, ".steve"), { recursive: true });
+    mkdirSync(join(TEST_DIR, ".senka"), { recursive: true });
     writeFileSync(storeFile, '{"contacts": []}{"contacts": [', "utf-8");
 
     await expect(listContacts()).rejects.toThrow(/no es JSON válido/);

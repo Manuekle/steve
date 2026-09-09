@@ -70,8 +70,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 
 const DOCK_MIN = 300;
 const DOCK_MAX = 480;
-const DOCK_WIDTH_KEY = "steve:pipeline-dock-width";
-const DOCK_OPEN_KEY = "steve:pipeline-dock-open";
+const DOCK_WIDTH_KEY = "senka:pipeline-dock-width";
+const DOCK_OPEN_KEY = "senka:pipeline-dock-open";
 
 type DockTab = "summary" | "analysis";
 

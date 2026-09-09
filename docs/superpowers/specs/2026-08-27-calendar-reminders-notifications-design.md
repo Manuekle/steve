@@ -6,7 +6,7 @@
 
 ## Overview
 
-Add three modular capabilities to the Steve agent:
+Add three modular capabilities to the Senka agent:
 
 1. **Calendar** — Google Calendar integration for availability checking and booking
 2. **Reminders** — Tool + automatic schedule for contact reminders

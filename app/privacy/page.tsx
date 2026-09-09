@@ -4,9 +4,9 @@ import { Privacy } from "./_components/privacy";
 
 export const metadata: Metadata = marketingMetadata({
   path: "/privacy",
-  title: "Privacidad — steve",
+  title: "Privacidad — senka",
   description:
-    "Qué datos guarda steve, dónde viven y qué sale de tu servidor. La aplicación es autoalojada: las conversaciones quedan en tu propia base de datos.",
+    "Qué datos guarda senka, dónde viven y qué sale de tu servidor. La aplicación es autoalojada: las conversaciones quedan en tu propia base de datos.",
 });
 
 export default function PrivacyPage() {

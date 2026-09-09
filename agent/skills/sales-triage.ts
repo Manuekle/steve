@@ -11,7 +11,7 @@ export default defineDynamic({
           "and what the bot is doing well or badly.",
         `# Triage the conversations
 
-Steve already reads every real conversation and records where it left the
+Senka already reads every real conversation and records where it left the
 person commercially. This skill uses that; it does not redo it.
 
 The outcomes it assigns: **won**, **lost**, **negotiating**, **interested**,

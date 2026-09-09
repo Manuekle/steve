@@ -6,13 +6,13 @@ import { createDocumentStore } from "./doc-store";
 //
 // Shared by the Eve agent (the search_knowledge tool) and the Next.js API
 // routes, the same way business-store.ts is: both processes run on one host
-// and read ~/.steve/knowledge.json.
+// and read ~/.senka/knowledge.json.
 //
 // Documents and chunks are kept in separate arrays so listing the library
 // (the common case, hit on every page load) never has to walk the embedding
 // vectors, which are by far the bulk of the file.
 
-const STORE_FILE = join(homedir(), ".steve", "knowledge.json");
+const STORE_FILE = join(homedir(), ".senka", "knowledge.json");
 
 export type KnowledgeDocument = {
   id: string;
@@ -72,7 +72,7 @@ function normalize(parsed: Partial<KnowledgeStore>): KnowledgeStore {
   };
 }
 
-// Postgres when one is configured, ~/.steve/knowledge.json otherwise. The
+// Postgres when one is configured, ~/.senka/knowledge.json otherwise. The
 // factory owns the routing, the one-time file import, and the locking that
 // the hand-rolled queue here used to approximate for one process only.
 const knowledgeStore = createDocumentStore<KnowledgeStore>({

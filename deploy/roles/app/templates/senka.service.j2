@@ -2,7 +2,7 @@
 # Long-running production Eve host. `eve build` runs before this unit starts;
 # Eve stops open sandboxes on SIGTERM and reattaches durable sessions on restart.
 [Unit]
-Description=steve — self-hosted eve agent host
+Description=senka — self-hosted eve agent host
 After=network-online.target docker.service
 Wants=network-online.target
 Requires=docker.service
@@ -24,7 +24,7 @@ Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # the agent starts. On reboot the agent would otherwise race the Docker
 # container and die with ECONNREFUSED to Postgres.
 ExecStartPre=/usr/bin/docker compose -f {{ app_dir }}/docker-compose.yml up -d postgres
-ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do docker exec steve-postgres pg_isready && exit 0; sleep 2; done; echo "postgres not ready" >&2; exit 1'
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do docker exec senka-postgres pg_isready && exit 0; sleep 2; done; echo "postgres not ready" >&2; exit 1'
 # Bind to localhost only; Caddy is the sole public entry point.
 ExecStart=/usr/bin/node {{ app_dir }}/node_modules/eve/bin/eve.js start --host 127.0.0.1 --port {{ app_port }}
 Restart=always

@@ -21,7 +21,7 @@ import { createDocumentStore } from "./doc-store";
 // Scoped to the business: two shops on one install have two sites, two
 // properties and two sets of changes.
 
-const STORE_FILE = join(homedir(), ".steve", "seo.json");
+const STORE_FILE = join(homedir(), ".senka", "seo.json");
 
 export type SeoChange = {
   readonly id: string;

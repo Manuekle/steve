@@ -552,14 +552,14 @@ export function uiControls(_locale?: string): Section {
           id: "button-group-text",
           title: ct("controls.buttonGroup.text.title"),
           code: `<ButtonGroup>
-  <ButtonGroupText>steve.app/</ButtonGroupText>
+  <ButtonGroupText>senka.app/</ButtonGroupText>
   <Input defaultValue="ventas" />
   <ButtonGroupSeparator />
   <Button variant="outline">Copiar</Button>
 </ButtonGroup>`,
           render: (
             <ButtonGroup>
-              <ButtonGroupText>steve.app/f/</ButtonGroupText>
+              <ButtonGroupText>senka.app/f/</ButtonGroupText>
               <Input defaultValue="ventas" className="w-32" />
               <ButtonGroupSeparator />
               <Button variant="outline">Copiar</Button>

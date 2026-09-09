@@ -84,7 +84,7 @@ export async function uploadToDrive(opts: {
   // The multipart/related shape Drive's upload endpoint wants: a JSON part
   // naming the file, then the raw bytes, split by one boundary neither part
   // is likely to contain — the same trick Gmail's raw message uses.
-  const boundary = `steve_${Date.now()}`;
+  const boundary = `senka_${Date.now()}`;
   const metadata = JSON.stringify({ name: opts.name });
   const body = new Blob([
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`,
@@ -116,7 +116,7 @@ export async function uploadToDrive(opts: {
 }
 
 export async function downloadFromDrive(fileId: string): Promise<Uint8Array> {
-  // Readonly, not `drive.file`: this reads back both an asset Steve
+  // Readonly, not `drive.file`: this reads back both an asset Senka
   // uploaded itself and one imported from an existing folder — see
   // readAssetBytes in lib/media-store.ts and lib/drive-import.ts.
   const token = await getGoogleToken(DRIVE_READONLY_SCOPE);
@@ -131,7 +131,7 @@ export async function downloadFromDrive(fileId: string): Promise<Uint8Array> {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-/** Best-effort: a Drive file Steve can no longer reach to delete costs
+/** Best-effort: a Drive file Senka can no longer reach to delete costs
  *  storage quota, not correctness — the library entry is gone either way. */
 export async function deleteFromDrive(fileId: string): Promise<void> {
   const token = await getGoogleToken(DRIVE_SCOPE);

@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The steve glyph on its own — no tile, no background, just the path in
+ * The senka glyph on its own — no tile, no background, just the path in
  * `currentColor`, the way the landing header carries it. `app/icon.svg` is a
  * different asset on purpose: the favicon needs a near-black tile to survive
  * 16px against a browser chrome of unknown colour, and that tile is exactly
  * what looks wrong anywhere inside the app.
  */
-export function SteveMark({ className }: { readonly className?: string }) {
+export function SenkaMark({ className }: { readonly className?: string }) {
   return (
     <svg
       viewBox="0 0 1006 1182"

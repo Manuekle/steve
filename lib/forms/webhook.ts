@@ -90,7 +90,7 @@ export async function deliverFormWebhook(form: Form, response: FormResponse): Pr
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "user-agent": "Steve-Forms-Webhook/1",
+        "user-agent": "Senka-Forms-Webhook/1",
       },
       body: JSON.stringify(buildFormWebhookPayload(form, response)),
       redirect: "error",

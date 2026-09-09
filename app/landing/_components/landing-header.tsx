@@ -5,7 +5,7 @@ import { Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { SteveMark } from "@/components/icons/steve-mark";
+import { SenkaMark } from "@/components/icons/senka-mark";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth/use-session";
 import { useActiveSection, useStuckHeader } from "@/lib/hooks/use-reveal";
@@ -46,10 +46,9 @@ const PAGES = [
 export function Wordmark({ className }: { readonly className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <SteveMark />
+      <SenkaMark />
       <span className="font-semibold text-lg leading-none tracking-tight">
-        <span className="text-muted-foreground">st</span>
-        <span className="text-foreground">eve</span>
+        <span className="text-foreground">senka</span>
       </span>
     </span>
   );

@@ -1,13 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-# ─── Steve Enterprise Installer ──────────────────────────────────────────────
+# ─── Senka Enterprise Installer ──────────────────────────────────────────────
 # Supports macOS (ARM/Intel) and Linux (x64/arm64).
 # Installs: Git, Docker (check only), Node.js 24, pnpm, project deps,
 #           PostgreSQL (via Docker), and runs migrations.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Manuekle/steve/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Manuekle/senka/main/install.sh | bash
 #   or: bash install.sh
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ esac
 
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════${NC}"
-echo -e "${BOLD}  Steve Enterprise Installer${NC}"
+echo -e "${BOLD}  Senka Enterprise Installer${NC}"
 echo -e "${BOLD}═══════════════════════════════════════════${NC}"
 echo ""
 echo -e "  Platform:  ${GREEN}$PLATFORM${NC} ($ARCH)"
@@ -129,7 +129,7 @@ fi
 
 # ── 5. Project directory ─────────────────────────────────────────────────────
 
-INSTALL_DIR="${STEVE_INSTALL_DIR:-$HOME/steve}"
+INSTALL_DIR="${STEVE_INSTALL_DIR:-$HOME/senka}"
 
 if [ ! -d "$INSTALL_DIR" ]; then
   info "Creating project directory at $INSTALL_DIR..."
@@ -157,7 +157,7 @@ if [ ! -f .env ]; then
     echo -e "    API keys do not go here — add them in Settings once the app is up."
     echo ""
   else
-    fail ".env.example not found. Is this the Steve project directory?"
+    fail ".env.example not found. Is this the Senka project directory?"
   fi
 else
   ok ".env exists"
