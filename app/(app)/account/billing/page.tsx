@@ -6,7 +6,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowLeft02Icon,
   CrownIcon,
-  Invoice01Icon,
+  Invoice04Icon,
   StripeIcon,
   Calendar01Icon,
   CheckIcon,
@@ -238,7 +238,7 @@ export default function BillingPage() {
         <Card>
           <CardHeader>
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-              <HugeiconsIcon icon={Invoice01Icon} size={16} strokeWidth={1.75} />
+              <HugeiconsIcon icon={Invoice04Icon} size={16} strokeWidth={1.75} />
             </div>
             <div className="min-w-0 flex-1">
               <CardTitle>{t("billing.invoicesTitle")}</CardTitle>

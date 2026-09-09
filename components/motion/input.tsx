@@ -12,9 +12,9 @@ import {
   useId,
   useRef,
   useState,
-  type InputHTMLAttributes,
   type ReactNode,
 } from "react";
+import { Input as BaseInput } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export type InputClassNames = {
@@ -28,10 +28,7 @@ export type InputClassNames = {
   errorMessage?: string;
 };
 
-export interface InputProps extends Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "value" | "defaultValue" | "onChange"
-> {
+export interface InputProps {
   label?: string;
   value?: string;
   defaultValue?: string;
@@ -43,6 +40,12 @@ export interface InputProps extends Omit<
   rightIcon?: ReactNode;
   className?: string;
   classNames?: InputClassNames;
+  disabled?: boolean;
+  id?: string;
+  type?: string;
+  placeholder?: string;
+  "aria-label"?: string;
+  "aria-describedby"?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
@@ -51,8 +54,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     value: valueProp,
     defaultValue,
     onChange,
-    onFocus,
-    onBlur,
     error,
     success,
     leftIcon,
@@ -62,7 +63,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     disabled,
     id: idProp,
     type,
-    ...rest
+    placeholder,
+    "aria-label": ariaLabel,
+    "aria-describedby": ariaDescribedBy,
   },
   ref,
 ) {
@@ -73,8 +76,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const controlled = valueProp !== undefined;
   const [internal, setInternal] = useState(defaultValue ?? "");
   const value = controlled ? (valueProp ?? "") : internal;
-
-  const [focused, setFocused] = useState(false);
 
   const fieldRef = useRef<HTMLDivElement>(null);
 
@@ -122,23 +123,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             ? "error"
             : success
               ? "success"
-              : focused
-                ? "focused"
-                : "idle"
+              : "idle"
         }
-        className={cn(
-          "relative h-11 overflow-hidden rounded-full border transition-colors duration-200",
-          "border-border",
-          focused && !hasError && "border-foreground/40 ring-2 ring-ring/40",
-          hasError && "border-destructive ring-2 ring-destructive/25",
-          disabled && "opacity-60",
-          classNames?.field,
-        )}
+        className={cn("relative", classNames?.field)}
       >
         {leftIcon ? (
           <span
             className={cn(
-              "pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-muted-foreground [&_svg]:h-4 [&_svg]:w-4",
+              "pointer-events-none absolute left-3 top-1/2 z-10 flex -translate-y-1/2 items-center text-muted-foreground [&_svg]:h-4 [&_svg]:w-4",
               classNames?.leftIcon,
             )}
           >
@@ -146,30 +138,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           </span>
         ) : null}
 
-        <input
+        <BaseInput
           ref={ref}
           id={id}
           type={type}
           value={value}
           disabled={disabled}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
           aria-invalid={hasError || undefined}
-          aria-describedby={errorMessage ? `${id}-error` : undefined}
-          {...rest}
+          aria-describedby={ariaDescribedBy ?? (errorMessage ? `${id}-error` : undefined)}
           onChange={(e) => handleChange(e.target.value)}
-          onFocus={(event) => {
-            setFocused(true);
-            onFocus?.(event);
-          }}
-          onBlur={(event) => {
-            setFocused(false);
-            onBlur?.(event);
-          }}
           className={cn(
-            "peer h-full w-full bg-transparent text-base leading-6 text-foreground caret-foreground outline-none",
-            "placeholder:text-muted-foreground",
-            leftIcon ? "pl-10" : "pl-3.5",
-            rightSlot || success ? "pr-10" : "pr-3.5",
-            disabled && "cursor-not-allowed",
+            leftIcon ? "pl-10" : undefined,
+            rightSlot || success ? "pr-10" : undefined,
+            hasError && "border-destructive focus-visible:border-destructive",
             classNames?.input,
           )}
         />
@@ -179,7 +162,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             viewBox="0 0 24 24"
             fill="none"
             className={cn(
-              "absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-(--color-success)",
+              "absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--color-success)",
               classNames?.successIcon,
             )}
           >
@@ -197,7 +180,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         ) : rightSlot ? (
           <span
             className={cn(
-              "absolute right-0 top-0 flex h-full items-center text-muted-foreground [&_button]:grid [&_button]:size-11 [&_button]:place-items-center [&_svg]:h-4 [&_svg]:w-4",
+              "absolute right-1 top-0 flex h-full items-center text-muted-foreground [&_svg]:h-4 [&_svg]:w-4",
               classNames?.rightIcon,
             )}
           >

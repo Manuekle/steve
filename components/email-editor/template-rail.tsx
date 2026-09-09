@@ -5,7 +5,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   Delete02Icon,
-  Mail01Icon,
+  Mail02Icon,
   PencilEdit02Icon,
   Search01Icon,
 } from "@hugeicons/core-free-icons";
@@ -187,7 +187,7 @@ function TemplateRow({
         className="flex min-w-0 flex-1 items-start gap-2 text-left"
       >
         <HugeiconsIcon
-          icon={template.source === "builtin" ? Mail01Icon : PencilEdit02Icon}
+          icon={template.source === "builtin" ? Mail02Icon : PencilEdit02Icon}
           size={14}
           strokeWidth={1.75}
           className={cn(

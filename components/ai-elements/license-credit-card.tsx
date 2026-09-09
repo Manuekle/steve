@@ -10,6 +10,7 @@ import {
   useTransform,
 } from "motion/react";
 import { SteveMark } from "@/components/icons/steve-mark";
+import { useTheme } from "@/components/theme-provider";
 import { SPRING_MOUSE } from "@/lib/ease";
 import { useHoverCapable } from "@/lib/hooks/use-hover-capable";
 import { useI18n } from "@/lib/i18n/provider";
@@ -24,9 +25,9 @@ import { cn } from "@/lib/utils";
 // are text under the card (license-card.tsx) — putting them on the face turned
 // a card into a dashboard.
 //
-// It stays a dark card in both themes on purpose. A physical object does not
-// repaint itself when the room lights change, and the theme-swapping version
-// of this lost the one thing that makes it legible as a card at a glance.
+// The card adapts to both light and dark themes: dark mode uses a deep charcoal
+// gradient, while light mode uses a warm off-white card stock. Text colors
+// invert accordingly.
 //
 // Nothing here gates anything — see lib/license/verify.ts. This is a picture
 // of a fact, not a check.
@@ -51,19 +52,26 @@ const SPRING_TILT = { stiffness: 260, damping: 22, mass: 0.5 } as const;
 const SPRING_FLIP = { type: "spring", stiffness: 220, damping: 26, mass: 0.7 } as const;
 const DRAG_RETURN = { bounceStiffness: 320, bounceDamping: 26 } as const;
 
-/** The card body. Pure neutral, on the same greys as the app's dark surfaces
- *  (`--background` 0.155, `--card` 0.18, `--accent` 0.23 in app/globals.css).
- *  The earlier version carried a hue around 260, which on a monochrome product
- *  read as a blue metallic card that had wandered in from another app. */
-const FACE_BACKGROUND =
+/** Dark-mode card body. Pure neutral, on the same greys as the app's dark surfaces
+ *  (`--background` 0.155, `--card` 0.18, `--accent` 0.23 in app/globals.css). */
+const FACE_BACKGROUND_DARK =
   "radial-gradient(115% 125% at 10% -15%, oklch(0.3 0 0) 0%, transparent 58%)," +
   "linear-gradient(160deg, oklch(0.235 0 0) 0%, oklch(0.14 0 0) 55%, oklch(0.19 0 0) 100%)";
 
+/** Light-mode card body. Warm off-white card stock with subtle depth. */
+const FACE_BACKGROUND_LIGHT =
+  "radial-gradient(115% 125% at 10% -15%, oklch(0.97 0 0) 0%, transparent 58%)," +
+  "linear-gradient(160deg, oklch(0.96 0 0) 0%, oklch(0.92 0 0) 55%, oklch(0.94 0 0) 100%)";
+
 /** Guilloché: two hairline gratings crossing at a shallow angle, fine enough
  *  that they read as a milled surface rather than as stripes. */
-const FACE_ENGRAVING =
+const FACE_ENGRAVING_DARK =
   "repeating-linear-gradient(72deg, oklch(1 0 0 / 0.035) 0 1px, transparent 1px 7px)," +
   "repeating-linear-gradient(-63deg, oklch(1 0 0 / 0.022) 0 1px, transparent 1px 11px)";
+
+const FACE_ENGRAVING_LIGHT =
+  "repeating-linear-gradient(72deg, oklch(0 0 0 / 0.04) 0 1px, transparent 1px 7px)," +
+  "repeating-linear-gradient(-63deg, oklch(0 0 0 / 0.025) 0 1px, transparent 1px 11px)";
 
 /** Chip contact pads, drawn rather than imported — it is eight rectangles, and
  *  it is the one thing on the face that says "card" without a word. */
@@ -118,6 +126,8 @@ export function LicenseCreditCard({
   readonly className?: string;
 }) {
   const { t } = useI18n();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const reduce = useReducedMotion();
   const canHover = useHoverCapable();
   const node = useRef<HTMLDivElement>(null);
@@ -182,12 +192,32 @@ export function LicenseCreditCard({
    *  the top edge, and the inset ring. Nothing on it moves — the roaming
    *  radial highlight that used to ride the tilt read as a spotlight sweeping
    *  the card rather than as a card catching the light. */
-  const face = "absolute inset-0 overflow-hidden rounded-[14px] text-white [backface-visibility:hidden]";
+  const faceBg = isDark ? FACE_BACKGROUND_DARK : FACE_BACKGROUND_LIGHT;
+  const engraving = isDark ? FACE_ENGRAVING_DARK : FACE_ENGRAVING_LIGHT;
+  const textPrimary = isDark ? "text-white" : "text-neutral-900";
+  const textMuted = isDark ? "text-white/40" : "text-neutral-500";
+  const textSubtle = isDark ? "text-white/45" : "text-neutral-600";
+  const textBody = isDark ? "text-white/90" : "text-neutral-800";
+  const textSoft = isDark ? "text-white/85" : "text-neutral-700";
+  const textFaint = isDark ? "text-white/70" : "text-neutral-600";
+  const textGhost = isDark ? "text-white/25" : "text-neutral-400";
+  const iconColor = isDark ? "text-white" : "text-neutral-900";
+  const iconGhost = isDark ? "text-white/25" : "text-neutral-400";
+  const face = cn(
+    "absolute inset-0 overflow-hidden rounded-[14px] [backface-visibility:hidden]",
+    textPrimary,
+  );
   const surface = (
     <>
-      <div className="pointer-events-none absolute inset-0" style={{ background: FACE_ENGRAVING }} />
-      <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-      <div className="pointer-events-none absolute inset-0 rounded-[14px] ring-1 ring-white/10 ring-inset" />
+      <div className="pointer-events-none absolute inset-0" style={{ background: engraving }} />
+      <div className={cn(
+        "pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent to-transparent",
+        isDark ? "via-white/30" : "via-black/20",
+      )} />
+      <div className={cn(
+        "pointer-events-none absolute inset-0 rounded-[14px] ring-1 ring-inset",
+        isDark ? "ring-white/10" : "ring-black/10",
+      )} />
     </>
   );
 
@@ -238,38 +268,38 @@ export function LicenseCreditCard({
             className="absolute inset-0"
           >
             {/* ── Front ── */}
-            <motion.div style={{ background: FACE_BACKGROUND, boxShadow }} className={face}>
+            <motion.div style={{ background: faceBg, boxShadow }} className={face}>
               {surface}
 
               <div className="relative flex h-full flex-col justify-between p-5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
-                    <SteveMark className="h-[18px] w-[15px] text-white" />
-                    <span className="font-heading text-[14px] leading-none font-semibold tracking-tight">
+                    <SteveMark className={cn("h-[18px] w-[15px]", iconColor)} />
+                    <span className={cn("font-heading text-[14px] leading-none font-semibold tracking-tight", textPrimary)}>
                       steve
                     </span>
                   </span>
-                  <p className="truncate text-[11px] text-white/45">
+                  <p className={cn("truncate text-[11px]", textSubtle)}>
                     {payload?.edition ?? t("license.card.noHolder")}
                   </p>
                 </div>
 
                 <Chip />
 
-                <p className="font-mono text-[15px] tracking-[0.16em] text-white/90 tabular-nums">
+                <p className={cn("font-mono text-[15px] tracking-[0.16em] tabular-nums", textBody)}>
                   {cardNumber(payload?.licenseId)}
                 </p>
 
                 <div className="flex items-end justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-[9px] text-white/40">{t("license.card.holder")}</p>
-                    <p className="mt-1 truncate text-[12px] tracking-wide text-white/90">
+                    <p className={cn("text-[9px]", textMuted)}>{t("license.card.holder")}</p>
+                    <p className={cn("mt-1 truncate text-[12px] tracking-wide", textBody)}>
                       {payload?.company ?? "—"}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-[9px] text-white/40">{t("license.card.validThru")}</p>
-                    <p className="mt-1 font-mono text-[12px] text-white/90 tabular-nums">
+                    <p className={cn("text-[9px]", textMuted)}>{t("license.card.validThru")}</p>
+                    <p className={cn("mt-1 font-mono text-[12px] tabular-nums", textBody)}>
                       {payload ? monthYear(payload.maintenanceUntil) : "––/––"}
                     </p>
                   </div>
@@ -279,37 +309,42 @@ export function LicenseCreditCard({
 
             {/* ── Back ── */}
             <motion.div
-              style={{ background: FACE_BACKGROUND, boxShadow }}
+              style={{ background: faceBg, boxShadow }}
               className={cn(face, "[transform:rotateY(180deg)]")}
             >
               {surface}
 
               <div className="relative flex h-full flex-col">
-                <div className="mt-5 h-9 w-full bg-gradient-to-b from-black/85 via-black/95 to-black/80 shadow-[inset_0_1px_0_oklch(1_0_0/0.06)]" />
+                <div className={cn(
+                  "mt-5 h-9 w-full shadow-[inset_0_1px_0_oklch(1_0_0/0.06)]",
+                  isDark
+                    ? "bg-gradient-to-b from-black/85 via-black/95 to-black/80"
+                    : "bg-gradient-to-b from-neutral-800/90 via-neutral-900/95 to-neutral-800/90",
+                )} />
 
                 <div className="flex min-h-0 flex-1 flex-col justify-center gap-3.5 px-5">
                   {/* Reference only. Copying the installation id happens where
                       it is actually needed — inside "replace this license", next
                       to the box you paste the new token into. */}
                   <div>
-                    <p className="text-[9px] text-white/40">
+                    <p className={cn("text-[9px]", textMuted)}>
                       {t("settings.license.installationIdLabel")}
                     </p>
-                    <p className="mt-1 font-mono text-[11px] break-all text-white/85">
+                    <p className={cn("mt-1 font-mono text-[11px] break-all", textSoft)}>
                       {installationId ?? "…"}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[9px] text-white/40">{t("license.card.licenseId")}</p>
-                    <p className="mt-1 font-mono text-[11px] break-all text-white/70">
+                    <p className={cn("text-[9px]", textMuted)}>{t("license.card.licenseId")}</p>
+                    <p className={cn("mt-1 font-mono text-[11px] break-all", textFaint)}>
                       {payload?.licenseId ?? "—"}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex justify-end px-5 pb-5">
-                  <SteveMark className="h-[15px] w-[13px] text-white/25" />
+                  <SteveMark className={cn("h-[15px] w-[13px]", iconGhost)} />
                 </div>
               </div>
             </motion.div>

@@ -30,6 +30,7 @@ import { SuggestionChip } from "@/components/ui/suggestion-chip";
 import { Switch } from "@/components/ui/switch";
 import { ToggleChip } from "@/components/ui/toggle-chip";
 import { Textarea } from "@/components/ui/textarea";
+import { ct } from "../_lib/catalog-i18n";
 import type { Section } from "../_lib/types";
 
 // ── Stateful demo hosts ─────────────────────────────────────────────
@@ -112,62 +113,57 @@ const STATUS_VARIANTS: readonly StatusVariant[] = [
 
 // ── Section ─────────────────────────────────────────────────────────
 
-export const uiControls: Section = {
+export function uiControls(_locale?: string): Section {
+  return {
   id: "ui-controls",
-  title: "Controles",
-  desc:
-    "components/ui — botones, campos y pastillas. Es la capa que más se repite en "
-    + "la app, así que es la que menos debería reinventarse en una página nueva.",
+  title: ct("controls.title"),
+  desc: ct("controls.desc"),
   entries: [
     {
       id: "button",
       name: "Button",
       source: "components/ui/button.tsx",
       importLine: 'import { Button, buttonVariants } from "@/components/ui/button";',
-      desc:
-        "Seis variantes y ocho tamaños sobre una sola receta: mismo radio, misma "
-        + "tipografía, misma transición. La profundidad es un borde hairline más un "
-        + "inner highlight arriba y una sombra corta abajo. El foco es un `outline`, "
-        + "no un `ring`, porque el `box-shadow` ya está gastado en la superficie.",
+      desc: ct("controls.button.desc"),
       exports: ["Button", "buttonVariants"],
       props: [
         {
           name: "variant",
           type: '"default" | "destructive" | "secondary" | "outline" | "ghost" | "link"',
           def: '"default"',
-          desc: "Cuánto peso carga la acción. default es la principal de la pantalla.",
+          desc: ct("controls.button.variant.desc"),
         },
         {
           name: "size",
           type: '"default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg"',
           def: '"default"',
-          desc: "Las variantes icon son cuadradas; el resto crece solo en alto y padding.",
+          desc: ct("controls.button.size.desc"),
         },
         {
           name: "asChild",
           type: "boolean",
           def: "false",
-          desc: "Renderiza el hijo en vez de un <button> — para un <Link> con pinta de botón.",
+          desc: ct("controls.button.asChild.desc"),
         },
         {
           name: "disabled",
           type: "boolean",
-          desc: "Baja el contraste y corta pointer-events, no solo el cursor.",
+          desc: ct("controls.button.disabled.desc"),
         },
         {
           name: "…props",
           type: 'React.ComponentProps<"button">',
-          desc: "Todo lo nativo pasa tal cual: type, onClick, form, aria-*.",
+          desc: ct("controls.button.props.desc"),
         },
       ],
       notes: [
-        "default, destructive, secondary y outline suenan al pulsarse (data-cuelume-press). ghost y link no: son la X de cerrar y el «ver más», y sonarlos es como se acaba silenciando la app entera.",
-        "El SVG dentro se dimensiona solo a 16px salvo que le pases una clase size-*.",
+        ct("controls.button.note1"),
+        ct("controls.button.note2"),
       ],
       demos: [
         {
           id: "button-variants",
-          title: "Variantes",
+          title: ct("controls.button.variants.title"),
           code: `<Button>Guardar</Button>
 <Button variant="destructive">Eliminar</Button>
 <Button variant="secondary">Duplicar</Button>
@@ -187,7 +183,7 @@ export const uiControls: Section = {
         },
         {
           id: "button-sizes",
-          title: "Tamaños",
+          title: ct("controls.button.sizes.title"),
           code: `<Button size="xs">xs</Button>
 <Button size="sm">sm</Button>
 <Button size="default">default</Button>
@@ -203,8 +199,8 @@ export const uiControls: Section = {
         },
         {
           id: "button-icons",
-          title: "Con icono y solo icono",
-          desc: "Un botón que es solo un icono necesita aria-label: el SVG va oculto al lector.",
+          title: ct("controls.button.icons.title"),
+          desc: ct("controls.button.icons.desc"),
           code: `<Button><HugeiconsIcon icon={Add01Icon} size={16} />Nuevo agente</Button>
 <Button variant="outline" size="icon-sm" aria-label="Ajustes">
   <HugeiconsIcon icon={Settings01Icon} size={16} />
@@ -236,7 +232,7 @@ export const uiControls: Section = {
         },
         {
           id: "button-states",
-          title: "Estados",
+          title: ct("controls.button.states.title"),
           code: `<Button disabled>Guardando</Button>
 <Button variant="secondary" disabled>
   <Spinner /> Procesando
@@ -261,19 +257,15 @@ export const uiControls: Section = {
       name: "SuggestionChip",
       source: "components/ui/suggestion-chip.tsx",
       importLine: 'import { SuggestionChip } from "@/components/ui/suggestion-chip";',
-      desc:
-        "La pastilla de arranque de una conversación: el estado vacío del chat, "
-        + "los dos asistentes y las opciones de seguimiento de un turno. Es un "
-        + "Button outline con la superficie del chip encima, así que el radio, el "
-        + "foco y el disabled vienen del sistema.",
+      desc: ct("controls.suggestionChip.desc"),
       props: [
-        { name: "size", type: '"xs" | "sm" | "default" | "lg"', def: '"sm"', desc: "xs para las opciones dentro de un turno." },
-        { name: "...", type: "ComponentProps<typeof Button>", desc: "Todo lo del Button: disabled, onClick, asChild." },
+        { name: "size", type: '"xs" | "sm" | "default" | "lg"', def: '"sm"', desc: ct("controls.suggestionChip.size.desc") },
+        { name: "...", type: "ComponentProps<typeof Button>", desc: ct("controls.suggestionChip.extra.desc") },
       ],
       demos: [
         {
           id: "suggestion-chip-basic",
-          title: "Tamaños y disabled",
+          title: ct("controls.suggestionChip.demos.title"),
           code: `<SuggestionChip>¿Cuántos leads entraron hoy?</SuggestionChip>
 <SuggestionChip size="xs">Sí</SuggestionChip>
 <SuggestionChip disabled>Mientras responde</SuggestionChip>`,
@@ -292,20 +284,16 @@ export const uiControls: Section = {
       name: "ToggleChip",
       source: "components/ui/toggle-chip.tsx",
       importLine: 'import { ToggleChip } from "@/components/ui/toggle-chip";',
-      desc:
-        "La pastilla que está elegida o no: el idioma del brief, la plantilla al "
-        + "crear un agente, el filtro de opciones de un paso de formulario. "
-        + "`aria-pressed` sale de `selected`, no del que llama — las tres copias "
-        + "a mano que sustituye no lo ponían todas.",
+      desc: ct("controls.toggleChip.desc"),
       props: [
-        { name: "selected", type: "boolean", required: true, desc: "Marca el estado y escribe aria-pressed." },
+        { name: "selected", type: "boolean", required: true, desc: ct("controls.toggleChip.selected.desc") },
         { name: "size", type: '"xs" | "sm" | "default" | "lg"', def: '"sm"', desc: "" },
       ],
       demos: [
         {
           id: "toggle-chip-basic",
-          title: "Una sola elección",
-          desc: "Pulsa: solo una queda marcada.",
+          title: ct("controls.toggleChip.demos.title"),
+          desc: ct("controls.toggleChip.demos.desc"),
           code: `<ToggleChip selected={picked === option.id} onClick={() => setPicked(option.id)}>
   {option.label}
 </ToggleChip>`,
@@ -318,28 +306,26 @@ export const uiControls: Section = {
       name: "Badge",
       source: "components/ui/badge.tsx",
       importLine: 'import { Badge, badgeVariants } from "@/components/ui/badge";',
-      desc:
-        "Pastilla de etiqueta, no de estado — para eso está StatusBadge. Monocroma "
-        + "salvo destructive, que es el único acento.",
+      desc: ct("controls.badge.desc"),
       exports: ["Badge", "badgeVariants"],
       props: [
         {
           name: "variant",
           type: '"default" | "secondary" | "destructive" | "outline" | "ghost" | "link"',
           def: '"default"',
-          desc: "El peso visual de la etiqueta.",
+          desc: ct("controls.badge.variant.desc"),
         },
         {
           name: "asChild",
           type: "boolean",
           def: "false",
-          desc: "Para renderizar la pastilla como <a>; los hovers [a&] se activan solos.",
+          desc: ct("controls.badge.asChild.desc"),
         },
       ],
       demos: [
         {
           id: "badge-variants",
-          title: "Variantes",
+          title: ct("controls.badge.variants.title"),
           code: `<Badge>Beta</Badge>
 <Badge variant="secondary">Borrador</Badge>
 <Badge variant="destructive">Vencido</Badge>
@@ -357,8 +343,8 @@ export const uiControls: Section = {
         },
         {
           id: "badge-icon",
-          title: "Con icono",
-          desc: "El SVG se dimensiona solo a 12px dentro de la pastilla.",
+          title: ct("controls.badge.icon.title"),
+          desc: ct("controls.badge.icon.desc"),
           code: `<Badge variant="secondary">
   <HugeiconsIcon icon={Search01Icon} />
   Indexando
@@ -377,35 +363,32 @@ export const uiControls: Section = {
       name: "StatusBadge",
       source: "components/ui/status-badge.tsx",
       importLine: 'import { StatusBadge } from "@/components/ui/status-badge";',
-      desc:
-        "La única pastilla de estado de la app: un pastel por estado, icono de línea "
-        + "y etiqueta. Las siete variantes de la especificación más siete alias "
-        + "propios del producto que reutilizan los mismos colores.",
+      desc: ct("controls.statusBadge.desc"),
       props: [
         {
           name: "status",
           type: "StatusVariant",
           required: true,
-          desc: "pending · in-progress · submitted · in-review · success · failed · expired, más connected · disconnected · active · paused · draft · error · warning.",
+          desc: ct("controls.statusBadge.status.desc"),
         },
         {
           name: "label",
           type: "string",
-          desc: "Pisa la etiqueta del diccionario. Solo cuando una pantalla necesita otra palabra.",
+          desc: ct("controls.statusBadge.label.desc"),
         },
         {
           name: "title",
           type: "string",
-          desc: "Texto de hover para el detalle que haría la pastilla ilegible de largo.",
+          desc: ct("controls.statusBadge.title.desc"),
         },
       ],
       notes: [
-        "Traduce con useT() contra las claves badge.<variant>, así que necesita el I18nProvider del layout raíz.",
+        ct("controls.statusBadge.note"),
       ],
       demos: [
         {
           id: "status-badge-all",
-          title: "Todas las variantes",
+          title: ct("controls.statusBadge.all.title"),
           code: '<StatusBadge status="success" />',
           render: (
             <>
@@ -417,7 +400,7 @@ export const uiControls: Section = {
         },
         {
           id: "status-badge-label",
-          title: "Etiqueta propia",
+          title: ct("controls.statusBadge.custom.title"),
           code: '<StatusBadge status="warning" label="Plan gratuito" title="Catálogo parcial" />',
           render: <StatusBadge status="warning" label="Plan gratuito" title="Catálogo parcial" />,
         },
@@ -428,19 +411,16 @@ export const uiControls: Section = {
       name: "Input",
       source: "components/ui/input.tsx",
       importLine: 'import { Input } from "@/components/ui/input";',
-      desc:
-        "El <input> nativo con la receta de campo: fondo hundido, borde de 1px y "
-        + "foco por `outline`. En foco el fondo sube a --card, que es la señal de "
-        + "«esto está activo» sin gastar la sombra.",
+      desc: ct("controls.input.desc"),
       props: [
-        { name: "type", type: 'React.HTMLInputTypeAttribute', desc: "Nativo. file trae su propio estilo de botón." },
-        { name: "aria-invalid", type: "boolean", desc: "Pinta el borde en destructive y añade la sombra de error." },
-        { name: "…props", type: 'React.ComponentProps<"input">', desc: "Todo lo nativo pasa tal cual." },
+        { name: "type", type: 'React.HTMLInputTypeAttribute', desc: ct("controls.input.type.desc") },
+        { name: "aria-invalid", type: "boolean", desc: ct("controls.input.ariaInvalid.desc") },
+        { name: "…props", type: 'React.ComponentProps<"input">', desc: ct("controls.input.props.desc") },
       ],
       demos: [
         {
           id: "input-states",
-          title: "Estados",
+          title: ct("controls.input.states.title"),
           code: `<Input placeholder="nombre@empresa.com" />
 <Input defaultValue="Hola" />
 <Input aria-invalid placeholder="Requerido" />
@@ -461,17 +441,15 @@ export const uiControls: Section = {
       name: "Textarea",
       source: "components/ui/textarea.tsx",
       importLine: 'import { Textarea } from "@/components/ui/textarea";',
-      desc:
-        "Misma receta que Input, con field-sizing-content: crece con lo escrito en "
-        + "vez de quedarse en una caja fija con scroll.",
+      desc: ct("controls.textarea.desc"),
       props: [
-        { name: "…props", type: 'React.ComponentProps<"textarea">', desc: "Nativo. rows sigue funcionando si quieres fijar el alto." },
+        { name: "…props", type: 'React.ComponentProps<"textarea">', desc: ct("controls.textarea.props.desc") },
       ],
       demos: [
         {
           id: "textarea-basic",
-          title: "Autogrow",
-          desc: "Escribe varias líneas: la caja crece sola.",
+          title: ct("controls.textarea.title"),
+          desc: ct("controls.textarea.desc2"),
           code: '<Textarea placeholder="Instrucciones del agente…" />',
           render: (
             <div className="w-full max-w-md">
@@ -486,23 +464,20 @@ export const uiControls: Section = {
       name: "Switch",
       source: "components/ui/switch.tsx",
       importLine: 'import { Switch } from "@/components/ui/switch";',
-      desc:
-        "Interruptor on/off. El recorrido del pulgar y el doble rebote viven en "
-        + ".t-toggle (globals.css); el componente pone la caja, los colores y el "
-        + "cableado accesible.",
+      desc: ct("controls.switch.desc"),
       props: [
-        { name: "checked", type: "boolean", required: true, desc: "Controlado siempre — no hay estado interno." },
-        { name: "onCheckedChange", type: "(checked: boolean) => void", required: true, desc: "El nuevo valor, ya invertido." },
-        { name: "label", type: "string", required: true, desc: "Nombre accesible: el control no tiene texto propio." },
-        { name: "disabled", type: "boolean", desc: "Baja a 40 % y cambia el cursor." },
+        { name: "checked", type: "boolean", required: true, desc: ct("controls.switch.checked.desc") },
+        { name: "onCheckedChange", type: "(checked: boolean) => void", required: true, desc: ct("controls.switch.onCheckedChange.desc") },
+        { name: "label", type: "string", required: true, desc: ct("controls.switch.label.desc") },
+        { name: "disabled", type: "boolean", desc: ct("controls.switch.disabled.desc") },
       ],
       notes: [
-        "La animación de apagado solo se arma tras el primer clic (.is-init): si no, cada switch de la página tiembla al hidratar.",
+        ct("controls.switch.note"),
       ],
       demos: [
         {
           id: "switch-states",
-          title: "Estados",
+          title: ct("controls.switch.states.title"),
           code: `const [on, setOn] = useState(true);
 
 <Switch checked={on} onCheckedChange={setOn} label="Respuestas automáticas" />`,
@@ -515,26 +490,23 @@ export const uiControls: Section = {
       name: "LiquidSlider",
       source: "components/ui/liquid-slider.tsx",
       importLine: 'import { LiquidSlider } from "@/components/ui/liquid-slider";',
-      desc:
-        "Slider cuyo pulgar es una gota: persigue al puntero, se estira con la "
-        + "velocidad y deja cola. Debajo hay un <input type=\"range\"> real e "
-        + "invisible, que es lo que mantiene teclado y lectores funcionando.",
+      desc: ct("controls.liquidSlider.desc"),
       props: [
-        { name: "value", type: "number", required: true, desc: "Controlado." },
+        { name: "value", type: "number", required: true, desc: ct("controls.liquidSlider.value.desc") },
         { name: "onValueChange", type: "(value: number) => void", required: true, desc: "" },
         { name: "min", type: "number", def: "0", desc: "" },
         { name: "max", type: "number", def: "1", desc: "" },
         { name: "step", type: "number", def: "0.01", desc: "" },
-        { name: "label", type: "string", required: true, desc: "Nombre accesible: la pista no lleva texto." },
+        { name: "label", type: "string", required: true, desc: ct("controls.liquidSlider.label.desc") },
         { name: "disabled", type: "boolean", desc: "" },
       ],
       notes: [
-        "Un salto de más de 40px re-siembra la superficie líquida, para que un clic en el otro extremo no muestre la gota cruzando la pista.",
+        ct("controls.liquidSlider.note"),
       ],
       demos: [
         {
           id: "liquid-slider-basic",
-          title: "Arrástralo",
+          title: ct("controls.liquidSlider.title"),
           code: `const [value, setValue] = useState(0.4);
 
 <LiquidSlider value={value} onValueChange={setValue} label="Temperatura" />`,
@@ -547,17 +519,15 @@ export const uiControls: Section = {
       name: "ButtonGroup",
       source: "components/ui/button-group.tsx",
       importLine: 'import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "@/components/ui/button-group";',
-      desc:
-        "Cose varios botones en un solo bloque: quita los radios interiores y los "
-        + "bordes duplicados. Funciona con Button, Select y campos.",
+      desc: ct("controls.buttonGroup.desc"),
       exports: ["ButtonGroup", "ButtonGroupSeparator", "ButtonGroupText", "buttonGroupVariants"],
       props: [
-        { name: "orientation", type: '"horizontal" | "vertical"', def: '"horizontal"', desc: "Vertical apila y cose por arriba/abajo." },
+        { name: "orientation", type: '"horizontal" | "vertical"', def: '"horizontal"', desc: ct("controls.buttonGroup.orientation.desc") },
       ],
       demos: [
         {
           id: "button-group-basic",
-          title: "Horizontal y vertical",
+          title: ct("controls.buttonGroup.horizontal.title"),
           code: `<ButtonGroup>
   <Button variant="outline">Día</Button>
   <Button variant="outline">Semana</Button>
@@ -580,7 +550,7 @@ export const uiControls: Section = {
         },
         {
           id: "button-group-text",
-          title: "Con texto y separador",
+          title: ct("controls.buttonGroup.text.title"),
           code: `<ButtonGroup>
   <ButtonGroupText>steve.app/</ButtonGroupText>
   <Input defaultValue="ventas" />
@@ -603,10 +573,7 @@ export const uiControls: Section = {
       name: "InputGroup",
       source: "components/ui/input-group.tsx",
       importLine: 'import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText } from "@/components/ui/input-group";',
-      desc:
-        "Un campo con cosas pegadas: icono delante, botón detrás, ayuda debajo. El "
-        + "anillo de foco lo pinta el grupo, no el control — el grupo es el que "
-        + "tiene el radio.",
+      desc: ct("controls.inputGroup.desc"),
       exports: [
         "InputGroup",
         "InputGroupAddon",
@@ -620,19 +587,19 @@ export const uiControls: Section = {
           name: "align (Addon)",
           type: '"inline-start" | "inline-end" | "block-start" | "block-end"',
           def: '"inline-start"',
-          desc: "Dónde se pega el añadido. Los block-* apilan y convierten el grupo en columna.",
+          desc: ct("controls.inputGroup.align.desc"),
         },
         {
           name: "size (Button)",
           type: '"xs" | "sm" | "icon-xs" | "icon-sm"',
           def: '"xs"',
-          desc: "El botón interior es un Button ghost recortado para caber en la fila.",
+          desc: ct("controls.inputGroup.size.desc"),
         },
       ],
       demos: [
         {
           id: "input-group-basic",
-          title: "Icono y botón",
+          title: ct("controls.inputGroup.icon.title"),
           code: `<InputGroup>
   <InputGroupAddon>
     <HugeiconsIcon icon={Search01Icon} />
@@ -658,7 +625,7 @@ export const uiControls: Section = {
         },
         {
           id: "input-group-block",
-          title: "Ayuda debajo",
+          title: ct("controls.inputGroup.help.title"),
           code: `<InputGroup>
   <InputGroupInput placeholder="webhook" />
   <InputGroupAddon align="block-end">
@@ -685,15 +652,15 @@ export const uiControls: Section = {
       name: "Spinner",
       source: "components/ui/spinner.tsx",
       importLine: 'import { Spinner } from "@/components/ui/spinner";',
-      desc: "El icono Loading03 girando, con role=\"status\" y nombre accesible ya puestos.",
+      desc: ct("controls.spinner.desc"),
       props: [
-        { name: "size", type: "number", def: "16", desc: "En px." },
-        { name: "className", type: "string", desc: "Para el color: hereda currentColor por defecto." },
+        { name: "size", type: "number", def: "16", desc: ct("controls.spinner.size.desc") },
+        { name: "className", type: "string", desc: ct("controls.spinner.className.desc") },
       ],
       demos: [
         {
           id: "spinner-sizes",
-          title: "Tamaños y color",
+          title: ct("controls.spinner.title"),
           code: `<Spinner />
 <Spinner size={24} className="text-muted-foreground" />`,
           render: (
@@ -711,15 +678,15 @@ export const uiControls: Section = {
       name: "Separator",
       source: "components/ui/separator.tsx",
       importLine: 'import { Separator } from "@/components/ui/separator";',
-      desc: "Una línea de 1px en --border. Decorativa por defecto, así que no aparece en el árbol de accesibilidad.",
+      desc: ct("controls.separator.desc"),
       props: [
-        { name: "orientation", type: '"horizontal" | "vertical"', def: '"horizontal"', desc: "La vertical necesita un padre con altura." },
-        { name: "decorative", type: "boolean", def: "true", desc: "En false se anuncia como separador real." },
+        { name: "orientation", type: '"horizontal" | "vertical"', def: '"horizontal"', desc: ct("controls.separator.orientation.desc") },
+        { name: "decorative", type: "boolean", def: "true", desc: ct("controls.separator.decorative.desc") },
       ],
       demos: [
         {
           id: "separator-basic",
-          title: "Horizontal y vertical",
+          title: ct("controls.separator.title"),
           code: `<Separator />
 <Separator orientation="vertical" />`,
           render: (
@@ -739,4 +706,5 @@ export const uiControls: Section = {
       ],
     },
   ],
-};
+  };
+}

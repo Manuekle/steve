@@ -12,13 +12,14 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import { CheckIcon, Copy01Icon, SourceCodeIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ct } from "./catalog-i18n";
 import type { Demo, PropDoc } from "./types";
 
 // ── Copy ────────────────────────────────────────────────────────────
 
 export function CopyButton({
   value,
-  label = "Copiar",
+  label,
   className,
 }: {
   readonly value: string;
@@ -37,13 +38,15 @@ export function CopyButton({
     timer.current = window.setTimeout(() => setCopied(false), 1600);
   }, [value]);
 
+  const displayLabel = label ?? ct("shell.copy");
+
   return (
     <Button
       type="button"
       variant="ghost"
       size="xs"
       onClick={copy}
-      aria-label={label}
+      aria-label={displayLabel}
       className={cn("text-muted-foreground", className)}
     >
       <HugeiconsIcon
@@ -51,7 +54,7 @@ export function CopyButton({
         size={12}
         strokeWidth={1.75}
       />
-      {copied ? "Copiado" : label}
+      {copied ? ct("shell.copied") : displayLabel}
     </Button>
   );
 }
@@ -121,7 +124,7 @@ export function DemoBlock({ demo }: { readonly demo: Demo }) {
           className="shrink-0 text-muted-foreground"
         >
           <HugeiconsIcon icon={SourceCodeIcon} size={12} strokeWidth={1.75} />
-          {showCode ? "Ocultar" : "Código"}
+          {showCode ? ct("shell.hide") : ct("shell.code")}
         </Button>
       </div>
 
@@ -156,9 +159,9 @@ export function PropsTable({ props }: { readonly props: readonly PropDoc[] }) {
         <thead>
           <tr className="border-b border-border bg-muted/40 text-[11px] tracking-wide text-muted-foreground uppercase">
             <th scope="col" className="px-3.5 py-2 font-medium">Prop</th>
-            <th scope="col" className="px-3.5 py-2 font-medium">Tipo</th>
+            <th scope="col" className="px-3.5 py-2 font-medium">Type</th>
             <th scope="col" className="px-3.5 py-2 font-medium">Default</th>
-            <th scope="col" className="px-3.5 py-2 font-medium">Descripción</th>
+            <th scope="col" className="px-3.5 py-2 font-medium">Description</th>
           </tr>
         </thead>
         <tbody>
@@ -167,7 +170,7 @@ export function PropsTable({ props }: { readonly props: readonly PropDoc[] }) {
               <td className="px-3.5 py-2.5 font-mono text-[12px] whitespace-nowrap">
                 {prop.name}
                 {prop.required ? (
-                  <span className="ml-1 text-destructive" title="Requerido">*</span>
+                  <span className="ml-1 text-destructive" title={ct("shell.required")}>*</span>
                 ) : null}
               </td>
               <td className="px-3.5 py-2.5 font-mono text-[11.5px] text-muted-foreground">

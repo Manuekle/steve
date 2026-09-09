@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Add01Icon, ArrowRight02Icon, CursorPointer01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, ArrowRight02Icon, MouseLeftClick01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { TextReveal } from "@/components/motion/text-reveal";
 import { cn } from "@/lib/utils";
@@ -382,7 +382,7 @@ export function ScreenFrame({
 
       {hint ? (
         <p className="relative z-[2] mt-5 flex items-center justify-center gap-2 text-[13px] text-muted-foreground">
-          <HugeiconsIcon icon={CursorPointer01Icon} size={14} strokeWidth={1.75} className="shrink-0" />
+          <HugeiconsIcon icon={MouseLeftClick01Icon} size={14} strokeWidth={1.75} className="shrink-0" />
           {hint}
         </p>
       ) : null}

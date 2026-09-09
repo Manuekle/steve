@@ -6,9 +6,9 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   ChartLineData01Icon,
-  CursorPointer01Icon,
+  MouseLeftClick01Icon,
   Delete01Icon,
-  EyeIcon,
+  ScanEyeIcon,
   SearchIcon,
   Target02Icon,
   GlobalSearchIcon,
@@ -717,14 +717,14 @@ export default function SeoPage() {
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                           <KpiCard
                             delta={tileDelta(deltas.clicks, t("seo.vsPrevious"))}
-                            icon={CursorPointer01Icon}
+                            icon={MouseLeftClick01Icon}
                             label={t("seo.clicks")}
                             value={formatCount(totals.current.clicks, locale)}
                             visual={<KpiSparkline points={series.map((row) => row.clicks)} />}
                           />
                           <KpiCard
                             delta={tileDelta(deltas.impressions, t("seo.vsPrevious"))}
-                            icon={EyeIcon}
+                            icon={ScanEyeIcon}
                             label={t("seo.impressions")}
                             value={formatCount(totals.current.impressions, locale)}
                             visual={<KpiSparkline points={series.map((row) => row.impressions)} />}

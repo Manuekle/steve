@@ -18,7 +18,7 @@ import {
   ChartHistogramIcon,
   Clock01Icon,
   Delete01Icon,
-  MoneyBag02Icon,
+  PiggyBankIcon,
   PanelLeftIcon,
 } from "@hugeicons/core-free-icons";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
@@ -267,7 +267,7 @@ export default function PipelinePage() {
       <header className="shrink-0 border-b border-border bg-card/40 backdrop-blur-sm">
         <div className="flex items-center gap-2.5 px-3 py-2.5 sm:px-4">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-            <HugeiconsIcon icon={MoneyBag02Icon} size={15} strokeWidth={1.75} />
+            <HugeiconsIcon icon={PiggyBankIcon} size={15} strokeWidth={1.75} />
           </div>
 
           <h1 className="shrink-0 text-sm font-semibold tracking-tight">{t("pipeline.title")}</h1>
@@ -944,7 +944,7 @@ function EmptyBoard({
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
       <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-        <HugeiconsIcon icon={MoneyBag02Icon} size={20} strokeWidth={1.75} />
+        <HugeiconsIcon icon={PiggyBankIcon} size={20} strokeWidth={1.75} />
       </div>
       <p className="text-sm font-medium">{t("pipeline.empty")}</p>
       <p className="max-w-[42ch] text-xs leading-relaxed text-muted-foreground">

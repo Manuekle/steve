@@ -446,6 +446,7 @@ const ToastItem = memo(function ToastItem({
                       : { opacity: 0, y: -8, filter: "blur(6px)" }
                   }
                   transition={CONTENT_TRANSITION}
+                  className={cn(!toast.description && "flex items-center h-7")}
                 >
                   <p
                     className={cn(

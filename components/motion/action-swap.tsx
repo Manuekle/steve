@@ -151,10 +151,10 @@ const VARIANT_CLASS: Record<ActionSwapButtonVariant, string> = {
 };
 
 const SIZE_CLASS: Record<ActionSwapButtonSize, string> = {
-  sm: "h-8 gap-1.5 rounded-full px-3 text-xs",
-  md: "h-10 gap-2 rounded-full px-4 text-sm",
-  lg: "h-12 gap-2.5 rounded-full px-5 text-base",
-  icon: "h-10 w-10 rounded-full",
+  sm: "h-8 gap-1.5 rounded-[11px] px-3 text-xs",
+  md: "h-10 gap-2 rounded-[13px] px-4 text-sm",
+  lg: "h-12 gap-2.5 rounded-[14px] px-5 text-base",
+  icon: "h-10 w-10 rounded-[13px]",
 };
 
 export function ActionSwapText({

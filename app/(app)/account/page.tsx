@@ -5,7 +5,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AuthorizedIcon,
   Logout01Icon,
-  Invoice01Icon,
+  Invoice04Icon,
 } from "@hugeicons/core-free-icons";
 import type { LicenseInfo } from "@/lib/license/types";
 import { PageContainer } from "../../_components/page-container";
@@ -183,7 +183,7 @@ export default function AccountPage() {
                   href="/account/billing"
                   className="inline-flex h-8 items-center gap-1.5 rounded-[11px] bg-primary px-3 text-xs font-medium text-primary-foreground shadow-[var(--shadow-button)] transition-opacity hover:opacity-90"
                 >
-                  <HugeiconsIcon icon={Invoice01Icon} size={14} strokeWidth={1.75} />
+                  <HugeiconsIcon icon={Invoice04Icon} size={14} strokeWidth={1.75} />
                   {t("account.planManageBilling")}
                 </a>
               </div>

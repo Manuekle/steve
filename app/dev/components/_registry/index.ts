@@ -7,11 +7,13 @@ import { uiOverlays } from "./ui-overlays";
 import type { Section } from "../_lib/types";
 
 /** Reading order: tokens first, then what is built out of them. */
-export const CATALOG: readonly Section[] = [
-  foundations,
-  uiControls,
-  uiOverlays,
-  motionSection,
-  aiElements,
-  appShell,
-];
+export function getCatalog(locale?: string): readonly Section[] {
+  return [
+    foundations(locale),
+    uiControls(locale),
+    uiOverlays(locale),
+    motionSection(locale),
+    aiElements(locale),
+    appShell(locale),
+  ];
+}

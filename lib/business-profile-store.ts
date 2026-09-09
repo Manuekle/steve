@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { createDocumentStore } from "./doc-store";
+import { createDocumentStore, readDocument, type StoredDocumentId } from "./doc-store";
 import { getBlob, listBlobs, putBlob, removeBlob } from "./blob-store";
-import { activeBusinessId, blobPrefix, renameBusiness } from "./business-scope";
-import { join } from "node:path";
+import { activeBusinessId, blobPrefix, DEFAULT_BUSINESS_ID, renameBusiness } from "./business-scope";
+import { basename, dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 
 /**
@@ -187,6 +187,36 @@ export async function getBusinessIdentity(): Promise<BusinessIdentity> {
   return (await read()).identity;
 }
 
+/**
+ * Reads the identity for any business by ID, without switching the active scope.
+ * Used by the businesses list to show logos for non-active businesses.
+ * Tries file first, then database, then falls back to empty identity.
+ */
+export async function getBusinessIdentityById(businessId: string): Promise<BusinessIdentity> {
+  if (businessId === DEFAULT_BUSINESS_ID) return getBusinessIdentity();
+
+  // File path: ~/.steve/businesses/{id}/business-profile.json
+  try {
+    const filePath = join(dirname(FILE), "businesses", businessId, basename(FILE));
+    const raw = await readFile(filePath, "utf-8");
+    const parsed = JSON.parse(raw) as Partial<Store>;
+    return normalizeIdentity(parsed.identity);
+  } catch {
+    // File missing — try database
+  }
+
+  // Database fallback: document ID is `business-profile::{businessId}`
+  try {
+    const docId = `business-profile::${businessId}` as StoredDocumentId;
+    const doc = await readDocument<Partial<Store>>(docId);
+    if (doc) return normalizeIdentity(doc.identity);
+  } catch {
+    // DB unreachable
+  }
+
+  return emptyIdentity();
+}
+
 export async function saveBusinessIdentity(
   patch: Partial<BusinessIdentityFields>,
 ): Promise<BusinessIdentity> {
@@ -269,6 +299,25 @@ export async function readBusinessLogo(): Promise<{ bytes: Uint8Array; logo: Bus
   } catch {
     // The pointer outlived the file — a wiped ~/.steve/business, a restore
     // from a JSON-only backup. Report "no logo" rather than a broken read.
+    return null;
+  }
+}
+
+/**
+ * Reads the logo bytes for any business by ID, without switching scope.
+ * Used by the businesses list and the logo endpoint.
+ */
+export async function readBusinessLogoById(
+  businessId: string,
+): Promise<{ bytes: Uint8Array; logo: BusinessLogo } | null> {
+  const identity = await getBusinessIdentityById(businessId);
+  if (!identity.logo) return null;
+  try {
+    const stored = await getBlob(`profile/${identity.logo.file}`);
+    if (stored) return { bytes: stored, logo: identity.logo };
+    const bytes = new Uint8Array(await readFile(join(BLOB_DIR, identity.logo.file)));
+    return { bytes, logo: identity.logo };
+  } catch {
     return null;
   }
 }

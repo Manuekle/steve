@@ -57,7 +57,7 @@ export function Checkbox({
         }
         className={cn(
           "t-check",
-          "inline-flex size-3.5 shrink-0 items-center justify-center rounded border outline-none",
+          "inline-flex size-4 shrink-0 items-center justify-center rounded-[5px] border outline-none",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           "disabled:cursor-not-allowed disabled:opacity-60",
           showMark
@@ -65,7 +65,7 @@ export function Checkbox({
             : "border-muted-foreground/50 bg-background hover:border-muted-foreground",
         )}
       >
-        <svg viewBox="0 0 10.1668 10.1668" aria-hidden>
+        <svg viewBox="0 0 10.1668 10.1668" aria-hidden style={{ width: 12, height: 12 }}>
           <path d={indeterminate ? "M2 5h6" : "M1 5.52L3.92 9.17L9.17 1"} />
         </svg>
       </button>

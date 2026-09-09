@@ -19,8 +19,9 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
+import { CatalogI18nProvider, ct, useCatalogT } from "../_lib/catalog-i18n";
 import { DemoBlock, ExportList, ImportLine, PropsTable } from "../_lib/kit";
-import { CATALOG } from "../_registry";
+import { getCatalog } from "../_registry";
 import type { Entry, Section } from "../_lib/types";
 
 /** Lowercased and stripped of accents, so "boton" finds "Botón". */
@@ -39,6 +40,22 @@ function matches(entry: Entry, query: string): boolean {
     .split(/\s+/)
     .filter(Boolean)
     .every((word) => haystack.includes(word));
+}
+
+// ── Language toggle ─────────────────────────────────────────────────
+
+function LanguageToggle() {
+  const { locale, setLocale } = useCatalogT();
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      onClick={() => setLocale(locale === "es" ? "en" : "es")}
+      className="font-mono text-[11px]"
+    >
+      {locale === "es" ? "EN" : "ES"}
+    </Button>
+  );
 }
 
 // ── Entry ───────────────────────────────────────────────────────────
@@ -85,7 +102,7 @@ function EntryBlock({ entry }: { readonly entry: Entry }) {
       {entry.props?.length ? (
         <div className="mt-5">
           <h4 className="mb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-            API
+            {ct("shell.props")}
           </h4>
           <PropsTable props={entry.props} />
         </div>
@@ -94,7 +111,7 @@ function EntryBlock({ entry }: { readonly entry: Entry }) {
       {entry.exports?.length ? (
         <div className="mt-5">
           <h4 className="mb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-            Exporta
+            {ct("shell.exports")}
           </h4>
           <ExportList names={entry.exports} />
         </div>
@@ -105,24 +122,26 @@ function EntryBlock({ entry }: { readonly entry: Entry }) {
 
 // ── Shell ───────────────────────────────────────────────────────────
 
-export function Catalog() {
+function CatalogInner() {
+  const { ct: t, locale } = useCatalogT();
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState<string>(CATALOG[0]?.entries[0]?.id ?? "");
+  const [active, setActive] = useState<string>(() => getCatalog(locale)[0]?.entries[0]?.id ?? "");
   const searchRef = useRef<HTMLInputElement>(null);
 
   const sections: readonly Section[] = useMemo(() => {
-    if (!query) return CATALOG;
-    return CATALOG
+    const catalog = getCatalog(locale);
+    if (!query) return catalog;
+    return catalog
       .map((section) => ({
         ...section,
         entries: section.entries.filter((entry) => matches(entry, query)),
       }))
       .filter((section) => section.entries.length > 0);
-  }, [query]);
+  }, [query, locale]);
 
   const total = useMemo(
-    () => CATALOG.reduce((sum, section) => sum + section.entries.length, 0),
-    [],
+    () => getCatalog(locale).reduce((sum, section) => sum + section.entries.length, 0),
+    [locale],
   );
   const shown = sections.reduce((sum, section) => sum + section.entries.length, 0);
 
@@ -168,13 +187,14 @@ export function Catalog() {
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-5 py-3 sm:px-8">
           <div className="flex items-center gap-2.5">
-            <h1 className="font-heading text-base tracking-[-0.02em]">Catálogo</h1>
+            <h1 className="font-heading text-base tracking-[-0.02em]">{t("shell.title")}</h1>
             <Badge variant="outline" className="font-mono text-[10px]">
-              solo dev
+              {t("shell.badge")}
             </Badge>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <LanguageToggle />
             <InputGroup className="w-56">
               <InputGroupAddon>
                 <HugeiconsIcon icon={Search01Icon} strokeWidth={1.75} />
@@ -183,14 +203,14 @@ export function Catalog() {
                 ref={searchRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Filtrar…  /"
-                aria-label="Filtrar componentes"
+                placeholder={t("shell.filterPlaceholder")}
+                aria-label={t("shell.filterLabel")}
               />
               {query ? (
                 <InputGroupAddon align="inline-end">
                   <InputGroupButton
                     size="icon-xs"
-                    aria-label="Limpiar filtro"
+                    aria-label={t("shell.clearFilterLabel")}
                     onClick={() => setQuery("")}
                   >
                     <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
@@ -206,11 +226,13 @@ export function Catalog() {
       <div className="mx-auto flex max-w-7xl gap-10 px-5 py-8 sm:px-8">
         {/* Index */}
         <nav
-          aria-label="Índice de componentes"
+          aria-label={t("shell.indexLabel")}
           className="sticky top-[4.5rem] hidden h-[calc(100dvh-6rem)] w-56 shrink-0 overflow-y-auto pb-8 lg:block"
         >
           <p className="mb-3 font-mono text-[10.5px] text-muted-foreground">
-            {shown === total ? `${total} componentes` : `${shown} de ${total}`}
+            {shown === total
+              ? t("shell.total", { total: String(total) })
+              : t("shell.showing", { shown: String(shown), total: String(total) })}
           </p>
           {sections.map((section) => (
             <div key={section.id} className="mb-5">
@@ -244,10 +266,10 @@ export function Catalog() {
           {sections.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-10 text-center">
               <p className="text-sm text-muted-foreground">
-                Nada coincide con «{query}».
+                {t("shell.emptyMatch", { query })}
               </p>
               <Button variant="outline" size="sm" className="mt-3" onClick={() => setQuery("")}>
-                Limpiar filtro
+                {t("shell.clearFilter")}
               </Button>
             </div>
           ) : (
@@ -270,5 +292,13 @@ export function Catalog() {
         </main>
       </div>
     </div>
+  );
+}
+
+export function Catalog() {
+  return (
+    <CatalogI18nProvider>
+      <CatalogInner />
+    </CatalogI18nProvider>
   );
 }

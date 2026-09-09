@@ -3,7 +3,7 @@
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Coins01Icon,
-  CursorPointer01Icon,
+  MouseLeftClick01Icon,
   EyeIcon,
   SearchIcon,
   UserGroupIcon,
@@ -233,7 +233,7 @@ export function AdsScreen() {
           visual={<KpiSplit parts={split((c) => c.impressions)} />}
         />
         <KpiCard
-          icon={CursorPointer01Icon}
+          icon={MouseLeftClick01Icon}
           label={t("ads.clicks")}
           value={formatNumber(totals.clicks)}
           sub={t("ads.ctrSub", { value: ((totals.clicks / totals.impressions) * 100).toFixed(2) })}

@@ -50,6 +50,7 @@ type Business = {
   readonly name: string;
   readonly active: boolean;
   readonly primary: boolean;
+  readonly logoUpdatedAt: string | null;
 };
 
 export function BusinessSwitcher({ collapsed = false }: { readonly collapsed?: boolean }) {
@@ -130,9 +131,18 @@ export function BusinessSwitcher({ collapsed = false }: { readonly collapsed?: b
         collapsed ? "size-8 justify-center p-0" : "w-full gap-2 px-2 py-1.5",
       )}
     >
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold uppercase shadow-[var(--shadow-inset)]">
-        {activeName.slice(0, 1)}
-      </span>
+      {active?.logoUpdatedAt ? (
+        /* eslint-disable-next-line @next/next/no-img-element -- served by API route */
+        <img
+          src={`/api/businesses/${encodeURIComponent(active.id)}/logo?v=${encodeURIComponent(active.logoUpdatedAt)}`}
+          alt={activeName}
+          className="size-5 shrink-0 rounded-md border border-border bg-card object-contain p-px"
+        />
+      ) : (
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold uppercase shadow-[var(--shadow-inset)]">
+          {activeName.slice(0, 1)}
+        </span>
+      )}
       {collapsed ? null : (
         <>
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{activeName}</span>
@@ -175,9 +185,18 @@ export function BusinessSwitcher({ collapsed = false }: { readonly collapsed?: b
                 onSelect={() => void switchTo(business.id)}
               >
                 <span className="flex w-full items-center gap-2.5">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold uppercase">
-                    {(business.name || t("business.unnamed")).slice(0, 1)}
-                  </span>
+                  {business.logoUpdatedAt ? (
+                    /* eslint-disable-next-line @next/next/no-img-element -- served by API route */
+                    <img
+                      src={`/api/businesses/${encodeURIComponent(business.id)}/logo?v=${encodeURIComponent(business.logoUpdatedAt)}`}
+                      alt={business.name || t("business.unnamed")}
+                      className="size-6 shrink-0 rounded-md border border-border bg-card object-contain p-px"
+                    />
+                  ) : (
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold uppercase">
+                      {(business.name || t("business.unnamed")).slice(0, 1)}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1 truncate text-[13px]">
                     {business.name || t("business.unnamed")}
                   </span>

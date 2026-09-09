@@ -13,12 +13,12 @@ import {
   LibraryIcon,
   FilterHorizontalIcon,
   FileEditIcon,
-  Mail01Icon,
+  Mail02Icon,
   UserCircleIcon,
   Blockchain05Icon,
   TelevisionTableIcon,
   UserGroup02Icon,
-  MoneyBag02Icon,
+  PiggyBankIcon,
   GlobalSearchIcon,
 } from "@hugeicons/core-free-icons";
 
@@ -62,7 +62,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     labelKey: "nav.groupCrm",
     items: [
       { href: "/crm", labelKey: "nav.crm", icon: TelevisionTableIcon },
-      { href: "/pipeline", labelKey: "nav.pipeline", icon: MoneyBag02Icon },
+      { href: "/pipeline", labelKey: "nav.pipeline", icon: PiggyBankIcon },
       { href: "/leads", labelKey: "nav.leads", icon: UserGroup02Icon },
       { href: "/forms", labelKey: "nav.forms", icon: FileEditIcon },
     ],
@@ -74,7 +74,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { href: "/automations", labelKey: "nav.automations", icon: ZapIcon },
       { href: "/calendar", labelKey: "nav.calendar", icon: Calendar03Icon },
       { href: "/agents", labelKey: "nav.agents", icon: AiImagineIcon },
-      { href: "/email-templates", labelKey: "nav.emailTemplates", icon: Mail01Icon },
+      { href: "/email-templates", labelKey: "nav.emailTemplates", icon: Mail02Icon },
       { href: "/reminders", labelKey: "nav.reminders", icon: Timer01Icon },
       { href: "/ads", labelKey: "nav.ads", icon: MetaIcon },
       { href: "/seo", labelKey: "nav.seo", icon: GlobalSearchIcon },

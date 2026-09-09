@@ -9,7 +9,7 @@ import {
   ArrowLeft01Icon,
   Delete02Icon,
   FullSignalIcon,
-  Mail01Icon,
+  Mail02Icon,
   MoreHorizontalIcon,
   ReplyIcon,
   SmileIcon,
@@ -403,7 +403,7 @@ function Phone({
                 <HugeiconsIcon icon={Delete02Icon} size={21} strokeWidth={1.6} color={palette.tint} />
               </TapTarget>
               <TapTarget>
-                <HugeiconsIcon icon={Mail01Icon} size={21} strokeWidth={1.6} color={palette.tint} />
+                <HugeiconsIcon icon={Mail02Icon} size={21} strokeWidth={1.6} color={palette.tint} />
               </TapTarget>
               <TapTarget>
                 <HugeiconsIcon
@@ -823,7 +823,7 @@ function Placeholder({
 }) {
   return (
     <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/25 px-8 text-center">
-      <HugeiconsIcon icon={Mail01Icon} size={20} strokeWidth={1.5} className="text-muted-foreground" />
+      <HugeiconsIcon icon={Mail02Icon} size={20} strokeWidth={1.5} className="text-muted-foreground" />
       <p className="text-[13px] font-medium">{title}</p>
       <p className="max-w-[34ch] text-[12px] leading-relaxed text-muted-foreground">{children}</p>
     </div>

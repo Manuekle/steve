@@ -5,7 +5,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Call02Icon,
   Globe02Icon,
-  Mail01Icon,
+  Mail02Icon,
   Store01Icon,
 } from "@hugeicons/core-free-icons";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
@@ -153,7 +153,7 @@ function ContactChips({ identity }: { readonly identity: BusinessIdentity }) {
     identity.websiteUrl
       ? { icon: Globe02Icon, label: identity.websiteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") }
       : null,
-    identity.email ? { icon: Mail01Icon, label: identity.email } : null,
+    identity.email ? { icon: Mail02Icon, label: identity.email } : null,
     identity.phone ? { icon: Call02Icon, label: identity.phone } : null,
   ].filter((chip): chip is { icon: typeof Globe02Icon; label: string } => chip !== null);
 

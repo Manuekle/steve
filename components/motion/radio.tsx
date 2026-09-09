@@ -122,7 +122,7 @@ export function RadioGroupItem({
         transition={SPRING_PRESS}
         data-state={selected ? "checked" : "unchecked"}
         className={cn(
-          "relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 outline-none transition-colors duration-200",
+          "relative inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 outline-none transition-colors duration-200",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           "disabled:cursor-not-allowed disabled:opacity-60",
           selected
@@ -133,7 +133,7 @@ export function RadioGroupItem({
         {selected ? (
           <motion.span
             layoutId={layoutId}
-            className="absolute inset-1 rounded-full bg-primary"
+            className="absolute inset-[3px] rounded-full bg-primary"
             transition={reduce ? { duration: 0 } : SPRING_LAYOUT}
           />
         ) : null}

@@ -38,6 +38,7 @@ type Business = {
   readonly name: string;
   readonly active: boolean;
   readonly primary: boolean;
+  readonly logoUpdatedAt: string | null;
 };
 
 export function BusinessesCard() {
@@ -135,47 +136,59 @@ export function BusinessesCard() {
       <CardSeparator />
       <CardBody>
         <ErrorBanner className="mb-3" error={error} onDismiss={() => setError(null)} />
-        <ul className="space-y-2">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
           {businesses.map((business) => (
             <li
               key={business.id}
               className={cn(
-                "flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2.5",
-                business.active ? "border-foreground/25 bg-muted/40" : "border-border",
+                "flex items-center gap-3 px-4 py-3 transition-colors",
+                business.active ? "bg-muted/50" : "bg-card hover:bg-muted/30",
               )}
             >
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold uppercase">
-                {(business.name || t("business.unnamed")).slice(0, 1)}
-              </span>
-
-              {editingId === business.id ? (
-                <Input
-                  value={draftName}
-                  onChange={(event) => setDraftName(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      void rename(business.id);
-                    }
-                    if (event.key === "Escape") setEditingId(null);
-                  }}
-                  className="h-8 min-w-0 flex-1 text-sm"
-                  autoFocus
+              {business.logoUpdatedAt ? (
+                /* eslint-disable-next-line @next/next/no-img-element -- served by API route */
+                <img
+                  src={`/api/businesses/${encodeURIComponent(business.id)}/logo?v=${encodeURIComponent(business.logoUpdatedAt)}`}
+                  alt={business.name || t("business.unnamed")}
+                  className="size-10 shrink-0 rounded-lg border border-border bg-card object-contain p-0.5"
                 />
               ) : (
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                  {business.name || t("business.unnamed")}
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold uppercase text-muted-foreground shadow-[var(--shadow-inset)]">
+                  {(business.name || t("business.unnamed")).slice(0, 1)}
                 </span>
               )}
 
-              {business.active ? (
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <HugeiconsIcon icon={CheckIcon} size={11} strokeWidth={2} className="text-emerald-500" />
-                  {t("business.active")}
-                </span>
-              ) : null}
+              <div className="min-w-0 flex-1">
+                {editingId === business.id ? (
+                  <Input
+                    value={draftName}
+                    onChange={(event) => setDraftName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void rename(business.id);
+                      }
+                      if (event.key === "Escape") setEditingId(null);
+                    }}
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-sm font-medium">
+                      {business.name || t("business.unnamed")}
+                    </span>
+                    {business.active ? (
+                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <HugeiconsIcon icon={CheckIcon} size={9} strokeWidth={2.5} />
+                        {t("business.active")}
+                      </span>
+                    ) : null}
+                  </span>
+                )}
+              </div>
 
-              <span className="ml-auto flex items-center gap-1">
+              <span className="flex shrink-0 items-center gap-1">
                 {editingId === business.id ? (
                   <>
                     <Button size="sm" disabled={busy} onClick={() => void rename(business.id)}>

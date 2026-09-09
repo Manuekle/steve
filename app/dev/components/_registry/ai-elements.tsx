@@ -5,6 +5,7 @@
 // que las rodea.
 
 import { useState } from "react";
+import { ct } from "../_lib/catalog-i18n";
 import { Button } from "@/components/ui/button";
 import { NotificationBadge } from "@/components/ai-elements/notification-badge";
 import { Pagination } from "@/components/ai-elements/pagination";
@@ -127,29 +128,28 @@ function licenseFixture(overrides: Partial<LicenseInfo> = {}): LicenseInfo {
   };
 }
 
-export const aiElements: Section = {
+export function aiElements(_locale?: string): Section {
+  return {
   id: "ai-elements",
-  title: "Elementos de agente",
-  desc:
-    "components/ai-elements — lo que dibuja la conversación: esperas, "
-    + "razonamiento, herramientas y la navegación de las listas largas.",
+  title: ct("ai.title"),
+  desc: ct("ai.desc"),
   entries: [
     {
       id: "sliding-tabs",
       name: "SlidingTabs",
       source: "components/ai-elements/sliding-tabs.tsx",
       importLine: 'import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";',
-      desc: "Pestañas con la píldora activa deslizándose entre ellas con un layout compartido.",
+      desc: ct("ai.slidingTabs.desc"),
       props: [
-        { name: "tabs", type: "readonly SlidingTab[]", required: true, desc: "{ id, label }." },
-        { name: "value", type: "string", required: true, desc: "El id activo." },
+        { name: "tabs", type: "readonly SlidingTab[]", required: true, desc: ct("ai.slidingTabs.tabs.desc") },
+        { name: "value", type: "string", required: true, desc: ct("ai.slidingTabs.value.desc") },
         { name: "onValueChange", type: "(id: string) => void", required: true, desc: "" },
-        { name: "trailing", type: "ReactNode", desc: "Contenido a la derecha, dentro de la barra." },
+        { name: "trailing", type: "ReactNode", desc: ct("ai.slidingTabs.trailing.desc") },
       ],
       demos: [
         {
           id: "sliding-tabs-basic",
-          title: "Tres pestañas",
+          title: ct("ai.slidingTabs.title"),
           code: `<SlidingTabs
   value={tab}
   onValueChange={setTab}
@@ -164,19 +164,19 @@ export const aiElements: Section = {
       name: "Pagination",
       source: "components/ai-elements/pagination.tsx",
       importLine: 'import { Pagination } from "@/components/ai-elements/pagination";',
-      desc: "Anterior/siguiente, número de página y, si se pide, tamaño de página.",
+      desc: ct("ai.pagination.desc"),
       props: [
-        { name: "page", type: "number", required: true, desc: "Página actual, base 1." },
-        { name: "pageCount", type: "number", required: true, desc: "Total de páginas." },
+        { name: "page", type: "number", required: true, desc: ct("ai.pagination.page.desc") },
+        { name: "pageCount", type: "number", required: true, desc: ct("ai.pagination.pageCount.desc") },
         { name: "onPageChange", type: "(page: number) => void", required: true, desc: "" },
-        { name: "pageSize", type: "number", desc: "Muestra el selector de tamaño." },
+        { name: "pageSize", type: "number", desc: ct("ai.pagination.pageSize.desc") },
         { name: "onPageSizeChange", type: "(size: number) => void", desc: "" },
-        { name: "pageSizeOptions", type: "readonly number[]", desc: "Opciones del selector." },
+        { name: "pageSizeOptions", type: "readonly number[]", desc: ct("ai.pagination.pageSizeOptions.desc") },
       ],
       demos: [
         {
           id: "pagination-basic",
-          title: "Con tamaño de página",
+          title: ct("ai.pagination.title"),
           code: `<Pagination page={page} pageCount={12} pageSize={size}
   onPageChange={setPage} onPageSizeChange={setSize} />`,
           render: <PaginationDemo />,
@@ -188,10 +188,7 @@ export const aiElements: Section = {
       name: "Skeleton",
       source: "components/ai-elements/skeleton.tsx",
       importLine: 'import { Skeleton, SkeletonBar, SkeletonAvatar } from "@/components/ai-elements/skeleton";',
-      desc:
-        "Cruza el esqueleto con el contenido real en vez de intercambiarlos: el "
-        + "hueco no salta cuando llegan los datos. Los esqueletos de página enteros "
-        + "también viven aquí.",
+      desc: ct("ai.skeleton.desc"),
       exports: [
         "Skeleton",
         "SkeletonBar",
@@ -203,15 +200,15 @@ export const aiElements: Section = {
       ],
       props: [
         { name: "isLoading", type: "boolean", required: true, desc: "" },
-        { name: "skeleton", type: "ReactNode", required: true, desc: "El marcador de posición." },
-        { name: "children", type: "ReactNode", required: true, desc: "El contenido real." },
-        { name: "width (Bar)", type: "string", desc: "Cualquier medida CSS." },
-        { name: "size (Avatar)", type: "string", def: '"size-9"', desc: "Clase de Tailwind, no un número." },
+        { name: "skeleton", type: "ReactNode", required: true, desc: ct("ai.skeleton.skeleton.desc") },
+        { name: "children", type: "ReactNode", required: true, desc: ct("ai.skeleton.children.desc") },
+        { name: "width (Bar)", type: "string", desc: ct("ai.skeleton.width.desc") },
+        { name: "size (Avatar)", type: "string", def: '"size-9"', desc: ct("ai.skeleton.size.desc") },
       ],
       demos: [
         {
           id: "skeleton-basic",
-          title: "Carga y disolución",
+          title: ct("ai.skeleton.title"),
           code: `<Skeleton isLoading={loading} skeleton={<SkeletonBar className="h-3" width="60%" />}>
   <p>María G.</p>
 </Skeleton>`,
@@ -224,14 +221,14 @@ export const aiElements: Section = {
       name: "SuccessCheck",
       source: "components/ai-elements/success-check.tsx",
       importLine: 'import { SuccessCheck } from "@/components/ai-elements/success-check";',
-      desc: "El check dibujándose de un trazo cuando algo sale bien.",
+      desc: ct("ai.successCheck.desc"),
       props: [
-        { name: "active", type: "boolean", required: true, desc: "Pasar de false a true dispara el trazo." },
+        { name: "active", type: "boolean", required: true, desc: ct("ai.successCheck.active.desc") },
       ],
       demos: [
         {
           id: "success-check-basic",
-          title: "Dispáralo",
+          title: ct("ai.successCheck.title"),
           code: '<SuccessCheck active={saved} />',
           render: <SuccessCheckDemo />,
         },
@@ -242,14 +239,14 @@ export const aiElements: Section = {
       name: "NotificationBadge",
       source: "components/ai-elements/notification-badge.tsx",
       importLine: 'import { NotificationBadge } from "@/components/ai-elements/notification-badge";',
-      desc: "El contador rojo del sidebar. Con 0 o sin valor no se dibuja.",
+      desc: ct("ai.notificationBadge.desc"),
       props: [
-        { name: "count", type: "number", desc: "0 o undefined esconden la pastilla." },
+        { name: "count", type: "number", desc: ct("ai.notificationBadge.count.desc") },
       ],
       demos: [
         {
           id: "notification-badge-basic",
-          title: "Con y sin cuenta",
+          title: ct("ai.notificationBadge.title"),
           code: '<NotificationBadge count={3} />',
           render: (
             <div className="flex items-center gap-6">
@@ -275,20 +272,18 @@ export const aiElements: Section = {
       name: "Reasoning",
       source: "components/ai-elements/reasoning.tsx",
       importLine: 'import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";',
-      desc:
-        "El bloque de «pensó durante N s». Se abre solo mientras llega el flujo y se "
-        + "cierra un segundo después de terminar, salvo que lo hayan abierto a mano.",
+      desc: ct("ai.reasoning.desc"),
       exports: ["Reasoning", "ReasoningTrigger", "ReasoningContent", "useReasoning"],
       props: [
-        { name: "isStreaming", type: "boolean", def: "false", desc: "Mientras es true cuenta el tiempo y mantiene abierto." },
-        { name: "open / defaultOpen", type: "boolean", desc: "defaultOpen={false} impide la apertura automática." },
-        { name: "duration", type: "number", desc: "Segundos, si ya los tienes medidos." },
-        { name: "children (Content)", type: "string", required: true, desc: "Markdown: lo renderiza Streamdown." },
+        { name: "isStreaming", type: "boolean", def: "false", desc: ct("ai.reasoning.isStreaming.desc") },
+        { name: "open / defaultOpen", type: "boolean", desc: ct("ai.reasoning.open.desc") },
+        { name: "duration", type: "number", desc: ct("ai.reasoning.duration.desc") },
+        { name: "children (Content)", type: "string", required: true, desc: ct("ai.reasoning.children.desc") },
       ],
       demos: [
         {
           id: "reasoning-basic",
-          title: "Cerrado, ábrelo",
+          title: ct("ai.reasoning.title"),
           code: `<Reasoning duration={4}>
   <ReasoningTrigger />
   <ReasoningContent>El cliente pregunta por horarios…</ReasoningContent>
@@ -311,25 +306,23 @@ export const aiElements: Section = {
       name: "LicenseCreditCard",
       source: "components/ai-elements/license-credit-card.tsx",
       importLine: 'import { LicenseCreditCard } from "@/components/ai-elements/license-credit-card";',
-      desc:
-        "La licencia Enterprise dibujada como la tarjeta que es. Se arrastra, se "
-        + "inclina siguiendo al puntero y gira para mostrar los dos ids del dorso.",
+      desc: ct("ai.licenseCard.desc"),
       exports: ["LicenseCreditCard", "licenseTone"],
       props: [
-        { name: "info", type: "LicenseInfo | null", required: true, desc: "Lo que devuelve GET /api/license. null se dibuja igual que status \"missing\"." },
-        { name: "installationId", type: "string | null", required: true, desc: "Va en el dorso, con su botón de copiar." },
+        { name: "info", type: "LicenseInfo | null", required: true, desc: ct("ai.licenseCard.info.desc") },
+        { name: "installationId", type: "string | null", required: true, desc: ct("ai.licenseCard.installationId.desc") },
       ],
       notes: [
-        "Necesita el provider de i18n: los rótulos salen de license.card.* y settings.license.*.",
-        "La cara no lleva estado, contador ni fechas largas: eso es la línea de texto debajo, en LicenseCard. Una licencia activa y una con el mantenimiento vencido se dibujan igual acá.",
-        "Con prefers-reduced-motion se apagan el arrastre y la inclinación; el giro pasa a ser instantáneo.",
-        "El giro tiene su propio botón debajo de la tarjeta: la tarjeta no es un role=button, porque el botón de copiar del dorso quedaría anidado dentro de otro botón.",
+        ct("ai.licenseCard.note1"),
+        ct("ai.licenseCard.note2"),
+        ct("ai.licenseCard.note3"),
+        ct("ai.licenseCard.note4"),
       ],
       demos: [
         {
           id: "license-credit-card-active",
-          title: "Licencia activa",
-          desc: "Arrastrala. Clic para ver el dorso.",
+          title: ct("ai.licenseCard.active.title"),
+          desc: ct("ai.licenseCard.active.desc2"),
           surface: "muted",
           code: `<LicenseCreditCard info={info} installationId={installationId} />`,
           render: (
@@ -343,8 +336,8 @@ export const aiElements: Section = {
         },
         {
           id: "license-credit-card-missing",
-          title: "Sin licencia",
-          desc: "La instalación corre igual: la tarjeta está en blanco, no bloqueada.",
+          title: ct("ai.licenseCard.missing.title"),
+          desc: ct("ai.licenseCard.missing.desc2"),
           surface: "muted",
           code: `<LicenseCreditCard info={null} installationId={id} />`,
           render: (
@@ -356,4 +349,5 @@ export const aiElements: Section = {
       ],
     },
   ],
-};
+  };
+}

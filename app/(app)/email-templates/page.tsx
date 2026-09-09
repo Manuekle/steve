@@ -13,7 +13,7 @@ import {
   Add01Icon,
   ArtificialIntelligence08Icon,
   Copy01Icon,
-  Mail01Icon,
+  Mail02Icon,
   PanelLeftIcon,
   SquareLock02Icon,
 } from "@hugeicons/core-free-icons";
@@ -451,7 +451,7 @@ export default function EmailTemplatesPage() {
       <header className="shrink-0 border-b border-border bg-card/40 backdrop-blur-sm">
         <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-            <HugeiconsIcon icon={Mail01Icon} size={15} strokeWidth={1.75} />
+            <HugeiconsIcon icon={Mail02Icon} size={15} strokeWidth={1.75} />
           </div>
 
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -589,7 +589,7 @@ export default function EmailTemplatesPage() {
 
           {!dockOpen && selectedId ? (
             <DockReopenButton
-              icon={Mail01Icon}
+              icon={Mail02Icon}
               label={t("emailTemplates.preview")}
               onClick={() => setDockOpenPersisted(true)}
             />
@@ -790,7 +790,7 @@ function EmptyState({ onCreate }: { readonly onCreate: () => void }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
       <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-        <HugeiconsIcon icon={Mail01Icon} size={18} strokeWidth={1.5} />
+        <HugeiconsIcon icon={Mail02Icon} size={18} strokeWidth={1.5} />
       </div>
       <p className="text-sm font-medium">{t("emailTemplates.noTemplate")}</p>
       <p className="max-w-[38ch] text-[12px] leading-relaxed text-muted-foreground">

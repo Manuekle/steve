@@ -9,7 +9,7 @@ import {
   DEFAULT_BUSINESS_ID,
   type BusinessEntry,
 } from "@/lib/business-scope";
-import { getBusinessIdentity, getBusinessProfile } from "@/lib/business-profile-store";
+import { getBusinessIdentityById, getBusinessProfile } from "@/lib/business-profile-store";
 
 // GET    /api/businesses — every business on this installation, and the active one
 // POST   /api/businesses — { name } create one and switch to it
@@ -26,28 +26,34 @@ export const dynamic = "force-dynamic";
 
 /** The name to show. The pre-existing business has no name of its own — it
  *  predates the registry — so it borrows the one from its business profile
- *  until somebody renames it. */
+ *  until somebody renames it. Now reads identity for any business, not just
+ *  the active one. */
 async function displayName(entry: BusinessEntry, isActive: boolean): Promise<string> {
   if (entry.name.trim()) return entry.name.trim();
+  const identity = await getBusinessIdentityById(entry.id);
+  if (identity.name.trim()) return identity.name.trim();
   if (!isActive) return "";
-  // Only the active business's profile is readable from here: the profile
-  // store is itself scoped to whichever business is active.
-  const [identity, record] = await Promise.all([getBusinessIdentity(), getBusinessProfile()]);
-  return identity.name.trim() || record?.profile.name?.trim() || "";
+  const record = await getBusinessProfile();
+  return record?.profile.name?.trim() || "";
 }
 
 export const GET = withApiErrors(async function GET() {
   const { businesses, activeId } = await listBusinesses();
   const named = await Promise.all(
-    businesses.map(async (entry) => ({
-      id: entry.id,
-      name: await displayName(entry, entry.id === activeId),
-      createdAt: entry.createdAt,
-      active: entry.id === activeId,
-      /** The original business keeps every unsuffixed key and file, which is
-       *  worth saying out loud in the one place that could offer to delete it. */
-      primary: entry.id === DEFAULT_BUSINESS_ID,
-    })),
+    businesses.map(async (entry) => {
+      const isActive = entry.id === activeId;
+      const identity = await getBusinessIdentityById(entry.id);
+      return {
+        id: entry.id,
+        name: await displayName(entry, isActive),
+        createdAt: entry.createdAt,
+        active: isActive,
+        /** The original business keeps every unsuffixed key and file, which is
+         *  worth saying out loud in the one place that could offer to delete it. */
+        primary: entry.id === DEFAULT_BUSINESS_ID,
+        logoUpdatedAt: identity.logo?.updatedAt ?? null,
+      };
+    }),
   );
   return NextResponse.json({ businesses: named, activeId });
 });

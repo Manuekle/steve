@@ -1,7 +1,8 @@
 "use client";
 // beui.dev/components/motion/theme-toggle
 
-import { Moon, Sun } from "lucide-react";
+import { HugeiconsIcon } from "@/components/icons/icon";
+import { Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { useTheme } from "@/components/theme-provider";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useState, type ComponentPropsWithoutRef } from "react";
@@ -201,7 +202,10 @@ export function ThemeToggle({
       type="button"
       aria-label={mounted && isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => toggle()}
-      className={cn("flex items-center justify-center", className)}
+      className={cn(
+        "inline-flex size-9 items-center justify-center rounded-[13px] border border-border bg-card text-foreground shadow-[var(--shadow-button)] transition-colors hover:bg-muted",
+        className,
+      )}
       {...rest}
     >
       {mounted ? (
@@ -211,9 +215,9 @@ export function ThemeToggle({
           className={iconClassName}
         >
           {isDark ? (
-            <Sun className={iconClassName} />
+            <HugeiconsIcon icon={Sun03Icon} size={18} strokeWidth={1.75} className={iconClassName} />
           ) : (
-            <Moon className={iconClassName} />
+            <HugeiconsIcon icon={Moon02Icon} size={18} strokeWidth={1.75} className={iconClassName} />
           )}
         </ActionSwapIcon>
       ) : (

@@ -4,6 +4,7 @@
 // tarjeta del panel, los tiles de métrica, las gráficas y las pastillas que
 // dependen de tipos del dominio.
 
+import { ct } from "../_lib/catalog-i18n";
 import { BubbleChatIcon, CallIcon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import {
   Card,
@@ -32,32 +33,28 @@ const SERIES = [
   { key: "d", label: "Dom", value: 41 },
 ] as const;
 
-export const appShell: Section = {
+export function appShell(_locale?: string): Section {
+  return {
   id: "app",
-  title: "Piezas de la app",
-  desc:
-    "app/_components — la tarjeta, los tiles y las gráficas del panel. Dependen "
-    + "de tipos de lib/types.ts, así que no se sacan a una librería sin arrastrar "
-    + "el dominio con ellas.",
+  title: ct("app.title"),
+  desc: ct("app.desc"),
   entries: [
     {
       id: "dashboard-card",
       name: "Card",
       source: "app/_components/dashboard-card.tsx",
       importLine: 'import { Card, CardBody, CardDescription, CardHeader, CardSeparator, CardTitle } from "@/app/_components/dashboard-card";',
-      desc:
-        "La superficie elevada del panel. `interactive` añade el hover que sube la "
-        + "sombra — solo para las tarjetas que llevan a algún sitio.",
+      desc: ct("app.card.desc"),
       exports: ["Card", "CardHeader", "CardBody", "CardTitle", "CardDescription", "CardSeparator"],
       props: [
-        { name: "interactive", type: "boolean", desc: "Hover elevado y cursor de puntero." },
+        { name: "interactive", type: "boolean", desc: ct("app.card.interactive.desc") },
         { name: "onClick", type: "() => void", desc: "" },
-        { name: "style", type: "CSSProperties", desc: "Para el retardo de entrada escalonado." },
+        { name: "style", type: "CSSProperties", desc: ct("app.card.style.desc") },
       ],
       demos: [
         {
           id: "dashboard-card-basic",
-          title: "Estática e interactiva",
+          title: ct("app.card.title"),
           surface: "page",
           code: `<Card interactive>
   <CardHeader>
@@ -99,29 +96,26 @@ export const appShell: Section = {
       name: "KpiCard",
       source: "app/_components/kpi-card.tsx",
       importLine: 'import { KpiCard, KpiBars, KpiSparkline, KpiSplit } from "@/app/_components/kpi-card";',
-      desc:
-        "El tile de una métrica: cifra, etiqueta, delta y su propio dibujo. Los tres "
-        + "dibujos comparten los roles de color con las gráficas, porque «warning» "
-        + "tiene que significar lo mismo en un tile y en un chart.",
+      desc: ct("app.kpiCard.desc"),
       exports: ["KpiCard", "KpiBars", "KpiSparkline", "KpiSplit"],
       props: [
-        { name: "value", type: "number | string", required: true, desc: "Ya formateada si lleva unidad." },
+        { name: "value", type: "number | string", required: true, desc: ct("app.kpiCard.value.desc") },
         { name: "label", type: "string", required: true, desc: "" },
         { name: "icon", type: "IconSvgElement", required: true, desc: "De @hugeicons/core-free-icons." },
-        { name: "delta", type: "KpiDelta", desc: "{ direction, value, label?, tone? }. Ocupa la línea de sub." },
-        { name: "sub", type: "string", desc: "Contexto en prosa, cuando no hay delta." },
-        { name: "visual", type: "ReactNode", desc: "KpiBars, KpiSparkline, KpiSplit o cualquier nodo." },
-        { name: "ratio (Bars)", type: "number", desc: "0–1, recortado." },
-        { name: "points (Sparkline)", type: "readonly number[]", desc: "Mínimo dos; se escala a su propio rango." },
-        { name: "parts (Split)", type: "{ tone, value }[]", desc: "Una barra dividida por tono." },
+        { name: "delta", type: "KpiDelta", desc: ct("app.kpiCard.delta.desc") },
+        { name: "sub", type: "string", desc: ct("app.kpiCard.sub.desc") },
+        { name: "visual", type: "ReactNode", desc: ct("app.kpiCard.visual.desc") },
+        { name: "ratio (Bars)", type: "number", desc: ct("app.kpiCard.ratio.desc") },
+        { name: "points (Sparkline)", type: "readonly number[]", desc: ct("app.kpiCard.points.desc") },
+        { name: "parts (Split)", type: "{ tone, value }[]", desc: ct("app.kpiCard.parts.desc") },
       ],
       notes: [
-        "Una latencia que baja es direction: \"down\" con tone: \"positive\" — sin el tono, el tile colorea por dirección, que es lo correcto para un contador pero no para un tiempo.",
+        ct("app.kpiCard.note"),
       ],
       demos: [
         {
           id: "kpi-card-basic",
-          title: "Los tres dibujos",
+          title: ct("app.kpiCard.title"),
           surface: "page",
           code: `<KpiCard
   icon={BubbleChatIcon}
@@ -171,20 +165,17 @@ export const appShell: Section = {
       name: "Gráficas",
       source: "app/_components/chart.tsx",
       importLine: 'import { RankedBars, TimeSeries } from "@/app/_components/chart";',
-      desc:
-        "Dos gráficas hechas a mano, sin librería: barras ordenadas y una serie "
-        + "temporal. Cada columna de la serie es un botón real, así que los valores "
-        + "no viven solo en el hover.",
+      desc: ct("app.chart.desc"),
       exports: ["RankedBars", "TimeSeries", "ChartTone", "RankedBar", "TimePoint"],
       props: [
-        { name: "bars", type: "readonly RankedBar[]", required: true, desc: "{ key, label, formatted, value, tone? }." },
-        { name: "limit (RankedBars)", type: "number", def: "6", desc: "A partir de ahí una lista ordenada deja de leerse." },
-        { name: "data (TimeSeries)", type: "readonly TimePoint[]", required: true, desc: "{ key, label, value }." },
-        { name: "formatValue (TimeSeries)", type: "(point: TimePoint) => ReactNode", required: true, desc: "El cuerpo del tooltip de cada cubo." },
+        { name: "bars", type: "readonly RankedBar[]", required: true, desc: ct("app.chart.bars.desc") },
+        { name: "limit (RankedBars)", type: "number", def: "6", desc: ct("app.chart.limit.desc") },
+        { name: "data (TimeSeries)", type: "readonly TimePoint[]", required: true, desc: ct("app.chart.data.desc") },
+        { name: "formatValue (TimeSeries)", type: "(point: TimePoint) => ReactNode", required: true, desc: ct("app.chart.formatValue.desc") },
         { name: "height (TimeSeries)", type: "number", def: "148", desc: "" },
-        { name: "markers (TimeSeries)", type: "ReadonlySet<string>", desc: "Claves de cubos a señalar con un punto — el día que se tocó algo. Lo que dice el marcador va en el tooltip del cubo." },
-        { name: "tone", type: '"critical" | "neutral" | "positive" | "warning"', def: '"neutral"', desc: "Respaldo para las filas que no traen el suyo." },
-        { name: "emptyLabel", type: "string", required: true, desc: "Qué se dice cuando no hay filas." },
+        { name: "markers (TimeSeries)", type: "ReadonlySet<string>", desc: ct("app.chart.markers.desc") },
+        { name: "tone", type: '"critical" | "neutral" | "positive" | "warning"', def: '"neutral"', desc: ct("app.chart.tone.desc") },
+        { name: "emptyLabel", type: "string", required: true, desc: ct("app.chart.emptyLabel.desc") },
       ],
       demos: [
         {
@@ -211,7 +202,7 @@ export const appShell: Section = {
         {
           id: "chart-series",
           title: "TimeSeries",
-          desc: "Pasa el ratón o tabula por las columnas.",
+          desc: ct("app.chart.series.desc"),
           code: `<TimeSeries
   data={data}
   emptyLabel="Sin actividad"
@@ -234,19 +225,16 @@ export const appShell: Section = {
       name: "ChannelBadge",
       source: "app/_components/channel-badge.tsx",
       importLine: 'import { ChannelBadge, ChannelIcon, ChannelStatusBadge } from "@/app/_components/channel-badge";',
-      desc:
-        "Por dónde entró un contacto. WhatsApp e Instagram son productos y "
-        + "conservan su nombre en todos los idiomas; «formulario» y «voz» son "
-        + "nombres comunes y sí se traducen.",
+      desc: ct("app.channelBadge.desc"),
       exports: ["ChannelBadge", "ChannelIcon", "ChannelStatusBadge", "CHANNEL_LABELS"],
       props: [
-        { name: "channel", type: '"web" | "whatsapp" | "instagram" | "form" | "voice"', required: true, desc: "Un valor fuera de la unión cae al icono de globo en vez de romper la página." },
+        { name: "channel", type: '"web" | "whatsapp" | "instagram" | "form" | "voice"', required: true, desc: ct("app.channelBadge.channel.desc") },
         { name: "status (StatusBadge)", type: '"connected" | "disconnected" | "error"', desc: "" },
       ],
       demos: [
         {
           id: "channel-badge-all",
-          title: "Los cinco canales",
+          title: ct("app.channelBadge.title"),
           code: '<ChannelBadge channel="whatsapp" />',
           render: (
             <>
@@ -258,7 +246,7 @@ export const appShell: Section = {
         },
         {
           id: "channel-icon",
-          title: "Solo el icono",
+          title: ct("app.channelBadge.icon.title"),
           code: '<ChannelIcon channel="instagram" />',
           render: (
             <>
@@ -275,17 +263,14 @@ export const appShell: Section = {
       name: "ProspectBadge",
       source: "app/_components/prospect-badge.tsx",
       importLine: 'import { ProspectBadge } from "@/app/_components/prospect-badge";',
-      desc:
-        "Dónde quedó comercialmente una conversación. Es un StatusBadge con el "
-        + "mapeo etapa → variante ya hecho, y el motivo en el title porque una "
-        + "frase no cabe en una pastilla.",
+      desc: ct("app.prospectBadge.desc"),
       props: [
-        { name: "prospect", type: "ProspectAssessment | undefined", required: true, desc: "Sin valoración pinta «sin valorar» en vez de nada." },
+        { name: "prospect", type: "ProspectAssessment | undefined", required: true, desc: ct("app.prospectBadge.prospect.desc") },
       ],
       demos: [
         {
           id: "prospect-badge-stages",
-          title: "Etapas",
+          title: ct("app.prospectBadge.title"),
           code: '<ProspectBadge prospect={conversation.prospect} />',
           render: (
             <>
@@ -312,18 +297,16 @@ export const appShell: Section = {
       name: "PageContainer",
       source: "app/_components/page-container.tsx",
       importLine: 'import { PageContainer } from "@/app/_components/page-container";',
-      desc:
-        "El envoltorio de toda página dentro de AppShell: ancho máximo, padding, "
-        + "patrón de fondo y la animación de entrada, en un solo sitio.",
+      desc: ct("app.pageContainer.desc"),
       props: [
-        { name: "maxWidth", type: "string", def: '"max-w-5xl"', desc: "Clase de Tailwind. Ajustes usa max-w-xl." },
-        { name: "pattern", type: '"grid" | "crosses" | "diagonals" | "brackets" | "none"', def: '"grid"', desc: "El patrón fijo detrás del contenido, al 30 %." },
+        { name: "maxWidth", type: "string", def: '"max-w-5xl"', desc: ct("app.pageContainer.maxWidth.desc") },
+        { name: "pattern", type: '"grid" | "crosses" | "diagonals" | "brackets" | "none"', def: '"grid"', desc: ct("app.pageContainer.pattern.desc") },
       ],
       demos: [
         {
           id: "page-container-patterns",
-          title: "Los cuatro patrones",
-          desc: "Aquí recortados en una caja; en una página real ocupan el viewport entero.",
+          title: ct("app.pageContainer.title"),
+          desc: ct("app.pageContainer.desc2"),
           surface: "page",
           code: '<PageContainer pattern="crosses" maxWidth="max-w-xl">…</PageContainer>',
           render: (
@@ -348,13 +331,10 @@ export const appShell: Section = {
     },
     {
       id: "misc-app",
-      name: "Otras piezas de la app",
+      name: ct("app.misc.name"),
       source: "app/_components/",
       importLine: 'import { … } from "@/app/_components/…";',
-      desc:
-        "Componentes que solo se leen dentro de su pantalla: piden datos, una "
-        + "sesión o un negocio seleccionado, así que un demo suelto aquí mentiría "
-        + "sobre lo que hacen. Se listan para que se sepa que existen.",
+      desc: ct("app.misc.desc"),
       exports: [
         "AppShell",
         "AgentChat",
@@ -373,7 +353,7 @@ export const appShell: Section = {
       demos: [
         {
           id: "misc-app-note",
-          title: "Dónde mirarlos",
+          title: ct("app.misc.title"),
           code: "ls app/_components/",
           render: (
             <p className="text-sm text-muted-foreground">
@@ -387,4 +367,5 @@ export const appShell: Section = {
       ],
     },
   ],
-};
+  };
+}

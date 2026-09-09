@@ -6,6 +6,7 @@
 // (`t-dropdown`, `t-dialog` en globals.css) y el cue de sonido.
 
 import { useState } from "react";
+import { ct } from "../_lib/catalog-i18n";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Copy01Icon,
@@ -205,22 +206,18 @@ const ORB_STATES: readonly OrbState[] = [
 
 // ── Sección ─────────────────────────────────────────────────────────
 
-export const uiOverlays: Section = {
+export function uiOverlays(_locale?: string): Section {
+  return {
   id: "ui-overlays",
-  title: "Capas y menús",
-  desc:
-    "Diálogos, menús y avisos. La superficie es siempre --popover con "
-    + "--shadow-float; la animación de entrada vive en globals.css para que un "
-    + "menú nuevo no tenga que volver a inventarla.",
+  title: ct("overlays.title"),
+  desc: ct("overlays.desc"),
   entries: [
     {
       id: "dialog",
       name: "Dialog",
       source: "components/ui/dialog.tsx",
       importLine: 'import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";',
-      desc:
-        "Panel modal para editar algo. Radix pone el foco atrapado, el scroll lock "
-        + "y el Escape; el envoltorio pone la superficie, la ✕ y el cue de apertura.",
+      desc: ct("overlays.dialog.desc"),
       exports: [
         "Dialog",
         "DialogTrigger",
@@ -235,17 +232,17 @@ export const uiOverlays: Section = {
         "useDialogOpenCue",
       ],
       props: [
-        { name: "open / onOpenChange", type: "boolean / (open: boolean) => void", desc: "Controlado. Sin ellos el Trigger lo maneja solo." },
-        { name: "showCloseButton", type: "boolean", def: "true", desc: "En DialogContent. Apágalo cuando el pie ya tenga un Cancelar." },
+        { name: "open / onOpenChange", type: "boolean / (open: boolean) => void", desc: ct("overlays.dialog.open.desc") },
+        { name: "showCloseButton", type: "boolean", def: "true", desc: ct("overlays.dialog.showClose.desc") },
       ],
       notes: [
-        "Un diálogo de edición necesita key={editing?.id ?? \"new\"} en el sitio de la llamada, o reabre con los datos del anterior.",
-        "DialogTitle es obligatorio para Radix: si no lo quieres visible, ponlo en sr-only.",
+        ct("overlays.dialog.note1"),
+        ct("overlays.dialog.note2"),
       ],
       demos: [
         {
           id: "dialog-basic",
-          title: "Editar algo",
+          title: ct("overlays.dialog.title"),
           code: `<Dialog>
   <DialogTrigger asChild>
     <Button variant="outline">Editar agente</Button>
@@ -290,9 +287,7 @@ export const uiOverlays: Section = {
       name: "AlertDialog",
       source: "components/ui/alert-dialog.tsx",
       importLine: 'import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";',
-      desc:
-        "El Dialog para decisiones que no se deshacen. No se cierra al hacer clic "
-        + "fuera y siempre tiene exactamente dos salidas.",
+      desc: ct("overlays.alertDialog.desc"),
       exports: [
         "AlertDialog",
         "AlertDialogTrigger",
@@ -305,12 +300,12 @@ export const uiOverlays: Section = {
         "AlertDialogCancel",
       ],
       notes: [
-        "Para el borrado normal la app usa components/confirm-dialog.tsx, que ya envuelve esto con el texto y el botón destructivo puestos.",
+        ct("overlays.alertDialog.note"),
       ],
       demos: [
         {
           id: "alert-dialog-basic",
-          title: "Confirmar un borrado",
+          title: ct("overlays.alertDialog.title"),
           code: `<AlertDialog>
   <AlertDialogTrigger asChild>
     <Button variant="destructive">Eliminar</Button>
@@ -355,7 +350,7 @@ export const uiOverlays: Section = {
       name: "DropdownMenu",
       source: "components/ui/dropdown-menu.tsx",
       importLine: 'import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";',
-      desc: "El menú de los tres puntos. Incluye checkbox, radio y submenús.",
+      desc: ct("overlays.dropdownMenu.desc"),
       exports: [
         "DropdownMenu",
         "DropdownMenuTrigger",
@@ -373,13 +368,13 @@ export const uiOverlays: Section = {
         "DropdownMenuSubContent",
       ],
       props: [
-        { name: "variant (Item)", type: '"default" | "destructive"', def: '"default"', desc: "destructive tiñe texto e icono, y el hover." },
-        { name: "inset (Item, Label)", type: "boolean", desc: "Sangra a la izquierda para alinear con items que llevan check." },
+        { name: "variant (Item)", type: '"default" | "destructive"', def: '"default"', desc: ct("overlays.dropdownMenu.variant.desc") },
+        { name: "inset (Item, Label)", type: "boolean", desc: ct("overlays.dropdownMenu.inset.desc") },
       ],
       demos: [
         {
           id: "dropdown-basic",
-          title: "Acciones de fila",
+          title: ct("overlays.dropdownMenu.title"),
           code: `<DropdownMenu>
   <DropdownMenuTrigger asChild>
     <Button variant="ghost" size="icon-sm" aria-label="Acciones">
@@ -428,7 +423,7 @@ export const uiOverlays: Section = {
       name: "ContextMenu",
       source: "components/ui/context-menu.tsx",
       importLine: 'import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";',
-      desc: "El mismo menú, abierto con clic derecho sobre una zona.",
+      desc: ct("overlays.contextMenu.desc"),
       exports: [
         "ContextMenu",
         "ContextMenuTrigger",
@@ -440,7 +435,7 @@ export const uiOverlays: Section = {
       demos: [
         {
           id: "context-menu-basic",
-          title: "Clic derecho en la zona",
+          title: ct("overlays.contextMenu.title"),
           code: `<ContextMenu>
   <ContextMenuTrigger>…</ContextMenuTrigger>
   <ContextMenuContent>
@@ -470,9 +465,7 @@ export const uiOverlays: Section = {
       name: "Select",
       source: "components/ui/select.tsx",
       importLine: 'import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";',
-      desc:
-        "Desplegable de una sola opción. El disparador comparte la receta de campo "
-        + "con Input, así que un Select y un Input en la misma fila se alinean.",
+      desc: ct("overlays.select.desc"),
       exports: [
         "Select",
         "SelectTrigger",
@@ -486,13 +479,13 @@ export const uiOverlays: Section = {
         "SelectScrollDownButton",
       ],
       props: [
-        { name: "size (Trigger)", type: '"default" | "sm"', def: '"default"', desc: "h-9 y h-8 — los mismos altos que Button." },
-        { name: "value / onValueChange", type: "string / (value: string) => void", desc: "Controlado; si no, defaultValue." },
+        { name: "size (Trigger)", type: '"default" | "sm"', def: '"default"', desc: ct("overlays.select.size.desc") },
+        { name: "value / onValueChange", type: "string / (value: string) => void", desc: ct("overlays.select.value.desc") },
       ],
       demos: [
         {
           id: "select-basic",
-          title: "Con grupos",
+          title: ct("overlays.select.title"),
           code: `<Select defaultValue="opus">
   <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
   <SelectContent>
@@ -540,9 +533,7 @@ export const uiOverlays: Section = {
       name: "Command",
       source: "components/ui/command.tsx",
       importLine: 'import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command";',
-      desc:
-        "Lista filtrable sobre cmdk. Suelta es un buscador embebido; dentro de "
-        + "CommandDialog es la paleta de comandos (⌘K).",
+      desc: ct("overlays.command.desc"),
       exports: [
         "Command",
         "CommandDialog",
@@ -555,13 +546,13 @@ export const uiOverlays: Section = {
         "CommandSeparator",
       ],
       notes: [
-        "Al montarse, cmdk selecciona su primera fila y la lleva a la vista con scrollIntoView. Dentro de una página larga eso arrastra el scroll hasta la lista: por eso aquí el buscador embebido se monta a mano.",
+        ct("overlays.command.note"),
       ],
       demos: [
         {
           id: "command-dialog",
-          title: "Como paleta",
-          desc: "La forma que usa la app: CommandDialog sobre el mismo Command.",
+          title: ct("overlays.command.dialog.title"),
+          desc: ct("overlays.command.dialog.desc"),
           code: `<CommandDialog open={open} onOpenChange={setOpen} title="Paleta de comandos">
   <CommandInput placeholder="Buscar…" />
   <CommandList>
@@ -575,8 +566,8 @@ export const uiOverlays: Section = {
         },
         {
           id: "command-inline",
-          title: "Embebido",
-          desc: "Móntalo y escribe para filtrar.",
+          title: ct("overlays.command.inline.title"),
+          desc: ct("overlays.command.inline.desc"),
           code: `<Command>
   <CommandInput placeholder="Buscar…" />
   <CommandList>
@@ -595,21 +586,19 @@ export const uiOverlays: Section = {
       name: "Tooltip",
       source: "components/ui/tooltip.tsx",
       importLine: 'import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";',
-      desc:
-        "Etiqueta corta al pasar por encima. El TooltipProvider ya está montado en "
-        + "el layout raíz, así que no hace falta volver a envolver.",
+      desc: ct("overlays.tooltip.desc"),
       exports: ["Tooltip", "TooltipTrigger", "TooltipContent", "TooltipProvider"],
       props: [
         { name: "side (Content)", type: '"top" | "right" | "bottom" | "left"', def: '"top"', desc: "" },
-        { name: "sideOffset (Content)", type: "number", desc: "Separación del disparador, en px." },
+        { name: "sideOffset (Content)", type: "number", desc: ct("overlays.tooltip.sideOffset.desc") },
       ],
       notes: [
-        "Un tooltip no es un nombre accesible: un botón de solo icono necesita además su aria-label.",
+        ct("overlays.tooltip.note"),
       ],
       demos: [
         {
           id: "tooltip-basic",
-          title: "Cuatro lados",
+          title: ct("overlays.tooltip.title"),
           code: `<Tooltip>
   <TooltipTrigger asChild><Button variant="outline">Arriba</Button></TooltipTrigger>
   <TooltipContent>Se envía en cuanto entra el mensaje</TooltipContent>
@@ -634,12 +623,12 @@ export const uiOverlays: Section = {
       name: "HoverCard",
       source: "components/ui/hover-card.tsx",
       importLine: 'import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";',
-      desc: "Como el tooltip, pero con sitio para contenido: una ficha de contacto, un resumen.",
+      desc: ct("overlays.hoverCard.desc"),
       exports: ["HoverCard", "HoverCardTrigger", "HoverCardContent"],
       demos: [
         {
           id: "hover-card-basic",
-          title: "Ficha al pasar",
+          title: ct("overlays.hoverCard.title"),
           code: `<HoverCard>
   <HoverCardTrigger asChild><Button variant="link">@ventas</Button></HoverCardTrigger>
   <HoverCardContent>…</HoverCardContent>
@@ -665,12 +654,12 @@ export const uiOverlays: Section = {
       name: "Collapsible",
       source: "components/ui/collapsible.tsx",
       importLine: 'import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";',
-      desc: "Abrir y cerrar un bloque. Es la base de Reasoning y de Tool.",
+      desc: ct("overlays.collapsible.desc"),
       exports: ["Collapsible", "CollapsibleTrigger", "CollapsibleContent"],
       demos: [
         {
           id: "collapsible-basic",
-          title: "Abrir un detalle",
+          title: ct("overlays.collapsible.title"),
           code: `const [open, setOpen] = useState(false);
 
 <Collapsible open={open} onOpenChange={setOpen}>
@@ -686,22 +675,19 @@ export const uiOverlays: Section = {
       name: "ErrorBanner",
       source: "components/ui/error-banner.tsx",
       importLine: 'import { ErrorBanner } from "@/components/ui/error-banner";',
-      desc:
-        "La única forma en que una pantalla dice «eso no funcionó». Traduce el error "
-        + "en el render, no al guardarlo, para que cambiar de idioma lo re-renderice "
-        + "en el nuevo. Suena solo cuando aparece, no cuando ya estaba.",
+      desc: ct("overlays.errorBanner.desc"),
       props: [
-        { name: "error", type: "UiError | null", desc: "Lo que falló. Se traduce con uiErrorMessage." },
-        { name: "messageKey", type: "string | null", desc: "Atajo de error={{ messageKey }} para fallos locales." },
-        { name: "message", type: "string | null", desc: "Una frase ya final. Último recurso: no se re-traduce." },
-        { name: "detail", type: "string", desc: "Contexto técnico, en pequeño y debajo." },
-        { name: "onRetry", type: "() => void", desc: "Añade el botón de reintentar." },
-        { name: "onDismiss", type: "() => void", desc: "Añade la ✕." },
+        { name: "error", type: "UiError | null", desc: ct("overlays.errorBanner.error.desc") },
+        { name: "messageKey", type: "string | null", desc: ct("overlays.errorBanner.messageKey.desc") },
+        { name: "message", type: "string | null", desc: ct("overlays.errorBanner.message.desc") },
+        { name: "detail", type: "string", desc: ct("overlays.errorBanner.detail.desc") },
+        { name: "onRetry", type: "() => void", desc: ct("overlays.errorBanner.onRetry.desc") },
+        { name: "onDismiss", type: "() => void", desc: ct("overlays.errorBanner.onDismiss.desc") },
       ],
       demos: [
         {
           id: "error-banner-basic",
-          title: "Con reintento y descarte",
+          title: ct("overlays.errorBanner.title"),
           code: `<ErrorBanner
   error={error}
   onRetry={reload}
@@ -716,19 +702,16 @@ export const uiOverlays: Section = {
       name: "Orb",
       source: "components/ui/orb.tsx",
       importLine: 'import { Orb } from "@/components/ui/orb";',
-      desc:
-        "La entrada única de la app a thinking-orbs: la esfera que dice qué verbo "
-        + "está haciendo el agente. Resuelve el tema sola, se congela bajo "
-        + "prefers-reduced-motion y se pausa fuera de pantalla.",
+      desc: ct("overlays.orb.desc"),
       props: [
-        { name: "state", type: "OrbState", required: true, desc: "working · searching · solving · listening · connecting · weaving · composing · breathing · shaping." },
-        { name: "size", type: "20 | 64", def: "20", desc: "20 va en línea con el texto; 64 es para una pantalla vacía." },
-        { name: "decorative", type: "boolean", def: "true", desc: "Oculto al lector de pantalla: al lado siempre hay una etiqueta que ya nombra el estado." },
+        { name: "state", type: "OrbState", required: true, desc: ct("overlays.orb.state.desc") },
+        { name: "size", type: "20 | 64", def: "20", desc: ct("overlays.orb.size.desc") },
+        { name: "decorative", type: "boolean", def: "true", desc: ct("overlays.orb.decorative.desc") },
       ],
       demos: [
         {
           id: "orb-states",
-          title: "Los nueve estados",
+          title: ct("overlays.orb.states.title"),
           code: '<Orb state="weaving" />',
           render: (
             <div className="grid w-full grid-cols-3 gap-4 sm:grid-cols-5">
@@ -743,7 +726,7 @@ export const uiOverlays: Section = {
         },
         {
           id: "orb-large",
-          title: "Tamaño 64",
+          title: ct("overlays.orb.large.title"),
           code: '<Orb state="connecting" size={64} />',
           render: <Orb state="connecting" size={64} />,
         },
@@ -754,24 +737,21 @@ export const uiOverlays: Section = {
       name: "Beam",
       source: "components/ui/beam.tsx",
       importLine: 'import { Beam } from "@/components/ui/beam";',
-      desc:
-        "El halo metálico alrededor de un control. Envuelve al hijo en un <div> "
-        + "propio, así que lo posicional va en `style`, no en `className` — el "
-        + "paquete inyecta su CSS después de Tailwind y gana por orden.",
+      desc: ct("overlays.beam.desc"),
       props: [
-        { name: "size", type: '"sm" | "md" | "line" | "pulse-inner" | "pulse-outside"', def: '"pulse-outside"', desc: "pulse-outside es la de la casa: florece por fuera en vez de trazar el borde." },
-        { name: "colorVariant", type: '"colorful" | "mono" | "ocean" | "sunset"', desc: "Pisa el metal por tema. Normalmente no se toca." },
-        { name: "strength", type: "number", def: "0.55", desc: "0–1. En botones va bajo para que sea un tinte, no un espectáculo." },
-        { name: "active", type: "boolean", def: "true", desc: "Se desvanece en vez de desmontarse: el envoltorio carga el layout." },
-        { name: "borderRadius", type: "number", desc: "Solo si el hijo esconde su propio radio." },
+        { name: "size", type: '"sm" | "md" | "line" | "pulse-inner" | "pulse-outside"', def: '"pulse-outside"', desc: ct("overlays.beam.size.desc") },
+        { name: "colorVariant", type: '"colorful" | "mono" | "ocean" | "sunset"', desc: ct("overlays.beam.color.desc") },
+        { name: "strength", type: "number", def: "0.55", desc: ct("overlays.beam.strength.desc") },
+        { name: "active", type: "boolean", def: "true", desc: ct("overlays.beam.active.desc") },
+        { name: "borderRadius", type: "number", desc: ct("overlays.beam.borderRadius.desc") },
       ],
       notes: [
-        "Necesita un hijo opaco con su propio borde de 1px y sitio para desbordar: cualquier overflow:hidden por encima recorta el halo.",
+        ct("overlays.beam.note"),
       ],
       demos: [
         {
           id: "beam-button",
-          title: "Sobre un botón",
+          title: ct("overlays.beam.title"),
           code: `<Beam strength={0.5}>
   <Button variant="outline">Conectar WhatsApp</Button>
 </Beam>`,
@@ -788,3 +768,4 @@ export const uiOverlays: Section = {
     },
   ],
 };
+}

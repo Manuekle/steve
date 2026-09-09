@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
-  Mail01Icon,
+  Mail02Icon,
   WebhookIcon,
   Blockchain05Icon,
   AuthorizedIcon,
@@ -93,7 +93,7 @@ type ManualSummary = {
 type FormRow = Form & { readonly responseCount?: number };
 
 const ICONS: Record<string, IconSvgElement> = {
-  smtp: Mail01Icon,
+  smtp: Mail02Icon,
 };
 
 /** The vendors with a real brand mark on hand — everything else falls back

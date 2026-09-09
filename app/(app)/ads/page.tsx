@@ -6,8 +6,8 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Megaphone01Icon,
   SearchIcon,
-  EyeIcon,
-  CursorPointer01Icon,
+  ScanEyeIcon,
+  MouseLeftClick01Icon,
   Coins01Icon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
@@ -673,7 +673,7 @@ export default function AdsPage() {
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
-                  icon: EyeIcon,
+                  icon: ScanEyeIcon,
                   label: t("ads.impressions"),
                   sub:
                     totals.reach > 0
@@ -692,7 +692,7 @@ export default function AdsPage() {
                   ),
                 },
                 {
-                  icon: CursorPointer01Icon,
+                  icon: MouseLeftClick01Icon,
                   label: t("ads.clicks"),
                   sub:
                     totals.impressions > 0

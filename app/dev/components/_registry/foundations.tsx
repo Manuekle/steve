@@ -4,6 +4,7 @@
 // by name rather than duplicated as values, so a token that changes there
 // changes here on the next paint instead of on the next edit to this file.
 
+import { ct } from "../_lib/catalog-i18n";
 import { Swatch } from "../_lib/kit";
 import type { Section } from "../_lib/types";
 
@@ -53,28 +54,23 @@ const RADII = [
   { name: "--radius-xl", value: "calc(var(--radius) + 4px)" },
 ] as const;
 
-export const foundations: Section = {
-  id: "foundations",
-  title: "Fundamentos",
-  desc:
-    "Los tokens de app/globals.css. Todo lo demás en esta página está hecho con "
-    + "estos: un componente que inventa su propio gris es un componente que se "
-    + "sale del sistema.",
-  entries: [
+export function foundations(_locale?: string): Section {
+  return {
+    id: "foundations",
+    title: ct("foundations.title"),
+    desc: ct("foundations.desc"),
+    entries: [
     {
       id: "tokens-color",
-      name: "Color",
+      name: ct("foundations.color.name"),
       source: "app/globals.css",
       importLine: 'className="bg-card text-muted-foreground border-border"',
-      desc:
-        "Escala monocroma en oklch, con destructive y billing como los dos únicos "
-        + "acentos. Cada token tiene par claro/oscuro; el bloque .dark los redefine, "
-        + "nunca los componentes.",
+      desc: ct("foundations.color.desc"),
       demos: [
         {
           id: "tokens-color-surfaces",
-          title: "Superficies y semántica",
-          desc: "Cambia el tema arriba a la derecha para ver el par oscuro.",
+          title: ct("foundations.color.surfaces.title"),
+          desc: ct("foundations.color.surfaces.desc"),
           code: 'var(--card)  /* en Tailwind: bg-card, text-card-foreground */',
           render: (
             <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
@@ -91,8 +87,8 @@ export const foundations: Section = {
         },
         {
           id: "tokens-color-status",
-          title: "Colores de estado",
-          desc: "Los siete pares que consume StatusBadge. Fondo pastel, texto del mismo tono.",
+          title: ct("foundations.color.status.title"),
+          desc: ct("foundations.color.status.desc"),
           code: 'style={{ background: "var(--status-success-bg)", color: "var(--status-success-fg)" }}',
           render: (
             <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
@@ -116,16 +112,14 @@ export const foundations: Section = {
     },
     {
       id: "tokens-elevation",
-      name: "Elevación y radio",
+      name: ct("foundations.elevation.name"),
       source: "app/globals.css",
       importLine: 'className="rounded-xl shadow-[var(--shadow-soft)]"',
-      desc:
-        "La profundidad se siente, no se ve: sombras cortas y de baja alfa, más un "
-        + "inset highlight arriba. El radio base es 12px y todo lo demás sale de ahí.",
+      desc: ct("foundations.elevation.desc"),
       demos: [
         {
           id: "tokens-shadows",
-          title: "Sombras",
+          title: ct("foundations.elevation.shadows.title"),
           code: 'className="shadow-[var(--shadow-elevated)]"',
           surface: "page",
           render: (
@@ -143,7 +137,7 @@ export const foundations: Section = {
         },
         {
           id: "tokens-radius",
-          title: "Radios",
+          title: ct("foundations.elevation.radius.title"),
           code: 'className="rounded-lg"  /* = var(--radius-lg) */',
           render: (
             <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4">
@@ -162,16 +156,14 @@ export const foundations: Section = {
     },
     {
       id: "tokens-type",
-      name: "Tipografía",
+      name: ct("foundations.typography.name"),
       source: "app/globals.css",
       importLine: 'className="font-heading | font-sans | font-mono"',
-      desc:
-        "Saans para titulares, Inter para todo lo demás, Geist Mono para código. "
-        + "Las tres son variables y se sirven desde /public/fonts salvo la mono.",
+      desc: ct("foundations.typography.desc"),
       demos: [
         {
           id: "type-families",
-          title: "Familias",
+          title: ct("foundations.typography.families.title"),
           code: '<h2 className="font-heading text-2xl">…</h2>',
           render: (
             <div className="flex w-full flex-col gap-4">
@@ -194,7 +186,7 @@ export const foundations: Section = {
         },
         {
           id: "type-scale",
-          title: "Escala de texto",
+          title: ct("foundations.typography.scale.title"),
           code: 'text-xs · text-sm · text-base · text-lg · text-2xl',
           render: (
             <div className="flex w-full flex-col gap-2">
@@ -210,4 +202,5 @@ export const foundations: Section = {
       ],
     },
   ],
-};
+  };
+}

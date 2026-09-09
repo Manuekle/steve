@@ -6,9 +6,10 @@
 
 import { useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Mail01Icon } from "@hugeicons/core-free-icons";
+import { Mail02Icon } from "@hugeicons/core-free-icons";
 import { ActionSwapButton } from "@/components/motion/action-swap";
 import { Checkbox } from "@/components/motion/checkbox";
+import { DownloadAnimation } from "@/components/motion/download-animation";
 import { Input as MotionInput } from "@/components/motion/input";
 import { RadioGroup, RadioGroupItem } from "@/components/motion/radio";
 import { TextReveal } from "@/components/motion/text-reveal";
@@ -18,6 +19,7 @@ import { ThinkingText } from "@/components/motion/thinking-text";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast-provider";
 import type { Section } from "../_lib/types";
+import { ct } from "../_lib/catalog-i18n";
 
 // ── Hosts con estado ────────────────────────────────────────────────
 
@@ -60,7 +62,7 @@ function MotionInputDemo() {
         onChange={setValue}
         error={invalid ? "Eso no parece un correo." : false}
         success={value.includes("@")}
-        leftIcon={<HugeiconsIcon icon={Mail01Icon} size={16} strokeWidth={1.75} />}
+        leftIcon={<HugeiconsIcon icon={Mail02Icon} size={16} strokeWidth={1.75} />}
         placeholder="nombre@empresa.com"
       />
     </div>
@@ -71,13 +73,28 @@ function ToastDemo() {
   const { toast } = useToast();
   return (
     <div className="flex flex-wrap gap-2">
-      <Button size="sm" onClick={() => toast({ title: "Guardado", status: "success" })}>
+      <Button
+        size="sm"
+        onClick={() =>
+          toast({
+            title: "Guardado",
+            description: "Los cambios se sincronizaron con el servidor.",
+            status: "success",
+          })
+        }
+      >
         success
       </Button>
       <Button
         size="sm"
         variant="outline"
-        onClick={() => toast({ title: "Sincronizando…", status: "loading" })}
+        onClick={() =>
+          toast({
+            title: "Sincronizando…",
+            description: "Esto puede tardar unos segundos.",
+            status: "loading",
+          })
+        }
       >
         loading
       </Button>
@@ -94,43 +111,81 @@ function ToastDemo() {
       >
         error
       </Button>
-      <Button size="sm" variant="ghost" onClick={() => toast({ title: "Nada que hacer", status: "info" })}>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() =>
+          toast({
+            title: "Nada que hacer",
+            description: "No hay elementos pendientes por procesar.",
+            status: "info",
+          })
+        }
+      >
         info
       </Button>
     </div>
   );
 }
 
+function DownloadAnimationDemo() {
+  const { toast } = useToast();
+  return (
+    <div className="flex flex-wrap gap-2">
+      <DownloadAnimation
+        fileType="csv"
+        onDownload={() => toast({ title: "Descargado", description: "reporte.csv", status: "success" })}
+      >
+        <Button size="sm" variant="outline">
+          Descargar CSV
+        </Button>
+      </DownloadAnimation>
+      <DownloadAnimation
+        fileType="pdf"
+        onDownload={() => toast({ title: "Descargado", description: "informe.pdf", status: "success" })}
+      >
+        <Button size="sm" variant="outline">
+          Descargar PDF
+        </Button>
+      </DownloadAnimation>
+      <DownloadAnimation
+        fileType="default"
+        onDownload={() => toast({ title: "Descargado", description: "datos.xlsx", status: "success" })}
+      >
+        <Button size="sm" variant="outline">
+          Descargar archivo
+        </Button>
+      </DownloadAnimation>
+    </div>
+  );
+}
+
 // ── Sección ─────────────────────────────────────────────────────────
 
-export const motionSection: Section = {
+export function motionSection(_locale?: string): Section {
+  return {
   id: "motion",
-  title: "Movimiento",
-  desc:
-    "components/motion — controles con muelle, texto que entra y botones con "
-    + "estado. Nada de aquí anima bajo prefers-reduced-motion, y los efectos de "
-    + "hover se apagan solos en dispositivos sin puntero.",
+  title: ct("motion.title"),
+  desc: ct("motion.desc"),
   entries: [
     {
       id: "motion-checkbox",
       name: "Checkbox",
       source: "components/motion/checkbox.tsx",
       importLine: 'import { Checkbox } from "@/components/motion/checkbox";',
-      desc:
-        "Casilla con la marca dibujándose. El <input> real sigue debajo, así que "
-        + "el clic en la etiqueta y el teclado son los nativos.",
+      desc: ct("motion.checkbox.desc"),
       props: [
-        { name: "checked", type: "boolean", required: true, desc: "Controlado." },
+        { name: "checked", type: "boolean", required: true, desc: ct("motion.checkbox.checked.desc") },
         { name: "onCheckedChange", type: "(checked: boolean) => void", required: true, desc: "" },
-        { name: "indeterminate", type: "boolean", desc: "Dibuja el guion del estado parcial." },
-        { name: "label", type: "string", desc: "Texto a la derecha; también es el destino del clic." },
+        { name: "indeterminate", type: "boolean", desc: ct("motion.checkbox.indeterminate.desc") },
+        { name: "label", type: "string", desc: ct("motion.checkbox.label.desc") },
         { name: "disabled", type: "boolean", desc: "" },
-        { name: 'aria-describedby', type: "string", desc: "Asocia un mensaje externo, por ejemplo un error de formulario." },
+        { name: 'aria-describedby', type: "string", desc: ct("motion.checkbox.aria.desc") },
       ],
       demos: [
         {
           id: "motion-checkbox-basic",
-          title: "Marcado, parcial y bloqueado",
+          title: ct("motion.checkbox.title"),
           code: `const [checked, setChecked] = useState(true);
 
 <Checkbox checked={checked} onCheckedChange={setChecked} label="Responder fuera de horario" />`,
@@ -143,10 +198,10 @@ export const motionSection: Section = {
       name: "RadioGroup",
       source: "components/motion/radio.tsx",
       importLine: 'import { RadioGroup, RadioGroupItem } from "@/components/motion/radio";',
-      desc: "Una sola opción de varias, con el punto interior escalando al elegir.",
+      desc: ct("motion.radio.desc"),
       exports: ["RadioGroup", "RadioGroupItem"],
       props: [
-        { name: "value / defaultValue", type: "string", desc: "Controlado o no." },
+        { name: "value / defaultValue", type: "string", desc: ct("motion.radio.value.desc") },
         { name: "onValueChange", type: "(value: string) => void", desc: "" },
         { name: "orientation", type: '"vertical" | "horizontal"', def: '"vertical"', desc: "" },
         { name: "value (Item)", type: "string", required: true, desc: "" },
@@ -155,7 +210,7 @@ export const motionSection: Section = {
       demos: [
         {
           id: "motion-radio-basic",
-          title: "Vertical",
+          title: ct("motion.radio.title"),
           code: `<RadioGroup value={value} onValueChange={setValue}>
   <RadioGroupItem value="auto" label="Responder siempre" />
   <RadioGroupItem value="hours" label="Solo en horario" />
@@ -169,22 +224,19 @@ export const motionSection: Section = {
       name: "Input (motion)",
       source: "components/motion/input.tsx",
       importLine: 'import { Input } from "@/components/motion/input";',
-      desc:
-        "Campo con etiqueta flotante, iconos a los lados y sacudida al fallar. Es "
-        + "el de los formularios de la landing; dentro de la app el de "
-        + "components/ui/input es el que manda.",
+      desc: ct("motion.input.desc"),
       props: [
-        { name: "label", type: "string", desc: "Etiqueta que sube al enfocar." },
-        { name: "value / onChange", type: "string / (value: string) => void", desc: "onChange recibe el valor, no el evento." },
-        { name: "error", type: "string | boolean", desc: "Truthy sacude y pinta en rojo; si es string, además lo muestra." },
-        { name: "success", type: "boolean", desc: "Dibuja el check a la derecha." },
+        { name: "label", type: "string", desc: ct("motion.input.label.desc") },
+        { name: "value / onChange", type: "string / (value: string) => void", desc: ct("motion.input.onChange.desc") },
+        { name: "error", type: "string | boolean", desc: ct("motion.input.error.desc") },
+        { name: "success", type: "boolean", desc: ct("motion.input.success.desc") },
         { name: "leftIcon / rightIcon", type: "ReactNode", desc: "" },
-        { name: "classNames", type: "InputClassNames", desc: "Escotillas por parte: root, label, field, input, errorMessage…" },
+        { name: "classNames", type: "InputClassNames", desc: ct("motion.input.classNames.desc") },
       ],
       demos: [
         {
           id: "motion-input-basic",
-          title: "Escribe algo sin arroba",
+          title: ct("motion.input.title"),
           code: `<Input
   label="Correo"
   value={value}
@@ -200,9 +252,7 @@ export const motionSection: Section = {
       name: "ActionSwapButton",
       source: "components/motion/action-swap.tsx",
       importLine: 'import { ActionSwapButton, ActionSwapIcon, ActionSwapText } from "@/components/motion/action-swap";',
-      desc:
-        "Un botón cuya etiqueta cambia al pulsarlo, sin que la caja se mueva: un "
-        + "medidor oculto guarda el estado más largo y es quien fija el ancho.",
+      desc: ct("motion.actionSwap.desc"),
       exports: [
         "ActionSwapButton",
         "ActionSwapText",
@@ -212,18 +262,18 @@ export const motionSection: Section = {
         "ActionSwapRollIcon",
       ],
       props: [
-        { name: "items", type: "ActionSwapItem[]", required: true, desc: "{ id, label, icon?, ariaLabel? } por estado." },
-        { name: "value / defaultValue", type: "string", desc: "El id activo." },
+        { name: "items", type: "ActionSwapItem[]", required: true, desc: ct("motion.actionSwap.items.desc") },
+        { name: "value / defaultValue", type: "string", desc: ct("motion.actionSwap.value.desc") },
         { name: "onValueChange", type: "(value: string, item: ActionSwapItem) => void", desc: "" },
-        { name: "animation", type: '"blur" | "roll" | "cascade"', def: '"blur"', desc: "cascade rueda letra a letra, de izquierda a derecha." },
-        { name: "cycle", type: "boolean", def: "true", desc: "Cada clic avanza al siguiente item y vuelve al principio." },
-        { name: "iconOnly", type: "boolean", def: 'size === "icon"', desc: "Oculta el texto y deja solo el icono." },
+        { name: "animation", type: '"blur" | "roll" | "cascade"', def: '"blur"', desc: ct("motion.actionSwap.animation.desc") },
+        { name: "cycle", type: "boolean", def: "true", desc: ct("motion.actionSwap.cycle.desc") },
+        { name: "iconOnly", type: "boolean", def: 'size === "icon"', desc: ct("motion.actionSwap.iconOnly.desc") },
       ],
       demos: [
         {
           id: "action-swap-basic",
-          title: "Tres animaciones",
-          desc: "Pulsa cada uno: blur funde, roll gira, cascade va letra por letra.",
+          title: ct("motion.actionSwap.title"),
+          desc: ct("motion.actionSwap.desc2"),
           code: `<ActionSwapButton
   animation="cascade"
   items={[
@@ -254,21 +304,18 @@ export const motionSection: Section = {
       name: "ThemeToggle",
       source: "components/motion/theme-toggle.tsx",
       importLine: 'import { ThemeToggle } from "@/components/motion/theme-toggle";',
-      desc:
-        "Cambia el tema con una View Transition: el nuevo esquema se revela desde "
-        + "un punto en vez de parpadear. Suspende el cross-fade de :root mientras "
-        + "dura, que es lo que convertía el barrido en puré.",
+      desc: ct("motion.themeToggle.desc"),
       exports: ["ThemeToggle", "useThemeToggle"],
       props: [
-        { name: "variant", type: '"rectangle" | "circle" | "circle-blur" | "blinds"', def: '"rectangle"', desc: "La forma del barrido." },
-        { name: "start", type: '"top-left" | "top-right" | "bottom-left" | "bottom-right" | "center" | "bottom-up"', def: '"bottom-up"', desc: "De dónde sale el revelado." },
+        { name: "variant", type: '"rectangle" | "circle" | "circle-blur" | "blinds"', def: '"rectangle"', desc: ct("motion.themeToggle.variant.desc") },
+        { name: "start", type: '"top-left" | "top-right" | "bottom-left" | "bottom-right" | "center" | "bottom-up"', def: '"bottom-up"', desc: ct("motion.themeToggle.start.desc") },
         { name: "iconClassName", type: "string", desc: "" },
       ],
       demos: [
         {
           id: "theme-toggle-variants",
-          title: "Las cuatro variantes",
-          desc: "Cada una cambia el tema de verdad — pulsa dos veces para volver.",
+          title: ct("motion.themeToggle.title"),
+          desc: ct("motion.themeToggle.desc2"),
           code: '<ThemeToggle variant="circle-blur" start="top-right" />',
           render: (
             <>
@@ -288,24 +335,21 @@ export const motionSection: Section = {
       name: "TextReveal",
       source: "components/motion/text-reveal.tsx",
       importLine: 'import { TextReveal } from "@/components/motion/text-reveal";',
-      desc:
-        "Titular que entra por palabras o por letras, con desenfoque y muelle. Un "
-        + "único tokenizador para los dos modos, así que no se desalinean en qué "
-        + "cuenta como palabra.",
+      desc: ct("motion.textReveal.desc"),
       props: [
-        { name: "text", type: "string | string[]", required: true, desc: "Un array son líneas: cada una entra detrás de la anterior." },
-        { name: "as", type: "TextTag", def: '"p"', desc: "h1…h6, span, label, strong, em." },
-        { name: "split", type: '"word" | "char"', desc: "Granularidad de la entrada." },
-        { name: "stagger", type: "number", desc: "Segundos entre unidad y unidad." },
-        { name: "delay", type: "number", desc: "Retraso antes de empezar." },
-        { name: "blur", type: "number", desc: "Desenfoque de partida, en px." },
-        { name: "yOffset", type: "string | number", desc: "Desde dónde sube." },
-        { name: "whileInView / once", type: "boolean", desc: "Dispara al entrar en pantalla, y solo una vez." },
+        { name: "text", type: "string | string[]", required: true, desc: ct("motion.textReveal.text.desc") },
+        { name: "as", type: "TextTag", def: '"p"', desc: ct("motion.textReveal.as.desc") },
+        { name: "split", type: '"word" | "char"', desc: ct("motion.textReveal.split.desc") },
+        { name: "stagger", type: "number", desc: ct("motion.textReveal.stagger.desc") },
+        { name: "delay", type: "number", desc: ct("motion.textReveal.delay.desc") },
+        { name: "blur", type: "number", desc: ct("motion.textReveal.blur.desc") },
+        { name: "yOffset", type: "string | number", desc: ct("motion.textReveal.yOffset.desc") },
+        { name: "whileInView / once", type: "boolean", desc: ct("motion.textReveal.view.desc") },
       ],
       demos: [
         {
           id: "text-reveal-basic",
-          title: "Por palabras y por letras",
+          title: ct("motion.textReveal.title"),
           code: `<TextReveal as="h3" text="Cada canal en una sola bandeja" split="word" />
 <TextReveal text="Sin copiar y pegar entre pestañas" split="char" />`,
           render: (
@@ -332,16 +376,16 @@ export const motionSection: Section = {
       name: "TextShimmer",
       source: "components/motion/text-shimmer.tsx",
       importLine: 'import { TextShimmer } from "@/components/motion/text-shimmer";',
-      desc: "Un brillo recorriendo el texto — la señal de «esto sigue pasando».",
+      desc: ct("motion.textShimmer.desc"),
       props: [
         { name: "children", type: "ReactNode", required: true, desc: "" },
         { name: "as", type: "TextTag", def: '"span"', desc: "" },
-        { name: "duration", type: "number", def: "2.5", desc: "Segundos por pasada." },
+        { name: "duration", type: "number", def: "2.5", desc: ct("motion.textShimmer.duration.desc") },
       ],
       demos: [
         {
           id: "text-shimmer-basic",
-          title: "En marcha",
+          title: ct("motion.textShimmer.title"),
           code: '<TextShimmer>Generando la respuesta…</TextShimmer>',
           render: <TextShimmer className="text-sm">Generando la respuesta…</TextShimmer>,
         },
@@ -352,17 +396,15 @@ export const motionSection: Section = {
       name: "ThinkingText",
       source: "components/motion/thinking-text.tsx",
       importLine: 'import { ThinkingText } from "@/components/motion/thinking-text";',
-      desc:
-        "Cicla frases sin que la caja cambie de ancho: un medidor invisible sostiene "
-        + "la más larga, así que el botón de alrededor no salta a media frase.",
+      desc: ct("motion.thinkingText.desc"),
       props: [
-        { name: "states", type: "readonly string[]", required: true, desc: "Las frases, en orden." },
-        { name: "hold", type: "number", def: "2000", desc: "Milisegundos por frase." },
+        { name: "states", type: "readonly string[]", required: true, desc: ct("motion.thinkingText.states.desc") },
+        { name: "hold", type: "number", def: "2000", desc: ct("motion.thinkingText.hold.desc") },
       ],
       demos: [
         {
           id: "thinking-text-basic",
-          title: "Ciclando",
+          title: ct("motion.thinkingText.title"),
           code: `<ThinkingText states={["Leyendo el historial", "Buscando en el catálogo", "Redactando"]} />`,
           render: (
             <ThinkingText
@@ -375,27 +417,47 @@ export const motionSection: Section = {
       ],
     },
     {
+      id: "download-animation",
+      name: "DownloadAnimation",
+      source: "components/motion/download-animation.tsx",
+      importLine: 'import { DownloadAnimation } from "@/components/motion/download-animation";',
+      desc: ct("motion.downloadAnimation.desc"),
+      exports: ["DownloadAnimation"],
+      props: [
+        { name: "fileType", type: '"csv" | "pdf" | "default"', def: '"default"', desc: ct("motion.downloadAnimation.fileType.desc") },
+        { name: "onDownload", type: "() => void", required: true, desc: ct("motion.downloadAnimation.onDownload.desc") },
+        { name: "disabled", type: "boolean", desc: "" },
+      ],
+      demos: [
+        {
+          id: "download-animation-basic",
+          title: ct("motion.downloadAnimation.title"),
+          desc: ct("motion.downloadAnimation.desc2"),
+          code: `<DownloadAnimation fileType="csv" onDownload={handleDownload}>
+  <Button>Descargar CSV</Button>
+</DownloadAnimation>`,
+          render: <DownloadAnimationDemo />,
+        },
+      ],
+    },
+    {
       id: "toast",
       name: "Toast",
       source: "components/toast-provider.tsx",
       importLine: 'import { useToast } from "@/components/toast-provider";',
-      desc:
-        "La superficie de aviso de la app, montada una sola vez en el layout raíz. "
-        + "El sonido se decide aquí por estado, no en cada llamada. Un toast de "
-        + "error no caduca solo: 4,2 s alcanzan para «Guardado» y no para leer qué "
-        + "falló y decidir qué hacer.",
+      desc: ct("motion.toast.desc"),
       exports: ["useToast", "ToastProvider", "AnimatedToastStack", "useAnimatedToastStack"],
       props: [
         { name: "title", type: "ReactNode", required: true, desc: "" },
         { name: "description", type: "ReactNode", desc: "" },
-        { name: "status", type: '"neutral" | "info" | "loading" | "success" | "error"', def: '"neutral"', desc: "Decide icono, color y sonido." },
-        { name: "action", type: "{ label, onClick }", desc: "Un botón dentro del toast." },
-        { name: "duration", type: "number", desc: "ms. 0 = hasta que se descarte. Los error ya son 0." },
+        { name: "status", type: '"neutral" | "info" | "loading" | "success" | "error"', def: '"neutral"', desc: ct("motion.toast.status.desc") },
+        { name: "action", type: "{ label, onClick }", desc: ct("motion.toast.action.desc") },
+        { name: "duration", type: "number", desc: ct("motion.toast.duration.desc") },
       ],
       demos: [
         {
           id: "toast-basic",
-          title: "Lánzalos",
+          title: ct("motion.toast.title"),
           code: `const { toast } = useToast();
 
 toast({ title: "Guardado", status: "success" });`,
@@ -404,4 +466,5 @@ toast({ title: "Guardado", status: "success" });`,
       ],
     },
   ],
-};
+  };
+}
