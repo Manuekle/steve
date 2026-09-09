@@ -1,6 +1,7 @@
 import { aiElements } from "./ai-elements";
 import { appShell } from "./app-shell";
 import { foundations } from "./foundations";
+import { lighting } from "./lighting";
 import { motionSection } from "./motion";
 import { uiControls } from "./ui-controls";
 import { uiOverlays } from "./ui-overlays";
@@ -13,6 +14,7 @@ export function getCatalog(locale?: string): readonly Section[] {
     uiControls(locale),
     uiOverlays(locale),
     motionSection(locale),
+    lighting(locale),
     aiElements(locale),
     appShell(locale),
   ];

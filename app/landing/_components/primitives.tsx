@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { TextReveal } from "@/components/motion/text-reveal";
 import { cn } from "@/lib/utils";
 import { BrowserChrome } from "./browser-chrome";
+import { LightBar, LuminousText } from "./lighting";
 
 /**
  * The building blocks every landing section is made of. They exist so the
@@ -242,19 +243,55 @@ export function TextSwap({
  * quotes the same figures under the same billing toggle, and two copies of the
  * same twelve lines is how the two stop matching.
  */
-export function DigitPop({ groupKey, text }: { readonly groupKey: string; readonly text: string }) {
+export function DigitPop({
+  groupKey,
+  luminous = false,
+  text,
+}: {
+  readonly groupKey: string;
+  /**
+   * Mills each character: the metallic ramp and the bloom of `LuminousText`,
+   * per glyph rather than around the figure.
+   *
+   * Per glyph because it cannot be otherwise. `background-clip: text` is
+   * painted by the element that declares it and masked by the text inside it,
+   * and a descendant that composites separately — which every one of these
+   * spans is, animating opacity and a blur — is painted outside that operation
+   * and comes out with the transparent fill and nothing behind it. Wrapped
+   * around the group, the whole figure went invisible for the 500ms of its own
+   * entrance: the animation still ran, on text nobody could see, so the number
+   * looked like it had changed without moving. On each span the clip and the
+   * animation are the same element and the filter applies to the already
+   * clipped glyph.
+   *
+   * The ramps line up into one because every digit is the same height.
+   */
+  readonly luminous?: boolean;
+  readonly text: string;
+}) {
   return (
     <span className="t-digit-group is-animating" key={groupKey}>
-      {[...text].map((char, index) => (
-        <span
-          // biome-ignore lint/suspicious/noArrayIndexKey: the run is static per render, only `groupKey` ever changes
-          key={index}
-          className="t-digit"
-          style={{ animationDelay: `calc(var(--digit-stagger) * ${index})` }}
-        >
-          {char}
-        </span>
-      ))}
+      {[...text].map((char, index) => {
+        const style = { animationDelay: `calc(var(--digit-stagger) * ${index})` };
+        return luminous ? (
+          <LuminousText
+            className="t-digit"
+            // biome-ignore lint/suspicious/noArrayIndexKey: the run is static per render, only `groupKey` ever changes
+            key={index}
+            style={style}
+            text={char}
+          />
+        ) : (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: the run is static per render, only `groupKey` ever changes
+            key={index}
+            className="t-digit"
+            style={style}
+          >
+            {char}
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -334,6 +371,8 @@ export function ScreenFrame({
   className,
   hint,
   label,
+  lit = true,
+  litIntensity = 1,
   overlays,
   url,
 }: {
@@ -342,40 +381,107 @@ export function ScreenFrame({
   /** One line under the frame saying what a visitor can do with it. */
   readonly hint?: ReactNode;
   readonly label: string;
+  /**
+   * The strip light over the frame's top edge, and the pool it leaves under
+   * it. On by default, because a screenshot that is lit and one that is not
+   * are two different objects and this page has five of them — the whole
+   * argument for a rig rather than an effect is that the fifth screen is
+   * under the same lamp as the first.
+   *
+   * `intensity` is the only thing a caller tunes. The hero's frame runs
+   * brighter than the four below it: it is the one screenshot arriving with
+   * nothing above it to have been lit already.
+   */
+  readonly lit?: boolean;
+  readonly litIntensity?: number;
   readonly overlays?: ReactNode;
   /** The address the toolbar shows. Omit for a frame with no browser chrome. */
   readonly url?: string;
 }) {
   return (
     <div className="relative">
-      {/* Two elements, two borders: the bezel and the screen inside it. */}
-      <div className={cn("lp-frame", className)}>
-        <div
-          aria-label={label}
-          className="lp-frame-inner pointer-events-none flex flex-col"
-          role="group"
-        >
-          {url ? <BrowserChrome url={url} /> : null}
-          {children}
+      {/* ── The window ──────────────────────────────────────────────────
+          Its own positioning context, and that is the whole point of it
+          existing: everything anchored to the *bottom* of a screenshot — the
+          veil, the pool of light under it — has to be measured from the frame
+          and not from this component's outer box, because the outer box also
+          holds the hint line under the picture.
+
+          It did not, and the numbers were not close. On the automation figure
+          the frame ended at 4018 and the veil ran 4099→4269: the entire
+          progressive blur sat *below* the window, over the empty gap and
+          across the hint text, washing out the one line on the page that tells
+          a visitor the screen is operable — and leaving 80px of dead space
+          where the screenshot was supposed to be dissolving. `bottom: -40px`
+          and `height: 24%` are correct values; they were just being resolved
+          against a box 200px taller than the thing they describe. */}
+      <div className="relative">
+        {/* The lamp. The box sits on the frame's top edge — `top-0`, not above
+            it — and `LightBar` lifts the tube out of it by its own gap. Put
+            the whole fixture above the frame instead and the cone starts above
+            it too, so the sliver that shows over the bezel is the brightest
+            part of the wash: a smear along the top edge rather than a lamp.
+
+            The tube is inset from the frame's sides by 14% each way, so it is
+            shorter than what it lights. A fixture as wide as its subject is a
+            backlit panel; one that is narrower throws a cone with edges, and
+            the corners of the frame stay in the dark where they belong.
+
+            Behind the frame, and by paint order rather than by `z-index`. Both
+            fixtures are rendered *before* the frame and neither carries a
+            z-index, so the frame's opaque `--card` covers the half of the cone
+            that would otherwise fall across the interface — a screenshot with
+            white poured down its first two hundred pixels is a screenshot you
+            cannot read, and that is the failure mode of every landing page
+            that discovered this effect. What survives is the tube, its bloom,
+            and the light spilling past the window's edges, which is what you
+            would actually see in a room.
+
+            `-z-10` would have been the obvious way to say the same thing and
+            it is wrong here: `.lp` paints its own `--background`, so a negative
+            index does not put the beam behind the frame, it puts it behind the
+            page.
+
+            No pool under the foot, unlike the pricing card and the closing
+            mark. A window whose bottom is being dissolved by the veil and lit
+            from underneath at the same time is three treatments arguing over
+            the same forty pixels — the wash erasing the edge, a glow insisting
+            there is one, and the page under both. Light pools under objects
+            that end; these end by going out of focus. One treatment at the
+            foot, and it is the veil. */}
+        {lit ? (
+          <LightBar className="inset-x-[14%] top-0 z-10" drop="24rem" gap="0px" intensity={litIntensity} />
+        ) : null}
+
+        {/* Two elements, two borders: the bezel and the screen inside it. */}
+        <div className={cn("lp-frame", className)}>
+          <div
+            aria-label={label}
+            className="lp-frame-inner pointer-events-none flex flex-col"
+            role="group"
+          >
+            {url ? <BrowserChrome url={url} /> : null}
+            {children}
+          </div>
         </div>
-      </div>
 
-      {/* Progressive blur, then the wash onto the page. Three layers, all
-          pointer-transparent; `.lp-veil` in globals.css carries the ramp each
-          one is masked by.
+        {/* Progressive blur, then the wash onto the page. Three layers, all
+            pointer-transparent; `.lp-veil` in globals.css carries the ramp
+            each one is masked by.
 
-          Two blurs, not five, and the number came off a profiler: a backdrop
-          blur re-computes whenever its backdrop moves, so every frame of a
-          scroll re-blurred five stacked layers under every mockup on the page.
-          Five cost 47ms a frame while scrolling, two cost 32.
+            Two blurs, not five, and the number came off a profiler: a backdrop
+            blur re-computes whenever its backdrop moves, so every frame of a
+            scroll re-blurred five stacked layers under every mockup on the
+            page. Five cost 47ms a frame while scrolling, two cost 32.
 
-          The blur is a utility class rather than a `backdrop-filter` in that
-          stylesheet because the build strips hand-written `backdrop-filter`
-          declarations — the note over `.lp-overlay` has the detail. */}
-      <div aria-hidden="true" className="lp-veil">
-        <span className="backdrop-blur-[3px]" />
-        <span className="backdrop-blur-[14px]" />
-        <span />
+            The blur is a utility class rather than a `backdrop-filter` in that
+            stylesheet because the build strips hand-written `backdrop-filter`
+            declarations — the note over `.lp-overlay` has the detail. */}
+        <div aria-hidden="true" className="lp-veil">
+          <span className="backdrop-blur-[3px]" />
+          <span className="backdrop-blur-[14px]" />
+          <span />
+        </div>
       </div>
 
       {overlays}

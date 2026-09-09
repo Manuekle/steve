@@ -7,8 +7,8 @@ import {
   ArrowReloadHorizontalIcon,
   ArrowRight02Icon,
   Copy01Icon,
-  DownloadCircle01Icon,
-  Share08Icon,
+  Download03Icon,
+  Share03Icon,
   Shield01Icon,
   SidebarLeft01Icon,
 } from "@hugeicons/core-free-icons";
@@ -94,8 +94,8 @@ export function BrowserChrome({ url }: { readonly url: string }) {
       </div>
 
       <span className="ml-2 hidden items-center gap-3.5 md:flex">
-        <Glyph icon={DownloadCircle01Icon} />
-        <Glyph icon={Share08Icon} />
+        <Glyph icon={Download03Icon} />
+        <Glyph icon={Share03Icon} />
         <Glyph icon={Add01Icon} />
         <Glyph icon={Copy01Icon} />
       </span>

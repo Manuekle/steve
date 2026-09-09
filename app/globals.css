@@ -2609,13 +2609,49 @@ html.lenis body {
    at the twelfth pixel of scroll. At zero opacity the layer paints nothing, so
    the top of the page is genuinely unfiltered — the blur is not merely
    invisible there, it is not sampled. */
+/* ── A build-pipeline landmine: `color-mix(…, transparent)` ─────────
+   Lightning CSS collapses `color-mix(in oklab, var(--x) N%, transparent)` to
+   a bare `var(--x)`. Not a warning, not a fallback — it drops the mix and the
+   percentage and hands the browser the colour at full alpha.
+
+   It cannot resolve the mix, because `var(--x)` is only known at used-value
+   time; what it should do is leave the function alone, and what it does is
+   simplify it as though the first argument were already a colour. Every one of
+   these in this file had been shipping at 100% since it was written:
+
+     the veil under every screenshot   an eight-stop eased wash, served as
+                                       transparent → solid page colour at 18%,
+                                       which is the "grey band across the
+                                       bottom" the stops exist to avoid
+     the sticky header's frost         a 45% tint, served opaque: a solid bar
+                                       over a sharp page, which is the exact
+                                       bug the note above `.lp-header-blur`
+                                       describes fixing
+     the floating overlay panels       88% of `--popover`, served solid, so the
+                                       glass cards were never glass
+
+   Two replacements, and which one depends on whether the colour is known here:
+
+   * When it is a token this file owns, the alpha step gets a token of its own.
+     `--lp-beam-core` and `--lp-beam-halo-*` below are that: one declared value
+     per theme, no function to be simplified away, and nothing for a browser to
+     fail to support.
+   * When it is not — `--background` under a theme, or a brand hex a caller
+     passes in — the relative-colour form `oklch(from C l c h / a)` says the
+     same thing and survives the pipeline verbatim. It is exactly equivalent:
+     mixing a colour N% with `transparent` yields that colour at alpha N.
+     Every site that uses it carries a plain-colour declaration first, so a
+     browser without relative colour gets the shipped-today appearance rather
+     than a dropped declaration. */
+
 .lp-header-blur {
   position: absolute;
   inset: 0;
   z-index: -1;
   opacity: 0;
   pointer-events: none;
-  background-color: color-mix(in oklab, var(--background) 45%, transparent);
+  background-color: var(--background);
+  background-color: oklch(from var(--background) l c h / 0.45);
   transition: opacity 260ms var(--lp-ease);
 }
 
@@ -2804,8 +2840,12 @@ html.lenis body {
      24px on a phone, so anything wider than that hangs past the viewport and
      the document picks up a horizontal scrollbar. 20px is still more than the
      22px corner needs, because what has to disappear under the wash is the
-     corner's outer edge, not its whole arc. */
-  inset: auto -20px -40px -20px;
+     corner's outer edge, not its whole arc.
+
+     Downwards it is 18px, not 40. The wash reaches page colour at 97% of its
+     own height, so everything past the bezel is belt-and-braces — and every
+     pixel of it is dead space between the picture and the line under it. */
+  inset: auto -20px -18px -20px;
   /* Was 46% / 200–380px, measured against a frame that ran 1263px tall — a
      380px wash over the last 30% of it. The frames are windows now and a
      third that size, so the same percentage would put nearly half the screen
@@ -2853,15 +2893,19 @@ html.lenis body {
    lens loses focus. It reaches the page colour a hair before the foot and
    holds it, so the bezel underneath is gone rather than half-there. */
 .lp-veil > span:nth-child(3) {
+  /* The straight ramp, for a browser without relative colour. A gradient from
+     `transparent` to a colour already interpolates the alpha, so the fallback
+     is the same wash without the easing. */
+  background: linear-gradient(to bottom, transparent 0%, var(--background) 97%);
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    color-mix(in oklab, var(--background) 6%, transparent) 18%,
-    color-mix(in oklab, var(--background) 20%, transparent) 34%,
-    color-mix(in oklab, var(--background) 42%, transparent) 50%,
-    color-mix(in oklab, var(--background) 68%, transparent) 66%,
-    color-mix(in oklab, var(--background) 88%, transparent) 80%,
-    color-mix(in oklab, var(--background) 98%, transparent) 91%,
+    oklch(from var(--background) l c h / 0.06) 18%,
+    oklch(from var(--background) l c h / 0.2) 34%,
+    oklch(from var(--background) l c h / 0.42) 50%,
+    oklch(from var(--background) l c h / 0.68) 66%,
+    oklch(from var(--background) l c h / 0.88) 80%,
+    oklch(from var(--background) l c h / 0.98) 91%,
     var(--background) 97%
   );
 }
@@ -2879,14 +2923,51 @@ html.lenis body {
    they resolve through the `--tw-backdrop-*` chain. This rule carried the
    blur for months and shipped none of it: the panel was a flat translucent
    card over a sharp screen. */
+/* No `position` here, on purpose, even though the `::after` below needs a
+   positioned ancestor. It had one for a while and it was a layout bug with a
+   200px blast radius: this file sits outside `@layer`, so a `position` set
+   here beats the `absolute` utility every caller passes — and every floating
+   panel on the page dropped into the document flow. The screenshots grew a
+   card's worth of empty space under them, and the line that says the screen is
+   operable ended up 190px below the picture it describes.
+
+   `OverlayShell` is the only thing that ever gets this class and it always
+   carries `absolute`, so the ancestor the pseudo-element needs is already
+   there. */
 .lp-overlay {
   border-radius: 14px;
   border: 1px solid var(--lp-hairline-strong);
   /* The app's popover surface, thinned so the screen reads through it. */
-  background: color-mix(in oklab, var(--popover) 88%, transparent);
+  background: var(--popover);
+  background: oklch(from var(--popover) l c h / 0.88);
   box-shadow:
     0 1px 0 oklch(1 0 0 / 0.07) inset,
     0 24px 48px -12px oklch(0 0 0 / 0.65);
+}
+
+/* The specular line along the top edge — the one thing that separates a pane
+   of glass from a translucent rectangle.
+ 
+   The inset shadow above it is even across the whole width, which is what a
+   painted highlight looks like; a real edge catching a lamp that is directly
+   above it is brightest where the lamp is and gone at the corners. So this is
+   the same 1px, ramped: it is `--kpi-edge`, the token the app's own KPI tiles
+   light their top edge with, which means these panels catch the light the same
+   way the product's do rather than a way invented for the landing.
+
+   Above the panel's own content, because it is the edge of the panel and
+   nothing inside it should paint across it — the same argument, and the same
+   z-index, as `.lp-cap::after`. */
+.lp-overlay::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  z-index: 40;
+  height: 1px;
+  border-radius: 14px 14px 0 0;
+  background: var(--kpi-edge);
+  pointer-events: none;
 }
 
 /* Overlays drift up into place a beat after the screenshot lands, which is
@@ -3074,30 +3155,39 @@ html.lenis body {
     var(--shadow-soft),
     inset 0 0 0 1px var(--lp-cap-lip);
   text-decoration: none;
-  transition:
-    border-color 260ms var(--lp-ease),
-    box-shadow 260ms var(--lp-ease);
+  /* Only the edge transitions now. The shadow used to as well, and kept the
+     declaration for a while after `:hover` stopped changing it — a transition
+     on a property nothing animates is a line that looks load-bearing and is
+     not. */
+  transition: border-color 260ms var(--lp-ease);
 }
 
+/* Hover changes the edge and nothing else. It used to swap the whole card up
+   to `--shadow-elevated`, which is the app's own "this is clickable" gesture
+   and was the right one before the cards were lit: a shadow is how a card
+   answers a pointer on a page with no light in it.
+
+   On a page with a lamp over it, it is the wrong one. A deepening shadow says
+   the card moved *towards* the reader, which is a claim about depth made by a
+   card that did not move — and it is the half of a hover that reads as
+   generic, because every card on every landing page does it.
+
+   The edge is the whole feedback now. Something has to confirm the pointer
+   landed, and one hairline going from `--border` to `--input` is the quietest
+   thing that can. A cursor-tracking radial was tried in between and was worse
+   than either: see the note where `.lp-ambient` used to be. */
 .lp-cap:hover {
   border-color: var(--input);
-  box-shadow:
-    var(--shadow-elevated),
-    inset 0 0 0 1px var(--lp-cap-lip);
 }
 
-/* A card that is only there to be read. The lift on `.lp-cap:hover` is the
-   page's way of saying "this answers you" — every other card in the landing
-   either opens a page or resolves a drawing under the cursor. A testimonial
-   does neither: it is a quote, it goes nowhere, and a card that brightens
-   under the cursor and then does nothing is a promise the section cannot
-   keep. The wall still pauses on hover; that is the wall answering, not the
-   card. */
+/* A card that is only there to be read. The edge lift is the page's way of
+   saying "this answers you" — every other card in the landing either opens a
+   page or resolves a drawing under the cursor. A testimonial does neither: it
+   is a quote, it goes nowhere, and a card that brightens under the cursor and
+   then does nothing is a promise the section cannot keep. The wall still
+   pauses on hover; that is the wall answering, not the card. */
 .lp-cap-still:hover {
   border-color: var(--border);
-  box-shadow:
-    var(--shadow-soft),
-    inset 0 0 0 1px var(--lp-cap-lip);
 }
 
 /* The sheen. `isolation` above keeps it in this card's stacking context so it
@@ -3458,6 +3548,578 @@ html.lenis body {
   animation-play-state: paused;
 }
 
+/* ── Lighting ────────────────────────────────────────────────────────
+   The page has one light source and everything below is a way of showing it.
+
+   Until now the marketing surface carried exactly one lit gesture — `.lp-glow`,
+   a wide neutral bloom behind the hero headline — and it was doing the work of
+   a whole lighting rig on its own: at `oklch(1 0 0 / 0.07)` over a 44rem
+   ellipse it is under one value step of the page ground, which is a bloom you
+   can only find by toggling it off. The result was a page whose surfaces were
+   all correct and none of which were *lit*: cards sat on the ground rather
+   than above it, the screenshots ended in a veil with nothing having ever
+   fallen on them, and the only thing separating a card from the page was a
+   hairline.
+
+   What follows is that rig, in four pieces and one rule. The rule is that
+   every piece names its light in the same two tokens, so the whole page is one
+   lamp seen from different distances rather than six effects that each
+   invented their own white:
+
+     `.lp-beam`      a strip light: filament, its own bloom, and the cone it
+                     throws down onto whatever is under it
+     `.lp-spot`      the same light from further away — a cone with no visible
+                     fixture, for lighting a headline rather than an object
+     `.lp-halo`      the pool a lit object leaves on the ground under it
+     `.lp-glowmark`  a small object that is itself the source, built the way a
+                     bloom is built in a compositor: the shape, stacked at
+                     three blur radii, over a radial that is only light
+     `.lp-lumen`     type that has been polished rather than lit — a vertical
+                     metallic ramp through the letterforms, with a blurred
+                     copy of the same word behind them
+
+   ── Why none of it moves ────────────────────────────────────────────
+   Not one of these animates, on a loop or otherwise. A light that pulses is a
+   notification; a light that sits still is a room. A cursor-tracking one was
+   tried and removed — the note where `.lp-ambient` used to be says why.
+
+   ── Why it is gradients and not filters ─────────────────────────────
+   A `filter: blur()` costs a full offscreen pass over the element's bounds,
+   every frame it is composited. A 44rem cone rendered as a blurred rectangle
+   is that pass over half the viewport; the same cone rendered as a
+   `radial-gradient` with enough stops is one paint of a gradient the GPU
+   already knows how to interpolate. So the cones, washes and pools are all
+   gradients, and `blur()` appears in exactly two places — the 8px filament
+   bloom and the glow mark's icon stack — where the blurred box is small enough
+   that the pass is measured in single-digit pixels.
+
+   ── Why every value has a black twin ────────────────────────────────
+   Light on a white page is a shadow. A white bloom over `--background` in
+   light theme is invisible by construction — it *is* the background — so the
+   whole scale inverts: on dark the light is white at an alpha, on light it is
+   black at an alpha and the filament keeps a little of its brightness so a
+   strip light still reads as a fixture rather than as a scuff. This is the
+   same call `--lp-glow-a/b` already makes two hundred lines up, extended to
+   the rest of the rig. */
+
+/* Light theme first, and it is the harder of the two — which is why it is
+   worth saying out loud what "the same rig, inverted" actually means here,
+   because the naive inversion is wrong.
+
+   The naive inversion turns every white wash into a black one, on the
+   reasoning that light on a white page is a shadow. That is right for a
+   *bloom* and wrong for a *beam*: a cone of shadow falling from a fixture
+   above a card says the light is coming from below, which is the one thing
+   nothing on this page does. What actually inverts is not the ink — it is
+   which part of the fixture you can see. On a dark page the light is visible
+   and the housing is not; on a light page the housing is visible and the light
+   is nearly not, because `--background` is `oklch(0.971)` and there are only
+   three per cent of headroom above it.
+
+   So on light: the tube is a grey line (an object, seen against a bright
+   room), and what it casts is still white — pushed to a high alpha, because
+   three per cent of headroom used at 8% opacity is nothing at all. The two
+   places that genuinely do invert are the ones that are not beams: the cursor
+   light, which is a hand shading a white card rather than a lamp, and the
+   corner marks, which are ink. Both have tokens of their own for exactly that
+   reason. */
+.lp {
+  /* The tube: an object, not the light. Grey on light because a white line on
+     a near-white page is nothing and a black one is a rule rather than a lamp. */
+  --lp-beam-core: oklch(0.66 0 0 / 0.5);
+  /* The tube's own ends, where the housing cuts it off. A token rather than a
+     mix of the one above, for the reason the note further up sets out. */
+  --lp-beam-core-dim: oklch(0.66 0 0 / 0.15);
+  /* The brightest point of the light itself, where it leaves the tube, and the
+     two steps its halo falls off through. */
+  --lp-beam-hot: oklch(1 0 0);
+  --lp-beam-halo: oklch(1 0 0 / 0.42);
+  --lp-beam-halo-dim: oklch(1 0 0 / 0.12);
+  /* The three steps a cone falls off through. They are not evenly spaced:
+     light falls off with the square of the distance, and three evenly spaced
+     stops is the flat wash that reads as a gradient rather than as a lamp.
+     High alphas on light — the whole range between the page and white is
+     0.971→1, so a cone at 8% is a cone nobody can see. */
+  --lp-beam-1: oklch(1 0 0 / 0.95);
+  --lp-beam-2: oklch(1 0 0 / 0.5);
+  --lp-beam-3: oklch(1 0 0 / 0.18);
+  /* The pool a lit object leaves on the ground under it. */
+  --lp-halo-ink: oklch(1 0 0 / 0.85);
+  /* A mark that is its own source. Dark on light, because the glyph still has
+     to be legible first and luminous second — an icon drawn in the light's own
+     value on a white page is an icon nobody can read. */
+  --lp-glowmark-ink: oklch(0.3 0 0);
+  /* Polished type. Top-lit: bright at the cap line, falling to the baseline,
+     which is the direction every one of these lights points. Dark-to-light on
+     a light page, because milled metal on white reads by its shadows. */
+  --lp-lumen-hi: oklch(0.24 0 0);
+  --lp-lumen-mid: oklch(0.4 0 0);
+  --lp-lumen-lo: oklch(0.66 0 0);
+  --lp-lumen-bloom: oklch(0 0 0 / 0.18);
+}
+
+.lp.dark,
+.dark .lp {
+  --lp-beam-core: oklch(1 0 0 / 0.92);
+  --lp-beam-core-dim: oklch(1 0 0 / 0.28);
+  --lp-beam-hot: oklch(1 0 0);
+  --lp-beam-halo: oklch(1 0 0 / 0.42);
+  --lp-beam-halo-dim: oklch(1 0 0 / 0.12);
+  --lp-beam-1: oklch(1 0 0 / 0.2);
+  --lp-beam-2: oklch(1 0 0 / 0.085);
+  --lp-beam-3: oklch(1 0 0 / 0.03);
+  --lp-halo-ink: oklch(1 0 0 / 0.14);
+  --lp-glowmark-ink: oklch(1 0 0 / 0.92);
+  --lp-lumen-hi: oklch(1 0 0);
+  --lp-lumen-mid: oklch(0.88 0 0);
+  --lp-lumen-lo: oklch(0.58 0 0);
+  --lp-lumen-bloom: oklch(1 0 0 / 0.3);
+}
+
+/* ── Strip light ─────────────────────────────────────────────────────
+   A tube over a surface: the filament, the bloom that hugs it, and the cone it
+   throws down. Three children rather than one element with three shadows,
+   because they have to be masked differently — the tube fades at its ends, the
+   cone fades at its sides and its foot, and one box cannot do both.
+
+   The wrapper takes no size of its own. Where a strip light hangs is the
+   caller's decision and it passes it inline, which also keeps this rule from
+   overruling a Tailwind utility — this file sits outside `@layer`, so anything
+   declared here beats the utility that tried to move it. */
+/* The box is placed on the TOP EDGE OF THE THING BEING LIT, not on the tube.
+   The tube is then pushed up out of it by `--lp-beam-gap`, and the cone starts
+   at zero — which is the object's own face.
+
+   This started the other way round: the whole fixture was positioned a few
+   pixels above the object, so the cone started a few pixels above it too, and
+   those few pixels were the brightest part of the wash. On a 700px screenshot
+   that was a faint smear along the top edge; on a pricing card it was a white
+   blob hanging over the heading, which is the shape a lens flare has and not
+   the shape light has.
+
+   With the box on the object, everything above it is the fixture — a tube and
+   the halo that hugs it, with clean dark air between them and what they light
+   — and everything at or below it is the light, which the object's own opaque
+   surface then hides. What is left visible is the spill past its sides, which
+   is exactly what you would see in a room. */
+.lp-beam {
+  position: absolute;
+  pointer-events: none;
+  /* How far above the lit surface the tube hangs. Deliberately more than a
+     hairline: at 8px the fixture read as an underline welded to the object's
+     top border rather than as a separate thing above it. */
+  --lp-beam-gap: 20px;
+  /* How far the cone reaches before it is gone. */
+  --lp-beam-drop: 18rem;
+  /* One dial for the whole fixture, so a caller says "brighter" once instead
+     of tuning three alphas that then drift apart. */
+  --lp-beam-i: 1;
+}
+
+/* The tube. Hot across the middle, gone at both ends — a fixture seen from
+   directly underneath, not a border with a glow on it. The ends matter more
+   than the middle: a strip that reaches its own edges at full brightness reads
+   as a rule someone lit, and the eye finds the two hard stops before it finds
+   the light. */
+/* 1px and a hard bright middle. At 1.5px with the brightness ramping from the
+   ends the tube read as a soft white streak rather than as a filament — and a
+   streak is what the eye files under "gradient somebody put there", because
+   nothing physical is that wide and that diffuse at the same time. The light
+   is allowed to be diffuse; the thing emitting it is not. */
+.lp-beam-bar {
+  position: absolute;
+  inset: calc(-1 * var(--lp-beam-gap)) 0 auto 0;
+  height: 1px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--lp-beam-core-dim) 8%,
+    var(--lp-beam-core) 30%,
+    var(--lp-beam-core) 70%,
+    var(--lp-beam-core-dim) 92%,
+    transparent 100%
+  );
+  opacity: var(--lp-beam-i);
+}
+
+/* The bloom around the tube — the part that makes it emit rather than paint.
+   Blurred rather than drawn as a gradient, and it is the one place on this
+   page where that is the cheap option: the box is 10px tall, so the offscreen
+   pass is a strip, and a gradient tight enough to fake it bands visibly on an
+   8-bit display. */
+/* The halo hugging the tube, and it has to *hug*. At 10px tall, blurred by 7
+   and running full white through the middle it stopped being a halo and became
+   the fixture — a 24px band of white haze over every screenshot on the page,
+   close enough to the copy above to look like it was bleeding into it.
+
+   Half that now, and the centre is a mix rather than the raw light: the bar
+   underneath is the brightest thing, the halo is the air around it, and the
+   halo being dimmer than its own source is the whole reason the pair reads as
+   one object. */
+.lp-beam-glow {
+  position: absolute;
+  inset: calc(-1 * var(--lp-beam-gap) - 2px) 0 auto 0;
+  height: 5px;
+  filter: blur(4px);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--lp-beam-halo-dim) 12%,
+    var(--lp-beam-halo) 50%,
+    var(--lp-beam-halo-dim) 88%,
+    transparent 100%
+  );
+  opacity: var(--lp-beam-i);
+}
+
+/* The cone. An ellipse anchored on the tube, wider than the fixture because
+   light spreads, and running out well before the bottom of its own box —
+   the last stop is at 76%, so the wash has finished being light before it
+   reaches an edge it could show. */
+.lp-beam-wash {
+  position: absolute;
+  inset: 0 -14% auto -14%;
+  height: var(--lp-beam-drop);
+  opacity: var(--lp-beam-i);
+  background: radial-gradient(
+    62% 100% at 50% 0%,
+    var(--lp-beam-1) 0%,
+    var(--lp-beam-2) 24%,
+    var(--lp-beam-3) 48%,
+    transparent 76%
+  );
+}
+
+/* ── Spotlight ───────────────────────────────────────────────────────
+   The same lamp with the fixture out of frame: a cone that opens downward over
+   a headline.
+
+   A `conic-gradient` swept about a point above the element, not a `clip-path`
+   polygon. The polygon was the obvious build and it is the wrong one twice
+   over. A beam's sides are soft — light does not stop at a line — and a
+   polygon's are the hardest edge CSS can draw; the version with straight sides
+   read as a translucent triangle laid over the headline rather than as
+   anything shining on it. And it cannot be fixed downstream: `filter` is
+   applied *before* `clip-path` in the rendering order, so blurring a clipped
+   shape blurs the fill and then re-cuts it on the same hard edge. Softening it
+   properly would have meant a second element existing only to be the thing
+   that gets blurred.
+
+   Swept angularly instead, the falloff is free and it is the right falloff:
+   the shoulders are where the lamp's own housing cuts the beam off, which is
+   a gradient in *angle*, and that is exactly what a conic gradient is. The
+   apex sits above the box (`at 50% -8%`) so the beam is already open where it
+   enters, rather than converging to a point on screen — a cone that comes to a
+   point is a triangle, and a real one starts at the width of its lens.
+
+   The mask is the distance falloff, and only that. Sides are the gradient's
+   job; how far the light carries is the mask's. */
+.lp-spot {
+  position: absolute;
+  pointer-events: none;
+  --lp-spot-i: 1;
+  opacity: var(--lp-spot-i);
+  /* Centred on 180deg — straight down — with an 18deg half-angle and soft
+     shoulders either side of it. */
+  background: conic-gradient(
+    from 162deg at 50% -8%,
+    transparent 0deg,
+    var(--lp-beam-3) 5deg,
+    var(--lp-beam-2) 11deg,
+    var(--lp-beam-1) 16deg,
+    var(--lp-beam-1) 20deg,
+    var(--lp-beam-2) 25deg,
+    var(--lp-beam-3) 31deg,
+    transparent 36deg
+  );
+  /* Transparent at the very top, not opaque.
+
+     Every spotlight on this page hangs above a section that clips — the hero
+     and the closing block both carry `overflow: hidden`, which is what keeps
+     their backdrops off the sections either side — so the cone's top edge is
+     cut by the section border wherever it starts above it. Cut at full
+     brightness that is a hard white line straight across the page, which is
+     exactly the seam the whole rig exists to avoid.
+
+     A short ramp in over the first eighth costs nothing where the beam is
+     already off screen, and where it is not it reads as the light arriving
+     through the air rather than switching on at a line. */
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 16%,
+    #000 34%,
+    oklch(0 0 0 / 0.5) 62%,
+    transparent 94%
+  );
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 16%,
+    #000 34%,
+    oklch(0 0 0 / 0.5) 62%,
+    transparent 94%
+  );
+}
+
+/* ── Halo ────────────────────────────────────────────────────────────
+   The pool a lit object leaves under itself. Gradient, not a blurred box: the
+   thing is 30rem across and blurring it would be a full pass over that area
+   for a shape a radial gradient already draws exactly.
+
+   Anchored at 50% rather than at the top, because it is the light *around* an
+   object rather than the light falling *past* it — the difference between a
+   card sitting on a lit floor and a card with a shadow. */
+.lp-halo {
+  position: absolute;
+  pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 50%, var(--lp-halo-ink) 0%, transparent 70%);
+}
+
+/* ── Glow mark ───────────────────────────────────────────────────────
+   A small object that is the source rather than a lit surface.
+
+   Built the way a compositor builds a bloom, which is why it is four layers
+   and not a `drop-shadow`: a radial that is only light, then the shape itself
+   at three blur radii, tightest on top. A single `filter: drop-shadow` gives
+   you the outermost of those four and nothing else, which is why an icon with
+   a drop shadow reads as an icon with a shadow and this reads as an icon that
+   is on.
+
+   Every layer is the same glyph, so the bloom has the shape of the thing
+   glowing — a lightning bolt's light is bolt-shaped near the bolt and round
+   far from it, and stacking the radii is what produces that for free. */
+.lp-glowmark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  --lp-glowmark-i: 1;
+}
+
+.lp-glowmark > span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* The air around it. Wider than the mark and centred on it. */
+.lp-glowmark > span[data-layer="air"] {
+  inset: -60%;
+  background: radial-gradient(50% 50% at 50% 50%, var(--lp-halo-ink) 0%, transparent 68%);
+  opacity: var(--lp-glowmark-i);
+}
+
+/* The two blurred copies. Opacity falls as the radius grows, which is what
+   keeps the outer layer from turning the whole box into a grey square. */
+.lp-glowmark > span[data-layer="far"] {
+  color: var(--lp-glowmark-ink);
+  filter: blur(10px);
+  opacity: calc(0.55 * var(--lp-glowmark-i));
+}
+
+.lp-glowmark > span[data-layer="near"] {
+  color: var(--lp-glowmark-ink);
+  filter: blur(3px);
+  opacity: calc(0.8 * var(--lp-glowmark-i));
+}
+
+/* The mark itself, in flow so the box is its size. */
+.lp-glowmark > [data-layer="core"] {
+  position: relative;
+  z-index: 1;
+  color: var(--lp-glowmark-ink);
+}
+
+/* ── Polished type ───────────────────────────────────────────────────
+   Not a lit surface — a milled one. A vertical ramp through the letterforms,
+   bright at the cap line and falling to the baseline, so the type reads as
+   metal under the same overhead light everything else on the page is under.
+
+   The bloom is a second copy of the word behind the first, blurred. It has to
+   be a copy rather than a `text-shadow`: a shadow spreads from the glyph
+   outline evenly, and what a luminous letterform does is spill more light from
+   its thick strokes than its thin ones — which is what a blurred duplicate of
+   the filled shape gives you and a shadow does not.
+
+   `background-clip: text` needs a transparent fill, and the fallback if the
+   clip is ever dropped is invisible text — so the colour is set on the same
+   rule as the clip, never separately.
+
+   ── It goes on the glyph, never on a box containing one ──────────────
+   A clipped background is painted by *this* element and masked by the text
+   inside it. Any descendant that composites separately — one with an opacity
+   below 1, a `filter`, a `will-change` naming either — is painted outside that
+   operation, so it gets the transparent fill and no background to show
+   through, and it disappears.
+
+   Which is precisely what an animated figure is. The pricing band's number is
+   a `DigitPop`: one span per character, each of them animating opacity and a
+   blur. With this class on the wrapper, every digit vanished for the 500ms of
+   its own entrance and popped in at the end — the entrance was still running,
+   it was just running on invisible text, and the number looked like it had
+   simply changed. The fix is not a workaround: the class belongs on each
+   character span, where the clip and the animation are the same element and
+   the filter applies to the already-clipped result. */
+.lp-lumen {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+  background-image: linear-gradient(
+    180deg,
+    var(--lp-lumen-hi) 0%,
+    var(--lp-lumen-hi) 22%,
+    var(--lp-lumen-mid) 58%,
+    var(--lp-lumen-lo) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.lp-lumen::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: var(--lp-lumen-bloom);
+  -webkit-text-fill-color: var(--lp-lumen-bloom);
+  filter: blur(16px);
+  pointer-events: none;
+}
+
+/* ── Brand glow ──────────────────────────────────────────────────────
+   The channel marks, lit in their own colour.
+
+   This is the one place the rig is allowed a hue, and it is not the rig
+   inventing one: WhatsApp's green, Instagram's magenta and Meta's blue are
+   already on the page — the marks are full-colour SVGs, and the note over
+   `brand-marks.tsx` sets out why they are the exception the landing makes.
+   What was missing is that they were the only bright objects on a lit page
+   that were not throwing any light of their own, which made them read as
+   stickers on the section rather than as things in it.
+
+   `drop-shadow` and not a blurred duplicate, and the reason is structural
+   rather than a performance call: those marks carry gradients addressed by
+   `id`, and each one is rendered once per document precisely because a second
+   copy would silently repaint with the first one's `<defs>`. A duplicate is
+   not available here. `drop-shadow` takes the glyph's own alpha channel and
+   blooms it — the light ends up exactly the shape of the logo, which is what
+   a duplicate would have bought anyway.
+
+   Two shadows, tight then wide, for the same reason `GlowMark` stacks three
+   radii: one shadow is a shadow, and the falloff is what makes it emission.
+
+   The air behind is a third of the intensity of the mark itself. A coloured
+   radial as strong as the logo turns a row of three into a row of three
+   traffic lights. */
+.lp {
+  /* How hard the brand light is driven. Lower on a white page: a saturated
+     bloom on near-white does not read as light, it reads as a print
+     registration error.
+
+     `--lp-brand-k` is the caller's own dial on top of it, so a mark further
+     from the argument can be quieter without a second set of alphas: the
+     channel row is the section's whole claim and runs at 1, the connector
+     footnote under the automation figure runs at a third of that. Same
+     fixture, further away. */
+  --lp-brand-i: 0.55;
+}
+.lp.dark,
+.dark .lp {
+  --lp-brand-i: 1;
+}
+
+.lp-brand-glow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+/* A descendant selector, not a child one. Most marks are a bare `<svg>`, but
+   the payments connector is two of them side by side in a span — one slot, two
+   brands — and a `>` here would have lit neither. */
+/* No fallback pair here, unlike the surfaces above. If a browser cannot do
+   relative colour the filter is dropped and the mark is simply not lit, which
+   is the correct thing to lose — every other one of these carries a plain
+   declaration first because losing it would take a surface with it. */
+.lp-brand-glow svg {
+  filter:
+    drop-shadow(
+      0 0 5px
+      oklch(from var(--lp-brand) l c h / calc(0.55 * var(--lp-brand-i) * var(--lp-brand-k, 1)))
+    )
+    drop-shadow(
+      0 0 16px
+      oklch(from var(--lp-brand) l c h / calc(0.3 * var(--lp-brand-i) * var(--lp-brand-k, 1)))
+    );
+}
+
+.lp-brand-glow::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -85%;
+  pointer-events: none;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    oklch(from var(--lp-brand) l c h / calc(0.2 * var(--lp-brand-i) * var(--lp-brand-k, 1))) 0%,
+    transparent 68%
+  );
+}
+
+/* ── Cursor light, removed ───────────────────────────────────────────
+   There was a `.lp-ambient` here: a soft radial that followed the pointer
+   across a card, written by one listener per grid.
+
+   It was the wrong instrument for this page and it looked it. A radial that
+   tracks the cursor is a blurred ball travelling under the mouse — the light
+   has no fixture, no direction and no relationship to the single overhead lamp
+   every other piece in this rig obeys, so a card under the pointer read as
+   having a torch shone at it from the front while its own top edge was still
+   lit from above. Two light sources in one card, one of which moves with the
+   reader's hand.
+
+   Nothing replaces it. Hover on a card changes the edge and that is the whole
+   feedback: the rig lights objects, and a pointer is not an object. */
+
+/* ── Registration marks, removed ─────────────────────────────────────
+   Four hairline corner brackets used to stand off the hero's screenshot.
+
+   The argument for them was that a beam needs something to be aimed at. The
+   argument against is what they actually were on the page: four small square
+   grids in the corners of a window that already has a bezel, a border and an
+   inset lip, which is a fifth kind of edge on a composition that had four —
+   and unlike every other piece here they were not light, so they read as
+   crop marks somebody forgot to delete. The beam has the window to land on;
+   it did not need a viewfinder drawn around it. */
+
+/* ── Lit hairline ────────────────────────────────────────────────────
+   `.lp-hairline-x` with a source on it: the same rule, plus the point where
+   the light enters it. Used where a divider is also the top of a section that
+   is lit — otherwise the plain hairline is the right one and this is noise. */
+.lp-filament {
+  position: relative;
+}
+
+.lp-filament::after {
+  content: "";
+  position: absolute;
+  inset: -2px 0 auto 0;
+  height: 5px;
+  filter: blur(4px);
+  pointer-events: none;
+  background: radial-gradient(40% 100% at 50% 50%, var(--lp-beam-core) 0%, transparent 100%);
+  opacity: 0.55;
+}
+
 /* ── Reduced motion ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .lp [data-reveal] {
@@ -3492,6 +4154,7 @@ html.lenis body {
     transition: none !important;
     animation: none !important;
   }
+
 }
 
 /* ── Focus ring, high-contrast fallback ─────────────────────── */
@@ -3518,3 +4181,4 @@ html.lenis body {
     --btn-destructive-focus-ring: oklch(0.58 0.18 22);
   }
 }
+

@@ -3,9 +3,11 @@
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
+  ArrowDown01Icon,
   BellIcon,
   CustomerSupportIcon,
   Globe02Icon,
+  Logout01Icon,
   Moon02Icon,
   PanelLeftCloseIcon,
   SearchIcon,
@@ -68,6 +70,16 @@ export const MockSidebar = memo(function MockSidebar({ active }: { readonly acti
         </span>
       </div>
 
+      <div className="flex shrink-0 px-3 pb-2">
+        <span className="flex w-full items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-left">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold uppercase shadow-[var(--shadow-inset)]">
+            {(t("business.unnamed") || "M").slice(0, 1)}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{t("business.unnamed")}</span>
+          <HugeiconsIcon icon={ArrowDown01Icon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
+        </span>
+      </div>
+
       <div className="flex shrink-0 flex-col gap-1.5 px-3 pb-2">
         <span className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 font-medium text-primary-foreground text-sm shadow-[var(--shadow-button)]">
           <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} className="shrink-0" />
@@ -120,14 +132,18 @@ export const MockSidebar = memo(function MockSidebar({ active }: { readonly acti
         </span>
 
         <div className="mt-1 flex items-center gap-0.5 border-border border-t pt-2">
-          {[Moon02Icon, VolumeOffIcon, Globe02Icon].map((icon, index) => (
-            <span
-              key={index}
-              className="flex size-8 items-center justify-center rounded-lg text-muted-foreground"
-            >
-              <HugeiconsIcon icon={icon} size={16} strokeWidth={1.75} />
-            </span>
-          ))}
+          <span className="flex size-8 items-center justify-center rounded-lg text-muted-foreground">
+            <HugeiconsIcon icon={Moon02Icon} size={16} strokeWidth={1.75} />
+          </span>
+          <span className="flex size-8 items-center justify-center rounded-lg text-muted-foreground">
+            <HugeiconsIcon icon={VolumeOffIcon} size={16} strokeWidth={1.75} />
+          </span>
+          <span className="flex size-8 items-center justify-center rounded-lg text-muted-foreground">
+            <HugeiconsIcon icon={Globe02Icon} size={16} strokeWidth={1.75} />
+          </span>
+          <span className="flex size-8 items-center justify-center rounded-lg text-muted-foreground">
+            <HugeiconsIcon icon={Logout01Icon} size={14} strokeWidth={1.75} />
+          </span>
         </div>
 
         {/* The dot is the tell that the instance is answering — `SidebarStatus`

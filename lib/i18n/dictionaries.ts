@@ -2010,7 +2010,7 @@ const es: Dictionary = {
     "Un agente no es sólo texto. Busca en tus documentos, reserva un turno, manda un link de pago, y cuando no sabe algo pasa la conversación a una persona. Cada capacidad se activa por separado, agente por agente.",
   "landing.capabilities.cta": "Cómo se configura cada una",
   "landing.capabilities.andAlso":
-    "Y además: formularios públicos, plantillas de email, fotos y audio, recordatorios, perfil del negocio y pedidos de Shopify.",
+    "Y además: CRM y contactos, calificación de leads, API y webhooks, formularios públicos, plantillas de email, fotos y audio, recordatorios, perfil del negocio y pedidos de Shopify.",
   "landing.capabilities.footnote":
     "Ninguna capacidad viene activada sola: elegís cuáles tiene cada agente. Las que dependen de una integración quedan en gris hasta que la conectás, así nadie le da a un agente un cobro sin cuenta de cobro detrás.",
 
@@ -2229,7 +2229,7 @@ const es: Dictionary = {
   "pricing.managed.feature7": "Onboarding asistido",
   "pricing.managed.feature8": "Plantillas de agentes y automatizaciones para tu rubro",
   "pricing.enterprise.name": "Enterprise",
-  "pricing.enterprise.for": "Para quien necesita correrlo en su propia infraestructura: pago único, sin suscripción.",
+  "pricing.enterprise.for": "Para quien necesita correrlo en su propia infraestructura",
   "pricing.enterprise.feature1": "Corré la aplicación entera en tu propio servidor",
   "pricing.enterprise.feature2": "Tu PostgreSQL, tus backups y tus trazas por OpenTelemetry",
   "pricing.enterprise.feature3": "Sandbox Docker aislado, en tu infraestructura",
@@ -5277,7 +5277,7 @@ const en: Dictionary = {
     "An agent isn't just text. It searches your documents, books an appointment, sends a payment link — and when it doesn't know something, it hands the conversation to a person. Every capability is granted separately, agent by agent.",
   "landing.capabilities.cta": "How each one is set up",
   "landing.capabilities.andAlso":
-    "And also: public forms, email templates, photos and audio, reminders, the business profile and Shopify orders.",
+    "And also: CRM and contacts, lead qualification, API and webhooks, public forms, email templates, photos and audio, reminders, the business profile and Shopify orders.",
   "landing.capabilities.footnote":
     "Nothing is on by default: you pick what each agent gets. Capabilities that depend on an integration stay greyed out until you connect it, so nobody hands an agent a checkout with no payment account behind it.",
 
@@ -5496,7 +5496,7 @@ const en: Dictionary = {
   "pricing.managed.feature7": "Assisted onboarding",
   "pricing.managed.feature8": "Agent and automation templates for your industry",
   "pricing.enterprise.name": "Enterprise",
-  "pricing.enterprise.for": "For whoever needs to run it on their own infrastructure: one-time payment, no subscription.",
+  "pricing.enterprise.for": "For whoever needs to run it on their own infrastructure",
   "pricing.enterprise.feature1": "Run the whole application on your own server",
   "pricing.enterprise.feature2": "Your PostgreSQL, your backups, your OpenTelemetry traces",
   "pricing.enterprise.feature3": "Isolated Docker sandbox, on your own infrastructure",

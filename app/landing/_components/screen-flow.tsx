@@ -64,7 +64,6 @@ export function FlowScreen() {
       // context menu. Los children con pointer-events-auto son ignorados.
       // Los portales (ContextMenu) nunca se abren porque el evento trigger
       // nunca llega al handler.
-      // @ts-expect-error — inert es soportado en todos los browsers modernos
       inert={true}
     >
       <MockSidebar active="/automations" />

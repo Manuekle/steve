@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useT } from "@/lib/i18n/provider";
+import { LightBar } from "./lighting";
 import { Haze, Reveal, Shell } from "./primitives";
 
 /**
@@ -270,21 +271,37 @@ export function TestimonialsSection() {
               {/* A fixed height rather than an aspect ratio: the wall is a
                   window onto a longer list, and how tall the window is has
                   nothing to do with how wide the columns happen to be. */}
-              <div className="lp-wall h-[30rem] sm:h-[34rem]">
-                <Haze edge="top" />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {columns.map((items, index) => (
-                    <Column
-                      dir={TRACKS[index].dir}
-                      duration={TRACKS[index].duration}
-                      items={items}
-                      // biome-ignore lint/suspicious/noArrayIndexKey: three fixed positional tracks
-                      key={index}
-                      offset={TRACKS[index].offset}
-                    />
-                  ))}
+              {/* The tube hangs above the wall, in a wrapper of its own,
+                  because the wall clips. Put inside it — which is where this
+                  started — the filament sat exactly on the clip edge and its
+                  halo was sliced flat along the top of the window, which is
+                  the one seam a fixture cannot survive: a light with a
+                  straight edge is a rectangle.
+
+                  Outside, it lights the wall the same way the same tube lights
+                  every screenshot on the page, at the same distance and the
+                  same brightness — `top-0` and the same 14% inset, because the
+                  fixture's box goes on the lit surface and lifts its own tube
+                  out. That is the whole point of there being one fixture
+                  rather than an effect per section. */}
+              <div className="relative">
+                <LightBar className="inset-x-[14%] top-0 z-10" drop="16rem" gap="0px" />
+                <div className="lp-wall h-[30rem] sm:h-[34rem]">
+                  <Haze edge="top" />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {columns.map((items, index) => (
+                      <Column
+                        dir={TRACKS[index].dir}
+                        duration={TRACKS[index].duration}
+                        items={items}
+                        // biome-ignore lint/suspicious/noArrayIndexKey: three fixed positional tracks
+                        key={index}
+                        offset={TRACKS[index].offset}
+                      />
+                    ))}
+                  </div>
+                  <Haze edge="bottom" />
                 </div>
-                <Haze edge="bottom" />
               </div>
             </Reveal>
           )}

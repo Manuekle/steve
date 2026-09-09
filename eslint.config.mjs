@@ -25,6 +25,10 @@ export default [
       "node_modules/**",
       "next-env.d.ts",
       ".claude/**",
+      // Vendored reference checkout: gitignored, so CI never sees it, but a
+      // local `pnpm lint` walked it and failed on a minified gsap bundle.
+      // tsconfig.json already excludes the same path.
+      "que-podemos-sacar-de-este-repositorio/**",
     ],
   },
   ...coreWebVitals,

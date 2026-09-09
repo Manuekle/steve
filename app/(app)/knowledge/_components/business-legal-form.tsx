@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
   Delete02Icon,
-  DownloadCircle01Icon,
+  Download03Icon,
   LegalDocument01Icon,
   SecurityCheckIcon,
 } from "@hugeicons/core-free-icons";
@@ -223,7 +223,7 @@ function LegalPageEditor({
           {busy === "import" ? (
             <Spinner size={14} strokeWidth={2} />
           ) : (
-            <HugeiconsIcon icon={DownloadCircle01Icon} size={14} strokeWidth={1.75} />
+            <HugeiconsIcon icon={Download03Icon} size={14} strokeWidth={1.75} />
           )}
           {t("business.legalImport")}
         </Button>

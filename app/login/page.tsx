@@ -1,6 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@/components/icons/icon";
+import { SenkaMark } from "@/components/icons/senka-mark";
 import { ArrowLeft02Icon, EyeIcon, EyeOffIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -216,23 +217,8 @@ function LoginForm() {
         {/* The mark, in the same rounded tile the favicon uses, so the tab and
             the page agree. A padlock said "this is locked", which the heading
             says better and in words. */}
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-foreground shadow-[var(--shadow-soft)]">
-          <svg
-            aria-hidden="true"
-            className="size-7"
-            fill="none"
-            viewBox="302 213 744 764"
-          >
-            <g
-              className="fill-background"
-              fillRule="evenodd"
-              clipRule="evenodd"
-              transform="matrix(1.224609,0,0,1.224609,0,0)"
-            >
-              <path d="M582.456,174.042C600.42,172.773 620.252,173.718 640.863,189.005C644.383,191.616 663.795,206.014 668.034,236.573C681.076,330.579 559.988,394.831 484.619,470.617C438.086,517.408 454.974,544.289 469.67,549.004C500.598,558.927 512.748,508.059 541.695,472.649C617.522,379.894 693.952,399.843 705.529,402.372C748.19,411.69 775.215,442.871 784.382,463.556C853.922,620.467 641.439,770.217 486.406,798.038C307.307,830.177 306.84,714.337 351.837,679.925C412.084,633.851 480.186,661.211 575.542,648.796C638.358,640.617 675.314,609.221 687.096,580.331C707.551,530.174 665.637,494.725 614.46,507.35C552.897,522.536 534.576,573.975 504.84,594.992C464.44,623.547 419.885,608.565 404.81,552.41C387.977,489.707 415.383,189.146 582.456,174.042Z" />
-              <path d="M314.501,666.944C247.452,663.794 283.965,525.02 343.496,523.347C375.719,522.441 383.463,567.86 375.022,600.377C374.57,602.119 359.565,664.281 314.501,666.944Z" />
-            </g>
-          </svg>
+        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-foreground shadow-[var(--shadow-soft)] p-1">
+          <SenkaMark className="size-8 text-background" />
         </div>
 
         <h1 className="mt-7 text-balance text-center font-cooper text-[2rem] leading-[1.08] tracking-[-0.03em]">

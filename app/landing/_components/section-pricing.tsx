@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/provider";
 import { formatUSD, priceFor, type BillingPeriod } from "@/lib/plans";
+import { Halo, LightBar } from "./lighting";
 import { DigitPop, Reveal, SectionIntro, Shell } from "./primitives";
 
 /**
@@ -97,11 +98,56 @@ export function PricingSection() {
           </div>
         </Reveal>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        {/* `mt-14`, up from `mt-8`. The emphasised card has a fixture hanging
+            over it, and at the old spacing the tube and its halo landed a
+            dozen pixels under the billing toggle — a control and a light
+            fighting for the same band, which is what made the lamp read as a
+            smear attached to the pill rather than as something above the card.
+            Same argument, and the same fix, as the gap over the screenshots. */}
+        <div className="mt-14 grid gap-4 lg:grid-cols-3">
           {PLANS.map((plan, index) => {
             const price = priceFor(plan.nameKey, billing);
             return (
-              <Reveal delay={index * 70} key={plan.nameKey}>
+              <Reveal
+                className={plan.emphasis ? "relative" : undefined}
+                delay={index * 70}
+                key={plan.nameKey}
+              >
+                {/* The emphasised plan is the one card on the page that is lit
+                    from outside itself. It used to be marked by a border one
+                    step brighter and a shadow one step deeper — the app's own
+                    hover state, applied permanently, which is a card that
+                    looks like it is being pointed at by nobody.
+
+                    A fixture above it says the same thing in the page's own
+                    language, and says it without inventing an accent colour
+                    for a product that has none. The tube is inset well past
+                    the card's sides so the two corners stay dark: a strip
+                    light as wide as what it lights is a backlit panel.
+
+                    The fixture's box sits on the card's top edge and the tube
+                    lifts itself out of it; hanging the whole thing above the
+                    card instead put the top of the cone above the card too,
+                    and the brightest part of a cone is its first few pixels —
+                    which is why this used to be a white blob over the word
+                    "Pro" rather than a lamp over a card.
+
+                    Rendered before the card and with no z-index, so the card's
+                    opaque surface takes the rest of the cone. The pool below is
+                    the half the screenshots deliberately do without: a card
+                    ends on a hard edge and casts something, a screenshot ends
+                    by going out of focus and cannot. */}
+                {plan.emphasis ? (
+                  <>
+                    <LightBar
+                      className="inset-x-[14%] top-0 z-10"
+                      drop="14rem"
+                      gap="0px"
+                      intensity={0.9}
+                    />
+                    <Halo className="-inset-x-8 -bottom-10 h-32" />
+                  </>
+                ) : null}
                 {/* `lp-cap` is the same card the capability grid uses, so the
                     whole section hovers alike: the tile lifts and the ticks
                     come up in a run. The emphasised plan gets the stronger
@@ -111,9 +157,14 @@ export function PricingSection() {
                     full page's `Beam` stays on `/pricing`: a ring pulsing
                     forever belongs on the page you went to in order to
                     compare, not halfway down a landing. */}
+                {/* The emphasis is the fixture above and a brighter edge —
+                    not a permanent `--shadow-elevated`, which was the app's
+                    hover state applied to a card nobody is pointing at. A
+                    deeper shadow on a lit page is the one card claiming a
+                    light source of its own. */}
                 <div
                   className={`lp-cap group h-full flex-col p-6 sm:p-7 ${
-                    plan.emphasis ? "border-input shadow-[var(--shadow-elevated)]" : ""
+                    plan.emphasis ? "border-input" : ""
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -130,12 +181,25 @@ export function PricingSection() {
                   {price ? (
                     <div className="mt-5">
                       <p className="font-cooper font-heading font-semibold text-3xl tracking-[-0.03em]">
+                        {/* Milled, not lit. The figure is the one thing on this
+                            card a visitor came for, and it was set in the same
+                            `--foreground` as the plan name above it — three
+                            cards where the price and its own heading carried
+                            equal weight, which is a pricing band that makes you
+                            read it twice.
+
+                            `luminous` mills each character rather than the
+                            figure: a clipped background is masked by its own
+                            element's text, so wrapping the group put every
+                            animating digit outside the clip and the whole
+                            number vanished for the length of its entrance. */}
                         {/* Keyed on the period label, not on `billing`:
                             Enterprise's figure is the same under both, and a
                             number that replays its entrance without changing
                             reads as a number that changed. */}
                         <DigitPop
                           groupKey={`${plan.nameKey}-${price.periodKey}`}
+                          luminous
                           text={formatUSD(price.amount)}
                         />
                       </p>

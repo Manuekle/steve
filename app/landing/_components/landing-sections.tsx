@@ -27,6 +27,7 @@ import {
   WhatsAppMark,
 } from "./brand-marks";
 import { MercadoPagoBrandIcon } from "@/components/icons/connection-icons";
+import { BrandGlow, GlowMark, Halo, Spotlight } from "./lighting";
 import { AgentOverlay, ConversationOverlay } from "./overlays";
 import { SECURITY_ART } from "./security-art";
 import {
@@ -56,10 +57,18 @@ import {
  * automation trigger; it was never somewhere a customer writes to you, which
  * is the claim this section makes.
  */
-const CHANNELS: readonly { readonly label: string; readonly mark: ReactNode }[] = [
-  { label: "WhatsApp", mark: <WhatsAppMark size={34} /> },
-  { label: "Instagram", mark: <InstagramMark size={34} /> },
-  { label: "Meta", mark: <MetaMark size={38} /> },
+const CHANNELS: readonly {
+  /** The mark's own brand value, for the bloom under it. */
+  readonly glow: string;
+  readonly label: string;
+  readonly mark: ReactNode;
+}[] = [
+  { glow: "#25D366", label: "WhatsApp", mark: <WhatsAppMark size={34} /> },
+  // The magenta from the middle of the ramp, not the orange at its end: the
+  // gradient runs yellow through magenta to violet, and magenta is the one
+  // anybody would name if you asked them what colour Instagram is.
+  { glow: "#FC01D8", label: "Instagram", mark: <InstagramMark size={34} /> },
+  { glow: "#0081FB", label: "Meta", mark: <MetaMark size={38} /> },
 ];
 
 /** The four routes `lib/provider-catalog.ts` can be pointed at. Keep in step
@@ -91,7 +100,14 @@ export function ChannelBand() {
           <div className="mt-12 flex flex-wrap items-center justify-center gap-x-14 gap-y-9 sm:gap-x-20">
             {CHANNELS.map((channel) => (
               <span className="flex items-center gap-3.5" key={channel.label}>
-                {channel.mark}
+                {/* The one hue the rig allows. These marks were already the
+                    page's exception — full colour, on a product that has none
+                    — and they were the only bright objects on a lit page
+                    throwing no light of their own, which is what made them
+                    read as three stickers rather than three things in the
+                    room. The label beside each one stays plain: a glowing
+                    logo is a light source, a glowing word is a neon sign. */}
+                <BrandGlow colour={channel.glow}>{channel.mark}</BrandGlow>
                 <span className="whitespace-nowrap font-cooper text-[clamp(1.25rem,2.4vw,1.75rem)] text-foreground leading-none tracking-[-0.02em]">
                   {channel.label}
                 </span>
@@ -116,7 +132,13 @@ export function ChannelBand() {
             "the model is your choice" is a list, and a list read aloud is
             what a cycling word is. */}
         <Reveal delay={200}>
-          <div className="mt-14 border-border border-t pt-10">
+          {/* The rule under the channel row, with a source on it. It is the
+              one divider on the page that is also a hinge — everything above
+              it is what senka connects to and everything below is what runs
+              the replies — and the hot spot at its centre is where the light
+              that lit the hero enters this section. A plain hairline here read
+              as the section ending twice. */}
+          <div className="lp-filament mt-14 border-border border-t pt-10">
             <p className="text-center text-[13px] text-muted-foreground">
               {/* The prefix cannot wrap — the component keeps it on one line so
                   the sweep has a stable box to travel across — and the word
@@ -271,7 +293,13 @@ function FeatureSection({
           same object photographed from the same distance; running the first
           one 120px wider than the four below it read as four screenshots that
           had been shrunk to fit. */}
-      <div className="relative mx-auto mt-14 w-full max-w-[1240px] px-6 sm:mt-16 sm:px-8">
+      {/* `mt-20`, up from `mt-14`. The frames are lit now: a tube plus its halo
+          occupies the twenty pixels directly above the bezel, and at the old
+          spacing that put a bright horizontal streak within a line and a half
+          of the section's own paragraph — two things competing for the same
+          band of the composition. The fixture needs room above it to read as a
+          fixture rather than as an underline for the copy. */}
+      <div className="relative mx-auto mt-20 w-full max-w-[1240px] px-6 sm:mt-24 sm:px-8">
         <Reveal delay={60} lift={false}>
           <ScreenFrame hint={hint} label={label} overlays={overlays} url={url}>
             {children}
@@ -352,8 +380,16 @@ export function InboxSection() {
  * `lib/elevenlabs.ts`, and `http_request` is bounded by the host allowlist. A logo strip on a landing page is a promise about integrations,
  * and it is the easiest one on a page like this to write ahead of the code.
  */
+/* Same rule as the channel row: a mark that carries its own colour carries its
+   own light. `glow` is `null` for the two that are monochrome — a neutral
+   bloom under a grey wordmark is a smudge, and this row is a footnote, not a
+   light show. The three that do glow run at a third of the channel row's
+   brightness, which is what puts them further away rather than making them a
+   second claim. */
 const CONNECTORS: readonly {
   readonly detailKey: string;
+  /** The mark's brand value, or `null` when the mark has no colour of its own. */
+  readonly glow: string | null;
   /** `null` for a literal brand name — nothing to translate. */
   readonly labelKey: string | null;
   readonly label: string;
@@ -361,6 +397,9 @@ const CONNECTORS: readonly {
 }[] = [
   {
     detailKey: "landing.features.automation.connectorStripe",
+    // Stripe's violet. The slot holds two marks and one light; Mercado Pago's
+    // cyan under the same bloom would be two lamps in one 48px box.
+    glow: "#635BFF",
     labelKey: "landing.features.automation.connectorPaymentsLabel",
     label: "",
     mark: (
@@ -372,18 +411,21 @@ const CONNECTORS: readonly {
   },
   {
     detailKey: "landing.features.automation.connectorSheets",
+    glow: "#4285F4",
     labelKey: "landing.features.automation.connectorSheetsLabel",
     label: "",
     mark: <GoogleMark size={26} />,
   },
   {
     detailKey: "landing.features.automation.connectorVoice",
+    glow: null,
     labelKey: "landing.features.automation.connectorVoiceLabel",
     label: "",
     mark: <ElevenLabsMark height={15} />,
   },
   {
     detailKey: "landing.features.automation.connectorApi",
+    glow: null,
     labelKey: "landing.features.automation.connectorApiLabel",
     label: "",
     mark: (
@@ -413,7 +455,15 @@ function AutomationConnectors() {
                   ratios — a square G, a wide parallelogram, a wordmark seven
                   times wider than it is tall — and without it the labels sit
                   at four different heights. */}
-              <span className="flex h-7 items-center">{connector.mark}</span>
+              <span className="flex h-7 items-center">
+                {connector.glow ? (
+                  <BrandGlow colour={connector.glow} intensity={0.34}>
+                    {connector.mark}
+                  </BrandGlow>
+                ) : (
+                  connector.mark
+                )}
+              </span>
               <p className="mt-1 font-medium text-[15px] text-foreground">
                 {connector.labelKey ? t(connector.labelKey) : connector.label}
               </p>
@@ -730,15 +780,51 @@ export function ClosingSection() {
 
   return (
     <section className="relative overflow-hidden border-border border-t">
-      <div
-        aria-hidden="true"
-        className="lp-glow"
-        style={{ bottom: "-22rem", width: "min(900px, 120vw)", height: "34rem" }}
+      {/* The page closes under the same lamp it opened under. The bloom at the
+          foot was already here and it was doing the hero's old job — light
+          with no source — so the beam is the other half of it: it comes down
+          the section's centre line, lands on the mark, and the bloom below is
+          what it leaves on the floor.
+
+          Centred, unlike the hero's. The closing block is centred copy, and a
+          beam aimed off to one side of a centred column is the one arrangement
+          that reads as a mistake rather than as a composition. */}
+      <Spotlight
+        className="top-0 left-1/2 h-[34rem] w-[min(52rem,110vw)] -translate-x-1/2"
+        intensity={0.9}
       />
+      {/* The floor. This was `.lp-glow` — the same wide neutral bloom the hero
+          opens with — hung 22rem below the section's own foot. The section
+          clips, so two thirds of it was outside and the clip fell a third of
+          the way down the ellipse, above its brightest point: a hard edge the
+          full width of the page, sitting exactly on the border between this
+          section and the footer.
+
+          A `Halo` sized to end inside the section has no edge to show, because
+          a radial gradient is already transparent at its own bounds. And it is
+          the right piece now regardless: the beam above explains where this
+          light comes from, which is the thing `.lp-glow` never could. */}
+      <Halo className="inset-x-0 bottom-0 h-64" />
       <Shell className="relative py-28 text-center sm:py-36">
         <Reveal>
-          <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-            <HugeiconsIcon icon={ZapIcon} size={18} strokeWidth={1.75} />
+          {/* The one literal light source on the page, finally switched on.
+              It is a bolt in a recessed plate, and it has been a grey glyph in
+              a grey box for the whole life of this section — the icon that
+              means "this is fast" rendered at `--muted-foreground`, which is
+              the colour the page uses for things it is not asking you to look
+              at.
+
+              `GlowMark` and not a `drop-shadow`, because the silhouette is the
+              whole argument: a bolt's light is bolt-shaped close in and round
+              further out, and stacking the glyph at three radii is what
+              produces that. A single shadow gives you the round part only,
+              which is why an icon with a drop shadow reads as an icon with a
+              shadow. */}
+          <div className="relative mx-auto w-fit">
+            <Halo className="-inset-10" />
+            <div className="lp-plate relative flex size-10 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]">
+              <GlowMark icon={ZapIcon} size={18} strokeWidth={1.75} />
+            </div>
           </div>
         </Reveal>
         <TextReveal

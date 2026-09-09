@@ -50,13 +50,18 @@ type Capability = {
 };
 
 /**
- * Nine, in an asymmetric bento.
+ * Six, in an asymmetric bento.
  *
- * There were fifteen. Fifteen is a catalogue — the reader stops counting
- * around the eighth and the section stops being an argument. These nine are
- * the ones that answer "can it actually run my front desk"; the other six are
- * named in one line under the grid, which is enough for the reader who is
- * scanning for a particular word and is not a card each.
+ * There were fifteen, then nine, and nine was still a catalogue. The count
+ * that matters is not how many capabilities exist, it is how many cards a
+ * reader will actually read before they start scrolling past them — and nine
+ * cards over five rows is about twice that. Worse, it is nine cards each with
+ * a built scene in it: the section became the longest thing on the page while
+ * making the least specific claim on it.
+ *
+ * These six answer "can it actually run my front desk". Everything else is
+ * named in one line under the grid, which is what a reader scanning for a
+ * particular word needs and is not a card each.
  *
  * The asymmetry is in the width, not the height. Spanning rows was tried and
  * it does not survive copy that runs from two lines to four: the grid resolves
@@ -70,6 +75,12 @@ type Capability = {
  * right; alternating is what makes it read as a bento rather than as a table
  * with a wide first column.
  */
+/* Three rows of two, and the wide card changes sides on each. It also means
+   the grid closes on its own: the full-width `api` card existed to fill the
+   hole a ninth card left in a four-row bento, and with six there is no hole
+   for it to fill. `crm`, `prospect` and `api` moved to the line underneath —
+   all three are claims a reader either already assumed or will go to `/guide`
+   for, which is exactly the test for whether something needs a card. */
 const CAPABILITIES: readonly Capability[] = [
   { id: "knowledge", href: "/knowledge", span: 2 },
   { id: "handoff", href: "/inbox" },
@@ -79,16 +90,6 @@ const CAPABILITIES: readonly Capability[] = [
 
   { id: "payments", href: "/automations", span: 2 },
   { id: "voice", href: "/agents" },
-
-  { id: "crm", href: "/crm" },
-  { id: "prospect", href: "/crm", span: 2 },
-
-  // Full width, and last. Four rows of two leave a ninth card sitting in a
-  // two-column slot with an empty third beside it — a hole exactly where the
-  // grid should be closing. A card that spans the row closes it, and this is
-  // the right one to do it with: the scene is a wire between two systems and
-  // it is the only one that gets better the wider it goes.
-  { id: "api", href: "/connections", span: 3 },
 ];
 
 /**
@@ -299,17 +300,16 @@ export function CapabilitiesSection() {
           cta={{ href: "/guide", label: t("landing.capabilities.cta") }}
         />
 
-        {/* Four equal rows and then the full-width card at whatever height it
-            needs. Equal rows are what make a swap a translation and nothing
-            else: with rows sized by their own contents, two cards trading
-            places would resize each other and drag every row below them, which
-            is a layout recalculating rather than two cards moving. The last
-            row stays `auto` — the wire card is short, and stretching it to
-            match would open a hole exactly where the grid should be closing.
+        {/* Three equal rows. Equal rows are what make a swap a translation and
+            nothing else: with rows sized by their own contents, two cards
+            trading places would resize each other and drag every row below
+            them, which is a layout recalculating rather than two cards moving.
+
+            The trailing `auto` row went with the full-width card it was for.
 
             Below `lg` this is untouched: no spans, no shuffle, no fixed rows. */}
         <div
-          className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:[grid-template-rows:repeat(4,minmax(0,1fr))_auto]"
+          className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:[grid-template-rows:repeat(3,minmax(0,1fr))]"
           onBlurCapture={() => setHeld(false)}
           onFocusCapture={() => setHeld(true)}
           onMouseEnter={() => setHeld(true)}

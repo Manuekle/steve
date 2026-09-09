@@ -474,6 +474,13 @@ export default function AutomationFlowPage() {
                   </button>
                 </DialogTrigger>
                 <AutomationDialog
+                  // Remounted per open: the dialog seeds its fields from
+                  // `editing` with useState, and it never unmounts on close
+                  // (it is a permanent child of <Dialog>). Without this, a save
+                  // left the fields on the values handleSubmit resets them to —
+                  // an empty name, trigger "keyword", channel "all" — and the
+                  // next save wrote those defaults over the real automation.
+                  key={editDialogOpen ? "open" : "closed"}
                   editing={automation}
                   onUpdate={(_id, updates) => handleUpdateBasics(updates)}
                   onClose={() => setEditDialogOpen(false)}

@@ -312,6 +312,59 @@ const es: Dictionary = {
   "motion.toast.duration.desc": "ms. 0 = hasta que se descarte. Los error ya son 0.",
   "motion.toast.title": "Lánzalos",
 
+  // Lighting
+  "lighting.title": "Iluminación",
+  "lighting.desc": "El equipo de luces del landing. Seis piezas y una regla: la página tiene una sola lámpara, colgada arriba, y cada componente es esa lámpara vista desde otra distancia. Ninguno se anima en bucle — una luz que late es una notificación, una luz quieta es una habitación. Todos leen tokens declarados en .lp, así que fuera del envoltorio de marketing no pintan nada.",
+
+  "lighting.note.lpOnly": "Solo dentro de .lp. Los tokens --lp-beam-*, --lp-halo-ink y --lp-lumen-* viven en el envoltorio de marketing; fuera de él cada color resuelve a nada y la pieza dibuja una caja vacía.",
+
+  "lighting.lightBar.desc": "Un tubo de luz colgado sobre algo: el filamento, el brillo que lo rodea y el cono que tira hacia abajo. Es la pieza que va sobre cada captura de la página.",
+  "lighting.lightBar.prop.className": "Dónde cuelga y qué ancho tiene. La composición la decide quien llama, no el componente.",
+  "lighting.lightBar.prop.drop": "Hasta dónde llega el cono antes de desaparecer.",
+  "lighting.lightBar.prop.intensity": "Un solo dial para toda la luminaria. Por encima de ~1.4 el cono se lee como un panel gris en vez de como luz.",
+  "lighting.lightBar.note.paintOrder": "Renderizalo antes de lo que ilumina y sin z-index: la superficie opaca se come la mitad del cono que si no lavaría la interfaz.",
+  "lighting.lightBar.demo.title": "Sobre una card",
+  "lighting.lightBar.demo.desc": "El tubo entra hacia adentro de los bordes de la card: una luminaria tan ancha como lo que ilumina es un panel retroiluminado, no una lámpara.",
+  "lighting.lightBar.demo.body": "La luz llega desde arriba y las esquinas quedan en sombra. Eso es lo que separa una card iluminada de una card con borde.",
+
+  "lighting.spotlight.desc": "La misma lámpara con la luminaria fuera de cuadro: un cono de lados rectos que se abre hacia abajo sobre un titular. Es un conic-gradient, no un clip-path — un haz tiene bordes blandos y un polígono tiene el borde más duro que dibuja CSS.",
+  "lighting.spotlight.prop.className": "Dónde entra el haz y qué tan largo es.",
+  "lighting.spotlight.prop.intensity": "Un dial para todo el cono.",
+  "lighting.spotlight.note.apex": "El vértice va fuera de pantalla o detrás de algo. Un haz que arranca en el aire es un degradado disfrazado de lámpara.",
+  "lighting.spotlight.demo.title": "Sobre un titular",
+  "lighting.spotlight.demo.desc": "Centrado sobre texto centrado. Un haz apuntado a un costado de una columna centrada es la única disposición que se lee como error.",
+  "lighting.spotlight.demo.body": "Que el próximo mensaje ya tenga respuesta",
+
+  "lighting.halo.desc": "El charco que un objeto iluminado deja debajo de sí. Degradado, no una caja con blur: la forma ya la dibuja exacto un radial-gradient y el blur costaría una pasada entera sobre el área.",
+  "lighting.halo.prop.className": "Tamaño y posición del charco.",
+  "lighting.halo.note.gradient": "Anclado al 50%, no arriba: es la luz alrededor del objeto, no la que le pasa por al lado. Esa es la diferencia entre una card sobre un piso iluminado y una card con sombra.",
+  "lighting.halo.demo.title": "Debajo de una card",
+  "lighting.halo.demo.body": "Apoyada sobre algo",
+
+  "lighting.glowMark.desc": "Un ícono que es la fuente, no una superficie iluminada: el glifo apilado en tres radios de blur sobre un radial que es solo aire. Cuatro capas porque eso es un bloom — un drop-shadow es solo la más externa de las cuatro.",
+  "lighting.glowMark.prop.icon": "El glifo. Cuanto más dice su silueta, más rinde el efecto.",
+  "lighting.glowMark.prop.size": "Tamaño del ícono en píxeles.",
+  "lighting.glowMark.prop.strokeWidth": "Grosor del trazo, igual que en HugeiconsIcon.",
+  "lighting.glowMark.prop.intensity": "Escala las tres capas juntas.",
+  "lighting.glowMark.note.silhouette": "Vale la pena en una marca cuya silueta dice algo — un rayo, una llave, un escudo — y no vale nada en un círculo: el bloom tiene la forma del objeto cerca y es redondo lejos, y eso es todo lo que aporta sobre una sombra.",
+  "lighting.glowMark.demo.title": "En una placa, a tres intensidades",
+  "lighting.glowMark.demo.desc": "La placa es la misma lp-plate de siempre. Lo único que cambia es que el ícono está encendido.",
+
+  "lighting.lumen.desc": "Tipografía fresada, no iluminada: una rampa metálica vertical a través de las letras, con una copia borrosa de la misma palabra por detrás. Clara arriba y oscura en la base, que es hacia donde apunta todo lo demás de la página.",
+  "lighting.lumen.prop.text": "La palabra de la que se dibuja el bloom. Obligatoria incluso cuando children renderiza otra cosa: el bloom es attr(data-text) y no puede leer descendientes.",
+  "lighting.lumen.prop.children": "Por defecto, text. Se pasa aparte solo cuando otra pieza ya está renderizando la palabra — el modo luminous de DigitPop, que envuelve carácter por carácter.",
+  "lighting.lumen.prop.className": "Tipografía y tamaño. La rampa no toca ninguno de los dos.",
+  "lighting.lumen.note.figuresOnly": "Para cifras y casi nada más. Una rampa a través de un titular es un párrafo entero de cromo; a través de $249 es el número por el que alguien entró a la sección.",
+  "lighting.lumen.note.perGlyph": "Va sobre el glifo, nunca alrededor de una caja que lo contiene. Un fondo recortado lo pinta el elemento que lo declara y lo enmascara su propio texto, así que cualquier descendiente que componga aparte — opacidad menor a 1, un filter, un will-change que nombre alguno — queda fuera de esa operación y desaparece. Una cifra animada se envuelve carácter por carácter.",
+  "lighting.lumen.demo.title": "Cifras",
+
+  "lighting.brand.desc": "Una marca a todo color, encendida en su propio color. Es el único tono que se permite el equipo de luces, y no lo inventa: los logos de canal ya son la excepción que hace esta página. Eran los únicos objetos brillantes de una página iluminada que no tiraban luz propia, y eso los dejaba como calcos pegados encima.",
+  "lighting.brand.prop.colour": "El valor de marca del logo. Se pasa a mano: un SVG con tres gradientes no tiene un solo color y elegir cuál es una decisión editorial.",
+  "lighting.brand.prop.intensity": "Un dial encima del del tema, multiplicando. Sirve para alejar una marca, no para apagarla: la fila de canales es el argumento de la sección y va en 1, los conectores del pie van en un tercio.",
+  "lighting.brand.note.dropShadow": "drop-shadow, no una copia borrosa. Esos logos tienen gradientes direccionados por id y se renderizan una sola vez por documento justamente porque una segunda copia se repintaría con los defs de la primera. drop-shadow toma el canal alfa del glifo, así que la luz sale exactamente con la forma del logo.",
+  "lighting.brand.demo.title": "Los tres canales",
+  "lighting.brand.demo.desc": "El de Instagram es la magenta del medio de su rampa, no el naranja del final: es el color que cualquiera nombraría.",
+
   // AI Elements
   "ai.title": "Elementos de agente",
   "ai.desc": "components/ai-elements — lo que dibuja la conversación: esperas, razonamiento, herramientas y la navegación de las listas largas.",
@@ -726,6 +779,59 @@ const en: Dictionary = {
   "motion.toast.duration.desc": "ms. 0 = until dismissed. Errors are already 0.",
   "motion.toast.title": "Launch them",
 
+  // Lighting
+  "lighting.title": "Lighting",
+  "lighting.desc": "The landing's lighting rig. Six fixtures and one rule: the page has one lamp, hanging above it, and every component is that lamp seen from a different distance. None of them loops — a light that pulses is a notification, a light that holds still is a room. All of them read tokens declared on .lp, so outside the marketing wrapper they paint nothing.",
+
+  "lighting.note.lpOnly": "Inside .lp only. The --lp-beam-*, --lp-halo-ink and --lp-lumen-* tokens live on the marketing wrapper; outside it every colour resolves to nothing and the fixture draws an empty box.",
+
+  "lighting.lightBar.desc": "A tube light hung above something: the filament, the bloom around it, and the cone it throws down. This is the piece that goes over every screenshot on the page.",
+  "lighting.lightBar.prop.className": "Where it hangs and how wide it is. Composition is the caller's decision, not the component's.",
+  "lighting.lightBar.prop.drop": "How far the cone reaches before it is gone.",
+  "lighting.lightBar.prop.intensity": "One dial for the whole fixture. Above ~1.4 the cone reads as a grey panel rather than as light.",
+  "lighting.lightBar.note.paintOrder": "Render it before the thing it lights and with no z-index: the opaque surface takes the half of the cone that would otherwise wash across the interface.",
+  "lighting.lightBar.demo.title": "Over a card",
+  "lighting.lightBar.demo.desc": "The tube is inset from the card's sides — a fixture as wide as what it lights is a backlit panel, not a lamp.",
+  "lighting.lightBar.demo.body": "The light arrives from above and the corners stay dark. That is what separates a lit card from a card with a border.",
+
+  "lighting.spotlight.desc": "The same lamp with the fixture out of frame: a straight-sided cone opening downward over a headline. A conic gradient, not a clip-path — a beam has soft edges and a polygon has the hardest edge CSS can draw.",
+  "lighting.spotlight.prop.className": "Where the beam enters and how far it carries.",
+  "lighting.spotlight.prop.intensity": "One dial for the whole cone.",
+  "lighting.spotlight.note.apex": "The apex belongs off screen or behind something. A beam that starts in mid-air is a gradient in a lamp's costume.",
+  "lighting.spotlight.demo.title": "Over a headline",
+  "lighting.spotlight.demo.desc": "Centred over centred text. A beam aimed off to one side of a centred column is the one arrangement that reads as a mistake.",
+  "lighting.spotlight.demo.body": "Let the next message already have an answer",
+
+  "lighting.halo.desc": "The pool a lit object leaves under itself. A gradient, not a blurred box: a radial gradient already draws the shape exactly, and the blur would cost a full pass over the area.",
+  "lighting.halo.prop.className": "The pool's size and position.",
+  "lighting.halo.note.gradient": "Anchored at 50%, not at the top: it is the light around the object rather than the light falling past it. That is the difference between a card on a lit floor and a card with a shadow.",
+  "lighting.halo.demo.title": "Under a card",
+  "lighting.halo.demo.body": "Standing on something",
+
+  "lighting.glowMark.desc": "An icon that is the source rather than a lit surface: the glyph stacked at three blur radii over a radial that is only air. Four layers because that is what a bloom is — a drop-shadow is the outermost of the four on its own.",
+  "lighting.glowMark.prop.icon": "The glyph. The more its silhouette says, the more the effect earns.",
+  "lighting.glowMark.prop.size": "Icon size in pixels.",
+  "lighting.glowMark.prop.strokeWidth": "Stroke weight, same as HugeiconsIcon.",
+  "lighting.glowMark.prop.intensity": "Scales all three layers together.",
+  "lighting.glowMark.note.silhouette": "Worth it on a mark whose silhouette says something — a bolt, a key, a shield — and worth nothing on a circle: the bloom is glyph-shaped close in and round further out, and that is all it adds over a shadow.",
+  "lighting.glowMark.demo.title": "On a plate, at three intensities",
+  "lighting.glowMark.demo.desc": "The plate is the same lp-plate as everywhere else. The only thing that changed is that the icon is on.",
+
+  "lighting.lumen.desc": "Type that has been milled rather than lit: a vertical metallic ramp through the letterforms, with a blurred copy of the same word behind them. Bright at the cap line and dark at the baseline, which is where everything else on the page points.",
+  "lighting.lumen.prop.text": "The word the bloom is drawn from. Required even when children renders something else: the bloom is attr(data-text) and cannot read descendants.",
+  "lighting.lumen.prop.children": "Defaults to text. Passed separately only when another component is already rendering the word — DigitPop's luminous mode, which wraps one character at a time.",
+  "lighting.lumen.prop.className": "Typeface and size. The ramp touches neither.",
+  "lighting.lumen.note.figuresOnly": "For figures and almost nothing else. A ramp through a headline is a whole paragraph of chrome; a ramp through $249 is the number somebody came to the section for.",
+  "lighting.lumen.note.perGlyph": "It goes on the glyph, never around a box containing one. A clipped background is painted by the element that declares it and masked by its own text, so any descendant that composites separately — an opacity below 1, a filter, a will-change naming either — falls outside that operation and disappears. An animated figure is wrapped one character at a time.",
+  "lighting.lumen.demo.title": "Figures",
+
+  "lighting.brand.desc": "A full-colour mark, lit in its own colour. It is the one hue the rig allows, and it does not invent it: the channel logos are already the exception this page makes. They were the only bright objects on a lit page throwing no light of their own, which left them reading as stickers.",
+  "lighting.brand.prop.colour": "The mark's brand value, passed by hand: an SVG with three gradients has no single colour, and picking one is an editorial decision.",
+  "lighting.brand.prop.intensity": "A dial on top of the theme's, multiplying. It puts a mark further away rather than turning it down: the channel row is the section's argument and runs at 1, the connector footnote at a third.",
+  "lighting.brand.note.dropShadow": "drop-shadow, not a blurred copy. Those logos carry gradients addressed by id and are rendered once per document precisely because a second copy would repaint with the first one's defs. drop-shadow takes the glyph's own alpha, so the light comes out exactly the shape of the logo.",
+  "lighting.brand.demo.title": "The three channels",
+  "lighting.brand.demo.desc": "Instagram's is the magenta from the middle of its ramp, not the orange at the end: it is the colour anybody would name.",
+
   // AI Elements
   "ai.title": "Agent elements",
   "ai.desc": "components/ai-elements — what draws the conversation: waits, reasoning, tools, and long-list navigation.",
@@ -874,16 +980,22 @@ function getInitialLocale(): CatalogLocale {
   if (typeof window === "undefined") return "es";
   try {
     const stored = localStorage.getItem(CATALOG_LOCALE_KEY);
-    if (stored === "es" || stored === "en") return stored;
+    if (stored === "es" || stored === "en") {
+      currentLocale = stored;
+      return stored;
+    }
   } catch {}
+  currentLocale = "es";
   return "es";
 }
 
 export function CatalogI18nProvider({ children }: { readonly children: ReactNode }) {
   const [locale, setLocaleState] = useState<CatalogLocale>(getInitialLocale);
 
-  // Sync module-level variable so ct() works outside React.
-  currentLocale = locale;
+  // `currentLocale` is kept in step by `getInitialLocale` and by `setLocale`
+  // below, not by an assignment in the render body: a render React throws
+  // away must not leave the module-level cache pointing at a locale that was
+  // never committed.
 
   const setLocale = useCallback((next: CatalogLocale) => {
     setLocaleState(next);

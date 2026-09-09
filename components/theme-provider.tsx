@@ -22,12 +22,16 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 const THEME_STORAGE_KEY = "senka-theme";
 
 export function ThemeProvider({ children }: { readonly children: ReactNode }) {
-  // Initialize from the DOM class that the inline script in layout.tsx
-  // already set before first paint. This avoids a light→dark flash.
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "light";
-    return document.documentElement.classList.contains("dark") ? "dark" : "light";
-  });
+  // Always start as "light" so server HTML and the first client render match
+  // (hydration-safe). The inline script in layout.tsx has already set the
+  // correct `dark` class on <html> before paint, so there is no white flash —
+  // the CSS is already dark. We sync the React state to the DOM after mount.
+  const [theme, setThemeState] = useState<Theme>("light");
+
+  useEffect(() => {
+    const actual: Theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+    setThemeState((prev) => (prev === actual ? prev : actual));
+  }, []);
 
   // After mount, enable smooth theme transitions. Before this, transitions
   // are disabled so the initial theme set by the inline script doesn't

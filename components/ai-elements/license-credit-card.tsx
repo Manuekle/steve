@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   motion,
   useMotionTemplate,
@@ -127,7 +127,9 @@ export function LicenseCreditCard({
 }) {
   const { t } = useI18n();
   const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && theme === "dark";
   const reduce = useReducedMotion();
   const canHover = useHoverCapable();
   const node = useRef<HTMLDivElement>(null);
@@ -200,7 +202,6 @@ export function LicenseCreditCard({
   const textBody = isDark ? "text-white/90" : "text-neutral-800";
   const textSoft = isDark ? "text-white/85" : "text-neutral-700";
   const textFaint = isDark ? "text-white/70" : "text-neutral-600";
-  const textGhost = isDark ? "text-white/25" : "text-neutral-400";
   const iconColor = isDark ? "text-white" : "text-neutral-900";
   const iconGhost = isDark ? "text-white/25" : "text-neutral-400";
   const face = cn(
