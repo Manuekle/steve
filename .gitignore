@@ -1,6 +1,8 @@
 node_modules
 .env*
 !.env.example
+!.env.local.example
+!.env.prod.example
 .eve
 .vercel
 .workflow-data

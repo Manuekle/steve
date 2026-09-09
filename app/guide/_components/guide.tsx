@@ -77,6 +77,10 @@ export function Guide() {
                   {t("guide.quickInstall.windows")}
                 </a>
               </div>
+              <p className="text-sm text-muted-foreground">{t("guide.quickInstall.macosLinux")}</p>
+              <CodeBlock>{`curl -fsSL https://raw.githubusercontent.com/Manuekle/senka/main/install.sh | bash`}</CodeBlock>
+              <p className="text-sm text-muted-foreground">{t("guide.quickInstall.windows")}</p>
+              <CodeBlock>{`irm https://raw.githubusercontent.com/Manuekle/senka/main/install.ps1 | iex`}</CodeBlock>
               <p>{t("guide.quickInstall.afterInstall")}</p>
             </Clause>
 
