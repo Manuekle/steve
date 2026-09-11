@@ -1930,6 +1930,7 @@ export const es: Dictionary = {
     "WhatsApp, Instagram y Meta Ads en una sola bandeja. Los agentes responden lo que saben responder y te pasan el resto. Nosotros operamos la infraestructura; vos usás tu propia clave de modelo.",
   "landing.hero.noAccount": "Suscripción mensual o anual. O el tuyo, para siempre, con Enterprise.",
   "landing.hero.frameHint": "Una conversación de verdad, en vivo: elegir modelo, preguntar, y las herramientas que corre para responder.",
+  "landing.hero.ycApplication": "Estamos preparando nuestra aplicación para Y Combinator.",
 
   "landing.cta.start": "Empezar",
   "landing.cta.viewDashboard": "Ver el panel",
@@ -1961,6 +1962,7 @@ export const es: Dictionary = {
   "landing.footer.colSections": "En esta página",
   "landing.footer.colResources": "Recursos",
   "landing.footer.stackLabel": "Sobre qué corre",
+  "landing.footer.ycApplication": "Aplicación para Y Combinator en preparación.",
   "landing.footer.linkTerms": "Términos",
   "landing.footer.linkPrivacy": "Privacidad",
   "landing.footer.linkGuide": "Instalación y configuración",

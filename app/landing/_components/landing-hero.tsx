@@ -9,6 +9,7 @@ import { TextReveal } from "@/components/motion/text-reveal";
 import { useSession } from "@/lib/auth/use-session";
 import { useT } from "@/lib/i18n/provider";
 import { ChatScreen } from "./app-screens";
+import { YCombinatorMark } from "./brand-marks";
 import styles from "./editorial.module.css";
 import { Grain } from "./grain";
 import { Reveal, ScreenFrame, Shell } from "./primitives";
@@ -64,6 +65,13 @@ export function LandingHero() {
           </Link>
         </Reveal>
 
+        <Reveal delay={80}>
+          <div className="mt-5 inline-flex max-w-full items-center gap-2.5 text-[12px] text-muted-foreground">
+            <YCombinatorMark size={22} />
+            <span>{t("landing.hero.ycApplication")}</span>
+          </div>
+        </Reveal>
+
         {/* On mount, not on view: this line is above the fold on every device,
             so an in-view trigger fires at the same instant anyway and only
             costs an observer. `delay` keeps it a beat behind the badge. */}
@@ -107,6 +115,7 @@ export function LandingHero() {
             <span className="ml-1 text-[13px] text-muted-foreground">{t("landing.hero.noAccount")}</span>
           </div>
         </Reveal>
+
       </Shell>
 
       {/* The product. It sits on a wider rail than the copy and runs past the

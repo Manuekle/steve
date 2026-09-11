@@ -11,7 +11,7 @@ import { useSession } from "@/lib/auth/use-session";
 import { useI18n, useT } from "@/lib/i18n/provider";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { PrivacyPreferencesButton } from "@/components/privacy-consent";
-import { InstagramMark, MetaMark, WhatsAppMark } from "./brand-marks";
+import { InstagramMark, MetaMark, WhatsAppMark, YCombinatorMark } from "./brand-marks";
 import { LINKS, PAGES, Wordmark } from "./landing-header";
 import { BrandGlow, Halo, LightBar } from "./lighting";
 import { Shell } from "./primitives";
@@ -350,6 +350,11 @@ export function LandingFooter({ editorial = false }: { readonly editorial?: bool
             <p className="mt-2.5 max-w-[42ch] text-[13px] leading-relaxed text-muted-foreground">
               {t("landing.footer.builtOn")}
             </p>
+
+            <div className="mt-6 flex items-center gap-2.5 text-[12px] text-muted-foreground">
+              <YCombinatorMark size={22} />
+              <span>{t("landing.footer.ycApplication")}</span>
+            </div>
           </div>
 
           <div className="lg:col-span-4">

@@ -17,6 +17,25 @@
 
 const SIZE_CLASS = "shrink-0";
 
+/** Y Combinator mark supplied for the application announcement. */
+export function YCombinatorMark({ size = 32 }: { readonly size?: number }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={SIZE_CLASS}
+      height={size}
+      viewBox="0 0 256 256"
+      width={size}
+    >
+      <rect fill="#FB651E" height="256" width="256" />
+      <path
+        d="M119.373653 144.745813 75.43296 62.431573h20.081493l25.847467 52.092587c.397655.927862.86158 1.888848 1.391787 2.882987.530207.994138.994131 2.021399 1.391786 3.081813.265104.397655.463929.762167.59648 1.093547.132552.331379.265102.629616.397654.89472 1.060415 1.325517 1.656888 2.617878 2.187095 3.87712.530207 1.259242.994131 2.419052 1.391786 3.479466 1.060415-2.25338 2.220225-4.672413 3.479467-7.257173 1.259242-2.58476 2.551602-5.268893 3.87712-8.05248l26.24512-52.092587h18.689707l-44.338347 83.308374v53.08672h-16.900267z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  );
+}
+
 export function MetaMark({ size = 28 }: { readonly size?: number }) {
   return (
     <svg

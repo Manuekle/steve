@@ -1928,6 +1928,7 @@ export const en: Dictionary = {
     "WhatsApp, Instagram and Meta Ads in one inbox. Agents answer what they know and hand you the rest. We operate the infrastructure; you bring your own model key.",
   "landing.hero.noAccount": "Monthly or annual subscription. Or yours, for good, with Enterprise.",
   "landing.hero.frameHint": "A real conversation, live: picking a model, asking, and the tools it runs to answer.",
+  "landing.hero.ycApplication": "We are preparing our application for Y Combinator.",
 
   "landing.cta.start": "Get started",
   "landing.cta.viewDashboard": "View the dashboard",
@@ -1959,6 +1960,7 @@ export const en: Dictionary = {
   "landing.footer.colSections": "On this page",
   "landing.footer.colResources": "Resources",
   "landing.footer.stackLabel": "What it runs on",
+  "landing.footer.ycApplication": "Y Combinator application in preparation.",
   "landing.footer.linkTerms": "Terms",
   "landing.footer.linkPrivacy": "Privacy",
   "landing.footer.linkGuide": "Install & configure",
