@@ -2,9 +2,12 @@
 
 import { type FormEvent, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
+import { AiPaintbrushIcon } from "@hugeicons/core-free-icons";
 import {
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -71,7 +74,9 @@ export function AgentCreateDialog({
   return (
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>{t("agents.createAgent")}</DialogTitle>
+        <DialogTitle icon={<HugeiconsIcon icon={AiPaintbrushIcon} size={18} strokeWidth={1.75} />}>
+          {t("agents.createAgent")}
+        </DialogTitle>
         <DialogDescription>{t("builder.createDescription")}</DialogDescription>
       </DialogHeader>
 
@@ -118,7 +123,12 @@ export function AgentCreateDialog({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-1">
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="outline" disabled={creating}>
+              {t("common.cancel")}
+            </Button>
+          </DialogClose>
           <Button type="submit" disabled={!name.trim() || creating}>
             {creating ? (
               <span className="flex items-center gap-2">
@@ -129,7 +139,7 @@ export function AgentCreateDialog({
               t("builder.createAndOpen")
             )}
           </Button>
-        </div>
+        </DialogFooter>
       </form>
     </DialogContent>
   );

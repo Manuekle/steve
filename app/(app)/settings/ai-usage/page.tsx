@@ -326,6 +326,7 @@ export default function AiUsagePage() {
               <TimeSeries
                 data={dailySpend}
                 emptyLabel={t("aiUsage.trendEmpty")}
+                formatAxis={hasCost ? formatUsd : undefined}
                 formatValue={(point) => {
                   const day = summary?.byDay.find((d) => d.day === point.key);
                   return (

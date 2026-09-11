@@ -260,6 +260,22 @@ export type WorkflowStepType =
   | "send_payment_link"
   | "book_meeting";
 
+export type WorkflowPort = {
+  readonly side: "top" | "right" | "bottom" | "left";
+  /** Position along the chosen edge, from 0 to 1. */
+  readonly offset: number;
+};
+
+export type WorkflowConnection = {
+  /** Stable identity prevents a moved step inheriting another source's route. */
+  readonly sourceId: string;
+  readonly from: WorkflowPort;
+  readonly to: WorkflowPort;
+  readonly waypoint?: { readonly x: number; readonly y: number };
+  /** Offset from the anchors' midpoint, so a dragged rail follows moving nodes. */
+  readonly routing?: { readonly axis: "x" | "y" | "xy"; readonly offset: { readonly x: number; readonly y: number } };
+};
+
 export type WorkflowStep = {
   readonly id: string;
   readonly type: WorkflowStepType;
@@ -328,6 +344,7 @@ export type WorkflowStep = {
    * tentative / conditional hop on the canvas; the runtime doesn't care.
    */
   readonly connector?: "solid" | "dashed";
+  readonly connection?: WorkflowConnection;
   /**
    * Muted on the canvas and skipped when the flow runs — the step stays in
    * place so it can be switched back on without rebuilding it.
@@ -651,4 +668,194 @@ export type Reminder = {
   readonly message: string;
   readonly status: ReminderStatus;
   readonly created_at: string;
+};
+
+// ── Number directory ───────────────────────────────────────────────
+//
+// One installation, several agents, one phone number each. Until this
+// existed a number lived in exactly two places — the WhatsApp credentials
+// (one `WHATSAPP_PHONE_NUMBER_ID` for the whole install) and an agent's
+// ElevenLabs voice mirror — and neither could say who else was already
+// using it. Two agents pointed at the same number cross their
+// conversations: whichever webhook fires first answers, and the owner sees
+// one thread written by two different prompts.
+//
+// So numbers are their own directory, and an assignment is exclusive: the
+// store refuses to bind a number that another agent already holds, and the
+// UI says which agent holds it instead of failing silently.
+
+/** What a number is wired for. A number can serve more than one surface —
+ *  a WhatsApp Business number that also takes calls — so this is a set. */
+export type NumberCapability = "whatsapp" | "sms" | "voice" | "instagram";
+
+/** Where the number is actually provisioned. `manual` is a number the owner
+ *  owns somewhere this app does not integrate with; it still belongs in the
+ *  directory so the collision check can see it. */
+export type NumberProvider = "meta" | "twilio" | "elevenlabs" | "manual";
+
+export type PhoneNumberStatus = "active" | "inactive";
+
+export type PhoneNumber = {
+  readonly id: string;
+  /** E.164, digits only with a leading `+`. The stored, normalized form —
+   *  what the uniqueness check compares. */
+  readonly e164: string;
+  /** What the owner calls it. "Recepción", "Ventas MX". */
+  readonly label: string;
+  readonly capabilities: readonly NumberCapability[];
+  readonly provider: NumberProvider;
+  /**
+   * The provider's own id for this number, when it has one:
+   * `WHATSAPP_PHONE_NUMBER_ID` for Meta, the phone number id for ElevenLabs,
+   * the SID for Twilio. Kept so an assignment can actually be pushed to the
+   * provider rather than only recorded here.
+   */
+  readonly providerNumberId?: string;
+  /** The agent that answers this number. `null` is unassigned — which is a
+   *  real state, not a missing one: a number can exist before anybody owns it. */
+  readonly agentId: string | null;
+  readonly status: PhoneNumberStatus;
+  readonly notes?: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+// ── Agent skills ───────────────────────────────────────────────────
+//
+// A skill is a procedure the model loads on demand — Eve's `load_skill`
+// (node_modules/eve/docs/skills.mdx). The ones under agent/skills/ are
+// authored in this repo and ship with a release. These are the owner's:
+// written in the app, started from a template, or promoted out of a
+// document they uploaded to Conocimiento. They are served to the runtime by
+// agent/skills/user-skills.ts, which resolves them per session, so adding
+// one takes effect on the next turn rather than the next deploy.
+
+export type AgentSkillSource = "manual" | "template" | "knowledge";
+
+export type AgentSkill = {
+  readonly id: string;
+  /** Filesystem-safe slug. Becomes the skill name the model loads. */
+  readonly slug: string;
+  readonly name: string;
+  /** The routing hint. Eve shows this — not the body — to the model on every
+   *  turn, so it is written as the task that should trigger a load. */
+  readonly description: string;
+  /** The procedure itself. Markdown, the SKILL.md body. */
+  readonly markdown: string;
+  readonly source: AgentSkillSource;
+  /** Which template it started from, when it started from one. */
+  readonly templateId?: string;
+  /** The knowledge document it was promoted from, when it was. */
+  readonly documentId?: string;
+  readonly enabled: boolean;
+  /**
+   * Which agents get it. Empty means every agent — the common case, and the
+   * one an owner means when they upload a playbook for "the business".
+   */
+  readonly agentIds: readonly string[];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+// ── MCP servers ────────────────────────────────────────────────────
+//
+// Remote tool servers the owner connects, rather than ones this repo
+// authors. Eve's own `agent/connections/*.ts` are file-based and fixed at
+// build time, which is right for the vendors a release ships with and wrong
+// for a server somebody pastes a URL for on a Tuesday. These are stored and
+// lowered into tools per session by agent/tools/mcp.ts.
+
+export type McpAuthKind = "none" | "bearer" | "header";
+
+export type McpServer = {
+  readonly id: string;
+  /** Tool-name-safe slug. The model calls `mcp_<slug>`. */
+  readonly slug: string;
+  readonly name: string;
+  /** Streamable HTTP (or SSE) endpoint. */
+  readonly url: string;
+  /** Written for the model: the main signal it uses to pick this server. */
+  readonly description: string;
+  readonly authKind: McpAuthKind;
+  /** Bearer token or header value. Never returned to the browser. */
+  readonly secret?: string;
+  /** Header name when `authKind` is `header`. */
+  readonly headerName?: string;
+  readonly enabled: boolean;
+  /** Allow-list of remote tool names. Empty means every tool the server has. */
+  readonly allow: readonly string[];
+  /** Block-list, applied after the allow-list. */
+  readonly block: readonly string[];
+  /** Result of the last connectivity probe, from the Test button. */
+  readonly lastCheck?: McpCheck;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+export type McpCheck = {
+  readonly ok: boolean;
+  readonly at: string;
+  /** Tool names the server advertised, on a successful probe. */
+  readonly tools?: readonly string[];
+  readonly error?: string;
+};
+
+// ── Runtime log & plans ────────────────────────────────────────────
+//
+// What the agent actually did, kept where the owner can read it. Eve
+// streams every turn as NDJSON on /eve/v1/session/:id/stream, but a stream
+// only exists while somebody is attached: a WhatsApp turn at 3am has no
+// browser watching it. agent/hooks/runtime-log.ts subscribes to the same
+// events and writes them here, so the runtime page can show the last runs
+// and not only the live one.
+
+export type RuntimeLogLevel = "info" | "warn" | "error";
+
+export type RuntimeLogEntry = {
+  readonly id: string;
+  readonly at: string;
+  readonly sessionId: string;
+  readonly turnId?: string;
+  readonly level: RuntimeLogLevel;
+  /** The Eve stream event name: `turn.started`, `action.result`, … */
+  readonly event: string;
+  /** One line, already rendered for a human. */
+  readonly summary: string;
+  /** Tool name, subagent name, skill name — whatever the event was about. */
+  readonly subject?: string;
+  /** Which customer channel the session came in on. */
+  readonly channel?: ChannelId;
+  /** Truncated payload, for the expandable row. */
+  readonly detail?: string;
+  readonly durationMs?: number;
+};
+
+export type RunStepStatus = "pending" | "running" | "done" | "failed" | "skipped";
+
+export type RunStep = {
+  readonly id: string;
+  readonly title: string;
+  readonly status: RunStepStatus;
+  /** What the agent found or decided when it closed the step. */
+  readonly note?: string;
+  readonly startedAt?: string;
+  readonly endedAt?: string;
+};
+
+/**
+ * The checklist an agent writes for itself before doing multi-step work,
+ * and ticks off as it goes — the `plan` tool in agent/tools/plan.ts.
+ *
+ * It is not bookkeeping. A run that says what it is about to do, and then
+ * marks each step, is a run somebody can interrupt while it is still cheap
+ * to interrupt; without it a long turn is a spinner.
+ */
+export type RunPlan = {
+  readonly id: string;
+  readonly sessionId: string;
+  readonly title: string;
+  readonly steps: readonly RunStep[];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly completedAt?: string;
 };

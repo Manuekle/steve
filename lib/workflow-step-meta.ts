@@ -3,7 +3,7 @@ import {
   MessageSquareIcon,
   Timer01Icon,
   GitBranchIcon,
-  ArtificialIntelligence08Icon,
+  AiElementsIcon,
   UserIcon,
   Image01Icon,
   Video01Icon,
@@ -37,7 +37,7 @@ export const STEP_ICONS: Record<WorkflowStepType, IconSvgElement> = {
   message: MessageSquareIcon,
   wait: Timer01Icon,
   condition: GitBranchIcon,
-  ai_response: ArtificialIntelligence08Icon,
+  ai_response: AiElementsIcon,
   transfer_human: UserIcon,
   send_audio: AiAudioIcon,
   send_image: Image01Icon,
@@ -50,6 +50,26 @@ export const STEP_ICONS: Record<WorkflowStepType, IconSvgElement> = {
   log_sheet: GoogleSheetIcon,
   send_payment_link: StripeIcon,
   book_meeting: Calendar03Icon,
+};
+
+/** One type palette for canvas nodes, list badges and the step picker. */
+export const STEP_HUES: Record<WorkflowStepType, number> = {
+  message: 250,
+  wait: 345,
+  condition: 165,
+  ai_response: 295,
+  transfer_human: 65,
+  send_audio: 295,
+  send_image: 295,
+  send_video: 295,
+  http_request: 220,
+  notify_whatsapp: 165,
+  notify_team: 250,
+  notify_email: 250,
+  update_contact: 65,
+  log_sheet: 165,
+  send_payment_link: 295,
+  book_meeting: 220,
 };
 
 /**

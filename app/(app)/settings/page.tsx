@@ -7,7 +7,7 @@ import {
   CheckIcon,
   AuthorizedIcon,
   WhatsappIcon,
-  ArtificialIntelligence08Icon,
+  AiWiperIcon,
   InstagramIcon,
   Cancel01Icon,
   GoogleSheetIcon,
@@ -24,7 +24,7 @@ import {
   SquareLock02Icon,
   Coins01Icon,
   Blockchain05Icon,
-  ArrowRight01Icon,
+  ArrowRight02Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton, SettingsSkeleton } from "@/components/ai-elements/skeleton";
@@ -90,7 +90,7 @@ function isWebhookChannel(id: string): id is WebhookChannel {
 }
 
 const GROUP_ICONS: Record<string, IconSvgElement> = {
-  "ai-provider": ArtificialIntelligence08Icon,
+  "ai-provider": AiWiperIcon,
   database: DatabaseIcon,
   whatsapp: WhatsappIcon,
   instagram: InstagramIcon,
@@ -898,7 +898,7 @@ function AiUsageTeaser() {
               <CardDescription>{t("aiUsage.subtitle")}</CardDescription>
             </div>
             <HugeiconsIcon
-              icon={ArrowRight01Icon}
+              icon={ArrowRight02Icon}
               size={16}
               strokeWidth={1.75}
               className="shrink-0 text-muted-foreground"

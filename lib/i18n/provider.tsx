@@ -6,10 +6,17 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useState,
   type ReactNode,
 } from "react";
-import { dictionaries, DEFAULT_LOCALE, type Locale } from "./dictionaries";
+import {
+  DEFAULT_LOCALE,
+  type Dictionary,
+  getDictionary,
+  loadDictionary,
+  type Locale,
+} from "./dictionaries";
 
 type TranslationParams = Record<string, string | number>;
 
@@ -72,8 +79,42 @@ function interpolate(template: string, params?: TranslationParams): string {
   return result;
 }
 
+/**
+ * The dictionary for `locale`, loading its chunk if this is the first time the
+ * app has rendered in it.
+ *
+ * Only `es` is bundled with the app — see the note in `dictionaries.ts`. While
+ * another locale's chunk is in flight this returns the default one, so the
+ * interface shows Spanish for those few hundred milliseconds rather than a
+ * screenful of raw translation keys. The state bump is what re-renders the
+ * subtree once the real dictionary is in memory.
+ */
+function useDictionary(locale: Locale): Dictionary {
+  // The dictionary is read during render, not held in state — `getDictionary`
+  // is synchronous and the module owns the cache. The reducer exists only to
+  // schedule a re-render once a chunk lands, so nothing is set synchronously
+  // inside the effect.
+  const [, onLoaded] = useReducer((tick: number) => tick + 1, 0);
+
+  useEffect(() => {
+    if (getDictionary(locale)) return;
+
+    let cancelled = false;
+    loadDictionary(locale).then(() => {
+      if (!cancelled) onLoaded();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
+  // `getDictionary(DEFAULT_LOCALE)` is the static import and is always there.
+  return getDictionary(locale) ?? (getDictionary(DEFAULT_LOCALE) as Dictionary);
+}
+
 export function I18nProvider({ children }: { readonly children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  const dictionary = useDictionary(locale);
 
   useEffect(() => {
     setLocaleState(getInitialLocale());
@@ -99,11 +140,10 @@ export function I18nProvider({ children }: { readonly children: ReactNode }) {
 
   const t = useCallback(
     (key: string, params?: TranslationParams, fallback?: string): string => {
-      const dict = dictionaries[locale] ?? dictionaries[DEFAULT_LOCALE];
-      const template = dict[key] ?? fallback ?? key;
+      const template = dictionary[key] ?? fallback ?? key;
       return interpolate(template, params);
     },
-    [locale],
+    [dictionary],
   );
 
   const root = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
@@ -163,14 +203,14 @@ export function I18nLocale({
   readonly locale: Locale;
 }) {
   const { setLocale } = useI18n();
+  const dictionary = useDictionary(locale);
   const value = useMemo<I18nContextValue>(
     () => ({
       locale,
       setLocale,
-      t: (key, params) =>
-        interpolate((dictionaries[locale] ?? dictionaries[DEFAULT_LOCALE])[key] ?? key, params),
+      t: (key, params) => interpolate(dictionary[key] ?? key, params),
     }),
-    [locale, setLocale],
+    [dictionary, locale, setLocale],
   );
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

@@ -7,6 +7,19 @@ const nextConfig: NextConfig = {
   // start` and the existing systemd path still work unchanged, this only
   // adds the extra output alongside the normal build.
   output: "standalone",
+  /**
+   * The PDF export reads its fonts off disk.
+   *
+   * `lib/report-pdf.ts` embeds Cooper, Inter and Geist Mono so a downloaded
+   * report is the document the operator was looking at rather than a Helvetica
+   * summary of it, and a `.ttf` is not a module — it is read with `fs` at
+   * request time. Nothing imports the files, so nothing traces them, and the
+   * route would ship without them wherever the build is bundled rather than
+   * copied wholesale.
+   */
+  outputFileTracingIncludes: {
+    "/api/reports/pdf": ["./public/fonts/pdf/**"],
+  },
   // A redirect must never name the destination of one of the rewrites below.
   //
   // `next dev` runs redirects once, before the rewrites, so a redirect from
@@ -84,7 +97,6 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: [
         { source: "/", destination: "/landing" },
-        { source: "/chat", destination: "/" },
         { source: "/history", destination: "/chats" },
         { source: "/history/:path*", destination: "/chats/:path*" },
       ],

@@ -5,7 +5,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowDown01Icon,
   CheckIcon,
-  ArtificialIntelligence08Icon,
+  FaceMimicIcon,
   } from "@hugeicons/core-free-icons";
 import {
   CommandDialog,
@@ -212,7 +212,7 @@ export function ModelPicker({
         ) : selected ? (
           <ProviderLogo vendor={selected.vendor} size={14} />
         ) : (
-          <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={14} strokeWidth={1.75} />
+          <HugeiconsIcon icon={FaceMimicIcon} size={14} strokeWidth={1.75} />
         )}
         <span className="truncate">
           {selected ? selected.id : autoLabel ? t("models.autoWith", { model: autoLabel }) : t("models.auto")}
@@ -238,7 +238,7 @@ export function ModelPicker({
           <CommandGroup heading={t("models.automatic")}>
             <CommandItem value="auto automatic recomendado" onSelect={() => choose(null)}>
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} />
+                <HugeiconsIcon icon={FaceMimicIcon} size={16} strokeWidth={1.75} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm">{t("models.auto")}</span>
                   <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">

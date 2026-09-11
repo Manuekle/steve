@@ -47,7 +47,7 @@ function CommandDialog({
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
       <DialogContent
-        className={cn("flex flex-col overflow-hidden p-0", className)}
+        className={cn("flex flex-col overflow-hidden overflow-y-hidden p-0", className)}
         showCloseButton={showCloseButton}
         // The first row here is the search field, not a padded header, so the
         // default `top-4` inset dropped the ✕ below the row's centre line and
@@ -55,6 +55,7 @@ function CommandDialog({
         closeClassName="top-2.5 right-3"
       >
         <Command className={cn(
+          "bg-transparent border-0 rounded-none shadow-none",
           // The close button's lane, so a long query never runs under the ✕.
           showCloseButton && "**:data-[slot=command-input-wrapper]:pr-12",
           "**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5",

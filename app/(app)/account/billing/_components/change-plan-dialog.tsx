@@ -7,6 +7,7 @@ import {
   ArrowLeft02Icon,
   ArrowUp01Icon,
   CheckmarkCircle02Icon,
+  InvoiceIcon,
   MinusSignCircleIcon,
 } from "@hugeicons/core-free-icons";
 import {
@@ -145,7 +146,9 @@ export function ChangePlanDialog({
         {downgradeTo === null ? (
           <>
             <DialogHeader>
-              <DialogTitle>{t("billing.changePlanTitle")}</DialogTitle>
+              <DialogTitle icon={<HugeiconsIcon icon={InvoiceIcon} size={18} strokeWidth={1.75} />}>
+                {t("billing.changePlanTitle")}
+              </DialogTitle>
               <DialogDescription>{t("billing.changePlanDescription")}</DialogDescription>
             </DialogHeader>
 
@@ -230,7 +233,9 @@ export function ChangePlanDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>{t("billing.downgradeTitle", { plan: targetName })}</DialogTitle>
+              <DialogTitle icon={<HugeiconsIcon icon={InvoiceIcon} size={18} strokeWidth={1.75} />}>
+                {t("billing.downgradeTitle", { plan: targetName })}
+              </DialogTitle>
               <DialogDescription>
                 {t("billing.downgradeEffective", { date: effectiveDate })}
               </DialogDescription>
@@ -290,8 +295,7 @@ export function ChangePlanDialog({
             </label>
 
             <DialogFooter>
-              <Button variant="ghost" onClick={reset} disabled={busy !== null}>
-                <HugeiconsIcon icon={ArrowLeft02Icon} size={16} strokeWidth={1.75} />
+              <Button variant="outline" onClick={reset} disabled={busy !== null}>
                 {t("billing.dialogBack")}
               </Button>
               <Button
@@ -299,11 +303,7 @@ export function ChangePlanDialog({
                 disabled={!typedMatches || reason === "" || busy !== null}
                 onClick={() => void submit(downgradeTo, true)}
               >
-                {busy === downgradeTo ? (
-                  <Spinner />
-                ) : (
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} strokeWidth={1.75} />
-                )}
+                {busy === downgradeTo ? <Spinner /> : null}
                 {t("billing.downgradeConfirm")}
               </Button>
             </DialogFooter>
@@ -313,7 +313,7 @@ export function ChangePlanDialog({
         {downgradeTo === null ? (
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary">{t("billing.cancel")}</Button>
+              <Button variant="outline">{t("billing.cancel")}</Button>
             </DialogClose>
           </DialogFooter>
         ) : null}

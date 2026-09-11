@@ -15,7 +15,7 @@ import {
   ArrowLeft02Icon,
   ZapIcon,
   PanelLeftIcon,
-  ArtificialIntelligence08Icon,
+  AiElementsIcon,
 } from "@hugeicons/core-free-icons";
 import { StatusBadge } from "../../../_components/channel-badge";
 import {
@@ -26,8 +26,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { AutomationDialog } from "@/components/ai-elements/automation-dialog";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, uiErrorMessage, type UiError } from "@/lib/api-error-message";
@@ -49,7 +49,7 @@ import {
   getStepAt,
   insertStepAt,
   moveStepAt,
-  moveStepTo,
+  connectWorkflowSteps,
   newStep,
   pathsEqual,
   removeStepAt,
@@ -57,7 +57,7 @@ import {
   updateStepAt,
   type StepPath,
 } from "@/lib/workflow-tree";
-import type { Automation, WorkflowStep, WorkflowStepType } from "@/lib/types";
+import type { Automation, WorkflowConnection, WorkflowStep, WorkflowStepType } from "@/lib/types";
 import { DockReopenButton } from "@/app/_components/dock-reopen-button";
 
 const DOCK_MIN = 340;
@@ -243,17 +243,22 @@ export default function AutomationFlowPage() {
    * the source's next sibling, dropping its isolated flag on the way.
    * Selection is cleared because every path after the move can have shifted.
    */
-  const handleConnectSteps = useCallback((source: StepPath, target: StepPath) => {
-    const parentPath = source.slice(0, -1);
-    const sourceIndex = source[source.length - 1];
-    if (typeof sourceIndex !== "number") return;
+  const handleConnectSteps = useCallback((source: StepPath, target: StepPath, connection?: WorkflowConnection) => {
     setSteps((prev) => {
-      const next = moveStepTo(prev, target, parentPath, sourceIndex + 1);
+      const next = connectWorkflowSteps(prev, source, target, connection);
       if (next === prev) return prev;
       scheduleSave(next);
       return next;
     });
     setSelectedPath(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+  const handleUpdateConnection = useCallback((path: StepPath, connection: WorkflowConnection | undefined) => {
+    setSteps(prev => {
+      const next = updateStepAt(prev, path, step => ({ ...step, connection }));
+      scheduleSave(next);
+      return next;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
   /** Drop a standalone step on the canvas — right-click on empty space, or
@@ -461,31 +466,30 @@ export default function AutomationFlowPage() {
 
             <div className="flex shrink-0 items-center gap-2">
               <SaveIndicator status={saveStatus} />
-              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <button
-                    className={cn(
-                      "rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-[var(--shadow-inset)]",
-                      "transition-[background-color,border-color,box-shadow] duration-150 ease-out",
-                      "hover:border-input hover:bg-accent active:scale-[0.98]",
-                    )}
-                  >
-                    {t("automations.edit")}
-                  </button>
-                </DialogTrigger>
+              <button
+                onClick={() => setEditDialogOpen(true)}
+                className={cn(
+                  "rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-[var(--shadow-inset)]",
+                  "transition-[background-color,border-color,box-shadow] duration-150 ease-out",
+                  "hover:border-input hover:bg-accent active:scale-[0.98]",
+                )}
+              >
+                {t("automations.edit")}
+              </button>
+              {editDialogOpen ? (
                 <AutomationDialog
-                  // Remounted per open: the dialog seeds its fields from
-                  // `editing` with useState, and it never unmounts on close
-                  // (it is a permanent child of <Dialog>). Without this, a save
-                  // left the fields on the values handleSubmit resets them to —
-                  // an empty name, trigger "keyword", channel "all" — and the
-                  // next save wrote those defaults over the real automation.
+                  // Remounted per open: the panel seeds its fields from
+                  // `editing` with useState. Without this, a save left the
+                  // fields on the values handleSubmit resets them to — an empty
+                  // name, trigger "keyword", channel "all" — and the next save
+                  // wrote those defaults over the real automation.
                   key={editDialogOpen ? "open" : "closed"}
+                  open={editDialogOpen}
                   editing={automation}
                   onUpdate={(_id, updates) => handleUpdateBasics(updates)}
                   onClose={() => setEditDialogOpen(false)}
                 />
-              </Dialog>
+              ) : null}
               <button
                 onClick={handleToggle}
                 disabled={steps.length === 0}
@@ -554,6 +558,7 @@ export default function AutomationFlowPage() {
               onResetLayout={handleResetLayout}
               onIsolateStep={handleIsolateStep}
               onConnectSteps={handleConnectSteps}
+              onUpdateConnection={handleUpdateConnection}
               onAddStepAt={handleAddStepAt}
               onToggleDisabled={handleToggleDisabled}
               onSetConnector={handleSetConnector}
@@ -566,7 +571,7 @@ export default function AutomationFlowPage() {
             </p>
             {!dockOpen ? (
               <DockReopenButton
-                icon={ArtificialIntelligence08Icon}
+                icon={AiElementsIcon}
                 label={t("assistant.tab")}
                 onClick={() => setDockOpenPersisted(true)}
               />
@@ -673,9 +678,11 @@ export default function AutomationFlowPage() {
                             handleRemoveStep(selectedPath);
                             setDockTab("assistant");
                           }}
-                          onClose={() => {
-                            setSelectedPath(null);
-                            setDockTab("assistant");
+                           onClose={() => {
+                             const nodeId = selectedStep.id;
+                             setSelectedPath(null);
+                             setDockTab("assistant");
+                             requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-node-id="${CSS.escape(nodeId)}"]`)?.focus());
                           }}
                         />
                       </div>
@@ -771,7 +778,9 @@ function RunStepDialog({
     <Dialog open={!!step} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t("automations.runStepConfirm")}</DialogTitle>
+          <DialogTitle icon={<HugeiconsIcon icon={ZapIcon} size={18} strokeWidth={1.75} />}>
+            {t("automations.runStepConfirm")}
+          </DialogTitle>
           <DialogDescription>
             {step ? t(STEP_LABEL_KEYS[step.type]) : ""}
             {step && OUTWARD_STEPS.has(step.type) ? ` — ${t("automations.runStepOutward")}` : ""}
@@ -779,18 +788,14 @@ function RunStepDialog({
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <button
-              type="button"
-              className="rounded-lg border border-border px-3 py-1.5 text-sm transition-colors duration-150 hover:bg-accent"
-            >
+            <Button variant="outline" type="button">
               {t("automations.runStepCancel")}
-            </button>
+            </Button>
           </DialogClose>
-          <button
+          <Button
             type="button"
             disabled={running}
             onClick={onConfirm}
-            className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-[var(--shadow-button)] transition-transform duration-150 active:scale-[0.98] disabled:opacity-60"
           >
             {running ? (
               <span className="flex items-center gap-2">
@@ -800,7 +805,7 @@ function RunStepDialog({
             ) : (
               t("automations.runStepGo")
             )}
-          </button>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

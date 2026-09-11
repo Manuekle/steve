@@ -121,7 +121,15 @@ const WEBHOOK = /^\/api\/automations\/[^/]+\/webhook\/?$/;
 const DEV_ROUTES_OPEN = process.env.NODE_ENV !== "production";
 
 function isPublic(pathname: string): boolean {
-  if (DEV_ROUTES_OPEN && (pathname === "/dev" || pathname.startsWith("/dev/"))) {
+  if (
+    DEV_ROUTES_OPEN &&
+    (pathname === "/dev" ||
+      pathname.startsWith("/dev/") ||
+      pathname === "/chat" ||
+      pathname.startsWith("/chat/") ||
+      pathname === "/chats" ||
+      pathname.startsWith("/chats/"))
+  ) {
     return true;
   }
   if (WEBHOOK.test(pathname)) return true;

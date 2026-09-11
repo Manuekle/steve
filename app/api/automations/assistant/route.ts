@@ -1,20 +1,31 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { modelIdForTask } from "@/lib/task-model";
 import { resolveLanguageModel } from "@/lib/ai-provider";
 import { getProviderReport } from "@/lib/provider-catalog";
-import { workflowPlanSchema } from "@/lib/workflow-schema";
+import { storedWorkflowStepSchema, workflowAssistantResponseSchema } from "@/lib/workflow-schema";
 import { STEP_TYPES } from "@/lib/workflow-step-meta";
 import type { WorkflowStep } from "@/lib/types";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
 import { guardAiRoute, recordRouteUsage } from "@/lib/ai-route-guard";
+import { aiGenerationFailure } from "@/lib/ai-generation-error";
 
 // POST /api/automations/assistant
 // Turns a plain-language request into a proposed workflow. It only ever
 // RETURNS a plan — it never writes to the store. The canvas applies it once
 // the user accepts, so a person is always the one who approves the change.
+export const maxDuration = 90;
 
-
+const requestSchema = z.object({
+  prompt: z.string().trim().min(1).max(12_000),
+  steps: z.array(storedWorkflowStepSchema).default([]),
+  name: z.string().optional(),
+  trigger: z.string().optional(),
+  triggerValue: z.string().optional(),
+  channel: z.string().optional(),
+  turns: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(4000) })).max(24).default([]),
+});
 function describeExistingSteps(steps: readonly WorkflowStep[]): string {
   if (steps.length === 0) return "(empty — the flow has no steps yet)";
   const lines: string[] = [];
@@ -53,19 +64,11 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     return apiError("invalid_body");
   }
 
-  const input = body as {
-    prompt?: string;
-    steps?: WorkflowStep[];
-    name?: string;
-    trigger?: string;
-    triggerValue?: string;
-    channel?: string;
-  };
-
-  const prompt = input.prompt?.trim();
-  if (!prompt) {
-    return missingField("prompt");
-  }
+  if (!(body as { prompt?: unknown }).prompt) return missingField("prompt");
+  const parsed = requestSchema.safeParse(body);
+  if (!parsed.success) return apiError("invalid_field", { field: String(parsed.error.issues[0]?.path[0] ?? "prompt") });
+  const input = parsed.data;
+  const prompt = input.prompt;
 
   const health = await getProviderReport();
   if (health.status === "missing" || health.status === "invalid") {
@@ -76,8 +79,13 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
 
   const system = [
     "You design conversational automation flows for a business messaging agent.",
-    "Return the COMPLETE flow after applying the user's request — not just the new part.",
+    "Talk to the owner about their flow. For greetings (such as 'hola'), questions,",
+    "or unclear requests, return a short reply and plan: null. Ask what they want",
+    "to automate when they only greet you. Never rewrite a flow just to answer a greeting.",
+    "Only propose a plan when the user requests a concrete creation or change.",
+    "When proposing, return the COMPLETE flow after applying the request — not just the new part.",
     "When the user asks for a tweak, preserve the steps they did not mention.",
+    "The current canvas below is authoritative. Earlier proposals are not applied unless reflected there.",
     "",
     `Step types you may use: ${STEP_TYPES.join(", ")}.`,
     "- message: send a fixed text you write.",
@@ -126,6 +134,9 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     "Current flow:",
     describeExistingSteps(existing),
     "",
+    "Conversation so far:",
+    ...input.turns.map(turn => `${turn.role === "user" ? "Owner" : "Assistant"}: ${turn.text}`),
+    "",
     `User request: ${prompt}`,
   ].join("\n");
 
@@ -133,16 +144,14 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     const modelId = await modelIdForTask("automation");
     const result = await generateObject({
       model: resolveLanguageModel(modelId),
-      schema: workflowPlanSchema,
+      schema: workflowAssistantResponseSchema,
       system,
       prompt: context,
       abortSignal: AbortSignal.timeout(60_000),
     });
     await recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "automations-assistant" });
-    return NextResponse.json({ plan: result.object });
+    return NextResponse.json(result.object);
   } catch (error) {
-    return apiError("generation_failed", {
-      detail: error instanceof Error ? error.message : String(error),
-    });
+    return aiGenerationFailure(error, "automations-assistant");
   }
 });

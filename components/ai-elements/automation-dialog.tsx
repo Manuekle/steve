@@ -1,12 +1,17 @@
 "use client";
 
 import { type FormEvent, useEffect, useId, useState } from "react";
+import { HugeiconsIcon } from "@/components/icons/icon";
+import { ZapIcon } from "@hugeicons/core-free-icons";
 import {
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -84,14 +89,23 @@ function WebhookUrl({ id }: { readonly id: string }) {
 /**
  * Creates a new automation, or edits an existing one's basics (name/trigger/
  * channel). It never touches the workflow's steps — those are built on the
- * automation's own page (app/automations/[id]/page.tsx), not in this dialog.
+ * automation's own page (app/automations/[id]/page.tsx), not in this panel.
+ *
+ * A side drawer rather than a centred dialog: the trigger picker alone is five
+ * cards, and with a schedule or a webhook selected the form runs past 890px.
+ * Centred, that is taller than the viewport on any laptop — the panel gets
+ * clipped at both edges and the fields that fall outside cannot be reached at
+ * all. The drawer is as tall as the window, so the header and the save button
+ * stay put and only the fields scroll.
  */
 export function AutomationDialog({
+  open,
   editing,
   onCreate,
   onUpdate,
   onClose,
 }: {
+  readonly open: boolean;
   readonly editing: Automation | null;
   /** Omit when this dialog only ever edits (e.g. embedded on the automation's own page, where `editing` is always set). */
   readonly onCreate?: (data: Omit<Automation, "id" | "status" | "responseCount" | "createdAt" | "steps">) => void;
@@ -151,178 +165,179 @@ export function AutomationDialog({
   };
 
   return (
-    <DialogContent
-      className="sm:max-w-lg flex flex-col max-h-[85vh] p-0 gap-0 overflow-hidden"
-      // The padding lives on the sections, not on the dialog, so the default
-      // `top-4 right-4` measured the ✕ against a rail that is not there: it
-      // sat 3px above the title's centre line and 8px inside the 24px rail
-      // everything else in the dialog lines up on. 20px centres it on the
-      // title and lands the icon's edge on that rail.
-      closeClassName="top-5 right-5"
-    >
-      <DialogHeader className="px-6 pt-6 pb-4 pr-14 shrink-0">
-        <DialogTitle>{isEditing ? t("automations.editTitle") : t("automations.createTitle")}</DialogTitle>
-        <DialogDescription>
-          {isEditing ? t("automations.editDescription") : t("automations.createDescription")}
-        </DialogDescription>
-      </DialogHeader>
-      <form id="create-automation-form" className="space-y-5 overflow-y-auto px-6 py-4 flex-1" onSubmit={handleSubmit}>
-        <label className="block space-y-2 text-sm">
-          <span className="font-medium">{t("automations.name")}</span>
-          <Input
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("automations.namePlaceholder")}
-            required
-            value={name}
-          />
-        </label>
-        <label className="block space-y-2 text-sm">
-          <span className="font-medium">{t("automations.description")}</span>
-          <Input
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t("automations.descriptionPlaceholder")}
-            value={description}
-          />
-        </label>
-
-        <div className="space-y-1.5">
-          <span className="text-sm font-medium" id={triggerLabelId}>
-            {t("automations.trigger")}
-          </span>
-          <div aria-labelledby={triggerLabelId} className="grid grid-cols-2 gap-2" role="group">
-            {TRIGGER_OPTIONS.map((opt) => (
-              <button
-                className={cn(
-                  "rounded-lg border p-2.5 text-left text-sm transition-all duration-150",
-                  trigger === opt.value
-                    ? "border-foreground/20 bg-foreground/5 text-foreground shadow-[var(--shadow-inset)]"
-                    : "border-border bg-card/50 text-muted-foreground hover:border-input hover:text-foreground",
-                )}
-                key={opt.value}
-                onClick={() => {
-                  if (opt.value === trigger) return;
-                  setTrigger(opt.value);
-                  // One box serves every trigger, so switching type has to
-                  // empty it. Leaving it filled offered the previous
-                  // trigger's value as the next one's — a keyword as a
-                  // webhook secret, a cron line as a wait time — and the
-                  // webhook case was a real hole: the keyword is the word
-                  // the business publishes. The server refuses to inherit
-                  // one either (see webhookToken in
-                  // app/api/automations/route.ts); this is so nobody is
-                  // shown a token that was never going to be saved.
-                  setTriggerValue(opt.value === editing?.trigger ? editing.triggerValue : "");
-                }}
-                type="button"
-              >
-                <span className="block text-sm font-medium">{t(opt.labelKey)}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{t(opt.descriptionKey)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        {trigger === "keyword" ? (
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium">{t("automations.keywords")}</span>
-            <Input
-              onChange={(e) => setTriggerValue(e.target.value)}
-              placeholder={t("automations.keywordsPlaceholder")}
-              value={triggerValue}
-            />
-          </label>
-        ) : null}
-        {trigger === "schedule" ? (
-          <ScheduleBuilder onChange={setTriggerValue} value={triggerValue} />
-        ) : null}
-        {trigger === "webhook" ? (
-          <div className="space-y-2">
+    <Drawer open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DrawerContent className="max-w-2xl">
+        <DrawerHeader>
+          <DrawerTitle icon={<HugeiconsIcon icon={ZapIcon} size={18} strokeWidth={1.75} />}>
+            {isEditing ? t("automations.editTitle") : t("automations.createTitle")}
+          </DrawerTitle>
+          <DrawerDescription>
+            {isEditing ? t("automations.editDescription") : t("automations.createDescription")}
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerBody className="min-h-0">
+          <form id="create-automation-form" className="space-y-4" onSubmit={handleSubmit}>
             <label className="block space-y-2 text-sm">
-              <span className="font-medium">{t("automations.webhookToken")}</span>
+              <span className="font-medium">{t("automations.name")}</span>
               <Input
-                onChange={(e) => setTriggerValue(e.target.value)}
-                placeholder={t("automations.webhookTokenPlaceholder")}
-                value={triggerValue}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t("automations.namePlaceholder")}
+                required
+                value={name}
               />
             </label>
-            {editing ? <WebhookUrl id={editing.id} /> : null}
-            <p className="text-xs leading-relaxed text-muted-foreground">{t("automations.webhookHelp")}</p>
-          </div>
-        ) : null}
-        {trigger === "no_reply" ? (
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium">{t("automations.waitTime")}</span>
-            <Input
-              onChange={(e) => setTriggerValue(e.target.value)}
-              placeholder="30min"
-              value={triggerValue}
-              pattern="^\\d+(min|h|d)?$"
-              title="Formato: 30min, 2h, 1d"
-            />
-          </label>
-        ) : null}
+            <label className="block space-y-2 text-sm">
+              <span className="font-medium">{t("automations.description")}</span>
+              <Input
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t("automations.descriptionPlaceholder")}
+                value={description}
+              />
+            </label>
 
-        <div className="space-y-1.5">
-          <span className="text-sm font-medium" id={channelLabelId}>
-            {t("automations.channel")}
-          </span>
-          <Select
-            value={channel}
-            onValueChange={(val) => setChannel(val as ChannelId | "all")}
-          >
-            {/* Both ids: the label names it, the trigger's own text says which
-                channel is picked. The label alone would drop the value. */}
-            <SelectTrigger
-              aria-labelledby={`${channelLabelId} ${channelControlId}`}
-              className="w-full"
-              id={channelControlId}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CHANNEL_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {t(opt.labelKey)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium" id={triggerLabelId}>
+                {t("automations.trigger")}
+              </span>
+              <div aria-labelledby={triggerLabelId} className="grid grid-cols-2 gap-2" role="group">
+                {TRIGGER_OPTIONS.map((opt) => (
+                  <button
+                    className={cn(
+                      "rounded-lg border p-2.5 text-left text-sm transition-all duration-150",
+                      trigger === opt.value
+                        ? "border-foreground/20 bg-foreground/5 text-foreground shadow-[var(--shadow-inset)]"
+                        : "border-border bg-card/50 text-muted-foreground hover:border-input hover:text-foreground",
+                    )}
+                    key={opt.value}
+                    onClick={() => {
+                      if (opt.value === trigger) return;
+                      setTrigger(opt.value);
+                      // One box serves every trigger, so switching type has to
+                      // empty it. Leaving it filled offered the previous
+                      // trigger's value as the next one's — a keyword as a
+                      // webhook secret, a cron line as a wait time — and the
+                      // webhook case was a real hole: the keyword is the word
+                      // the business publishes. The server refuses to inherit
+                      // one either (see webhookToken in
+                      // app/api/automations/route.ts); this is so nobody is
+                      // shown a token that was never going to be saved.
+                      setTriggerValue(opt.value === editing?.trigger ? editing.triggerValue : "");
+                    }}
+                    type="button"
+                  >
+                    <span className="block text-sm font-medium">{t(opt.labelKey)}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{t(opt.descriptionKey)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {trigger === "keyword" ? (
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium">{t("automations.keywords")}</span>
+                <Input
+                  onChange={(e) => setTriggerValue(e.target.value)}
+                  placeholder={t("automations.keywordsPlaceholder")}
+                  value={triggerValue}
+                />
+              </label>
+            ) : null}
+            {trigger === "schedule" ? (
+              <ScheduleBuilder onChange={setTriggerValue} value={triggerValue} />
+            ) : null}
+            {trigger === "webhook" ? (
+              <div className="space-y-2">
+                <label className="block space-y-2 text-sm">
+                  <span className="font-medium">{t("automations.webhookToken")}</span>
+                  <Input
+                    onChange={(e) => setTriggerValue(e.target.value)}
+                    placeholder={t("automations.webhookTokenPlaceholder")}
+                    value={triggerValue}
+                  />
+                </label>
+                {editing ? <WebhookUrl id={editing.id} /> : null}
+                <p className="text-xs leading-relaxed text-muted-foreground">{t("automations.webhookHelp")}</p>
+              </div>
+            ) : null}
+            {trigger === "no_reply" ? (
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium">{t("automations.waitTime")}</span>
+                <Input
+                  onChange={(e) => setTriggerValue(e.target.value)}
+                  placeholder="30min"
+                  value={triggerValue}
+                  pattern="^\\d+(min|h|d)?$"
+                  title="Formato: 30min, 2h, 1d"
+                />
+              </label>
+            ) : null}
 
-        <div className="space-y-1.5">
-          <span className="text-sm font-medium" id={agentLabelId}>
-            {t("automations.agent")}
-          </span>
-          <Select
-            value={agentId || "__default__"}
-            onValueChange={(val) => setAgentId(val === "__default__" ? "" : val)}
-          >
-            <SelectTrigger
-              aria-describedby={agentHelpId}
-              aria-labelledby={`${agentLabelId} ${agentControlId}`}
-              className="w-full"
-              id={agentControlId}
-            >
-              <SelectValue placeholder={t("automations.agentPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__default__">{t("automations.agentDefault")}</SelectItem>
-              {agents.map((agent) => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground" id={agentHelpId}>
-            {t("automations.agentHelp")}
-          </p>
-        </div>
-      </form>
-      <div className="px-6 py-4 border-t border-border shrink-0 bg-card">
-        <div className="flex justify-end">
-          <Button type="submit" form="create-automation-form">{isEditing ? t("automations.save") : t("automations.create")}</Button>
-        </div>
-      </div>
-    </DialogContent>
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium" id={channelLabelId}>
+                {t("automations.channel")}
+              </span>
+              <Select
+                value={channel}
+                onValueChange={(val) => setChannel(val as ChannelId | "all")}
+              >
+                {/* Both ids: the label names it, the trigger's own text says which
+                    channel is picked. The label alone would drop the value. */}
+                <SelectTrigger
+                  aria-labelledby={`${channelLabelId} ${channelControlId}`}
+                  className="w-full"
+                  id={channelControlId}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHANNEL_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium" id={agentLabelId}>
+                {t("automations.agent")}
+              </span>
+              <Select
+                value={agentId || "__default__"}
+                onValueChange={(val) => setAgentId(val === "__default__" ? "" : val)}
+              >
+                <SelectTrigger
+                  aria-describedby={agentHelpId}
+                  aria-labelledby={`${agentLabelId} ${agentControlId}`}
+                  className="w-full"
+                  id={agentControlId}
+                >
+                  <SelectValue placeholder={t("automations.agentPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__default__">{t("automations.agentDefault")}</SelectItem>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground" id={agentHelpId}>
+                {t("automations.agentHelp")}
+              </p>
+            </div>
+          </form>
+        </DrawerBody>
+        <DrawerFooter>
+          <Button variant="outline" type="button" onClick={onClose}>
+            {t("common.cancel")}
+          </Button>
+          <Button type="submit" form="create-automation-form">
+            {isEditing ? t("automations.save") : t("automations.create")}
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

@@ -6,7 +6,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Megaphone01Icon,
   SearchIcon,
-  ScanEyeIcon,
+  ScanSearchIcon as ScanSearchAreaIcon,
   MouseLeftClick01Icon,
   Coins01Icon,
   UserGroupIcon,
@@ -673,7 +673,7 @@ export default function AdsPage() {
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
-                  icon: ScanEyeIcon,
+                  icon: ScanSearchAreaIcon,
                   label: t("ads.impressions"),
                   sub:
                     totals.reach > 0

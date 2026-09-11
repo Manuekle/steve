@@ -207,3 +207,30 @@ export async function searchChunks(
 
   return scored.sort((a, b) => b.score - a.score).slice(0, limit);
 }
+
+/**
+ * The whole text of one document, chunks reassembled in order.
+ *
+ * Retrieval never needs this — it wants the passages that match, which is what
+ * `searchChunks` returns. Promoting a document into a skill does: a procedure
+ * is only a procedure if you have all of it, and the halves of a refund policy
+ * that cosine similarity did not return are exactly the halves that matter.
+ *
+ * Capped, because a 200-page manual is not a skill and pretending otherwise
+ * would put a megabyte of markdown in front of the model.
+ */
+export async function documentText(
+  docId: string,
+  options?: { readonly maxChars?: number },
+): Promise<{ readonly document: KnowledgeDocument; readonly text: string } | null> {
+  const store = await knowledgeStore.read();
+  const document = store.documents.find((doc) => doc.id === docId);
+  if (!document) return null;
+  const text = store.chunks
+    .filter((chunk) => chunk.doc_id === docId)
+    .sort((a, b) => a.index - b.index)
+    .map((chunk) => chunk.text)
+    .join("\n\n");
+  const max = options?.maxChars ?? 24_000;
+  return { document, text: text.length > max ? `${text.slice(0, max)}\n\n[…]` : text };
+}

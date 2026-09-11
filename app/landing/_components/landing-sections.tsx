@@ -7,7 +7,8 @@ import {
   Shield01Icon,
   WebhookIcon,
 } from "@hugeicons/core-free-icons";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
+import { SenkaMark } from "@/components/icons/senka-mark";
 import { ChromaticTextReveal } from "@/components/motion/chromatic-text-reveal";
 import { TextReveal } from "@/components/motion/text-reveal";
 import { AnthropicLogo, GeminiLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
@@ -24,12 +25,14 @@ import {
 } from "./brand-marks";
 import { MercadoPagoBrandIcon } from "@/components/icons/connection-icons";
 import { BrandGlow } from "./lighting";
-import { AgentOverlay, ConversationOverlay } from "./overlays";
+import { ConversationOverlay } from "./overlays";
+import styles from "./editorial.module.css";
+import { Grain } from "./grain";
+import { BrowserChrome } from "./browser-chrome";
 import { SECURITY_ART } from "./security-art";
 import {
   Disclosure,
   FigureLabel,
-  Haze,
   Reveal,
   ScreenFrame,
   SectionIntro,
@@ -493,49 +496,69 @@ export function AutomationSection() {
   const t = useT();
 
   return (
-    <FeatureSection
+    <section
       id="automatizaciones"
-      figure="Fig 02"
-      footer={<AutomationConnectors />}
-      url="senka.ai/automations/atencion-primera-linea"
-      label={t("landing.features.automation.label")}
-      hint={t("landing.features.automation.hint")}
-      title={[t("landing.features.automation.titleLine1"), t("landing.features.automation.titleLine2")]}
-      body={t("landing.features.automation.body")}
-      overlays={
-        <AgentOverlay
-          className="-right-6 bottom-24 hidden lg:block"
-          delay={260}
-          prompt={t("landing.features.automation.overlayPrompt")}
-          /* The real tools, in the order the agent uses them: it checks for an
-             existing playbook first, then proposes one. `propose_automation`
-             is why the result lands as a draft — the tool proposes, a human
-             approves. */
-          steps={[
-            "list_automations()",
-            t("landing.features.automation.overlayStep2"),
-            t("landing.features.automation.overlayStep3"),
-          ]}
-          result={t("landing.features.automation.overlayResult")}
-        />
-      }
-      disclosures={[
-        {
-          label: t("landing.features.automation.disclosure1.label"),
-          detail: t("landing.features.automation.disclosure1.detail"),
-        },
-        {
-          label: t("landing.features.automation.disclosure2.label"),
-          detail: t("landing.features.automation.disclosure2.detail"),
-        },
-        {
-          label: t("landing.features.automation.disclosure3.label"),
-          detail: t("landing.features.automation.disclosure3.detail"),
-        },
-      ]}
+      className={`${styles.automation} scroll-mt-20 border-border border-t py-24 sm:py-32`}
     >
-      <FlowScreen />
-    </FeatureSection>
+      <Shell>
+        <div className={styles.automationLayout}>
+          <div>
+            <Reveal>
+              <FigureLabel>{t("nav.automations")}</FigureLabel>
+              <TextReveal
+                as="h2"
+                className="mt-5 max-w-[15ch] font-cooper text-[clamp(2.5rem,4.4vw,3.5rem)] leading-[1.12] tracking-[-0.03em]"
+                text={[t("landing.features.automation.titleLine1"), t("landing.features.automation.titleLine2")]}
+                whileInView
+              />
+              <p className="mt-6 max-w-[46ch] text-[15px] leading-relaxed text-muted-foreground">
+                {t("landing.features.automation.body")}
+              </p>
+            </Reveal>
+
+            <ol className={styles.process}>
+              {(["message", "decision", "response"] as const).map((step, index) => (
+                <li className={styles.processStep} key={step}>
+                  <span aria-hidden="true" className={styles.stepNumber}>0{index + 1}</span>
+                  <Reveal delay={index * 60}>
+                    <h3 className="text-[15px] font-medium tracking-tight">
+                      {t(`landing.features.automation.process.${step}.title`)}
+                    </h3>
+                    <p className="mt-2 max-w-[38ch] text-[14px] leading-relaxed text-muted-foreground">
+                      {t(`landing.features.automation.process.${step}.body`)}
+                    </p>
+                  </Reveal>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <Reveal lift={false} delay={100}>
+            <figure className={styles.flowFigure}>
+              <figcaption className="sr-only">
+                {t("landing.features.automation.example")}: {t("landing.demo.flow.title")}
+              </figcaption>
+              <BrowserChrome variant="minimal" />
+              <div role="img" aria-label={t("landing.features.automation.hint")}>
+                <FlowScreen compact />
+              </div>
+              <p className={styles.flowFootnote}>{t("landing.features.automation.process.note")}</p>
+            </figure>
+          </Reveal>
+        </div>
+
+        <Reveal>
+          <div className="mt-10 grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((index) => (
+              <Disclosure key={index} label={t(`landing.features.automation.disclosure${index}.label`)}>
+                {t(`landing.features.automation.disclosure${index}.detail`)}
+              </Disclosure>
+            ))}
+          </div>
+        </Reveal>
+        <AutomationConnectors />
+      </Shell>
+    </section>
   );
 }
 
@@ -675,114 +698,63 @@ const STACK: readonly {
   },
 ];
 
-/**
- * One guarantee, sized for a rail rather than for a grid cell.
- *
- * The width is fixed because the row is a flex line: left to itself a flex
- * line divides the rail between its cards, and twelve cards in a 1120px rail
- * is twelve slivers. `.lp-rail-card` is what the spotlight rule reads — the
- * hover styling lives in the stylesheet so a paused row and a lit card are one
- * decision rather than one per card.
- */
-function StackCard({
-  body,
-  echo,
-  scene,
-  title,
-}: {
-  readonly body: string;
-  /** The duplicated pass, heard once by a screen reader and read twice by the
-   *  loop. */
-  readonly echo?: boolean;
-  readonly scene: ReactNode;
-  readonly title: string;
-}) {
-  return (
-    <div aria-hidden={echo ? "true" : undefined} className="lp-rail-card w-[19rem] sm:w-[21rem]">
-      {/* Same linear card the principles and the capability grid use: a rule
-          across the top and the guarantee under it, no surface. On a rail it
-          reads better than the box did — six boxes sliding past each other
-          were six edges crossing the two hazes at the ends, and what is left
-          moving now is six measurements. */}
-      <div className="lp-line group h-full flex-col">
-        <div className="relative z-20 order-last flex-none pt-1 pb-7">
-          <h3 className="font-medium text-[15px] tracking-tight text-foreground">{title}</h3>
-          <p className="mt-2.5 text-[14px] leading-relaxed text-muted-foreground">{body}</p>
-        </div>
-        <div className="lp-scene pt-7 pb-3">{scene}</div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * One travelling row. `items` is rendered twice — the animation covers exactly
- * half the track, so the second copy lands where the first began and the loop
- * has no seam.
- */
-function StackRow({
-  dir,
-  duration,
-  items,
-}: {
-  readonly dir: "left" | "right";
-  readonly duration: string;
-  readonly items: readonly (typeof STACK)[number][];
-}) {
-  const t = useT();
-
-  const card = (item: (typeof STACK)[number], echo: boolean) => {
-    const Art = SECURITY_ART[item.id];
-    return (
-      <StackCard
-        body={t(item.bodyKey)}
-        echo={echo}
-        key={echo ? `${item.id}-echo` : item.id}
-        scene={Art ? <Art /> : null}
-        title={t(item.titleKey)}
-      />
-    );
-  };
-
-  return (
-    <div className="lp-rail-track" data-dir={dir} style={{ "--lp-drift": duration } as CSSProperties}>
-      {items.map((item) => card(item, false))}
-      {items.map((item) => card(item, true))}
-    </div>
-  );
-}
-
 export function SelfHostedSection() {
   const t = useT();
 
   return (
-    <section id="autoalojado" className="scroll-mt-20 border-border border-t py-24 sm:py-32">
-      <Shell>
-        <SectionIntro
-          figure="Fig 06"
-          title={[t("landing.selfHosted.titleLine1"), t("landing.selfHosted.titleLine2")]}
-          body={t("landing.selfHosted.body")}
-        />
+    <section id="autoalojado" className={`${styles.surface} ${styles.hosting} scroll-mt-20 border-border border-t py-24 sm:py-32`}>
+      <Grain />
+      <Shell className={styles.hostingContent}>
+        <div className={styles.hostingIntro}>
+          <Reveal>
+            <FigureLabel>Enterprise</FigureLabel>
+            <TextReveal
+              as="h2"
+              className="mt-5 font-cooper text-[clamp(2.5rem,4.4vw,3.5rem)] leading-[1.12] tracking-[-0.03em]"
+              text={[t("landing.selfHosted.titleLine1"), t("landing.selfHosted.titleLine2")]}
+              whileInView
+            />
+            <p className="mt-6 max-w-[48ch] text-[15px] leading-relaxed text-muted-foreground">
+              {t("landing.selfHosted.body")}
+            </p>
+          </Reveal>
 
-        {/* Two rows travelling against each other. Six guarantees are a list of
-            equals — nothing here is wider or taller than its neighbour — so the
-            asymmetry is in the movement instead: the rows run opposite ways and
-            at different speeds, which is what keeps them from reading as one
-            block sliding.
+          <Reveal lift={false} delay={80}>
+            <figure className={styles.installation}>
+              <div className={styles.serverStack}>
+                <div className={styles.serverFace}>
+                  <div className={styles.serverWordmark}><SenkaMark metal /><span>senka</span></div>
+                  <p className="font-medium text-sm">{t("landing.selfHosted.installation.title")}</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">{t("landing.selfHosted.installation.body")}</p>
+                  <div className={styles.serverPorts}>
+                    <span>PostgreSQL</span><span>Docker</span><span>OpenTelemetry</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption className={styles.modelConnection}>
+                <span>{t("landing.selfHosted.installation.connection")}</span>
+                <div aria-hidden="true" className="mt-1 flex items-center gap-5">
+                  {PROVIDERS.map((provider) => <span key={provider.label}>{provider.mark}</span>)}
+                </div>
+              </figcaption>
+            </figure>
+          </Reveal>
+        </div>
 
-            Three guarantees to a row, and the rows do not share any: both
-            rows carrying all six put the same card on screen twice at once,
-            in two places, which reads as a rendering fault rather than as a
-            loop. Three cards is 1068px against a 1056px rail, so a card is
-            never on screen beside its own second copy either. */}
-        <Reveal delay={60} lift={false}>
-          <div className="lp-rail mt-9 flex flex-col gap-5">
-            <Haze edge="left" />
-            <StackRow dir="right" duration="72s" items={STACK.slice(0, 3)} />
-            <StackRow dir="left" duration="88s" items={STACK.slice(3)} />
-            <Haze edge="right" />
-          </div>
-        </Reveal>
+        <div className={styles.guarantees}>
+          {STACK.map((item, index) => {
+            const Art = SECURITY_ART[item.id];
+            return (
+              <Reveal key={item.id} delay={(index % 3) * 60}>
+                <article className={`${styles.guarantee} group`}>
+                  <div aria-hidden="true" className={styles.guaranteeArt}>{Art ? <Art /> : null}</div>
+                  <h3 className="text-[15px] font-medium tracking-tight">{t(item.titleKey)}</h3>
+                  <p className="mt-2.5 text-[14px] leading-relaxed text-muted-foreground">{t(item.bodyKey)}</p>
+                </article>
+              </Reveal>
+            );
+          })}
+        </div>
       </Shell>
     </section>
   );

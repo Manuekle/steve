@@ -3,11 +3,12 @@
 import type { EveDynamicToolPart, EveMessage, EveMessagePart } from "eve/react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { ExternalLinkIcon, File01Icon } from "@hugeicons/core-free-icons";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, memo, useState } from "react";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { MessageResponse } from "@/components/ai-elements/message-response";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { ToolResult, ToolResultOutput, type ToolResultStatus } from "@/components/agents/tool-result";
+import { isArtifactPart, ToolArtifact } from "./chat/artifacts";
 import { Orb } from "@/components/ui/orb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ export type AgentInputResponse = {
   readonly text?: string;
 };
 
-export function AgentMessage({
+export const AgentMessage = memo(function AgentMessage({
   canRespond,
   isStreaming,
   message,
@@ -63,7 +64,7 @@ export function AgentMessage({
       </MessageContent>
     </Message>
   );
-}
+});
 
 function AgentMessagePart({
   canRespond,
@@ -95,23 +96,62 @@ function AgentMessagePart({
       );
     case "file": {
       const label = part.filename ?? t("chat.attachment");
+      const isImage =
+        part.mediaType?.startsWith("image/") ||
+        part.url?.startsWith("data:image/") ||
+        /\.(png|jpe?g|webp|gif|svg)$/i.test(label);
+
+      if (isImage && part.url) {
+        return (
+          <div className="space-y-1.5 my-1">
+            <div className="group relative overflow-hidden rounded-xl border border-border/80 bg-muted/40 max-w-sm shadow-sm transition-all hover:shadow-md">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={part.url}
+                alt={label}
+                className="max-h-72 w-full object-contain rounded-xl bg-card"
+                loading="lazy"
+              />
+              <a
+                href={part.url}
+                target="_blank"
+                rel="noreferrer"
+                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-medium gap-1.5"
+              >
+                <span>Ver imagen completa</span>
+                <HugeiconsIcon icon={ExternalLinkIcon} size={14} strokeWidth={2} />
+              </a>
+            </div>
+            {part.filename && (
+              <span className="block text-[11px] text-muted-foreground truncate max-w-sm">
+                {part.filename}
+              </span>
+            )}
+          </div>
+        );
+      }
+
       return (
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-card/50 px-3.5 py-2.5 text-sm shadow-[var(--shadow-soft)]">
-          <HugeiconsIcon icon={File01Icon} size={16} strokeWidth={1.75} className="text-muted-foreground" />
-          {part.url ? (
-            <a
-              className="inline-flex items-center gap-1 underline underline-offset-4"
-              href={part.url}
-              rel="noreferrer"
-              target="_blank"
-            >
-              {label}
-              <HugeiconsIcon icon={ExternalLinkIcon} size={12} strokeWidth={1.75} />
-            </a>
-          ) : (
-            <span>{label}</span>
-          )}
-          <span className="text-muted-foreground">{part.mediaType}</span>
+        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card/60 px-3.5 py-2.5 text-sm shadow-[var(--shadow-soft)] transition-all hover:border-input max-w-sm my-1">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <HugeiconsIcon icon={File01Icon} size={16} strokeWidth={1.75} />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col">
+            {part.url ? (
+              <a
+                className="truncate font-medium text-foreground hover:underline inline-flex items-center gap-1"
+                href={part.url}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span>{label}</span>
+                <HugeiconsIcon icon={ExternalLinkIcon} size={12} strokeWidth={1.75} />
+              </a>
+            ) : (
+              <span className="truncate font-medium">{label}</span>
+            )}
+            <span className="text-[10px] text-muted-foreground">{part.mediaType || "Archivo"}</span>
+          </div>
         </div>
       );
     }
@@ -147,9 +187,16 @@ function AgentMessagePart({
         </div>
       );
     case "dynamic-tool": {
-      // A tool call is an execution disclosure: name, status, and the payload
-      // it produced, collapsed once it finishes so a long run doesn't bury the
-      // answer. It stays open while it needs a person.
+      // Two tools are not disclosures at all: `chart` and `report` exist to put
+      // something on screen, so their payload replaces the terminal block
+      // rather than hiding inside it. See ./chat/artifacts.
+      if (isArtifactPart(part)) {
+        return <ToolArtifact part={part} />;
+      }
+
+      // Everything else is an execution disclosure: name, status, and the
+      // payload it produced, collapsed once it finishes so a long run doesn't
+      // bury the answer. It stays open while it needs a person.
       const needsPerson = part.state === "approval-requested" || part.state === "approval-responded";
       const output = part.errorText ?? formatToolOutput(part.output);
       return (

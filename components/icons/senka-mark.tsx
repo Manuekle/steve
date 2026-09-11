@@ -28,11 +28,14 @@ import { cn } from "@/lib/utils";
  * rest of the rig already reads. It is a gradient and not a filter because the
  * mark is one path — there is nothing to bloom *from* except its own fill.
  *
- * It replaces `currentColor`, so it is opt-in and it is wrong anywhere the
- * mark is drawn on an inverted ground: the login tile paints it in
- * `text-background` on white, and a ramp built out of `--lp-lumen-*` would put
- * a near-white mark on a near-white tile. The lockups on the page ground —
- * header, footer, sidebar — are the ones that take it.
+ * It replaces `currentColor`, so it is opt-in. The lockups on the page ground
+ * — header, footer, sidebar, the licence card — take `metal`; a mark on a
+ * ground of the *opposite* polarity takes `metal="inverted"`, which is the
+ * same ramp read off `--lp-lumen-inv-*`. The login tile is the one of those:
+ * it is `--foreground`, so on a light page it is a near-black tile and the
+ * page-ground ramp would paint a near-black mark into it. Nothing here should
+ * ever go back to a flat fill on those two grounds — flat next to milled is
+ * the one combination that reads as a mistake rather than as a choice.
  *
  * ── Width is auto, and that is not a detail ───────────────────────────
  * The mark is 885.3 × 907.3: very nearly square, and not square. Callers were
@@ -47,8 +50,12 @@ export function SenkaMark({
   metal = false,
 }: {
   readonly className?: string;
-  /** Mill the mark instead of filling it with `currentColor`. */
-  readonly metal?: boolean;
+  /**
+   * Mill the mark instead of filling it with `currentColor`. `"inverted"`
+   * mills it for a ground that runs against the page's — a `--foreground`
+   * tile, a chip, anywhere the mark would otherwise be `text-background`.
+   */
+  readonly metal?: boolean | "inverted";
 }) {
   /* Per instance. The mark renders two or three times on a page and an SVG
      `url(#id)` is resolved against the whole document, so a hardcoded id would
@@ -56,6 +63,15 @@ export function SenkaMark({
      fine while they are identical, and a silent bug the moment one is not.
      `brand-marks.tsx` has the same note and the scar to go with it. */
   const gradientId = `senka-metal-${useId()}`;
+
+  /* Two token families, one ramp shape. Named rather than built by
+     concatenating a prefix into `var(--lp-lumen-…)`: a custom property that
+     only exists as a string is a custom property no search will find on the
+     day someone renames it. */
+  const ramp =
+    metal === "inverted"
+      ? { hi: "var(--lp-lumen-inv-hi)", lo: "var(--lp-lumen-inv-lo)", mid: "var(--lp-lumen-inv-mid)" }
+      : { hi: "var(--lp-lumen-hi)", lo: "var(--lp-lumen-lo)", mid: "var(--lp-lumen-mid)" };
 
   return (
     <svg
@@ -71,10 +87,10 @@ export function SenkaMark({
               the viewBox — the two differ by the crop, and a ramp measured on
               the box would put its midtone in the wrong place. */}
           <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="var(--lp-lumen-hi)" />
-            <stop offset="22%" stopColor="var(--lp-lumen-hi)" />
-            <stop offset="58%" stopColor="var(--lp-lumen-mid)" />
-            <stop offset="100%" stopColor="var(--lp-lumen-lo)" />
+            <stop offset="0%" stopColor={ramp.hi} />
+            <stop offset="22%" stopColor={ramp.hi} />
+            <stop offset="58%" stopColor={ramp.mid} />
+            <stop offset="100%" stopColor={ramp.lo} />
           </linearGradient>
         </defs>
       ) : null}

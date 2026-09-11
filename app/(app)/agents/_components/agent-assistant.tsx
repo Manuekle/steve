@@ -384,7 +384,7 @@ export function AgentAssistant({
 
         {busy ? (
           <div className="list-fade-in flex items-center gap-2">
-            <Orb state="weaving" />
+            <Orb state="composing" />
             <ThinkingShimmer>{t("builder.assistantThinking")}</ThinkingShimmer>
           </div>
         ) : null}

@@ -69,7 +69,7 @@ export function PricingSection() {
     <section id="precios" className="scroll-mt-20 border-border border-t py-24 sm:py-32">
       <Shell>
         <SectionIntro
-          figure="Fig 09"
+          figure="Fig 08"
           title={[t("landing.pricing.titleLine1"), t("landing.pricing.titleLine2")]}
           body={t("landing.pricing.body")}
           cta={{ href: "/pricing", label: t("landing.pricing.cta") }}

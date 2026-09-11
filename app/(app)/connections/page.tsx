@@ -10,7 +10,7 @@ import {
   AuthorizedIcon,
   CheckmarkCircle02Icon,
   AlertCircleIcon,
-  ArrowRight01Icon,
+  ArrowRight02Icon,
   ExternalLinkIcon,
   Unlink01Icon,
 } from "@hugeicons/core-free-icons";
@@ -46,6 +46,7 @@ import {
   CardTitle,
 } from "../../_components/dashboard-card";
 import { ManualKeyDialog } from "./_components/manual-key-dialog";
+import { McpSection } from "./_components/mcp-section";
 import { Spinner } from "@/components/ui/spinner";
 
 // Connections.
@@ -369,7 +370,7 @@ export default function ConnectionsPage() {
                             {integration.configured
                               ? t("connections.review")
                               : t("connections.addKey")}
-                            <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.75} />
+                            <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={1.75} />
                           </button>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs text-pretty">
@@ -417,6 +418,17 @@ export default function ConnectionsPage() {
             </Card>
           </section>
 
+          {/* ── MCP servers ──
+              Below the vendor cards on purpose: those are accounts, this is a
+              protocol. A server added here is not "an integration Senka
+              supports", it is one the operator wired themselves, and grouping
+              it with the branded cards would imply a review that never
+              happened. Self-contained so this already-long page does not grow
+              a fourth loading state. */}
+          <section className="mt-10">
+            <McpSection />
+          </section>
+
           {/* ── Webhooks ── */}
           <section className="mt-10">
             <SectionHeading
@@ -441,7 +453,7 @@ export default function ConnectionsPage() {
                         className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {t("connections.openForm")}
-                        <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.75} />
+                        <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={1.75} />
                       </Link>
                     </div>
                   </div>

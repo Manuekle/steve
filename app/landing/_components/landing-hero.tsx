@@ -9,7 +9,8 @@ import { TextReveal } from "@/components/motion/text-reveal";
 import { useSession } from "@/lib/auth/use-session";
 import { useT } from "@/lib/i18n/provider";
 import { ChatScreen } from "./app-screens";
-import { Spotlight } from "./lighting";
+import styles from "./editorial.module.css";
+import { Grain } from "./grain";
 import { Reveal, ScreenFrame, Shell } from "./primitives";
 
 /**
@@ -25,43 +26,11 @@ export function LandingHero() {
   const session = useSession();
 
   return (
-    <section className="relative overflow-hidden pt-32 pb-16 sm:pt-40 sm:pb-24">
-      {/* Backdrop, back to front: hairline grid, the wide neutral bloom that
-          was already here, and now the beam that explains where the bloom
-          comes from.
-
-          The bloom on its own was the whole problem with this hero. A soft
-          ellipse behind a headline is light with no source — the page was lit
-          by nothing, from nowhere, which is why it read as a dark rectangle
-          with a gradient in it rather than as a room. The beam is that light
-          arriving: it enters above the fold, opens over the headline, and has
-          run out by the time it reaches the buttons.
-
-          Anchored to the RAIL, not to the viewport. The rail is centred and
-          capped at 1120px, so where the headline sits moves with the window
-          and a percentage `left` does not: the same beam that lands on the
-          copy at 1440px lands on empty page at 1000. The wrapper tracks the
-          rail, so `left-0` means the left edge of the column at every width —
-          which is the composition, since the headline is pinned there and a
-          beam centred on the viewport lights the empty half.
-
-          `top-0` and not a negative offset. The hero clips — that is what
-          keeps its grid and its beam off the band below — so a cone starting
-          above the section is cut by the section's own top edge, at whatever
-          brightness it happens to have reached. Starting flush means there is
-          nothing to cut, and the cone's mask fades in over its first sixth
-          anyway, so the light still arrives rather than switching on. */}
-      <div aria-hidden="true" className="lp-grid" />
-      <div
-        aria-hidden="true"
-        className="lp-glow"
-        style={{ top: "-14rem", width: "min(1100px, 130vw)", height: "44rem" }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 mx-auto w-full max-w-[1120px] px-6 sm:px-8"
-      >
-        <Spotlight className="top-0 left-0 h-[44rem] w-[min(46rem,110%)]" intensity={1} />
+    <section className={`${styles.surface} ${styles.hero} relative overflow-hidden pt-32 pb-16 sm:pt-40 sm:pb-24`}>
+      {/* Texture belongs to the light, behind the copy and fading before the demo. */}
+      <div aria-hidden="true" className={styles.heroAtmosphere}>
+        <div className={styles.heroLight} />
+        <Grain variant="hero" />
       </div>
 
       <Shell className="relative">
@@ -72,7 +41,16 @@ export function LandingHero() {
               design. A full-pill container here was the shape the product
               never uses. */}
           <Link
-            href="/agents"
+            // `#agentes` signed out, and that is a correctness fix rather than
+            // a preference: `/agents` is behind the session gate, so the one
+            // announcement on the page sent every visitor who clicked it to
+            // the login wall. The section it is announcing is on this page,
+            // three screens down. Signed in, the real thing is better.
+            href={session.signedIn ? "/agents" : "#agentes"}
+            // Nothing to prefetch for a hash, and for the app route the click
+            // is deliberate — a marketing page should not pull the product's
+            // JS down behind the visitor's back.
+            prefetch={false}
             className="group inline-flex items-center gap-2.5 rounded-xl border border-border bg-card py-1.5 pr-3 pl-1.5 text-xs shadow-[var(--shadow-soft)] transition-[border-color,box-shadow] duration-200 hover:border-input hover:shadow-[var(--shadow-elevated)]"
           >
             <Badge className="px-2 py-0.5 text-[10px]">{t("landing.hero.badge")}</Badge>
@@ -89,17 +67,7 @@ export function LandingHero() {
         {/* On mount, not on view: this line is above the fold on every device,
             so an in-view trigger fires at the same instant anyway and only
             costs an observer. `delay` keeps it a beat behind the badge. */}
-        {/* Milled. This is the largest type on the site and the one line the
-            whole page is built to deliver, so it is the one that earns the
-            ramp — bright at the cap line, falling to the baseline, under the
-            beam that is already pointed at it. Anywhere else on the landing a
-            metallic headline would be chrome; here it is the light the
-            composition already claims to have, landing on the letters.
-
-            `unitClassName`, not `className`: the ramp is a clipped background
-            and every word here composites on its own to animate. On the
-            wrapper the headline would be invisible for the length of its own
-            entrance. */}
+        {/* Solid Cooper lettering stays crisp against the textured wash. */}
         <TextReveal
           as="h1"
           blur={6}
@@ -107,7 +75,7 @@ export function LandingHero() {
           delay={0.12}
           stagger={0.04}
           text={t("landing.hero.title")}
-          unitClassName="lp-lumen overflow-visible"
+          unitClassName="overflow-visible"
           yOffset="24%"
         />
 
@@ -123,7 +91,7 @@ export function LandingHero() {
                 explain; signed out, the primary is the door and the secondary
                 is the pricing — the only other page a visitor can reach. */}
             <Button asChild size="lg">
-              <Link href={session.signedIn ? "/dashboard" : "/login"}>
+              <Link href={session.signedIn ? "/dashboard" : "/login"} prefetch={!session.signedIn}>
                 {session.signedIn
                   ? t("landing.cta.openApp")
                   : session.claimed
@@ -132,7 +100,7 @@ export function LandingHero() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href={session.signedIn ? "/settings" : "/pricing"}>
+              <Link href={session.signedIn ? "/settings" : "/pricing"} prefetch={!session.signedIn}>
                 {session.signedIn ? t("landing.cta.settings") : t("landing.cta.pricing")}
               </Link>
             </Button>

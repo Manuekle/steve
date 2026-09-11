@@ -23,7 +23,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -537,9 +536,10 @@ export default function PipelinePage() {
         </aside>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {dialogOpen ? (
         <DealDialog
           key={`${editing?.id ?? "new"}-${dialogNonce}`}
+          open={dialogOpen}
           editing={editing}
           contacts={contacts}
           deals={deals}
@@ -552,7 +552,7 @@ export default function PipelinePage() {
             )
           }
         />
-      </Dialog>
+      ) : null}
       {confirmDialog}
     </div>
   );

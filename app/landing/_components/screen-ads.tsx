@@ -4,7 +4,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Coins01Icon,
   MouseLeftClick01Icon,
-  EyeIcon,
+  SearchAreaIcon,
   SearchIcon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
@@ -224,9 +224,14 @@ export function AdsScreen() {
           page draws them: where the impressions came from, how the clicks were
           distributed, how much of today's budget is gone, and how much of the
           impression count was a first look. */}
-      <div className="lp-kpi-row mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* `sm:grid-cols-2`, the ads page's own breakpoint — one tile per row on
+          a phone. The dashboard forces two columns at every width and this
+          screen had copied that, but its four subtitles are the long ones
+          ("2,4 veces por persona", "$0,45 por clic") and at 390px every one of
+          them was truncated to an ellipsis. */}
+      <div className="lp-kpi-row mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          icon={EyeIcon}
+          icon={SearchAreaIcon}
           label={t("ads.impressions")}
           value={formatNumber(totals.impressions)}
           sub={t("ads.frequency", { value: (totals.impressions / totals.reach).toFixed(1) })}

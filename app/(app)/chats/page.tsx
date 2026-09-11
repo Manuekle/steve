@@ -18,7 +18,13 @@ import { useConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
 import { useT } from "@/lib/i18n/provider";
 import { relativeTime } from "@/lib/format";
-import { getChats, mergeChats, togglePin as togglePinLocal, deleteChat as deleteChatLocal } from "@/lib/dashboard-store";
+import {
+  chatTitle,
+  getChats,
+  mergeChats,
+  togglePin as togglePinLocal,
+  deleteChat as deleteChatLocal,
+} from "@/lib/dashboard-store";
 import type { ChatSummary, ChannelId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { usePolling } from "@/lib/use-polling";
@@ -258,8 +264,10 @@ export default function ChatsPage() {
                       {chat.pinned ? (
                         <HugeiconsIcon icon={PinIcon} size={14} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
                       ) : null}
+                      {/* A row exists from the moment the session opens, before
+                          anybody has said anything to name it by. */}
                       <p className="truncate text-sm font-medium hover:text-foreground">
-                        {chat.title}
+                        {chatTitle(chat) ?? t("chats.newConversation")}
                       </p>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">

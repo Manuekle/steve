@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatedQR } from "@/components/motion/animated-qr";
+import { DownloadAnimation } from "@/components/motion/download-animation";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AlertCircleIcon,
@@ -30,6 +32,7 @@ import { cn } from "@/lib/utils";
  * decision with nothing to batch it with.
  */
 export function SettingsPane({
+  active,
   form,
   draft,
   ceiling,
@@ -39,6 +42,7 @@ export function SettingsPane({
   onSlugSave,
   onWebhookSave,
 }: {
+  readonly active: boolean;
   readonly form: Form;
   readonly draft: FormDraft;
   readonly ceiling: number;
@@ -62,6 +66,13 @@ export function SettingsPane({
   const publicUrl = `${origin}/f/${form.slug}`;
   const qrSrc = `/api/forms/${form.id}/qr?v=${encodeURIComponent(form.slug)}`;
   const unreachable = ceiling > 0 && draft.scoring.hot > ceiling;
+
+  const downloadQr = () => {
+    const link = document.createElement("a");
+    link.href = `${qrSrc}&download`;
+    link.download = "";
+    link.click();
+  };
 
   const copyLink = async () => {
     try {
@@ -273,26 +284,28 @@ export function SettingsPane({
           </Button>
         </div>
 
-        <div className="flex items-start gap-3 pt-1">
-          {/* Drawn by the route rather than by a canvas here, so what the
-              download hands over is byte-for-byte what is on screen. White
-              ground in both themes on purpose: a code inverted onto a dark
-              card stops scanning on a good half of the readers in the wild. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qrSrc}
-            alt={t("forms.detail.qrAlt", { name: form.name })}
-            width={92}
-            height={92}
-            className="size-[92px] shrink-0 rounded-lg border border-border bg-white p-1.5"
-          />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-              <a href={`${qrSrc}&download`} download>
+        <div className="flex flex-wrap items-start gap-3 pt-1">
+          {/* The canvas and printable SVG encode the same complete matrix.
+              Keep a light background in both themes for reliable scanning. */}
+          {/* Replay only the QR on tab entry; keep unsaved settings mounted. */}
+          {active ? (
+            <AnimatedQR
+              formId={form.id}
+              slug={form.slug}
+              size={180}
+              label={t("forms.detail.qrAlt", { name: form.name })}
+              downloadLabel={t("forms.detail.qrDownload")}
+              className="shrink-0"
+              onDownload={downloadQr}
+            />
+          ) : null}
+          <div className="flex min-w-32 flex-1 flex-col items-start gap-1.5">
+            <DownloadAnimation onDownload={downloadQr}>
+              <Button variant="outline" size="sm" className="h-8 text-xs">
                 <HugeiconsIcon icon={Download04Icon} size={13} strokeWidth={1.75} />
                 {t("forms.detail.qrDownload")}
-              </a>
-            </Button>
+              </Button>
+            </DownloadAnimation>
             <p className="text-[10px] leading-relaxed text-muted-foreground">
               {form.status === "published"
                 ? t("forms.detail.qrHint")

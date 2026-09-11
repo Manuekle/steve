@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { ArtificialIntelligence08Icon, EyeIcon, EyeOffIcon } from "@hugeicons/core-free-icons";
+import { AiReplaceIcon, EyeIcon, EyeOffIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -138,7 +138,7 @@ export function CredentialField({
           <SelectContent>
             <SelectItem value={AUTO_MODEL}>
               <span className="flex items-center gap-2">
-                <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={15} strokeWidth={1.75} />
+                <HugeiconsIcon icon={AiReplaceIcon} size={15} strokeWidth={1.75} />
                 {t("settings.modelDefault", {
                   model: DEFAULT_MODELS[activeProvider as AiProvider] ?? DEFAULT_MODELS.gateway,
                 })}

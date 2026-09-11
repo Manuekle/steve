@@ -37,22 +37,47 @@ import type { Contact, Deal } from "../../lib/types";
 export default defineTool({
   description:
     "Read the whole sales pipeline at once: totals and win rate by currency, deals grouped " +
-    "by stage, stale or overdue deals, and the contact list. Use this for any question about " +
+    "by stage, the month-by-month trend, stale or overdue deals, and the contact list. " +
+    "Use this for any question about " +
     "the business as a whole — the forecast, what is stuck, which stage loses deals, who has " +
     "gone quiet — as opposed to `deal`, which is about one contact. Read-only: it never " +
     "creates or moves a deal. Only available in the owner's own console, not on WhatsApp " +
     "or Instagram.",
   inputSchema: z.object({
     action: z
-      .enum(["summary", "deals", "contacts"])
+      .enum(["summary", "trend", "deals", "contacts"])
       .describe(
-        "summary: money and rates across the board. deals: the deal rows, filtered. " +
-          "contacts: the people, filtered. For conversations, use the `inbox` tool.",
+        "summary: money and rates across the board. trend: the same board bucketed by " +
+          "month or week, for anything over time — chart this with `chart`. deals: the " +
+          "deal rows, filtered. contacts: the people, filtered. For conversations, use " +
+          "the `inbox` tool.",
       ),
     stage: z
       .array(z.enum(["lead", "qualified", "meeting", "proposal", "negotiation", "won", "lost"]))
       .optional()
       .describe("action=deals: keep only these stages. Omit for every stage."),
+    granularity: z
+      .enum(["month", "week"])
+      .optional()
+      .describe("action=trend: bucket size. Defaults to month."),
+    buckets: z
+      .number()
+      .int()
+      .min(2)
+      .max(36)
+      .optional()
+      .describe(
+        "action=trend: how many buckets back from today, newest last. Defaults to 12 " +
+          "(a year of months). Use 12 for 'este año'.",
+      ),
+    currency: z
+      .string()
+      .length(3)
+      .optional()
+      .describe(
+        "action=trend: which currency's money to total. Defaults to the one most of " +
+          "the board is quoted in. Counts are currency-independent either way.",
+      ),
     onlyStale: z
       .boolean()
       .optional()
@@ -100,6 +125,23 @@ export default defineTool({
       .optional(),
     staleCount: z.number().optional(),
     overdueCount: z.number().optional(),
+    /** action=trend */
+    currency: z.string().optional(),
+    trend: z
+      .array(
+        z.object({
+          /** Sortable bucket key — "2026-03" for a month, "2026-W12" for a week. */
+          bucket: z.string(),
+          /** The same bucket as it should be printed on a chart axis. */
+          label: z.string(),
+          created: z.number(),
+          won: z.number(),
+          wonValue: z.number(),
+          lost: z.number(),
+          lostValue: z.number(),
+        }),
+      )
+      .optional(),
     /** action=deals */
     deals: z
       .array(
@@ -181,6 +223,15 @@ export default defineTool({
       };
     }
 
+    if (input.action === "trend") {
+      const currency = input.currency ?? pipelineTotals(deals)[0]?.currency ?? "";
+      return {
+        ok: true,
+        currency,
+        trend: bucketDeals(deals, currency, input.granularity ?? "month", input.buckets ?? 12, now),
+      };
+    }
+
     const contacts = await listContacts();
     const nameById = new Map(contacts.map((row) => [row.id, row.name] as const));
 
@@ -248,6 +299,124 @@ function contactRow(contact: Contact, openByContact: Map<string, number>, now: D
     attributes: contact.attributes,
     openDeals: openByContact.get(contact.id) ?? 0,
   };
+}
+
+/**
+ * The board over time.
+ *
+ * Every "how did we do this year" question needs the same three series —
+ * opened, won, lost — bucketed by a calendar unit, and none of them existed
+ * anywhere in this app: the dashboard draws a total, `summary` returns a total,
+ * and a total cannot show that March collapsed. Charting one meant asking the
+ * model to bucket raw deal rows itself, which is an eleven-way date arithmetic
+ * problem it gets subtly wrong (and which costs a `run_python` call when it
+ * doesn't).
+ *
+ * Buckets that exist but hold nothing are returned as zeros rather than
+ * skipped. A quiet August is a fact about the business; a chart that silently
+ * omits it draws a twelve-month year in eleven columns and reads as growth.
+ *
+ * A deal is counted in the bucket of the event, not of the deal: it is
+ * *created* when it was opened and *won* when it closed, so one deal can
+ * appear in two buckets. `closedAt` is set the first time a deal reaches a
+ * terminal stage and cleared if it reopens (see `lib/types.ts`); `updatedAt` is
+ * the fallback for rows written before that field existed.
+ *
+ * Money is one currency at a time — adding pesos to dollars produces a number
+ * that is true of nothing. Counts are currency-independent and include every
+ * deal.
+ */
+function bucketDeals(
+  deals: readonly Deal[],
+  currency: string,
+  granularity: "month" | "week",
+  count: number,
+  now: Date,
+) {
+  const keys: string[] = [];
+  const rows = new Map<string, { created: number; lost: number; lostValue: number; won: number; wonValue: number }>();
+
+  for (let step = count - 1; step >= 0; step -= 1) {
+    const key = bucketKey(shift(now, granularity, -step), granularity);
+    keys.push(key);
+    rows.set(key, { created: 0, lost: 0, lostValue: 0, won: 0, wonValue: 0 });
+  }
+
+  const oldest = keys[0]!;
+  for (const deal of deals) {
+    const createdKey = bucketKey(new Date(deal.createdAt), granularity);
+    if (createdKey >= oldest && rows.has(createdKey)) {
+      rows.get(createdKey)!.created += 1;
+    }
+
+    if (deal.stage !== "won" && deal.stage !== "lost") continue;
+    const closedKey = bucketKey(new Date(deal.closedAt ?? deal.updatedAt), granularity);
+    const row = rows.get(closedKey);
+    if (!row) continue;
+    const value = deal.currency === currency ? deal.value : 0;
+    if (deal.stage === "won") {
+      row.won += 1;
+      row.wonValue += value;
+    } else {
+      row.lost += 1;
+      row.lostValue += value;
+    }
+  }
+
+  return keys.map((key) => {
+    const row = rows.get(key)!;
+    return {
+      bucket: key,
+      created: row.created,
+      label: bucketLabel(key, granularity),
+      lost: row.lost,
+      lostValue: round(row.lostValue),
+      won: row.won,
+      wonValue: round(row.wonValue),
+    };
+  });
+}
+
+/** UTC throughout, so a bucket boundary doesn't move with the server's zone. */
+function shift(from: Date, granularity: "month" | "week", steps: number): Date {
+  const date = new Date(from.getTime());
+  if (granularity === "month") {
+    date.setUTCMonth(date.getUTCMonth() + steps);
+    return date;
+  }
+  date.setUTCDate(date.getUTCDate() + steps * 7);
+  return date;
+}
+
+function bucketKey(date: Date, granularity: "month" | "week"): string {
+  if (Number.isNaN(date.getTime())) return "";
+  if (granularity === "month") {
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+  }
+  // ISO week: Thursday of the same week decides the year, which is what keeps
+  // 31 December and 1 January in one bucket when they belong to one week.
+  const thursday = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+  thursday.setUTCDate(thursday.getUTCDate() + 3 - ((thursday.getUTCDay() + 6) % 7));
+  const firstThursday = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 4));
+  const week =
+    1 +
+    Math.round(
+      (thursday.getTime() - firstThursday.getTime()) / 604_800_000 -
+        ((firstThursday.getUTCDay() + 6) % 7) / 7,
+    );
+  return `${thursday.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+/** "2026-03" reads as a database key on a chart axis; "mar 2026" reads as March. */
+function bucketLabel(key: string, granularity: "month" | "week"): string {
+  if (granularity === "week") return key.replace("-W", " S");
+  const [year, month] = key.split("-");
+  const name = new Intl.DateTimeFormat("es-AR", { month: "short", timeZone: "UTC" }).format(
+    new Date(Date.UTC(Number(year), Number(month) - 1, 1)),
+  );
+  return `${name.replace(".", "")} ${year}`;
 }
 
 /** Two decimals. Money that arrives as 1234.5600000000001 reads as a bug to

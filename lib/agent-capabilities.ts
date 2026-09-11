@@ -39,6 +39,23 @@ export type CapabilityId =
   | "automations"
   | "code";
 
+/** UI category hues, aligned with matching workflow actions. */
+export const CAPABILITY_HUES: Record<CapabilityId, number> = {
+  contacts: 65,
+  deals: 65,
+  handoff: 65,
+  knowledge: 250,
+  media: 295,
+  calendar: 220,
+  sheets: 165,
+  reminders: 345,
+  payments: 295,
+  shopify: 165,
+  http: 220,
+  automations: 295,
+  code: 220,
+};
+
 export type Capability = {
   readonly id: CapabilityId;
   readonly labelKey: string;

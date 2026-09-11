@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { ArtificialIntelligence08Icon } from "@hugeicons/core-free-icons";
+import { ScanHeartIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ProviderLogo } from "@/components/provider-logo";
 import { useI18n } from "@/lib/i18n/provider";
@@ -49,7 +49,7 @@ export function ModelHealthCard() {
     <div className="mb-4 break-inside-avoid rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
       <div className="flex items-start gap-3 px-5 pt-5 pb-4">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-          <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} />
+          <HugeiconsIcon icon={ScanHeartIcon} size={16} strokeWidth={1.75} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

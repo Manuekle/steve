@@ -44,7 +44,11 @@ export type DocumentId =
   | "installation"
   | "chat-models"
   | "seo"
-  | "businesses";
+  | "businesses"
+  | "phone-numbers"
+  | "agent-skills"
+  | "mcp-servers"
+  | "runtime";
 
 let schemaReady: Promise<void> | undefined;
 

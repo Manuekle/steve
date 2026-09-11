@@ -473,7 +473,9 @@ function EditAssetDialog({
     <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("knowledge.mediaEditTitle")}</DialogTitle>
+          <DialogTitle icon={<HugeiconsIcon icon={PencilEdit02Icon} size={18} strokeWidth={1.75} />}>
+            {t("knowledge.mediaEditTitle")}
+          </DialogTitle>
           <DialogDescription>{t("knowledge.mediaEditDescription")}</DialogDescription>
         </DialogHeader>
 
@@ -546,7 +548,7 @@ function EditAssetDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="outline" onClick={onClose}>
             {t("common.cancel")}
           </Button>
           <Button

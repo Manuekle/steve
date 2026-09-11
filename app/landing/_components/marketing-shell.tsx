@@ -29,7 +29,13 @@ import { Spotlight } from "./lighting";
  * the pin is gone and this subtree reads `I18nContext` straight from
  * `I18nProvider`, the same one every other page uses.
  */
-export function MarketingShell({ children }: { readonly children: ReactNode }) {
+export function MarketingShell({
+  children,
+  editorial = false,
+}: {
+  readonly children: ReactNode;
+  readonly editorial?: boolean;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useReveal(rootRef);
@@ -49,7 +55,7 @@ export function MarketingShell({ children }: { readonly children: ReactNode }) {
         <div className="lp min-h-dvh" ref={rootRef}>
           <LandingHeader />
           <main>{children}</main>
-          <LandingFooter />
+          <LandingFooter editorial={editorial} />
         </div>
       </SmoothScroll>
     </>

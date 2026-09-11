@@ -7,11 +7,18 @@ import {
   InboxIcon,
   LibraryIcon,
   Megaphone01Icon,
+  ChatSpark01Icon,
   ZapIcon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +64,10 @@ export function FeaturesDialog({
     <Dialog onOpenChange={(next) => (next ? undefined : onClose())} open={open}>
       <DialogContent className="sm:max-w-[34rem]">
         <DialogHeader>
-          <DialogTitle className="font-cooper text-[1.6rem] leading-tight tracking-[-0.02em]">
+          <DialogTitle
+            className="font-cooper text-[1.6rem] leading-tight tracking-[-0.02em]"
+            icon={<HugeiconsIcon icon={ChatSpark01Icon} size={22} strokeWidth={1.75} />}
+          >
             {t("onboarding.readyTitle")}
           </DialogTitle>
         </DialogHeader>
@@ -108,9 +118,11 @@ export function FeaturesDialog({
           })}
         </div>
 
-        <Button className="mt-2 w-full" onClick={onClose}>
-          {t("onboarding.readyCta")}
-        </Button>
+        <DialogFooter>
+          <Button className="w-full" onClick={onClose}>
+            {t("onboarding.readyCta")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

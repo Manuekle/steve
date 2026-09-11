@@ -12,6 +12,11 @@ import {
   Settings01Icon,
 } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
+import { CategoryBadge } from "@/components/ui/category-badge";
+import { ChannelBadge } from "@/app/_components/channel-badge";
+import { CAPABILITIES, CAPABILITY_HUES } from "@/lib/agent-capabilities";
+import { STEP_HUES, STEP_ICONS, STEP_LABEL_KEYS, STEP_TYPES } from "@/lib/workflow-step-meta";
+import { useT } from "@/lib/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "@/components/ui/button-group";
 import {
@@ -38,6 +43,28 @@ import type { Section } from "../_lib/types";
 // A controlled component cannot be demoed as a bare element: it needs
 // somewhere to keep the value. One tiny host per component, right here, so
 // the registry entry below stays declarative.
+
+function CategoryBadgesDemo({ kind }: { readonly kind: "steps" | "capabilities" }) {
+  const t = useT();
+  return kind === "steps" ? (
+    <div className="flex flex-wrap gap-1.5">
+      {STEP_TYPES.map((type) => (
+        <CategoryBadge key={type} hue={STEP_HUES[type]}>
+          <HugeiconsIcon icon={STEP_ICONS[type]} size={12} strokeWidth={1.75} aria-hidden="true" />
+          {t(STEP_LABEL_KEYS[type])}
+        </CategoryBadge>
+      ))}
+    </div>
+  ) : (
+    <div className="flex flex-wrap gap-1.5">
+      {CAPABILITIES.map(({ id, labelKey }) => (
+        <CategoryBadge key={id} hue={CAPABILITY_HUES[id]} className="text-[10px]">
+          {t(labelKey)}
+        </CategoryBadge>
+      ))}
+    </div>
+  );
+}
 
 function ToggleChipDemo() {
   const [picked, setPicked] = useState("es");
@@ -354,6 +381,43 @@ export function uiControls(_locale?: string): Section {
               <HugeiconsIcon icon={Search01Icon} strokeWidth={1.75} />
               Indexando
             </Badge>
+          ),
+        },
+      ],
+    },
+    {
+      id: "category-badge",
+      name: "CategoryBadge",
+      source: "components/ui/category-badge.tsx",
+      importLine: 'import { CategoryBadge } from "@/components/ui/category-badge";',
+      desc: "Identidad de categoría con fondo tintado. Comparte tonos entre flows, capacidades y canales; se adapta a claro, oscuro y contraste aumentado.",
+      props: [
+        { name: "hue", type: "number", desc: "Tono OKLCH del catálogo. Sin tono, usa la superficie neutra." },
+      ],
+      demos: [
+        {
+          id: "category-badge-steps",
+          title: "Pasos del flow",
+          code: '<CategoryBadge hue={STEP_HUES.message}>Mensaje</CategoryBadge>',
+          render: <CategoryBadgesDemo kind="steps" />,
+        },
+        {
+          id: "category-badge-capabilities",
+          title: "Capacidades",
+          code: '<CategoryBadge hue={CAPABILITY_HUES.calendar}>Agenda</CategoryBadge>',
+          render: <CategoryBadgesDemo kind="capabilities" />,
+        },
+        {
+          id: "category-badge-channels",
+          title: "Canales",
+          code: '<ChannelBadge channel="whatsapp" />',
+          render: (
+            <>
+              {(["web", "whatsapp", "instagram", "form", "voice"] as const).map((channel) => (
+                <ChannelBadge key={channel} channel={channel} />
+              ))}
+              <CategoryBadge>Sin categoría</CategoryBadge>
+            </>
           ),
         },
       ],

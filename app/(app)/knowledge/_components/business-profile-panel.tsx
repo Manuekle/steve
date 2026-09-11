@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Delete02Icon, Edit02Icon, SparklesIcon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, Edit02Icon, AiSearch02Icon } from "@hugeicons/core-free-icons";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -226,7 +226,7 @@ export function BusinessProfilePanel({
             {analyzing ? (
               <Spinner size={15} strokeWidth={2} />
             ) : (
-              <HugeiconsIcon icon={SparklesIcon} size={15} strokeWidth={1.75} />
+              <HugeiconsIcon icon={AiSearch02Icon} size={15} strokeWidth={1.75} />
             )}
             {record ? t("businessProfile.reanalyze") : t("businessProfile.analyzeAction")}
           </Button>

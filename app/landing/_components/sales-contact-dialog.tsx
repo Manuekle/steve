@@ -1,13 +1,14 @@
 "use client";
 
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight02Icon, Mail01Icon } from "@hugeicons/core-free-icons";
 import { type FormEvent, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -120,7 +121,9 @@ export function SalesContactDialog({
       <DialogTrigger asChild>
         {triggerVariant === "link" ? (
           <button
-            className="group inline-flex w-fit items-center gap-1.5 font-medium text-foreground text-sm"
+            // `min-h-6`: the 24px WCAG 2.2 target-size floor — see the same
+            // note on `SectionIntro`'s link in `primitives.tsx`.
+            className="group inline-flex min-h-6 w-fit items-center gap-1.5 font-medium text-foreground text-sm"
             type="button"
           >
             {t(triggerLabelKey)}
@@ -139,7 +142,9 @@ export function SalesContactDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t(titleKey)}</DialogTitle>
+          <DialogTitle icon={<HugeiconsIcon icon={Mail01Icon} size={18} strokeWidth={1.75} />}>
+            {t(titleKey)}
+          </DialogTitle>
           <DialogDescription>{t(bodyKey)}</DialogDescription>
         </DialogHeader>
 
@@ -229,12 +234,14 @@ export function SalesContactDialog({
 
             {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
 
-            <Button type="submit" className="w-full" disabled={status === "submitting"}>
-              {status === "submitting" ? <Spinner size={15} strokeWidth={2} /> : null}
-              {status === "submitting"
-                ? t("pricing.contactModal.form.submitting")
-                : t("pricing.contactModal.form.submit")}
-            </Button>
+            <DialogFooter>
+              <Button type="submit" className="w-full" disabled={status === "submitting"}>
+                {status === "submitting" ? <Spinner size={15} strokeWidth={2} /> : null}
+                {status === "submitting"
+                  ? t("pricing.contactModal.form.submitting")
+                  : t("pricing.contactModal.form.submit")}
+              </Button>
+            </DialogFooter>
           </form>
         )}
       </DialogContent>

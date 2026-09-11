@@ -6,7 +6,7 @@ import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useSound, type CueName } from "@/components/sound-provider";
 
 /**
@@ -96,47 +96,212 @@ function DialogOverlay({
   );
 }
 
+function isFooterElement(child: React.ReactNode): boolean {
+  if (!React.isValidElement(child)) return false;
+  const props = child.props as Record<string, unknown> | undefined;
+  return (
+    child.type === DialogFooter ||
+    props?.["data-slot"] === "dialog-footer" ||
+    props?.["data-slot"] === "alert-dialog-footer"
+  );
+}
+
+function flattenChildren(children: React.ReactNode): React.ReactNode[] {
+  const result: React.ReactNode[] = [];
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement(child) && child.type === React.Fragment) {
+      result.push(...flattenChildren((child.props as { children?: React.ReactNode }).children));
+    } else if (child !== null && child !== undefined && child !== false) {
+      result.push(child);
+    }
+  });
+  return result;
+}
+
+function partitionDialogChildren(children: React.ReactNode) {
+  const flattened = flattenChildren(children);
+  let formElement: React.ReactElement<React.FormHTMLAttributes<HTMLFormElement>> | null = null;
+  let footerChild: React.ReactNode = null;
+  const bodyChildren: React.ReactNode[] = [];
+
+  for (const item of flattened) {
+    if (!React.isValidElement(item)) {
+      if (item !== null && item !== undefined && item !== false) {
+        bodyChildren.push(item);
+      }
+      continue;
+    }
+
+    if (isFooterElement(item)) {
+      footerChild = item;
+      continue;
+    }
+
+    if (typeof item.type === "string" && item.type === "form") {
+      formElement = item as React.ReactElement<React.FormHTMLAttributes<HTMLFormElement>>;
+      const formInner = flattenChildren(formElement.props.children);
+      const innerBody: React.ReactNode[] = [];
+      for (const inner of formInner) {
+        if (isFooterElement(inner)) {
+          footerChild = inner;
+        } else {
+          innerBody.push(inner);
+        }
+      }
+      bodyChildren.push(
+        <div key="dialog-form-inner" className={cn("flex flex-col gap-4", formElement.props.className)}>
+          {innerBody}
+        </div>,
+      );
+      continue;
+    }
+
+    bodyChildren.push(item);
+  }
+
+  return { formElement, bodyChildren, footerChild };
+}
+
 function DialogContent({
   className,
+  bodyClassName,
   children,
   showCloseButton = true,
   closeClassName,
+  variant = "default",
+  scrollBody = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
-  /**
-   * Where the close button sits. The default inset is measured against this
-   * component's own `p-6`; a dialog that drops the padding (a palette whose
-   * first row is a search field, a media viewer) has a different rail, and
-   * `top-4 right-4` then lands the button somewhere arbitrary over the first
-   * row instead of centred in it. Those dialogs pass their own inset.
-   */
   closeClassName?: string;
+  bodyClassName?: string;
+  variant?: "default" | "plain";
+  /**
+   * Off for a panel whose body holds a popover that is positioned rather than
+   * portalled — a calendar hanging off the last field, say. A scroll container
+   * clips its own absolutely-positioned children, so such a popover opens
+   * behind the card's bottom edge and has to be scrolled into view. Turning
+   * this off lets it spill over the panel the way it did before, and the panel
+   * then has to be short enough that it never needed to scroll.
+   */
+  scrollBody?: boolean;
 }) {
+  if (variant === "plain") {
+    return (
+      <DialogPortal data-slot="dialog-portal">
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          data-slot="dialog-content"
+          className={cn(
+            "t-modal fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-float)] outline-none sm:max-w-lg",
+            className,
+          )}
+          {...props}
+        >
+          {children}
+          {showCloseButton && (
+            <DialogPrimitive.Close
+              data-slot="dialog-close"
+              className={cn(
+                "absolute top-4 right-4 grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)] disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+                closeClassName,
+              )}
+            >
+              <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.75} />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          )}
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    );
+  }
+
+  const { formElement, bodyChildren, footerChild } = partitionDialogChildren(children);
+
+  // When there are no buttons / footer, render directly as a clean single card
+  if (!footerChild) {
+    return (
+      <DialogPortal data-slot="dialog-portal">
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          data-slot="dialog-content"
+          className={cn(
+            "t-modal fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-float)] outline-none sm:max-w-lg",
+            className,
+          )}
+          {...props}
+        >
+          {children}
+          {showCloseButton && (
+            <DialogPrimitive.Close
+              data-slot="dialog-close"
+              className={cn(
+                "absolute top-4 right-4 grid size-7 shrink-0 place-items-center rounded-[9px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)] disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+                closeClassName,
+              )}
+            >
+              <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.75} />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          )}
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    );
+  }
+
+  const cardContent = (
+    <>
+      <div
+        data-slot="dialog-card"
+        className={cn(
+          // The one scroll region. Everything above caps the panel at the
+          // viewport; this is what makes the part that no longer fits
+          // reachable instead of clipped off the top and bottom edges.
+          "relative flex min-h-0 flex-col gap-4 rounded-[14px] border border-border/50 bg-card p-4 shadow-xs sm:p-5",
+          scrollBody && "overflow-y-auto overscroll-contain",
+          bodyClassName,
+        )}
+      >
+        {bodyChildren}
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className={cn(
+              "absolute top-3.5 right-3.5 grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground/70 transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)] disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+              closeClassName,
+            )}
+          >
+            <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={1.75} />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
+      </div>
+      <div
+        data-slot="dialog-footer-wrapper"
+        className="shrink-0 px-2 pt-2 pb-1"
+      >
+        {footerChild}
+      </div>
+    </>
+  );
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "t-modal fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-float)] outline-none sm:max-w-lg",
+          "t-modal fixed top-[50%] left-[50%] z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)] outline-none sm:max-w-lg",
           className,
         )}
         {...props}
       >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className={cn(
-              "absolute top-4 right-4 grid size-7 shrink-0 place-items-center rounded-[9px] text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)] disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-              closeClassName,
-            )}
-          >
-            <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.75} />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
+        {formElement
+          ? React.cloneElement(formElement, {
+              className: cn("flex min-h-0 w-full flex-col gap-0", formElement.props.className),
+              children: cardContent,
+            })
+          : cardContent}
       </DialogPrimitive.Content>
     </DialogPortal>
   );
@@ -146,7 +311,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      className={cn("flex flex-col gap-1.5 text-left", className)}
       {...props}
     />
   );
@@ -163,7 +328,10 @@ function DialogFooter({
   return (
     <div
       data-slot="dialog-footer"
-      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      className={cn(
+        "flex flex-row items-center justify-between gap-3 w-full [&>*:only-child]:ml-auto",
+        className,
+      )}
       {...props}
     >
       {children}
@@ -176,13 +344,27 @@ function DialogFooter({
   );
 }
 
-function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+type DialogTitleProps = React.ComponentProps<typeof DialogPrimitive.Title> & {
+  icon?: React.ReactNode;
+};
+
+function DialogTitle({ className, icon, children, ...props }: DialogTitleProps) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
+      className={cn(
+        "flex items-center gap-2.5 text-lg font-semibold tracking-tight text-foreground leading-normal",
+        className,
+      )}
       {...props}
-    />
+    >
+      {icon && (
+        <span className="text-foreground/80 shrink-0 inline-flex items-center">
+          {icon}
+        </span>
+      )}
+      <span>{children}</span>
+    </DialogPrimitive.Title>
   );
 }
 
@@ -199,8 +381,81 @@ function DialogDescription({
   );
 }
 
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn("flex flex-col gap-4", className)}
+      {...props}
+    />
+  );
+}
+
+function DialogShortcut({
+  children,
+  variant = "subtle",
+  className,
+}: {
+  children: React.ReactNode;
+  variant?: "subtle" | "primary" | "destructive";
+  className?: string;
+}) {
+  return (
+    <kbd
+      data-slot="dialog-shortcut"
+      className={cn(
+        "inline-flex h-5 select-none items-center justify-center rounded px-1.5 font-mono text-[10px] font-medium tracking-wide transition-colors",
+        variant === "subtle" &&
+          "border border-border/80 bg-background/80 text-muted-foreground shadow-2xs",
+        variant === "primary" &&
+          "bg-primary-foreground/20 text-primary-foreground",
+        variant === "destructive" &&
+          "bg-destructive-foreground/20 text-destructive-foreground",
+        className,
+      )}
+    >
+      {children}
+    </kbd>
+  );
+}
+
+function DialogCancel({
+  className,
+  children,
+  showShortcut = false,
+  asChild,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Close> & {
+  showShortcut?: boolean;
+}) {
+  if (asChild) {
+    return (
+      <DialogPrimitive.Close asChild {...props}>
+        {children}
+      </DialogPrimitive.Close>
+    );
+  }
+  return (
+    <DialogPrimitive.Close
+      data-slot="dialog-cancel"
+      className={cn(
+        buttonVariants({ variant: "outline" }),
+        "text-muted-foreground hover:text-foreground",
+        showShortcut && "gap-2",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      {showShortcut && <DialogShortcut variant="subtle">esc</DialogShortcut>}
+    </DialogPrimitive.Close>
+  );
+}
+
 export {
   Dialog,
+  DialogBody,
+  DialogCancel,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -208,6 +463,7 @@ export {
   DialogHeader,
   DialogOverlay,
   DialogPortal,
+  DialogShortcut,
   DialogTitle,
   DialogTrigger,
   // Shared with the alert dialog, so both kinds of panel arrive the same way.

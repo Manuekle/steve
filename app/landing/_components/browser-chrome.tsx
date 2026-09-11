@@ -49,7 +49,13 @@ function Glyph({ icon, size = 15 }: { readonly icon: IconSvgElement; readonly si
    window, they read as a menu. */
 const LIGHTS = ["#ff5f57", "#febc2e", "#28c840"] as const;
 
-export function BrowserChrome({ url }: { readonly url: string }) {
+export function BrowserChrome({ url, variant = "full" }: {
+  readonly variant?: "full";
+  readonly url: string;
+} | {
+  readonly variant: "minimal";
+  readonly url?: never;
+}) {
   return (
     <div
       aria-hidden="true"
@@ -65,6 +71,7 @@ export function BrowserChrome({ url }: { readonly url: string }) {
         ))}
       </span>
 
+      {variant === "full" ? <>
       {/* The window controls are the only part small screens keep. Below `sm`
           the frame is ~330px wide and a full toolbar would leave the address
           — the one part that says anything — about forty pixels. */}
@@ -99,6 +106,7 @@ export function BrowserChrome({ url }: { readonly url: string }) {
         <Glyph icon={Add01Icon} />
         <Glyph icon={Copy01Icon} />
       </span>
+      </> : null}
     </div>
   );
 }

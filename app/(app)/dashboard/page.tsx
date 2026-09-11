@@ -12,7 +12,7 @@ import {
   TrendingUpIcon,
   Add01Icon,
   Settings01Icon,
-  ArtificialIntelligence08Icon,
+  AiElementsIcon,
   RocketIcon,
 } from "@hugeicons/core-free-icons";
 import { FeaturesDialog } from "../../_components/features-dialog";
@@ -22,11 +22,12 @@ import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { ChannelIcon, ChannelBadge, ChannelStatusBadge, CHANNEL_LABELS } from "../../_components/channel-badge";
 import { KpiBars, KpiCard, KpiSparkline, KpiSplit } from "../../_components/kpi-card";
-import { TimeSeries } from "../../_components/chart";
+import { AnimatedNumber, DonutChart, TimeSeries } from "../../_components/chart";
 import { Skeleton, DashboardSkeleton } from "@/components/ai-elements/skeleton";
 import { useT } from "@/lib/i18n/provider";
 import { relativeTime } from "@/lib/format";
 import {
+  chatTitle,
   getChats,
   getChannels,
   getStats,
@@ -179,7 +180,7 @@ function DashboardPageContent() {
                     href="/automations"
                     className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
                   >
-                    <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} />
+                    <HugeiconsIcon icon={AiElementsIcon} size={16} strokeWidth={1.75} />
                     {t("dashboard.emptyCreateAutomation")}
                   </Link>
                   <a
@@ -296,11 +297,11 @@ function DashboardPageContent() {
               {/* The week's total belongs next to the chart it summarises —
                   the bars answer "when", this answers "how much". */}
               <p className="shrink-0 font-semibold text-lg leading-none tabular-nums">
-                {activity.reduce((sum, d) => sum + d.value, 0)}
+                <AnimatedNumber value={activity.reduce((sum, d) => sum + d.value, 0)} />
               </p>
             </CardHeader>
             <CardSeparator />
-            <div className="py-6 pr-5 pl-10">
+            <div className="px-4 py-6">
               <ActivityChart data={activity} />
             </div>
           </Card>
@@ -315,28 +316,21 @@ function DashboardPageContent() {
                 <CardTitle>{t("dashboard.channels")}</CardTitle>
                 <CardDescription>{t("dashboard.channelBreakdown")}</CardDescription>
               </div>
+              <AnimatedNumber className="ml-auto text-lg font-semibold" value={stats?.channelBreakdown.reduce((sum, channel) => sum + channel.count, 0) ?? 0} />
             </CardHeader>
             <CardSeparator />
             <div className="px-5 py-4">
               {stats && stats.channelBreakdown.length > 0 ? (
-                <div className="space-y-4">
-                {stats.channelBreakdown.map((cb) => (
-                <div key={cb.channel}>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <ChannelBadge channel={cb.channel} />
-                    <span className="text-muted-foreground tabular-nums">
-                      {cb.count} ({cb.percentage}%)
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted shadow-[var(--shadow-inset)]">
-                    <div
-                      className="h-full rounded-full bg-foreground/70 transition-all duration-500"
-                      style={{ width: `${cb.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-                </div>
+                <DonutChart
+                  data={stats.channelBreakdown.map((cb) => ({
+                    key: cb.channel,
+                    label: <ChannelBadge channel={cb.channel} />,
+                    value: cb.count,
+                    formatted: `${cb.count} (${cb.percentage}%)`,
+                    formatValue: (value) => `${Math.round(value).toLocaleString()} (${cb.percentage}%)`,
+                  }))}
+                  emptyLabel={t("dashboard.noChannels")}
+                />
               ) : (
                 <p className="py-4 text-center text-sm text-muted-foreground">{t("dashboard.noChannels")}</p>
               )}
@@ -418,7 +412,9 @@ function DashboardPageContent() {
                     <ChannelIcon channel={chat.channel} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{chat.title}</p>
+                    <p className="truncate text-sm font-medium">
+                      {chatTitle(chat) ?? t("chats.newConversation")}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">{chat.lastMessage}</p>
                   </div>
                   <div className="shrink-0 text-right">
@@ -454,7 +450,7 @@ function DashboardPageContent() {
                 href="/automations"
                 className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
               >
-                <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} />
+                <HugeiconsIcon icon={AiElementsIcon} size={16} strokeWidth={1.75} />
                 {t("dashboard.emptyCreateAutomation")}
               </Link>
             </div>

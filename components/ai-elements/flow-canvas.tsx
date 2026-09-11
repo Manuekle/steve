@@ -6,7 +6,7 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
   ArrowExpandIcon,
-  MagicWand01Icon,
+  AiPaintbrushIcon,
   PencilEdit01Icon,
   Delete02Icon,
   GitBranchIcon,
@@ -25,6 +25,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useId,
   useRef,
   useState,
   type CSSProperties,
@@ -41,8 +42,11 @@ import {
   anchorOn,
   backOff,
   edgeGeometry,
+  connectionWaypoint,
+  withConnectionRouting,
   pickSides,
   pointOnGeometry,
+  portOffset,
   type EdgeShape,
   type NodeRect,
   type Side,
@@ -51,12 +55,13 @@ import { isAncestorPath, pathsEqual, type StepPath } from "@/lib/workflow-tree";
 import {
   STEP_CATEGORY_KEYS,
   STEP_EMPTY_KEYS,
+  STEP_HUES,
   STEP_ICONS,
   STEP_LABEL_KEYS,
   stepPreview,
 } from "@/lib/workflow-step-meta";
 import { useT } from "@/lib/i18n/provider";
-import type { WorkflowStep, WorkflowStepType } from "@/lib/types";
+import type { WorkflowConnection, WorkflowStep, WorkflowStepType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -68,6 +73,8 @@ import {
 } from "@/components/ui/context-menu";
 import { StepPalette } from "./step-palette";
 import { FlowPlusMenu } from "./flow-plus-menu";
+import nodeStyles from "./flow-node.module.css";
+import { FlowConnectionControl } from "./flow-connection-control";
 
 const PADDING = 72;
 const MIN_ZOOM = 0.4;
@@ -118,6 +125,9 @@ type EdgeSlot = {
   /** False for the very first step of the flow, which has nothing to detach from. */
   readonly canDisconnect: boolean;
   readonly dashed: boolean;
+  readonly connection?: WorkflowConnection;
+  readonly reference: XY;
+  readonly axis: "x" | "y" | "xy";
 };
 
 /** What a right-click landed on, so one context menu can serve the whole canvas. */
@@ -150,6 +160,7 @@ export function FlowCanvas({
   onResetLayout,
   onIsolateStep,
   onConnectSteps,
+  onUpdateConnection,
   onToggleDisabled,
   onSetConnector,
   onRunStep,
@@ -178,7 +189,8 @@ export function FlowCanvas({
    * Wire one step to another: `target` becomes the step that runs right after
    * `source`. Dragging from a node's port onto another node is the gesture.
    */
-  readonly onConnectSteps: (source: StepPath, target: StepPath) => void;
+  readonly onConnectSteps: (source: StepPath, target: StepPath, connection?: WorkflowConnection) => void;
+  readonly onUpdateConnection?: (path: StepPath, connection: WorkflowConnection | undefined) => void;
   /** Mute a step: it stays on the canvas but is skipped when the flow runs. */
   readonly onToggleDisabled: (path: StepPath, disabled: boolean) => void;
   /** Line style of the connector running INTO `path`. */
@@ -203,6 +215,10 @@ export function FlowCanvas({
   readonly containerClassName?: string;
 }) {
   const t = useT();
+  const helpId = useId();
+  const [announcement, setAnnouncement] = useState("");
+  const [connectionPreview, setConnectionPreview] = useState<{ path: StepPath; point: XY } | null>(null);
+  const routeDragRef = useRef<{ path: StepPath; connection: WorkflowConnection; reference: XY; axis: "x" | "y" | "xy"; origin: XY; start: XY; point: XY; moved: boolean } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [edgeShape, setEdgeShape] = useState<EdgeShape>("orthogonal");
@@ -214,6 +230,7 @@ export function FlowCanvas({
   // that pan is bookkeeping, not a move, and animating it is the lurch.
   const [viewAnimated, setViewAnimated] = useState(true);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
   // Measured, not read on demand: the minimap needs it during render to draw
   // the "what you're looking at" rectangle.
@@ -231,7 +248,12 @@ export function FlowCanvas({
     readonly x: number;
     readonly y: number;
     readonly over: StepPath | null;
+    readonly armed?: boolean;
+    readonly toSide?: Side;
+    readonly toOffset?: number;
   } | null>(null);
+  const linkPointerRef = useRef<XY | null>(null);
+  const ignorePortClick = useRef(false);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
@@ -317,12 +339,17 @@ export function FlowCanvas({
     const dotted = new Set<string>();
     return layout.edges.map((edge, i) => {
       const fromRect = edge.fromPath ? rectOf(positionOf(edge.fromPath)) : rectOf(edge.from);
+      const sourceStep = edge.fromPath ? stepByPath.get(key(edge.fromPath)) : undefined;
+      const target = edge.toPath ? stepByPath.get(key(edge.toPath)) : undefined;
+      const connection = target?.connection?.sourceId === sourceStep?.id ? target?.connection : undefined;
+      const previewPoint = connectionPreview && pathsEqual(connectionPreview.path, edge.toPath ?? null)
+        ? connectionPreview.point : undefined;
 
       // After a fork, layout hands us the merge point below the taller branch
       // rather than the condition's own bottom; re-deriving it from the port
       // would drag the line back up through the branches, so the layout's
       // anchor wins until someone drags the node.
-      const useMerge = edge.fromMerge === true && !isMoved(edge.fromPath);
+      const useMerge = edge.fromMerge === true && !isMoved(edge.fromPath) && !connection && !previewPoint;
       const mergeRect = slotRectOf(addXY(edge.from, offsetOf(edge.fromPath)));
 
       const toSlot = edge.toSlot;
@@ -339,21 +366,28 @@ export function FlowCanvas({
       // slot's other side — an S-curve that reads as a routing mistake.
       const downward = edge.label !== undefined || useMerge;
       const [pickedFrom, pickedTo] = pickSides(useMerge ? mergeRect : fromRect, toRect);
-      const fromSide: Side = downward ? "bottom" : pickedFrom;
-      const toSide: Side = downward ? "top" : pickedTo;
-      const from = useMerge ? addXY(edge.from, offsetOf(edge.fromPath)) : anchorOn(fromRect, fromSide);
-      const rawTo = anchorOn(toRect, toSide);
+      const fromSide: Side = connection?.from.side ?? (downward ? "bottom" : pickedFrom);
+      const toSide: Side = connection?.to.side ?? (downward ? "top" : pickedTo);
+      const from = useMerge ? addXY(edge.from, offsetOf(edge.fromPath)) : anchorOn(fromRect, fromSide, connection?.from.offset);
+      const rawTo = anchorOn(toRect, toSide, connection?.to.offset);
       // A connector into a "+" stops at the button's edge, not its middle.
       const to = edge.toPath ? rawTo : backOff(from, rawTo, 2);
+      const waypoint = previewPoint ?? connectionWaypoint(connection, from, to);
 
-      const target = edge.toPath ? stepByPath.get(key(edge.toPath)) : undefined;
       const anchorId = `${Math.round(from.x)},${Math.round(from.y)}`;
       const showSourceDot = !useMerge && !dotted.has(anchorId);
       dotted.add(anchorId);
       return {
         ...edge,
         id: i,
-        geom: edgeGeometry(from, fromSide, to, toSide, edgeShape),
+        geom: edgeGeometry(from, fromSide, to, toSide, edgeShape, waypoint, connection?.routing?.axis),
+        connection: sourceStep ? {
+          sourceId: sourceStep.id,
+          from: connection?.from ?? { side: fromSide, offset: 0.5 },
+          to: connection?.to ?? { side: toSide, offset: 0.5 },
+          ...(waypoint ? { waypoint } : {}),
+          ...(connection?.routing ? { routing: connection.routing } : {}),
+        } satisfies WorkflowConnection : undefined,
         from,
         to,
         fromSide,
@@ -366,7 +400,7 @@ export function FlowCanvas({
         muted: target?.disabled === true,
       };
     });
-  }, [layout, positionOf, slotPos, offsetOf, isMoved, edgeShape, stepByPath]);
+  }, [layout, positionOf, slotPos, offsetOf, isMoved, edgeShape, stepByPath, connectionPreview]);
 
   const edgeSlots = useMemo<EdgeSlot[]>(() => {
     return edges.flatMap((edge) => {
@@ -374,7 +408,7 @@ export function FlowCanvas({
       const toPath = edge.toPath;
       const lastSeg = toPath[toPath.length - 1];
       if (typeof lastSeg !== "number") return [];
-      const { point } = pointOnGeometry(edge.geom, 0.5);
+      const point = edge.geom.handle ?? pointOnGeometry(edge.geom, 0.5).point;
       return [
         {
           edgeId: `edge::${edge.id}::${key(toPath)}`,
@@ -386,6 +420,9 @@ export function FlowCanvas({
           // The very first step of the whole flow has no predecessor to cut.
           canDisconnect: toPath.length > 1 || lastSeg > 0,
           dashed: edge.dashed,
+          connection: edge.connection,
+          reference: { x: (edge.from.x + edge.to.x) / 2, y: (edge.from.y + edge.to.y) / 2 },
+          axis: edge.geom.handleAxis ?? "xy",
         },
       ];
     });
@@ -402,17 +439,28 @@ export function FlowCanvas({
 
   const bounds = useMemo(() => {
     const nodePositions = layout.nodes.map((n) => restingPos(n.path));
+    const nodesById = new Map(layout.nodes.map(node => [node.step.id, node]));
+    const waypoints = layout.nodes.flatMap(node => {
+      const connection = node.step.connection;
+      const source = connection ? nodesById.get(connection.sourceId) : undefined;
+      if (!connection || !source) return [];
+      const from = anchorOn(rectOf(restingPos(source.path)), connection.from.side, connection.from.offset);
+      const to = anchorOn(rectOf(restingPos(node.path)), connection.to.side, connection.to.offset);
+      const point = connectionWaypoint(connection, from, to);
+      return point ? [point] : [];
+    });
     const slotPositions = layout.slots.map((slot) => {
       const auto = slot.fromPath ? autoPos.get(key(slot.fromPath)) : undefined;
       if (!auto || !slot.fromPath) return { x: slot.x, y: slot.y };
       const rest = restingPos(slot.fromPath);
       return { x: slot.x + rest.x - auto.x, y: slot.y + rest.y - auto.y };
     });
-    const xs = [0, ...nodePositions.map((p) => p.x), ...slotPositions.map((p) => p.x)];
+    const xs = [0, ...nodePositions.map((p) => p.x), ...slotPositions.map((p) => p.x), ...waypoints.map(p => p.x)];
     const ys = [
       0,
       ...nodePositions.flatMap((p) => [p.y, p.y + NODE_H]),
       ...slotPositions.flatMap((p) => [p.y - SLOT_R, p.y + SLOT_R]),
+      ...waypoints.map(p => p.y),
     ];
     const minX = Math.min(...xs) - NODE_W / 2 - PADDING;
     const maxX = Math.max(...xs) + NODE_W / 2 + PADDING;
@@ -626,7 +674,10 @@ export function FlowCanvas({
   // The canvas is focusable, so once you have clicked into it the arrow keys
   // nudge the selected node instead of scrolling the page.
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("input,textarea,select,[contenteditable=true]")) return;
+    const keyboardPath = focused ? layout.nodes.find(node => key(node.path) === focused)?.path ?? selectedPath : selectedPath;
     if (e.key === " ") {
+      if ((e.target as HTMLElement).closest("button")) return;
       // Without this the page scrolls and the button under focus activates.
       e.preventDefault();
       setSpaceHeld(true);
@@ -642,10 +693,10 @@ export function FlowCanvas({
     const delta = arrows[e.key];
     if (delta) {
       e.preventDefault();
-      if (selectedPath) {
-        const from = positionOf(selectedPath);
+      if (keyboardPath) {
+        const from = positionOf(keyboardPath);
         userAdjustedRef.current = true;
-        onMoveNode(selectedPath, { x: from.x + delta.x, y: from.y + delta.y });
+        onMoveNode(keyboardPath, { x: from.x + delta.x, y: from.y + delta.y });
       } else {
         // Nothing selected: the arrows pan the canvas instead.
         userAdjustedRef.current = true;
@@ -653,12 +704,18 @@ export function FlowCanvas({
       }
       return;
     }
-    if ((e.key === "Delete" || e.key === "Backspace") && selectedPath) {
+    if ((e.key === "Delete" || e.key === "Backspace") && keyboardPath) {
       e.preventDefault();
-      onRemoveStep(selectedPath);
+      onRemoveStep(keyboardPath);
+      viewportRef.current?.focus();
       return;
     }
     if (e.key === "Escape") {
+      routeDragRef.current = null;
+      setConnectionPreview(null);
+      setLink(null);
+      linkPointerRef.current = null;
+      setAnnouncement("");
       onSelect(null);
       setPlusOpen(false);
       return;
@@ -721,24 +778,59 @@ export function FlowCanvas({
   const startLink = (e: ReactPointerEvent<HTMLElement>, path: StepPath, side: Side) => {
     if (e.button !== 0 || spaceHeld) return;
     e.stopPropagation();
+    if (link?.armed) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     // Suppress the click that follows, or releasing the port selects a node.
-    movedRef.current = true;
+    movedRef.current = false;
+    linkPointerRef.current = { x: e.clientX, y: e.clientY };
     const point = toFlow(e.clientX, e.clientY);
     setLink({ from: path, fromSide: side, x: point.x, y: point.y, over: null });
   };
   const moveLink = (e: ReactPointerEvent<HTMLElement>) => {
-    if (!link) return;
+    if (!link || link.armed) return;
     e.stopPropagation();
+    if (linkPointerRef.current && Math.hypot(e.clientX - linkPointerRef.current.x, e.clientY - linkPointerRef.current.y) > DRAG_THRESHOLD) movedRef.current = true;
     const point = toFlow(e.clientX, e.clientY);
-    setLink({ ...link, x: point.x, y: point.y, over: nodeUnder(point, link.from) });
+    const over = nodeUnder(point, link.from);
+    const targetRect = over ? rectOf(positionOf(over)) : null;
+    const toSide = targetRect ? nearestSide(targetRect, point) : undefined;
+    setLink({ ...link, x: point.x, y: point.y, over, toSide, toOffset: targetRect && toSide ? portOffset(targetRect, toSide, point) : undefined });
   };
   const endLink = (e: ReactPointerEvent<HTMLElement>) => {
-    if (!link) return;
+    if (!link || link.armed) return;
     e.stopPropagation();
-    if (link.over) onConnectSteps(link.from, link.over);
+    linkPointerRef.current = null;
+    ignorePortClick.current = true;
+    if (!movedRef.current) {
+      setLink({ ...link, armed: true });
+      setAnnouncement(t("automations.connection.started"));
+      return;
+    }
+    if (link.over) {
+      onConnectSteps(link.from, link.over, {
+        sourceId: stepByPath.get(key(link.from))!.id,
+        from: { side: link.fromSide, offset: 0.5 },
+        to: { side: link.toSide ?? "top", offset: link.toOffset ?? 0.5 },
+      });
+      setAnnouncement(t("automations.connection.done"));
+    }
     setLink(null);
+  };
+
+  const choosePort = (path: StepPath, side: Side) => {
+    if (!link) {
+      const point = anchorOn(rectOf(positionOf(path)), side);
+      setLink({ from: path, fromSide: side, ...point, over: null, armed: true });
+      setAnnouncement(t("automations.connection.started"));
+    } else if (pathsEqual(link.from, path)) {
+      setLink(null);
+      setAnnouncement("");
+    } else if (!isAncestorPath(link.from, path) && !isAncestorPath(path, link.from)) {
+      onConnectSteps(link.from, path, { sourceId: stepByPath.get(key(link.from))!.id, from: { side: link.fromSide, offset: 0.5 }, to: { side, offset: 0.5 } });
+      setLink(null);
+      setAnnouncement(t("automations.connection.done"));
+    }
   };
 
   // ── Step palette ─────────────────────────────────────────────────
@@ -764,12 +856,15 @@ export function FlowCanvas({
     <div
       role="application"
       aria-label={t("automations.canvasLabel")}
+      aria-describedby={helpId}
       className={cn(
         "relative overflow-hidden rounded-2xl border border-border",
         "bg-[radial-gradient(circle,var(--border)_1px,transparent_1px)] [background-size:20px_20px]",
         containerClassName,
       )}
     >
+      <p id={helpId} className="sr-only">{t("automations.keyboardHelp")}</p>
+      <p role="status" className="sr-only">{announcement}</p>
       <ContextMenu onOpenChange={(open) => !open && setMenuTarget(null)}>
         <ContextMenuTrigger asChild>
           <div
@@ -779,7 +874,7 @@ export function FlowCanvas({
               // Focusing the canvas must not paint a browser focus ring across
               // the whole workspace, and dragging must not smear a text
               // selection over every node label.
-              "select-none outline-none",
+              "relative z-0 select-none outline-none",
               embedded ? "touch-pan-y" : "touch-none",
               // Clicking in shouldn't paint anything, but a keyboard user has
               // to be able to tell the canvas is the thing listening.
@@ -821,7 +916,7 @@ export function FlowCanvas({
                 // Panning and dragging must track the pointer 1:1, not lag
                 // behind a transition.
                 transition:
-                  panRef.current || dragRef.current || !viewAnimated
+                  panRef.current || dragRef.current || connectionPreview || !viewAnimated
                     ? "none"
                     : "transform 200ms ease-out",
               }}
@@ -844,6 +939,7 @@ export function FlowCanvas({
                   return (
                     <g key={edge.id} opacity={edge.muted ? 0.4 : 1}>
                       <path
+                        data-connection-to={edge.toPath ? stepByPath.get(key(edge.toPath))?.id : undefined}
                         className={drag || link ? undefined : "flow-edge"}
                         style={{ ["--edge-len" as string]: "1400" }}
                         d={localPath(edge.geom.d)}
@@ -854,6 +950,43 @@ export function FlowCanvas({
                         strokeLinejoin="round"
                         strokeDasharray={edge.dashed ? "5 5" : edge.placeholder ? "3 5" : undefined}
                       />
+                      {onUpdateConnection && edge.toPath && edge.connection ? (
+                        <path data-connection-hit={stepByPath.get(key(edge.toPath))?.id}
+                          d={localPath(edge.geom.d)} fill="none" stroke="transparent" strokeWidth={14} vectorEffect="non-scaling-stroke"
+                          style={{ pointerEvents: "stroke", cursor: "move", touchAction: "none" }}
+                          onPointerDown={event => {
+                            if (event.button !== 0) return;
+                            event.stopPropagation();
+                            event.preventDefault();
+                            viewportRef.current?.focus({ preventScroll: true });
+                            event.currentTarget.setPointerCapture(event.pointerId);
+                            const point = edge.geom.handle ?? pointOnGeometry(edge.geom, 0.5).point;
+                            routeDragRef.current = { path: edge.toPath!, connection: edge.connection!, reference: { x: (edge.from.x + edge.to.x) / 2, y: (edge.from.y + edge.to.y) / 2 }, axis: edge.geom.handleAxis ?? "xy", origin: toFlow(event.clientX, event.clientY), start: point, point, moved: false };
+                            userAdjustedRef.current = true;
+                          }}
+                          onPointerMove={event => {
+                            const drag = routeDragRef.current;
+                            if (!drag) return;
+                            event.stopPropagation();
+                            const cursor = toFlow(event.clientX, event.clientY);
+                            const dx = cursor.x - drag.origin.x, dy = cursor.y - drag.origin.y;
+                            if (Math.hypot(dx, dy) > DRAG_THRESHOLD) drag.moved = true;
+                            if (!drag.moved) return;
+                            drag.point = { x: drag.start.x + (drag.axis === "y" ? 0 : dx), y: drag.start.y + (drag.axis === "x" ? 0 : dy) };
+                            setConnectionPreview({ path: drag.path, point: drag.point });
+                          }}
+                          onPointerUp={event => {
+                            event.stopPropagation();
+                            const drag = routeDragRef.current;
+                            if (drag?.moved) onUpdateConnection(drag.path, withConnectionRouting(drag.connection, drag.point, drag.reference, drag.axis));
+                            routeDragRef.current = null;
+                            setConnectionPreview(null);
+                          }}
+                          onPointerCancel={() => { routeDragRef.current = null; setConnectionPreview(null); }}
+                          onLostPointerCapture={() => { routeDragRef.current = null; setConnectionPreview(null); }}
+                          onClick={event => event.stopPropagation()}
+                          onContextMenu={() => { const slot = edgeSlots.find(slot => pathsEqual(slot.toPath, edge.toPath!)); if (slot) claimedRef.current = { kind: "edge", slot }; }} />
+                      ) : null}
                       {edge.showSourceDot ? (
                         <circle cx={source.x} cy={source.y} r={2.5} fill="var(--muted-foreground)" opacity={0.4} />
                       ) : null}
@@ -896,8 +1029,8 @@ export function FlowCanvas({
                   ? (() => {
                       const from = anchorOn(rectOf(positionOf(link.from)), link.fromSide);
                       const targetRect = link.over ? rectOf(positionOf(link.over)) : null;
-                      const toSide: Side = targetRect ? nearestSide(targetRect, from) : "top";
-                      const to = targetRect ? anchorOn(targetRect, toSide) : { x: link.x, y: link.y };
+                      const toSide: Side = link.toSide ?? (targetRect ? nearestSide(targetRect, from) : "top");
+                      const to = targetRect ? anchorOn(targetRect, toSide, link.toOffset) : { x: link.x, y: link.y };
                       const geom = edgeGeometry(from, link.fromSide, to, toSide, edgeShape);
                       const a = toLocal(from);
                       const b = toLocal(to);
@@ -931,14 +1064,20 @@ export function FlowCanvas({
                 const dragging = !!drag && pathsEqual(drag.path, node.path);
                 const linkSource = !!link && pathsEqual(link.from, node.path);
                 const linkTarget = !!link && pathsEqual(link.over, node.path);
-                const active = hovered === id || selected;
+                const interacting = hovered === id || focused === id;
+                const active = interacting || selected;
                 const preview = stepPreview(node.step);
                 const disabled = node.step.disabled === true;
                 return (
                   <div
                     key={id}
-                    className={cn("group absolute", dragging || linkSource || linkTarget ? "z-20" : null)}
+                    className={cn(
+                      nodeStyles.tone,
+                      "group absolute",
+                      dragging || linkSource || linkTarget ? "z-40" : interacting ? "z-30" : selected ? "z-20" : "z-10",
+                    )}
                     style={{
+                      ["--flow-hue" as string]: STEP_HUES[node.step.type],
                       left: pos.x,
                       top: pos.y,
                       width: NODE_W,
@@ -946,8 +1085,17 @@ export function FlowCanvas({
                       // Layout hands out center-x; the wrapper owns the -50%.
                       transform: "translateX(-50%)",
                     }}
-                    onPointerEnter={() => setHovered(id)}
+                    onPointerEnter={() => {
+                      setHovered(id);
+                      setHoveredEdge(null);
+                    }}
                     onPointerLeave={() => setHovered((prev) => (prev === id ? null : prev))}
+                    onFocusCapture={() => setFocused(id)}
+                    onBlurCapture={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        setFocused(prev => prev === id ? null : prev);
+                      }
+                    }}
                     onContextMenu={() => {
                       claimedRef.current = { kind: "node", path: node.path };
                     }}
@@ -962,7 +1110,16 @@ export function FlowCanvas({
                         // option/tab/row/gridcell/treeitem, so on a plain button it
                         // was dropped and the selected state reached no one.
                         aria-pressed={selected}
+                        data-dragging={dragging}
+                        data-link-target={linkTarget}
                         aria-label={t(STEP_LABEL_KEYS[node.step.type])}
+                        aria-describedby={`${helpId}-${node.step.id}`}
+                        data-node-id={node.step.id}
+                        aria-keyshortcuts="Enter F2 ArrowUp ArrowDown ArrowLeft ArrowRight Delete"
+                        title={preview ?? t(STEP_EMPTY_KEYS[node.step.type])}
+                        onKeyDown={event => {
+                          if (event.key === "F2") { event.preventDefault(); onSelect(node.path); }
+                        }}
                         onPointerDown={(e) => startNodeDrag(e, node.path)}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -970,60 +1127,48 @@ export function FlowCanvas({
                           onSelect(node.path);
                         }}
                         className={cn(
-                          "flex h-full w-full cursor-grab flex-col overflow-hidden rounded-xl border bg-card text-left",
+                          nodeStyles.card,
+                          "flex h-full w-full cursor-grab flex-col overflow-hidden rounded-xl border text-left",
                           "transition-[border-color,box-shadow,transform,opacity] duration-200 ease-out",
-                          "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
+                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--flow-accent)]",
                           disabled ? "border-dashed opacity-45" : null,
-                          linkTarget
-                            ? "border-foreground/50 shadow-[var(--shadow-float)]"
-                            : dragging
-                              ? "cursor-grabbing border-foreground/30 shadow-[var(--shadow-float)]"
-                              : selected
-                                ? "border-foreground/[0.15] shadow-[var(--shadow-elevated)]"
-                                : "border-border shadow-[var(--shadow-soft)] hover:border-input hover:shadow-[var(--shadow-elevated)]",
+                          dragging ? "cursor-grabbing" : null,
                         )}
                       >
-                        {/* Header. Selection reads as a filled bar here rather
-                            than a stripe glued to the card's rounded edge. */}
+                        {/* Type color is reinforced by the icon and label. */}
                         <span
                           className={cn(
-                            "flex shrink-0 items-center gap-2 px-3 pt-2.5 pb-1.5 transition-colors duration-200",
-                            selected ? "bg-foreground/[0.07]" : null,
+                            nodeStyles.header,
+                            "flex w-full shrink-0 items-center gap-1.5 px-2.5 py-1.5",
                           )}
                         >
-                          <span
-                            className={cn(
-                              "flex size-6 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
-                              selected ? "bg-foreground text-background" : "bg-foreground/[0.06] text-foreground/70",
-                            )}
-                          >
+                          <span className="flex size-4.5 shrink-0 items-center justify-center">
                             <HugeiconsIcon
                               icon={STEP_ICONS[node.step.type]}
-                              size={13}
+                              size={14}
                               strokeWidth={1.75}
                               aria-hidden="true"
                             />
                           </span>
-                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+                          <span className="min-w-0 flex-1 truncate text-xs font-medium">
                             {t(STEP_LABEL_KEYS[node.step.type])}
                           </span>
-                          <span className="shrink-0 font-mono text-[9px] tracking-[0.12em] text-muted-foreground uppercase">
+                          <span className={cn(nodeStyles.badge, "shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[8px] tracking-[0.06em] uppercase")}>
                             {t(STEP_CATEGORY_KEYS[node.step.type])}
                           </span>
                         </span>
-                        {/* Body. Selected already reads as one tinted block via
-                            the header fill, so the divider only earns its keep
-                            when that fill is absent — with both, it doubles up. */}
+                        {/* Inset surface echoes the card's radius with a 6px gutter. */}
                         <span
                           className={cn(
-                            "mx-3 mb-2.5 flex min-h-0 flex-1 items-center pt-2",
-                            !selected ? "border-t border-border/70" : null,
+                            nodeStyles.body,
+                            "mx-[5px] mb-[5px] flex min-h-0 flex-1 self-stretch items-center rounded-[11px] px-2 py-1",
                           )}
                         >
                           <span
+                            id={`${helpId}-${node.step.id}`}
                             className={cn(
                               "line-clamp-2 text-[11px] leading-snug",
-                              preview ? "text-muted-foreground" : "text-muted-foreground italic",
+                              !preview ? "italic" : null,
                             )}
                           >
                             {preview ?? t(STEP_EMPTY_KEYS[node.step.type])}
@@ -1037,13 +1182,19 @@ export function FlowCanvas({
                           it is worse than no toolbar. */}
                       <div
                         className={cn(
-                          "flow-node-tools absolute -top-10 left-1/2 z-10 flex -translate-x-1/2 items-center gap-0.5",
-                          "rounded-full border border-border bg-card/95 p-1 shadow-[var(--shadow-float)] backdrop-blur-sm",
+                          "flow-node-tools absolute -top-12 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5",
+                          "rounded-full border border-border bg-card p-1 shadow-[var(--shadow-float)]",
+                          // Bridge the gap to the card so moving onto its tools keeps hover alive.
+                          "before:absolute before:inset-x-0 before:top-full before:h-4 before:content-['']",
                         )}
                         data-open={active && !drag && !link}
+                        inert={!active || !!drag || !!link}
                         onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
                       >
+                        <NodeTool icon={PencilEdit01Icon} label={t("automations.editStep")} onClick={() => onSelect(node.path)} />
+                        <NodeTool icon={Add01Icon} label={t("automations.addStep")} onClick={() => setPalette({ kind: "tree", parentPath: node.path.slice(0, -1), index: (node.path[node.path.length - 1] as number) + 1 })} />
                         <NodeTool icon={PlayIcon} label={t("automations.runStep")} onClick={() => onRunStep(node.path)} />
                         <NodeTool
                           icon={disabled ? ToggleOffIcon : ToggleOnIcon}
@@ -1080,30 +1231,37 @@ export function FlowCanvas({
                         <button
                           key={side}
                           type="button"
-                          aria-label={t("automations.connectStep")}
+                          aria-label={t("automations.connection.port", { name: t(STEP_LABEL_KEYS[node.step.type]), side: t(`automations.connection.${side}`) })}
+                          aria-pressed={linkSource && link.fromSide === side}
                           title={t("automations.connectStep")}
-                          tabIndex={-1}
+                          tabIndex={link || active ? 0 : -1}
                           onPointerDown={(e) => startLink(e, node.path, side)}
                           onPointerMove={moveLink}
                           onPointerUp={endLink}
-                          onPointerCancel={() => setLink(null)}
-                          onClick={(e) => e.stopPropagation()}
+                          onPointerCancel={() => { setLink(null); linkPointerRef.current = null; ignorePortClick.current = true; }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (e.detail > 0 && ignorePortClick.current) { ignorePortClick.current = false; return; }
+                            choosePort(node.path, side);
+                          }}
+                          onKeyDown={event => { if (event.key !== "Escape") event.stopPropagation(); }}
                           className={cn(
-                            "absolute z-10 flex size-3.5 cursor-crosshair items-center justify-center rounded-full",
-                            "border border-muted-foreground/40 bg-card",
+                            nodeStyles.port,
+                            "absolute z-30 flex size-6 cursor-crosshair items-center justify-center rounded-full !bg-transparent !border-0",
                             "transition-[opacity,transform,border-color] duration-150 ease-out",
-                            "hover:scale-125 hover:border-foreground/60",
+                            "hover:scale-125",
                             // A hidden port must also be untouchable: at
                             // opacity 0 it still hit-tests, so clicking near a
                             // node's edge would silently start a connection.
                             link || active ? "opacity-100" : "pointer-events-none opacity-0",
-                            side === "top" ? "-top-[7px] left-1/2 -translate-x-1/2" : null,
-                            side === "bottom" ? "-bottom-[7px] left-1/2 -translate-x-1/2" : null,
-                            side === "left" ? "top-1/2 -left-[7px] -translate-y-1/2" : null,
-                            side === "right" ? "top-1/2 -right-[7px] -translate-y-1/2" : null,
+                            "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--flow-accent)]",
+                            side === "top" ? "-top-3 left-1/2 -translate-x-1/2" : null,
+                            side === "bottom" ? "-bottom-3 left-1/2 -translate-x-1/2" : null,
+                            side === "left" ? "top-1/2 -left-3 -translate-y-1/2" : null,
+                            side === "right" ? "top-1/2 -right-3 -translate-y-1/2" : null,
                           )}
                         >
-                          <span className="size-1 rounded-full bg-muted-foreground/70" aria-hidden="true" />
+                          <span className="flex size-2.5 items-center justify-center rounded-full border border-current bg-card"><span className="size-1 rounded-full bg-current" aria-hidden="true" /></span>
                         </button>
                       ))}
                     </div>
@@ -1150,11 +1308,25 @@ export function FlowCanvas({
                      the hover zone never steals a click from a card. ── */}
               {edgeSlots.map((es) => {
                 const pos = toLocal({ x: es.x, y: es.y });
+                if (onUpdateConnection && es.connection) {
+                  const targetStep = stepByPath.get(key(es.toPath))!;
+                  const sourceStep = layout.nodes.find(node => node.step.id === es.connection!.sourceId)!.step;
+                  return <div key={es.edgeId} className="absolute z-[5] -translate-x-1/2 -translate-y-1/2 hover:z-20 focus-within:z-20"
+                    style={{ left: pos.x, top: pos.y }} onContextMenu={() => { claimedRef.current = { kind: "edge", slot: es }; }}>
+                    <FlowConnectionControl point={{ x: es.x, y: es.y }} reference={es.reference} axis={es.axis} connection={es.connection}
+                      label={`${t(STEP_LABEL_KEYS[sourceStep.type])} → ${t(STEP_LABEL_KEYS[targetStep.type])}`}
+                      toFlow={toFlow}
+                      onPreview={point => { userAdjustedRef.current = true; setConnectionPreview(point ? { path: es.toPath, point } : null); }}
+                      onChange={connection => { userAdjustedRef.current = true; onUpdateConnection(es.toPath, connection); }}
+                      onInsert={() => setPalette({ kind: "tree", parentPath: es.parentPath, index: es.index })}
+                      onDisconnect={() => onIsolateStep(es.toPath, true)} />
+                  </div>;
+                }
                 const open = hoveredEdge === es.edgeId;
                 return (
                   <div
                     key={es.edgeId}
-                    className="pointer-events-none absolute z-10 flex items-center justify-center"
+                    className={cn("pointer-events-none absolute flex items-center justify-center", open ? "z-20" : "z-[5]")}
                     style={{ left: pos.x - 56, top: pos.y - 32, width: 112, height: 64 }}
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
@@ -1304,6 +1476,12 @@ export function FlowCanvas({
                 <HugeiconsIcon icon={DashedLine01Icon} size={14} strokeWidth={1.75} aria-hidden="true" />
                 {menuTarget.slot.dashed ? t("automations.connectorSolid") : t("automations.connectorDashed")}
               </ContextMenuItem>
+              {onUpdateConnection ? (
+                <ContextMenuItem onSelect={() => onUpdateConnection(menuTarget.slot.toPath, undefined)}>
+                  <HugeiconsIcon icon={FlowConnectionIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
+                  {t("automations.connection.reset")}
+                </ContextMenuItem>
+              ) : null}
               {menuTarget.slot.canDisconnect ? (
                 <>
                   <ContextMenuSeparator />
@@ -1342,7 +1520,7 @@ export function FlowCanvas({
                 {t("automations.resetView")}
               </ContextMenuItem>
               <ContextMenuItem onSelect={autoLayout}>
-                <HugeiconsIcon icon={MagicWand01Icon} size={14} strokeWidth={1.75} aria-hidden="true" />
+                <HugeiconsIcon icon={AiPaintbrushIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
                 {t("automations.autoLayout")}
               </ContextMenuItem>
             </>
@@ -1375,11 +1553,10 @@ export function FlowCanvas({
 
       {/* Quick-add. Drops a standalone node in the middle of the canvas. */}
       <FlowPlusMenu
-        className="absolute right-5 bottom-5"
+        className="absolute right-5 bottom-5 z-30"
         open={plusOpen}
         onOpenChange={setPlusOpen}
         onPick={(type) => onAddStepAt(type, canvasCentre())}
-        onMore={() => setPalette({ kind: "free", at: canvasCentre() })}
       />
 
       {/* Floating toolbar */}
@@ -1402,7 +1579,7 @@ export function FlowCanvas({
             onClick={() => setEdgeShape((s) => (s === "orthogonal" ? "curved" : "orthogonal"))}
           />
           <ToolbarButton icon={ArrowExpandIcon} label={t("automations.resetView")} onClick={resetView} />
-          <ToolbarButton icon={MagicWand01Icon} label={t("automations.autoLayout")} onClick={autoLayout} />
+          <ToolbarButton icon={AiPaintbrushIcon} label={t("automations.autoLayout")} onClick={autoLayout} />
         </div>
       </div>
     </div>

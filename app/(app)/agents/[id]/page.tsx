@@ -8,7 +8,7 @@ import {
   ArrowLeft02Icon,
   AiImagineIcon,
   PanelLeftIcon,
-  ArtificialIntelligence08Icon,
+  AiPaintbrushIcon,
   BubbleChatIcon,
   Call02Icon,
 } from "@hugeicons/core-free-icons";
@@ -565,7 +565,7 @@ export default function AgentBuilderPage() {
 
           {!dockOpen ? (
             <DockReopenButton
-              icon={ArtificialIntelligence08Icon}
+              icon={AiPaintbrushIcon}
               label={t("builder.assistantTab")}
               onClick={() => setDockOpenPersisted(true)}
             />

@@ -7,6 +7,7 @@ import { getProviderReport } from "@/lib/provider-catalog";
 import { extractTemplateVariables, renderTemplateSource, TemplateRenderError } from "@/lib/email-render";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
 import { guardAiRoute, recordRouteUsage } from "@/lib/ai-route-guard";
+import { aiGenerationFailure } from "@/lib/ai-generation-error";
 
 // POST /api/email-templates/generate
 // Turns a plain-language description into a complete custom template — label,
@@ -109,9 +110,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     await recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "email-generate" });
     draft = result.object;
   } catch (error) {
-    return apiError("generation_failed", {
-      detail: error instanceof Error ? error.message : String(error),
-    });
+    return aiGenerationFailure(error, "email-generate");
   }
 
   // Read the real prop list off the generated source rather than trusting the

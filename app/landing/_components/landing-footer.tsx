@@ -13,6 +13,8 @@ import { InstagramMark, MetaMark, WhatsAppMark } from "./brand-marks";
 import { LINKS, PAGES, Wordmark } from "./landing-header";
 import { BrandGlow, Halo, LightBar } from "./lighting";
 import { Shell } from "./primitives";
+import styles from "./editorial.module.css";
+import { Grain } from "./grain";
 
 /**
  * Public pages only.
@@ -223,12 +225,13 @@ function ChannelArc() {
  * and the bolt is the same `GlowMark` it was in the section: nothing about the
  * composition was wrong, it was in the wrong place.
  */
-function ClosingPanel() {
+function ClosingPanel({ editorial }: { readonly editorial: boolean }) {
   const t = useT();
   const session = useSession();
 
   return (
-    <div className="lp-cta px-8 py-12 sm:px-12 sm:py-14">
+    <div className={`lp-cta px-8 py-12 sm:px-12 sm:py-14 ${editorial ? styles.surface : ""}`}>
+      {editorial ? <Grain variant="closing" /> : null}
       <LightBar className="inset-x-[34%] top-0" drop="20rem" intensity={0.9} />
 
       {/* The field belongs to the panel, not to the orbit. Inside the arc it
@@ -261,7 +264,7 @@ function ClosingPanel() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <Link href={session.signedIn ? "/dashboard" : "/login"}>
+              <Link href={session.signedIn ? "/dashboard" : "/login"} prefetch={!session.signedIn}>
                 {session.signedIn
                   ? t("landing.cta.openApp")
                   : session.claimed
@@ -311,7 +314,7 @@ function ClosingPanel() {
  * And the bottom bar became a bottom bar: a copyright line, the two legal
  * links a reader goes to a footer to find, and the preferences.
  */
-export function LandingFooter() {
+export function LandingFooter({ editorial = false }: { readonly editorial?: boolean }) {
   const t = useT();
   const pathname = usePathname();
   const year = new Date().getFullYear();
@@ -328,7 +331,7 @@ export function LandingFooter() {
        margin nobody asked for. */
     <footer className="lp-footer pt-8">
       <Shell>
-        <ClosingPanel />
+        <ClosingPanel editorial={editorial} />
       </Shell>
 
       <Shell className="relative z-[1] pt-20">

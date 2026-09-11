@@ -216,9 +216,14 @@ function LoginForm() {
       <div className="relative w-full max-w-[25rem]">
         {/* The mark, in the same rounded tile the favicon uses, so the tab and
             the page agree. A padlock said "this is locked", which the heading
-            says better and in words. */}
+            says better and in words.
+
+            Milled, like every other lockup in the product — the header, the
+            sidebar, the footer. `inverted` because the tile runs against the
+            page: it is `--foreground`, so the ramp the rest of them use would
+            paint the mark in the tile's own value and lose it. */}
         <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-foreground shadow-[var(--shadow-soft)] p-1">
-          <SenkaMark className="h-8 w-auto text-background" />
+          <SenkaMark className="h-8 w-auto" metal="inverted" />
         </div>
 
         <h1 className="mt-7 text-balance text-center font-cooper text-[2rem] leading-[1.08] tracking-[-0.03em]">

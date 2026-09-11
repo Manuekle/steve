@@ -1,13 +1,17 @@
 "use client";
 
 import { type FormEvent, useId, useMemo, useState } from "react";
+import { HugeiconsIcon } from "@/components/icons/icon";
+import { ArrowLeft02Icon, ArrowRight02Icon, Calendar03Icon, Coins01Icon } from "@hugeicons/core-free-icons";
 import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,11 +27,33 @@ import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { DEAL_STAGES, defaultCurrency } from "@/lib/deals";
 import { useI18n } from "@/lib/i18n/provider";
 import type { Contact, Deal, DealStage } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 /** The codes an operator here is realistically quoting in. Free text would
  *  let a typo through into `Intl.NumberFormat`; a closed list of the region's
  *  currencies plus the two reserve ones covers the actual cases. */
 const CURRENCIES = ["ARS", "USD", "EUR", "BRL", "CLP", "COP", "MXN", "PEN", "UYU"] as const;
+
+function dayKey(date: Date): string {
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+}
+
+function parseDay(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function monthGrid(viewDate: Date, weekStart: number): Date[] {
+  const first = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+  const offset = (first.getDay() - weekStart + 7) % 7;
+  return Array.from({ length: 42 }, (_, index) => addDays(first, index - offset));
+}
 
 /**
  * Create or edit a deal.
@@ -37,6 +63,7 @@ const CURRENCIES = ["ARS", "USD", "EUR", "BRL", "CLP", "COP", "MXN", "PEN", "UYU
  * shows the first deal's numbers against the second deal's name.
  */
 export function DealDialog({
+  open,
   editing,
   contacts,
   deals,
@@ -44,6 +71,7 @@ export function DealDialog({
   onClose,
   onSaved,
 }: {
+  readonly open: boolean;
   readonly editing: Deal | null;
   readonly contacts: readonly Contact[];
   /** Only read to pick the starting currency — whatever this account already
@@ -55,6 +83,9 @@ export function DealDialog({
 }) {
   const { locale, t } = useI18n();
   const base = useId();
+  // The save button sits in the drawer footer, outside the <form> — the two
+  // are tied together by this id rather than by nesting.
+  const formId = `${base}-form`;
   const isEditing = Boolean(editing);
 
   const [title, setTitle] = useState(editing?.title ?? "");
@@ -70,10 +101,14 @@ export function DealDialog({
     editing?.currency ?? defaultCurrency(deals, locale),
   );
   const [stage, setStage] = useState<DealStage>(editing?.stage ?? "lead");
-  // `<input type="date">` wants YYYY-MM-DD; the store keeps a full ISO stamp.
+  // The picker uses YYYY-MM-DD; the store keeps a full ISO stamp.
   const [closeDate, setCloseDate] = useState(
     editing?.expectedCloseAt ? editing.expectedCloseAt.slice(0, 10) : "",
   );
+  const [viewDate, setViewDate] = useState(() =>
+    closeDate ? parseDay(closeDate) : new Date(),
+  );
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [lostReason, setLostReason] = useState(editing?.lostReason ?? "");
   const [busy, setBusy] = useState(false);
@@ -83,6 +118,14 @@ export function DealDialog({
     () => [...contacts].sort((a, b) => a.name.localeCompare(b.name)),
     [contacts],
   );
+  const weekStart = locale === "es" ? 1 : 0;
+  const gridDays = useMemo(() => monthGrid(viewDate, weekStart), [viewDate, weekStart]);
+  const weekdayLabels = useMemo(() => {
+    const sunday = new Date(2024, 0, 7);
+    return Array.from({ length: 7 }, (_, index) =>
+      addDays(sunday, (weekStart + index) % 7).toLocaleDateString(locale, { weekday: "short" }),
+    );
+  }, [locale, weekStart]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -119,134 +162,208 @@ export function DealDialog({
   };
 
   return (
-    <DialogContent className="sm:max-w-lg">
-      <DialogHeader>
-        <DialogTitle>
-          {t(isEditing ? "pipeline.dialog.editTitle" : "pipeline.dialog.newTitle")}
-        </DialogTitle>
-        <DialogDescription>{t("pipeline.dialog.description")}</DialogDescription>
-      </DialogHeader>
+    <Drawer open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DrawerContent className="max-w-2xl">
+        <DrawerHeader>
+          <DrawerTitle icon={<HugeiconsIcon icon={Coins01Icon} size={18} strokeWidth={1.75} />}>
+            {editing ? t("pipeline.dialog.editTitle") : t("pipeline.dialog.newTitle")}
+          </DrawerTitle>
+          <DrawerDescription>
+            {t("pipeline.dialog.description")}
+          </DrawerDescription>
+        </DrawerHeader>
 
-      <form className="space-y-4" onSubmit={(event) => void submit(event)}>
-        <ErrorBanner error={error} onDismiss={() => setError(null)} />
+        <DrawerBody className="min-h-0">
+          <form id={formId} className="space-y-4" onSubmit={(event) => void submit(event)}>
+            <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
-        <label className="block space-y-1.5 text-sm">
-          <span className="font-medium">{t("pipeline.field.title")}</span>
-          <Input
-            autoFocus
-            required
-            value={title}
-            placeholder={t("pipeline.field.titlePlaceholder")}
-            onChange={(event) => setTitle(event.target.value)}
-          />
-        </label>
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium">{t("pipeline.field.title")}</span>
+              <Input
+                autoFocus
+                required
+                value={title}
+                placeholder={t("pipeline.field.titlePlaceholder")}
+                onChange={(event) => setTitle(event.target.value)}
+              />
+            </label>
 
-        <div className="space-y-1.5 text-sm">
-          <span className="font-medium" id={`${base}-contact-label`}>
-            {t("pipeline.field.contact")}
-          </span>
-          {/* A deal belongs to a person, and the contact it belongs to is not
-              something an edit should be able to reassign — a deal that moves
-              between people takes its history somewhere it never happened. */}
-          <Select value={contactId} onValueChange={setContactId} disabled={isEditing}>
-            <SelectTrigger aria-labelledby={`${base}-contact-label`} className="w-full">
-              <SelectValue placeholder={t("pipeline.field.contactPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {sortedContacts.map((contact) => (
-                <SelectItem key={contact.id} value={contact.id}>
-                  {contact.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="space-y-1.5 text-sm">
+              <span className="font-medium" id={`${base}-contact-label`}>
+                {t("pipeline.field.contact")}
+              </span>
+              {/* A deal belongs to a person, and the contact it belongs to is not
+                  something an edit should be able to reassign — a deal that moves
+                  between people takes its history somewhere it never happened. */}
+              <Select value={contactId} onValueChange={setContactId} disabled={isEditing}>
+                <SelectTrigger aria-labelledby={`${base}-contact-label`} className="w-full">
+                  <SelectValue placeholder={t("pipeline.field.contactPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedContacts.map((contact) => (
+                    <SelectItem key={contact.id} value={contact.id}>
+                      {contact.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
-          <label className="block space-y-1.5 text-sm">
-            <span className="font-medium">{t("pipeline.field.value")}</span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="0.01"
-              value={value}
-              placeholder="0"
-              onChange={(event) => setValue(event.target.value)}
-            />
-          </label>
-          <div className="space-y-1.5 text-sm">
-            <span className="font-medium" id={`${base}-currency-label`}>
-              {t("pipeline.field.currency")}
-            </span>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger aria-labelledby={`${base}-currency-label`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCIES.map((code) => (
-                  <SelectItem key={code} value={code}>
-                    {code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
+              <label className="block space-y-1.5 text-sm">
+                <span className="font-medium">{t("pipeline.field.value")}</span>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  value={value}
+                  placeholder="0"
+                  onChange={(event) => setValue(event.target.value)}
+                />
+              </label>
+              <div className="space-y-1.5 text-sm">
+                <span className="font-medium" id={`${base}-currency-label`}>
+                  {t("pipeline.field.currency")}
+                </span>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger aria-labelledby={`${base}-currency-label`} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5 text-sm">
-            <span className="font-medium" id={`${base}-stage-label`}>
-              {t("pipeline.field.stage")}
-            </span>
-            <Select value={stage} onValueChange={(next) => setStage(next as DealStage)}>
-              <SelectTrigger aria-labelledby={`${base}-stage-label`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DEAL_STAGES.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`pipeline.stage.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <label className="block space-y-1.5 text-sm">
-            <span className="font-medium">{t("pipeline.field.closeDate")}</span>
-            <Input
-              type="date"
-              value={closeDate}
-              onChange={(event) => setCloseDate(event.target.value)}
-            />
-          </label>
-        </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5 text-sm">
+                <span className="font-medium" id={`${base}-stage-label`}>
+                  {t("pipeline.field.stage")}
+                </span>
+                <Select value={stage} onValueChange={(next) => setStage(next as DealStage)}>
+                  <SelectTrigger aria-labelledby={`${base}-stage-label`} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEAL_STAGES.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {t(`pipeline.stage.${option}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <span className="font-medium" id={`${base}-close-date-label`}>
+                  {t("pipeline.field.closeDate")}
+                </span>
+                <div className="relative">
+                  <button
+                    id={`${base}-close-date`}
+                    type="button"
+                    aria-expanded={calendarOpen}
+                    aria-haspopup="dialog"
+                    aria-labelledby={`${base}-close-date-label`}
+                    onClick={() => setCalendarOpen((open) => !open)}
+                    className="flex h-10 w-full items-center gap-2 rounded-xl border border-border bg-background px-3 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <HugeiconsIcon icon={Calendar03Icon} size={16} strokeWidth={1.75} />
+                    <span>
+                      {closeDate
+                        ? parseDay(closeDate).toLocaleDateString(locale, { dateStyle: "medium" })
+                        : t("pipeline.field.closeDate")}
+                    </span>
+                  </button>
+                  {calendarOpen ? (
+                    <div className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-full min-w-[18rem] rounded-2xl border border-border bg-card p-3 shadow-xl" role="dialog" aria-label={t("pipeline.field.closeDate")}>
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          aria-label={t("calendar.prevMonth")}
+                          onClick={() => setViewDate((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+                          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <HugeiconsIcon icon={ArrowLeft02Icon} size={16} strokeWidth={1.75} />
+                        </button>
+                        <span className="text-sm font-semibold capitalize">
+                          {viewDate.toLocaleDateString(locale, { month: "long", year: "numeric" })}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={t("calendar.nextMonth")}
+                          onClick={() => setViewDate((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+                          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <HugeiconsIcon icon={ArrowRight02Icon} size={16} strokeWidth={1.75} />
+                        </button>
+                      </div>
+                      <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {weekdayLabels.map((label) => <span key={label}>{label}</span>)}
+                      </div>
+                      <div className="mt-1 grid grid-cols-7 gap-1">
+                        {gridDays.map((day) => {
+                          const value = dayKey(day);
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              aria-pressed={value === closeDate}
+                              onClick={() => {
+                                setCloseDate(value);
+                                setViewDate(day);
+                                setCalendarOpen(false);
+                              }}
+                              className={cn(
+                                "size-9 rounded-xl text-xs font-medium transition-colors",
+                                day.getMonth() === viewDate.getMonth() ? "text-foreground" : "text-muted-foreground/45",
+                                value === closeDate ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                              )}
+                            >
+                              {day.getDate()}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
 
-        {stage === "lost" ? (
-          <label className="block space-y-1.5 text-sm">
-            <span className="font-medium">{t("pipeline.field.lostReason")}</span>
-            <Input
-              value={lostReason}
-              placeholder={t("pipeline.field.lostReasonPlaceholder")}
-              onChange={(event) => setLostReason(event.target.value)}
-            />
-          </label>
-        ) : null}
+            {stage === "lost" ? (
+              <label className="block space-y-1.5 text-sm">
+                <span className="font-medium">{t("pipeline.field.lostReason")}</span>
+                <Input
+                  value={lostReason}
+                  placeholder={t("pipeline.field.lostReasonPlaceholder")}
+                  onChange={(event) => setLostReason(event.target.value)}
+                />
+              </label>
+            ) : null}
 
-        <label className="block space-y-1.5 text-sm">
-          <span className="font-medium">{t("pipeline.field.notes")}</span>
-          <Textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} />
-        </label>
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium">{t("pipeline.field.notes")}</span>
+              <Textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} />
+            </label>
 
-        <DialogFooter>
-          <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+          </form>
+        </DrawerBody>
+
+        <DrawerFooter>
+          <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
             {t("common.cancel")}
           </Button>
-          <Button type="submit" disabled={busy || !title.trim() || !contactId}>
+          <Button type="submit" form={formId} disabled={busy || !title.trim() || !contactId}>
             {busy ? t("pipeline.dialog.saving") : t("common.save")}
           </Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

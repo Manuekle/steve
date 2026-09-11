@@ -18,6 +18,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
+import { CategoryBadge } from "@/components/ui/category-badge";
+import { CAPABILITY_HUES, isCapabilityId } from "@/lib/agent-capabilities";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 
@@ -120,16 +122,19 @@ export function CapabilityPicker({
           ) : (
             <>
               {shown.map((option) => (
-                <Badge
-                  key={option.id}
-                  variant={option.configured ? "secondary" : "outline"}
-                  className={cn(
-                    "max-w-[12rem]",
-                    !option.configured && "border-amber-500/40 text-amber-700 dark:text-amber-500",
-                  )}
-                >
-                  <span className="truncate">{t(option.labelKey)}</span>
-                </Badge>
+                option.configured ? (
+                  <CategoryBadge
+                    key={option.id}
+                    hue={isCapabilityId(option.id) ? CAPABILITY_HUES[option.id] : undefined}
+                    className="max-w-[12rem]"
+                  >
+                    <span className="truncate">{t(option.labelKey)}</span>
+                  </CategoryBadge>
+                ) : (
+                  <Badge key={option.id} variant="outline" className="max-w-[12rem] border-amber-500/40 text-amber-700 dark:text-amber-500">
+                    <span className="truncate">{t(option.labelKey)}</span>
+                  </Badge>
+                )
               ))}
               {overflow > 0 ? (
                 <span className="text-muted-foreground text-[12px]">

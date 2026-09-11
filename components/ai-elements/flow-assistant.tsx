@@ -15,14 +15,14 @@ import { networkErrorMessage, readApiError } from "@/lib/api-error-message";
 import { useSound } from "@/components/sound-provider";
 import { cn } from "@/lib/utils";
 import { STEP_ICONS, STEP_LABEL_KEYS, stepPreview } from "@/lib/workflow-step-meta";
-import type { WorkflowPlan, WorkflowPlanStep } from "@/lib/workflow-schema";
+import { workflowAssistantResponseSchema, workflowPlanSchema, type WorkflowPlan, type WorkflowPlanStep } from "@/lib/workflow-schema";
 import type { Automation, WorkflowStep } from "@/lib/types";
 import { SuggestionChip } from "@/components/ui/suggestion-chip";
 import { Button } from "@/components/ui/button";
 
 type Turn =
   | { readonly role: "user"; readonly text: string }
-  | { readonly role: "assistant"; readonly summary: string; readonly plan: WorkflowPlan; readonly applied: boolean }
+  | { readonly role: "assistant"; readonly summary: string; readonly plan: WorkflowPlan | null; readonly applied: boolean }
   | { readonly role: "error"; readonly text: string };
 
 /** One-tap starting points, same idea as the suggestion chips on Senka's own
@@ -53,7 +53,9 @@ function loadTurns(automationId: string): Turn[] {
       if (!turn || typeof turn !== "object") return false;
       const role = (turn as { role?: unknown }).role;
       if (role === "user" || role === "error") return typeof (turn as { text?: unknown }).text === "string";
-      return role === "assistant" && typeof (turn as { plan?: unknown }).plan === "object";
+      const assistant = turn as { summary?: unknown; plan?: unknown; applied?: unknown };
+      return role === "assistant" && typeof assistant.summary === "string" && typeof assistant.applied === "boolean"
+        && (assistant.plan === null || workflowPlanSchema.safeParse(assistant.plan).success);
     });
   } catch {
     return [];
@@ -129,6 +131,10 @@ export function FlowAssistant({
         body: JSON.stringify({
           prompt,
           steps,
+          turns: turns.filter(turn => turn.role !== "error").slice(-24).map(turn => ({
+            role: turn.role,
+            text: (turn.role === "assistant" ? turn.summary : turn.text).slice(0, 4000),
+          })),
           name: automation.name,
           trigger: automation.trigger,
           triggerValue: automation.triggerValue,
@@ -141,10 +147,15 @@ export function FlowAssistant({
         setTurns((prev) => [...prev, { role: "error", text: failure.message }]);
         return;
       }
-      const data = await response.json();
-      const plan = data.plan as WorkflowPlan;
+      const parsed = workflowAssistantResponseSchema.safeParse(await response.json());
+      if (!parsed.success) {
+        cue("error");
+        setTurns(prev => [...prev, { role: "error", text: t("apiError.generation_failed") }]);
+        return;
+      }
+      const { reply, plan } = parsed.data;
       cue("ready");
-      setTurns((prev) => [...prev, { role: "assistant", summary: plan.summary, plan, applied: false }]);
+      setTurns((prev) => [...prev, { role: "assistant", summary: reply, plan, applied: false }]);
     } catch (err) {
       cue("error");
       setTurns((prev) => [...prev, { role: "error", text: networkErrorMessage(t, err) }]);
@@ -160,7 +171,7 @@ export function FlowAssistant({
 
   const applyAt = (index: number) => {
     const turn = turns[index];
-    if (!turn || turn.role !== "assistant") return;
+    if (!turn || turn.role !== "assistant" || !turn.plan) return;
     cue("success");
     onApplyPlan(turn.plan);
     setTurns((prev) => prev.map((item, i) => (i === index && item.role === "assistant" ? { ...item, applied: true } : item)));
@@ -292,33 +303,37 @@ export function FlowAssistant({
               {/* The proposal reads as a task plan, because that is what it is:
                   the steps the flow will run, in order. Applying it marks the
                   whole list done. */}
-              <TodoList
-                title={t("assistant.proposal")}
-                items={planToTodos(turn.plan, turn.applied, t)}
-                collapseOnComplete={false}
-                defaultOpen
-              />
+              {turn.plan ? (
+                <>
+                  <TodoList
+                    title={t("assistant.proposal")}
+                    items={planToTodos(turn.plan, turn.applied, t)}
+                    collapseOnComplete={false}
+                    defaultOpen
+                  />
 
-              <ApprovalCard
-                title={turn.applied ? t("assistant.applied") : t("assistant.apply")}
-                description={
-                  turn.applied
-                    ? undefined
-                    : currentCount === 0
-                      ? t("assistant.createsFlow")
-                      : t("assistant.replaces", { count: currentCount })
-                }
-                status={turn.applied ? "approved" : "pending"}
-                approveLabel={t("assistant.apply")}
-                onApprove={() => applyAt(i)}
-              />
+                  <ApprovalCard
+                    title={turn.applied ? t("assistant.applied") : t("assistant.apply")}
+                    description={
+                      turn.applied
+                        ? undefined
+                        : currentCount === 0
+                          ? t("assistant.createsFlow")
+                          : t("assistant.replaces", { count: currentCount })
+                    }
+                    status={turn.applied ? "approved" : "pending"}
+                    approveLabel={t("assistant.apply")}
+                    onApprove={() => applyAt(i)}
+                  />
+                </>
+              ) : null}
             </div>
           );
         })}
 
         {busy ? (
           <div className="list-fade-in flex items-center gap-2">
-            <Orb state="weaving" />
+            <Orb state="composing" />
             <ThinkingShimmer>{t("assistant.thinking")}</ThinkingShimmer>
           </div>
         ) : null}

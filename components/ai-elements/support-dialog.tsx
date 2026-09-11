@@ -88,7 +88,9 @@ export function SupportDialog({
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("support.title")}</DialogTitle>
+          <DialogTitle icon={<HugeiconsIcon icon={CustomerSupportIcon} size={18} strokeWidth={1.75} />}>
+            {t("support.title")}
+          </DialogTitle>
           <DialogDescription>{t("support.subtitle")}</DialogDescription>
         </DialogHeader>
 

@@ -15,6 +15,5 @@
 
 export { AdsScreen } from "./screen-ads";
 export { ChatScreen } from "./screen-chat";
-export { DashboardScreen } from "./screen-dashboard";
 export { FlowScreen } from "./screen-flow";
 export { InboxScreen } from "./screen-inbox";

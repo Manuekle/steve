@@ -4,87 +4,112 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   AiImagineIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  InformationCircleIcon,
+  ArrowDown01Icon,
+  BubbleChatIcon,
+  Call02Icon,
+  Delete01Icon,
+  Globe02Icon,
+  InstagramIcon,
   PauseIcon,
   PencilEdit01Icon,
   PlayIcon,
   SearchIcon,
+  WhatsappIcon,
 } from "@hugeicons/core-free-icons";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/app/_components/dashboard-card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { StatusBadge } from "@/components/ui/status-badge";
+import type { CapabilityId } from "@/lib/agent-capabilities";
 import { useT } from "@/lib/i18n/provider";
+import { cn } from "@/lib/utils";
 import { AppChrome } from "./screen-chrome";
 
 /**
- * Five agents, and the first one open.
+ * The agents page, as `app/(app)/agents/page.tsx` renders it today.
  *
- * Three closed rows left the frame two-thirds empty — the screen was a header,
- * a search field, a short list and then 500px of background, which reads as a
- * page that failed to load rather than as a list with three things in it. The
- * page's own row expansion is what fills it, and it fills it with the thing
- * the section is actually claiming: an agent is instructions plus tools.
+ * It used to be a stack of full-width rows that expanded into a system prompt
+ * and a list of raw tool names — which was an accurate drawing of the page
+ * right up until the page changed. The inline editor moved to the workspace at
+ * `/agents/[id]`, and what is left in the list is a two-column grid of cards:
+ * who the agent is, what it is allowed to do in words a business owner uses,
+ * and the four things you do to it. This screen is that page.
+ *
+ * Above the grid is the routing card, and it is here for the same reason it is
+ * there: "an agent for every job" is a claim about a list until something says
+ * which one picks up WhatsApp.
  */
-function useMockAgents(t: (key: string) => string): readonly {
-  readonly active: boolean;
-  readonly description: string;
-  readonly id: string;
-  readonly name: string;
-  readonly systemPrompt?: string;
-  readonly time: string;
-  readonly tools?: readonly string[];
-}[] {
-  return [
-    {
-      active: true,
-      description: t("landing.demo.agents.senkaDescription"),
-      id: "senka",
-      name: "senka",
-      systemPrompt: t("landing.demo.agents.senkaPrompt"),
-      time: t("landing.demo.agents.time2h"),
-      tools: ["search_knowledge", "update_contact", "create_reminder", "handoff_human"],
-    },
-    {
-      active: true,
-      description: t("landing.demo.agents.ventasDescription"),
-      id: "ventas",
-      name: t("landing.demo.agents.ventasName"),
-      time: t("landing.demo.agents.time1d"),
-    },
-    {
-      active: true,
-      description: t("landing.demo.agents.catalogoDescription"),
-      id: "catalogo",
-      name: t("landing.demo.agents.catalogoName"),
-      time: t("landing.demo.agents.time2d"),
-    },
-    {
-      active: false,
-      description: t("landing.demo.agents.postventaDescription"),
-      id: "postventa",
-      name: t("landing.demo.agents.postventaName"),
-      time: t("landing.demo.agents.time3d"),
-    },
-    {
-      active: false,
-      description: t("landing.demo.agents.campanasDescription"),
-      id: "campanas",
-      name: t("landing.demo.agents.campanasName"),
-      time: t("landing.demo.agents.time6d"),
-    },
-  ];
-}
 
-/**
- * The agents list, as `app/(app)/agents/page.tsx` renders it: the page header with
- * the provider badge and the new-agent action, the search row, and the cards —
- * icon, name, active/inactive pill, description, and the pause/play plus
- * expand controls. Static like every landing screen.
- */
+// ── Data ────────────────────────────────────────────────────────────
+
+type MockAgent = {
+  /** `CapabilityId`, so the chips read out of the app's own dictionary rather
+   *  than printing tool slugs the picker has not shown since it was written. */
+  readonly capabilities: readonly CapabilityId[];
+  readonly descriptionKey: string;
+  readonly id: string;
+  readonly name?: string;
+  readonly nameKey?: string;
+  readonly status: "active" | "paused" | "draft";
+};
+
+const AGENTS: readonly MockAgent[] = [
+  {
+    capabilities: ["knowledge", "contacts", "reminders", "handoff"],
+    descriptionKey: "landing.demo.agents.senkaDescription",
+    id: "senka",
+    name: "senka",
+    status: "active",
+  },
+  {
+    capabilities: ["deals", "calendar", "contacts"],
+    descriptionKey: "landing.demo.agents.ventasDescription",
+    id: "ventas",
+    nameKey: "landing.demo.agents.ventasName",
+    status: "active",
+  },
+  {
+    capabilities: ["knowledge", "media", "shopify"],
+    descriptionKey: "landing.demo.agents.catalogoDescription",
+    id: "catalogo",
+    nameKey: "landing.demo.agents.catalogoName",
+    status: "active",
+  },
+  {
+    capabilities: ["contacts", "payments", "handoff"],
+    descriptionKey: "landing.demo.agents.postventaDescription",
+    id: "postventa",
+    nameKey: "landing.demo.agents.postventaName",
+    status: "paused",
+  },
+  {
+    capabilities: ["automations", "reminders"],
+    descriptionKey: "landing.demo.agents.campanasDescription",
+    id: "campanas",
+    nameKey: "landing.demo.agents.campanasName",
+    status: "draft",
+  },
+];
+
+/** Who answers where. The three channels the real card lists, with the two
+ *  that are connected everywhere else on this page — the dashboard's split and
+ *  the inbox both show WhatsApp and Instagram — assigned, and the web widget
+ *  left unassigned so the state the card exists to name is on screen. */
+const ROUTING: readonly {
+  readonly agent: string;
+  readonly icon: Parameters<typeof HugeiconsIcon>[0]["icon"];
+  readonly id: string;
+  readonly label: string;
+}[] = [
+  { agent: "senka", icon: WhatsappIcon, id: "whatsapp", label: "WhatsApp" },
+  { agent: "Ventas", icon: InstagramIcon, id: "instagram", label: "Instagram" },
+  { agent: "", icon: Globe02Icon, id: "web", label: "Web" },
+];
+
+// ── Screen ──────────────────────────────────────────────────────────
+
 export function AgentsScreen() {
   const t = useT();
-  const MOCK_AGENTS = useMockAgents(t);
 
   return (
     <AppChrome
@@ -93,6 +118,8 @@ export function AgentsScreen() {
       subtitle={t("agents.subtitle")}
       actions={
         <span className="flex items-center gap-2">
+          {/* `ProviderStatusBadge`'s own output: the status word, then the
+              balance, in one pill. */}
           <StatusBadge
             status="connected"
             label={`${t("models.status.ok")} · ${t("models.balance", { amount: "18.40" })}`}
@@ -109,83 +136,126 @@ export function AgentsScreen() {
           icon={SearchIcon}
           size={16}
           strokeWidth={1.75}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          className="-translate-y-1/2 absolute top-1/2 left-3 text-muted-foreground"
         />
-        <Input placeholder={t("agents.search")} className="pl-9" />
+        <Input placeholder={t("agents.search")} className="pl-9" readOnly />
       </div>
 
-      <div className="space-y-2">
-        {MOCK_AGENTS.map((agent) => {
-          const isOpen = agent.systemPrompt !== undefined;
+      {/* `ChannelRouting`, statically. The real card reads its assignments from
+          /api/channels/agents and opens a command palette on each row; this is
+          the same card with the fetch and the dialog taken out. */}
+      <Card className="mb-6">
+        <CardHeader className="flex-col gap-1">
+          <CardTitle>{t("agents.routingTitle")}</CardTitle>
+          <CardDescription>{t("agents.routingDesc")}</CardDescription>
+        </CardHeader>
+        <div className="grid gap-2 p-5 pt-0 sm:grid-cols-2">
+          {ROUTING.map((row) => (
+            <span
+              className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 text-left"
+              key={row.id}
+            >
+              <HugeiconsIcon
+                className="shrink-0 text-muted-foreground"
+                icon={row.icon}
+                size={16}
+                strokeWidth={1.75}
+              />
+              <span className="w-20 shrink-0 font-medium text-[13px]">{row.label}</span>
+              <span
+                className={cn(
+                  "min-w-0 flex-1 truncate text-[13px]",
+                  row.agent ? "text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {row.agent || t("agents.routingNone")}
+              </span>
+              <HugeiconsIcon
+                className="shrink-0 text-muted-foreground"
+                icon={ArrowDown01Icon}
+                size={14}
+                strokeWidth={1.75}
+              />
+            </span>
+          ))}
+        </div>
+      </Card>
 
-          return (
-            <div key={agent.id} className="rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-3 px-5 py-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                  <HugeiconsIcon icon={AiImagineIcon} size={20} strokeWidth={1.75} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium">{agent.name}</p>
-                    <StatusBadge status={agent.active ? "active" : "paused"} />
-                  </div>
-                  <p className="truncate text-xs text-muted-foreground">{agent.description}</p>
-                </div>
-                <span className="hidden text-xs text-muted-foreground sm:block">{agent.time}</span>
-                <span className="flex size-8 items-center justify-center rounded-lg text-muted-foreground">
-                  <HugeiconsIcon
-                    icon={agent.active ? PauseIcon : PlayIcon}
-                    size={14}
-                    strokeWidth={1.75}
-                  />
-                </span>
-                <span className="flex size-8 items-center justify-center rounded-lg text-muted-foreground">
-                  <HugeiconsIcon
-                    icon={isOpen ? ChevronUpIcon : ChevronDownIcon}
-                    size={14}
-                    strokeWidth={1.75}
-                  />
-                </span>
-              </div>
-
-              {isOpen ? (
-                <div className="space-y-3 border-border border-t px-5 py-4 text-muted-foreground text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <HugeiconsIcon icon={InformationCircleIcon} size={12} strokeWidth={1.75} />
-                    <span className="font-medium text-foreground">{t("agents.description")}:</span>
-                    <span className="truncate">{agent.description}</span>
-                  </div>
-                  <div>
-                    <p className="mb-1 font-medium text-foreground">{t("agents.systemPrompt")}:</p>
-                    <pre className="whitespace-pre-wrap rounded-lg bg-muted p-3 text-[11px] leading-relaxed">
-                      {agent.systemPrompt}
-                    </pre>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{t("agents.tools")}:</p>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {agent.tools?.map((tool) => (
-                        <span
-                          key={tool}
-                          className="rounded-md bg-muted px-1.5 py-0.5 font-medium text-[10px]"
-                        >
-                          {tool}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 border-border border-t pt-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 font-medium text-foreground text-xs shadow-[var(--shadow-inset)]">
-                      <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
-                      {t("agents.edit")}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {AGENTS.map((agent) => (
+          <AgentCard agent={agent} key={agent.id} />
+        ))}
       </div>
     </AppChrome>
+  );
+}
+
+/** One agent: who it is, what it can do, and the four things you do to it. */
+function AgentCard({ agent }: { readonly agent: MockAgent }) {
+  const t = useT();
+  const isActive = agent.status === "active";
+
+  return (
+    <Card className="flex flex-col">
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
+              isActive ? "bg-muted text-foreground" : "bg-muted/50 text-muted-foreground",
+            )}
+          >
+            <HugeiconsIcon icon={AiImagineIcon} size={20} strokeWidth={1.75} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              {/* `min-w-0 flex-1` and a `shrink-0` pill: at card width a
+                  truncating name resolves its own min-width to 0 and gives
+                  every pixel to the badge beside it. */}
+              <span className="min-w-0 flex-1 truncate font-medium text-sm">
+                {agent.name ?? t(agent.nameKey ?? "")}
+              </span>
+              <StatusBadge className="shrink-0" status={agent.status} />
+            </div>
+            <p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs leading-relaxed">
+              {t(agent.descriptionKey)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1">
+          {agent.capabilities.map((id) => (
+            <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium text-[10px]" key={id}>
+              {t(`capability.${id}`)}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 border-border border-t px-3 py-2">
+        <Button size="sm" variant="ghost">
+          <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
+          {t("builder.open")}
+        </Button>
+        <span className="ml-auto flex items-center gap-0.5">
+          <Button aria-label={t("agents.chatAction")} size="icon-sm" variant="ghost">
+            <HugeiconsIcon icon={BubbleChatIcon} size={14} strokeWidth={1.75} />
+          </Button>
+          <Button aria-label={t("agents.callAction")} size="icon-sm" variant="ghost">
+            <HugeiconsIcon icon={Call02Icon} size={14} strokeWidth={1.75} />
+          </Button>
+          <Button
+            aria-label={isActive ? t("agents.deactivate") : t("agents.activate")}
+            size="icon-sm"
+            variant="ghost"
+          >
+            <HugeiconsIcon icon={isActive ? PauseIcon : PlayIcon} size={14} strokeWidth={1.75} />
+          </Button>
+          <Button aria-label={t("agents.delete")} size="icon-sm" variant="ghost">
+            <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={1.75} />
+          </Button>
+        </span>
+      </div>
+    </Card>
   );
 }

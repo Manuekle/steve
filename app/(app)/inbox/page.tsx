@@ -633,9 +633,15 @@ export default function InboxPage() {
                         <ChannelIcon channel={contact.channel} />
                       </div>
                       <div className="min-w-0 flex-1">
+                        {/* `min-w-0 flex-1` on the name, `shrink-0` on the
+                            pill. A truncating <p> resolves `min-width` to 0,
+                            so on a narrow row the name lost every pixel to the
+                            badge beside it and the contact rendered as a status
+                            chip with no one's name on it. */}
                         <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-medium">{contact.name}</p>
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium">{contact.name}</p>
                           <StatusBadge
+                            className="shrink-0"
                             status={contact.status === "followup_due" ? "pending" : "warning"}
                             label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
                           />
@@ -670,9 +676,18 @@ export default function InboxPage() {
                           {isExpanded ? t("inbox.collapse") : t("inbox.expand")}
                         </TooltipContent>
                       </Tooltip>
-                      <Button size="sm" variant="outline" onClick={() => resume(contact.id)}>
+                      {/* Icon-only below `sm`, like the two header actions
+                          above. The label costs 90px of a 350px row on a
+                          phone, and the row was spending them before it got
+                          to the contact's name. */}
+                      <Button
+                        aria-label={t("inbox.resume")}
+                        onClick={() => resume(contact.id)}
+                        size="sm"
+                        variant="outline"
+                      >
                         <HugeiconsIcon icon={CheckIcon} size={14} strokeWidth={1.75} />
-                        {t("inbox.resume")}
+                        <span className="hidden sm:inline">{t("inbox.resume")}</span>
                       </Button>
                     </div>
                     <AnimatePresence initial={false}>

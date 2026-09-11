@@ -2,15 +2,16 @@ import { describe, expect, it } from "vitest";
 import { CREDENTIAL_GROUPS } from "./credentials";
 import { MANUAL_CONNECTIONS, OAUTH_CONNECTIONS } from "./connections";
 import { FIELD_I18N, VALIDATION_ERROR_KEYS } from "./settings-i18n";
-import { dictionaries } from "./i18n/dictionaries";
+// Both dictionaries, statically. The app loads `en` on demand — see
+// `lib/i18n/dictionaries.ts` — but a test comparing the two needs both in
+// memory, and a test file is not a client chunk.
+import { en } from "./i18n/dictionary-en";
+import { es } from "./i18n/dictionary-es";
 
 // The Settings and Connections pages are both generated from catalogs, so a
 // vendor added to a catalog renders whether or not anyone wrote its copy —
 // it just renders a hardcoded Spanish label that ignores the language toggle,
 // or a blank hint. These tests are the thing that notices.
-
-const es = dictionaries.es;
-const en = dictionaries.en;
 
 /** Group ids that intentionally have no card on Connections: they are wired
  *  through a channel or the runtime, not through a vendor account someone

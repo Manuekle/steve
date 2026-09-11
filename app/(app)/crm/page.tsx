@@ -3,15 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Add01Icon, Cancel01Icon, DragDropIcon, RefreshIcon, SearchIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Cancel01Icon, Download01Icon, DragDropIcon, RefreshIcon, SearchIcon } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
+import { Card, CardBody, CardHeader, CardSeparator, CardTitle, CardDescription } from "../../_components/dashboard-card";
+import { AnimatedNumber, ChartPeriod, ChartSelector, StackedBars, TimeSeries } from "../../_components/chart";
+import chartStyles from "../../_components/charts/tiles.module.css";
 import { ContactDialog } from "../../_components/contact-dialog";
 import { CrmBoard, CRM_COLUMNS, STATUS_THEME, type GroupedContacts } from "./_components/crm-board";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Skeleton, SkeletonAvatar, SkeletonBar } from "@/components/ai-elements/skeleton";
+import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConfirmDialog } from "@/components/confirm-dialog";
@@ -21,8 +26,8 @@ import { cn } from "@/lib/utils";
 import type { Contact, ContactStatus } from "@/lib/types";
 import { usePolling } from "@/lib/use-polling";
 import { moveContactTo } from "@/lib/contact-order";
-
-const EMPTY_GROUPS: GroupedContacts = { open: [], waiting_human: [], followup_due: [], closed: [] };
+import { countByDay } from "@/lib/chart-data";
+import { contactSourceLabel, contactStatusLabel } from "@/lib/contact-labels";
 
 /** Skeleton for the CRM page — header, pipeline bar, search row, kanban board. */
 function CrmSkeleton() {
@@ -73,7 +78,7 @@ function CrmSkeleton() {
 }
 
 export default function CrmPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const reduced = useReducedMotion();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { toast } = useToast();
@@ -82,8 +87,13 @@ export default function CrmPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<UiError | null>(null);
   const [search, setSearch] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<ContactStatus | "all">("all");
+  const [view, setView] = useState<"kanban" | "list" | "analytics">("list");
+  const [dragActive, setDragActive] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [trendDays, setTrendDays] = useState(14);
 
   /** The list as it stands right now, for rolling an optimistic move back. */
   const contactsRef = useRef<Contact[]>(contacts);
@@ -100,6 +110,7 @@ export default function CrmPage() {
 
   const load = useCallback(async () => {
     const result = await fetchJson<{ contacts?: Contact[] }>("/api/contacts?limit=200", t);
+    if (isDraggingRef.current) return result.ok;
     setIsLoading(false);
     if (!result.ok) {
       setError(result.error);
@@ -125,16 +136,41 @@ export default function CrmPage() {
     setIsRefreshing(false);
   }, [load]);
 
+  const sources = useMemo(
+    () => [...new Set(contacts.map((contact) => contact.source).filter(Boolean))].sort(),
+    [contacts],
+  );
+
   const filteredContacts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return contacts;
-    return contacts.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.phone && c.phone.includes(q)) ||
-        (c.email && c.email.toLowerCase().includes(q)),
-    );
-  }, [contacts, search]);
+    return contacts.filter((contact) => {
+      if (sourceFilter !== "all" && contact.source !== sourceFilter.slice(7)) return false;
+      if (statusFilter !== "all" && contact.status !== statusFilter) return false;
+      return !q || contact.name.toLowerCase().includes(q) ||
+        contact.phone?.includes(q) || contact.email?.toLowerCase().includes(q);
+    });
+  }, [contacts, search, sourceFilter, statusFilter]);
+
+  const leadsPerDay = useMemo(
+    () => countByDay(filteredContacts.map((contact) => contact.createdAt), { locale, days: trendDays }),
+    [filteredContacts, locale, trendDays],
+  );
+
+  const leadsBySource = useMemo(() => {
+    const counts = new Map<string, number[]>();
+    for (const contact of filteredContacts) {
+      const source = contact.source || "unknown";
+      const values = counts.get(source) ?? CRM_COLUMNS.map(() => 0);
+      const index = CRM_COLUMNS.indexOf(contact.status);
+      if (index >= 0) values[index] += 1;
+      counts.set(source, values);
+    }
+    return [...counts].map(([source, values]) => ({
+      key: source,
+      label: contactSourceLabel(t, source),
+      values,
+    }));
+  }, [filteredContacts, t]);
 
   const grouped = useMemo(() => {
     const map: GroupedContacts = { open: [], waiting_human: [], followup_due: [], closed: [] };
@@ -227,10 +263,32 @@ export default function CrmPage() {
   const handleDelete = useCallback((id: string) => void remove(id), [remove]);
   const handleDragActive = useCallback((active: boolean) => {
     isDraggingRef.current = active;
+    setDragActive(active);
   }, []);
 
+  const exportCSV = () => {
+    const header = "id,name,phone,email,channel,status,source,createdAt\r\n";
+    const rows = filteredContacts.map((contact) => [
+      contact.id, contact.name, contact.phone, contact.email,
+      contact.channel, contact.status, contact.source, contact.createdAt,
+    ].map((value) => {
+      const text = String(value ?? "");
+      const safe = /^[\s]*[=+\-@]|^[\t\r\n]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    }).join(",")).join("\r\n");
+    const blob = new Blob(["\uFEFF", header, rows], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   const total = filteredContacts.length;
-  const noResults = total === 0 && search.trim().length > 0;
+  const noResults = total === 0 && contacts.length > 0;
 
   return (
     <PageContainer maxWidth="max-w-[1400px]" pattern="grid">
@@ -241,10 +299,16 @@ export default function CrmPage() {
           <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold">{t("crm.title")}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{t("crm.subtitle")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("crm.subtitle")} · {t("leads.counter", { shown: total, total: contacts.length })}
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => void refresh()} disabled={isRefreshing}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" onClick={exportCSV} disabled={dragActive || total === 0}>
+                <HugeiconsIcon icon={Download01Icon} size={16} strokeWidth={1.75} />
+                {t("leads.exportCsv")}
+              </Button>
+              <Button variant="outline" onClick={() => void refresh()} disabled={isRefreshing || dragActive}>
                 {t("crm.contactCount", { count: total })}
                 <HugeiconsIcon
                   icon={RefreshIcon}
@@ -253,7 +317,7 @@ export default function CrmPage() {
                   className={cn(isRefreshing && "animate-spin")}
                 />
               </Button>
-              <Button onClick={openCreate}>
+              <Button onClick={openCreate} disabled={dragActive}>
                 {t("crm.addContact")}
                 <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
               </Button>
@@ -290,8 +354,8 @@ export default function CrmPage() {
             </div>
           ) : null}
 
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="relative w-full max-w-sm">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative min-w-[200px] flex-1">
               <HugeiconsIcon
                 icon={SearchIcon}
                 size={16}
@@ -301,6 +365,7 @@ export default function CrmPage() {
               <Input
                 aria-label={t("crm.searchPlaceholder")}
                 value={search}
+                disabled={dragActive}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("crm.searchPlaceholder")}
                 className={cn("pl-9", search && "pr-9")}
@@ -309,6 +374,7 @@ export default function CrmPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
+                  disabled={dragActive}
                   aria-label={t("crm.clearSearch")}
                   className="absolute top-1/2 right-2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
                 >
@@ -316,24 +382,115 @@ export default function CrmPage() {
                 </button>
               ) : null}
             </div>
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Select value={sourceFilter} onValueChange={setSourceFilter} disabled={dragActive}>
+              <SelectTrigger aria-label={t("common.filterBySource")} className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("leads.allSources")}</SelectItem>
+                {sources.map((source) => (
+                  <SelectItem key={source} value={`source:${source}`}>{contactSourceLabel(t, source)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={(status) => setStatusFilter(status as ContactStatus | "all")} disabled={dragActive}>
+              <SelectTrigger aria-label={t("common.filterByStatus")} className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("leads.allStatuses")}</SelectItem>
+                {CRM_COLUMNS.map((status) => (
+                  <SelectItem key={status} value={status}>{contactStatusLabel(t, status)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {view !== "analytics" ? <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               {t("crm.dragHint")}
               <HugeiconsIcon icon={DragDropIcon} size={14} strokeWidth={1.75} />
-            </p>
+            </p> : null}
           </div>
 
-          <CrmBoard
-            grouped={noResults ? EMPTY_GROUPS : grouped}
+          <fieldset disabled={dragActive} aria-label={locale === "es" ? "Vista del CRM" : "CRM view"} className="mb-4 flex min-w-0 justify-center disabled:opacity-50">
+            <SlidingTabs
+              tabs={[
+                { id: "kanban", label: "Kanban" },
+                { id: "list", label: locale === "es" ? "Lista" : "List" },
+                { id: "analytics", label: locale === "es" ? "Estadísticas" : "Analytics" },
+              ]}
+              value={view}
+              onValueChange={(mode) => {
+                if (!dragActive && (mode === "kanban" || mode === "list" || mode === "analytics")) setView(mode);
+              }}
+            />
+          </fieldset>
+
+          {view !== "analytics" ? <CrmBoard
+            view={view}
+            grouped={grouped}
             onMove={handleMove}
             onEdit={openEdit}
             onDelete={handleDelete}
             onDragActiveChange={handleDragActive}
-          />
+          /> : null}
 
-          {noResults ? (
+          {view !== "analytics" && total === 0 ? (
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              {t("crm.noResults", { query: search })}
+              {noResults ? t("leads.noResults") : t("leads.empty")}
             </p>
+          ) : null}
+
+          {view === "analytics" ? (
+            <section aria-label={locale === "es" ? "Estadísticas" : "Analytics"}>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle>{t("leads.trendTitle")}</CardTitle>
+                      <CardDescription className="truncate leading-[18px]"><ChartPeriod value={String(trendDays)}>{trendDays} {locale === "es" ? "días" : "days"}</ChartPeriod></CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardSeparator />
+                  <CardBody>
+                    <div className={chartStyles.root}>
+                      <div className={chartStyles.stackSummary}>
+                        <AnimatedNumber className={chartStyles.stackTotal} value={leadsPerDay.reduce((sum, day) => sum + day.value, 0)} />
+                        <span className={chartStyles.stackCaption}>{locale === "es" ? "leads nuevos" : "new leads"}</span>
+                      </div>
+                      <div className={cn(chartStyles.stackLegend, "items-center [&>div]:mt-0")}>
+                        <ChartSelector
+                          label={t("common.filterByPeriod")}
+                          value={String(trendDays)}
+                          options={[7, 14, 30, 90].map((days) => ({ value: String(days), label: `${days}D` }))}
+                          onChange={(value) => setTrendDays(Number(value))}
+                        />
+                      </div>
+                      <TimeSeries
+                        data={leadsPerDay}
+                        emptyLabel={t("leads.trendEmpty")}
+                        formatValue={(point) => (
+                          <span className="tabular-nums">
+                            {point.label} · {t("leads.trendTooltip", { count: point.value })}
+                          </span>
+                        )}
+                      />
+                    </div>
+                  </CardBody>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle>{t("leads.bySourceTitle")}</CardTitle>
+                      <CardDescription className="truncate leading-[18px]">{t("leads.bySourceDescription")}</CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardSeparator />
+                  <CardBody>
+                    <StackedBars
+                      columns={leadsBySource}
+                      bands={CRM_COLUMNS.map((status) => ({ key: status, label: contactStatusLabel(t, status) }))}
+                      emptyLabel={t("leads.bySourceEmpty")}
+                      totalLabel={t("leads.bySourceTitle")}
+                    />
+                  </CardBody>
+                </Card>
+              </div>
+            </section>
           ) : null}
         </div>
       </Skeleton>

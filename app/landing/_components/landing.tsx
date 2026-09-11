@@ -28,7 +28,7 @@ import { ProofSection } from "./section-proof";
  */
 export function Landing() {
   return (
-    <MarketingShell>
+    <MarketingShell editorial>
       <LandingLocaleSwap>
         <LandingHero />
         <ChannelBand />

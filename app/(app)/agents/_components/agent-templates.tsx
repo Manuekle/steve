@@ -4,7 +4,7 @@ import { useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   CheckmarkCircle02Icon,
-  MagicWand01Icon,
+  GlobalEducationIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -150,7 +150,7 @@ export function AgentTemplates({
           <div className="flex flex-1 flex-col gap-4 p-5">
             <div className="flex items-start gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={MagicWand01Icon} size={20} strokeWidth={1.75} />
+                <HugeiconsIcon icon={GlobalEducationIcon} size={20} strokeWidth={1.75} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{t("agents.templatesCustomTitle")}</p>

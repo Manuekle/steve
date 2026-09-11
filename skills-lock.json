@@ -12,6 +12,12 @@
       "sourceType": "github",
       "skillPath": "text-to-speech/SKILL.md",
       "computedHash": "a07858869c331494278dc201fde7c002ab4155cf93b642cc0f712e8e86793be9"
+    },
+    "vercel-connect": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "skillPath": "skills/vercel-connect/SKILL.md",
+      "computedHash": "49f496ff7b477473ccbf14376bf940a2a1071d118dcbc1a97f34810f4f2da70c"
     }
   }
 }

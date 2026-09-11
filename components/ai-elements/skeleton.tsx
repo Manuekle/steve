@@ -108,6 +108,25 @@ export function SkeletonAvatar({
 
 /* ── Page-level skeletons ──────────────────────────────────────────── */
 
+/** Matches the shared KPI header and inset plate while data is loading. */
+export function KpiCardSkeleton({ visual = false }: { readonly visual?: boolean }) {
+  return (
+    <div className="kpi-card border border-border bg-card shadow-[var(--shadow-soft)]" aria-hidden="true">
+      <div className="kpi-header">
+        <SkeletonBar className="size-4 shrink-0" />
+        <SkeletonBar className="h-4 w-24 max-w-full" />
+      </div>
+      <div className="kpi-body">
+        <div className="kpi-plate">
+          <SkeletonBar className="h-8 w-16 max-w-full" />
+          <SkeletonBar className="mt-2 h-4 w-28 max-w-full" />
+        </div>
+        {visual ? <div className="kpi-plate mt-auto pt-4"><SkeletonBar className="h-6 w-full" /></div> : null}
+      </div>
+    </div>
+  );
+}
+
 /** Skeleton for the Dashboard page — stats grid, chart, cards. */
 export function DashboardSkeleton() {
   return (
@@ -124,14 +143,7 @@ export function DashboardSkeleton() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <div className="absolute top-1/2 right-3 size-14 -translate-y-1/2 rounded-full bg-muted/40" />
-            <div className="relative space-y-2">
-              <SkeletonBar className="h-3.5 w-24" />
-              <SkeletonBar className="h-7 w-16" />
-              <SkeletonBar className="h-3 w-32" />
-            </div>
-          </div>
+          <KpiCardSkeleton key={i} visual />
         ))}
       </div>
 
@@ -263,15 +275,7 @@ export function AutomationsSkeleton() {
       {/* Stats bar — 3 KPI tiles */}
       <div className="grid grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <SkeletonBar className="h-7 w-10" />
-            <SkeletonBar className="mt-2 h-3 w-24" />
-            <SkeletonBar className="mt-4 h-1.5 w-full rounded-full" />
-            <div className="mt-4 flex items-center gap-2">
-              <SkeletonAvatar size="size-3.5" />
-              <SkeletonBar className="h-3 w-16" />
-            </div>
-          </div>
+          <KpiCardSkeleton key={i} visual />
         ))}
       </div>
 

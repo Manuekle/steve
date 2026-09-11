@@ -6,7 +6,7 @@ import {
   AlertCircleIcon,
   ArchiveArrowDownIcon,
   ArrowDown01Icon,
-  ArrowLeft01Icon,
+  ArrowLeft02Icon,
   Delete02Icon,
   FullSignalIcon,
   Mail02Icon,
@@ -360,7 +360,7 @@ function Phone({
             <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "0 10px" }}>
               <TapTarget>
                 <HugeiconsIcon
-                  icon={ArrowLeft01Icon}
+                  icon={ArrowLeft02Icon}
                   size={26}
                   strokeWidth={1.8}
                   color={palette.tint}

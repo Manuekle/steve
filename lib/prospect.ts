@@ -49,8 +49,8 @@ const assessmentSchema = z.object({
     ),
   nextStep: z
     .string()
-    .optional()
-    .describe("What the business should do next, in the conversation's language. Omit when nothing is worth doing."),
+    .nullable()
+    .describe("What the business should do next, in the conversation's language. null when nothing is worth doing."),
 });
 
 export type AssessmentTurn = { readonly role: "user" | "assistant"; readonly content: string };

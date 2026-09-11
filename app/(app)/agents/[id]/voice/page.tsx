@@ -14,7 +14,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AlertCircleIcon,
   ArrowLeft02Icon,
-  ArrowRight01Icon,
+  ArrowRight02Icon,
   CallOutgoing01Icon,
   TelephoneIcon,
   VolumeHighIcon,
@@ -959,7 +959,7 @@ function SavedCallsLink({ agentId }: { readonly agentId: string }) {
         </span>
         <HugeiconsIcon
           className="text-muted-foreground shrink-0"
-          icon={ArrowRight01Icon}
+          icon={ArrowRight02Icon}
           size={16}
           strokeWidth={1.75}
         />

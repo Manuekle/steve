@@ -11,6 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { HugeiconsIcon } from "@/components/icons/icon";
+import { Alert02Icon } from "@hugeicons/core-free-icons";
 import { useT } from "@/lib/i18n/provider";
 
 type ConfirmOptions = {
@@ -58,7 +60,9 @@ export function useConfirmDialog() {
       {pending ? (
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{pending.options.title}</AlertDialogTitle>
+            <AlertDialogTitle icon={<HugeiconsIcon icon={Alert02Icon} size={18} strokeWidth={2} />}>
+              {pending.options.title}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {pending.options.description ?? t("common.actionCannotBeUndone")}
             </AlertDialogDescription>

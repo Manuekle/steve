@@ -1,4 +1,4 @@
-import { getCredentialSync } from "./credentials";
+import { getCredentialSync, warmCredentialCache } from "./credentials";
 import { resolveProvider, type AiProvider } from "./ai-provider";
 import { FALLBACK_MODEL, MODEL_TASKS, preferencesFor, type CatalogModel } from "./model-catalog";
 import { readAccess, writeAccess } from "./model-access";
@@ -54,8 +54,10 @@ const GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta";
 /** Catalogs change on the order of days; a minute of staleness is invisible
  *  to the user and keeps a page refresh from re-fetching 200+ models. */
 const CACHE_TTL_MS = 60_000;
+const REQUEST_TIMEOUT_MS = 5_000;
 
-const cache = new Map<string, { report: ProviderReport; expires: number }>();
+const cache = new Map<string, { credential: string | undefined; report: ProviderReport; expires: number }>();
+const pending = new Map<string, { credential: string | undefined; promise: Promise<ProviderReport> }>();
 
 /**
  * Drop cached reports so the next read asks the provider again.
@@ -67,10 +69,13 @@ const cache = new Map<string, { report: ProviderReport; expires: number }>();
 export function invalidateProviderReports(provider?: AiProvider): void {
   if (!provider) {
     cache.clear();
+    pending.clear();
     return;
   }
-  for (const key of [...cache.keys()]) {
-    if (key.startsWith(`${provider}:`)) cache.delete(key);
+  for (const entries of [cache, pending]) {
+    for (const key of entries.keys()) {
+      if (key.startsWith(`${provider}:`)) entries.delete(key);
+    }
   }
 }
 
@@ -137,7 +142,12 @@ async function fetchJson(
   headers: Record<string, string>,
   init?: RequestInit,
 ): Promise<{ status: number; body: unknown }> {
-  const response = await fetch(url, { ...init, headers: { ...headers, ...init?.headers } });
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const response = await fetch(url, {
+    ...init,
+    headers: { ...headers, ...init?.headers },
+    signal: init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout,
+  });
   let body: unknown = null;
   try {
     body = await response.json();
@@ -239,7 +249,12 @@ async function probeGatewayAccess(
 async function reportGateway(key: string, probe: boolean): Promise<Omit<ProviderReport, "provider" | "checkedAt">> {
   const auth = { Authorization: `Bearer ${key}` };
 
-  const models = await fetchJson(`${GATEWAY_BASE}/models`, auth);
+  // Independent reads: balance must not add a second network round trip.
+  // A balance outage is not evidence that the model catalog is unavailable.
+  const [models, credits] = await Promise.all([
+    fetchJson(`${GATEWAY_BASE}/models`, auth),
+    fetchJson(`${GATEWAY_BASE}/credits`, auth).catch(() => ({ status: 503, body: null })),
+  ]);
   if (models.status >= 400) {
     const message = errorMessage(models.body);
     return {
@@ -258,7 +273,6 @@ async function reportGateway(key: string, probe: boolean): Promise<Omit<Provider
 
   // The Gateway publishes the balance, so "is this account paid up" is a
   // straight read — no need to spend a token probing for it.
-  const credits = await fetchJson(`${GATEWAY_BASE}/credits`, auth);
   const balance =
     credits.status < 400 ? toNumber((credits.body as { balance?: unknown })?.balance) : undefined;
 
@@ -463,14 +477,38 @@ async function reportGoogle(key: string, probe: boolean): Promise<Omit<ProviderR
  * Settings. The Gateway never needs it: it reports a balance directly.
  */
 export async function getProviderReport(
-  provider: AiProvider = resolveProvider(),
+  providerOverride?: AiProvider,
   { probe = false, force = false }: { probe?: boolean; force?: boolean } = {},
 ): Promise<ProviderReport> {
+  await warmCredentialCache();
+  const provider = providerOverride ?? resolveProvider();
   const cacheKey = `${provider}:${probe}`;
-  const hit = cache.get(cacheKey);
-  if (!force && hit && hit.expires > Date.now()) return hit.report;
-
   const key = credential(provider);
+  const hit = cache.get(cacheKey);
+  if (!force && hit && hit.credential === key && hit.expires > Date.now()) return hit.report;
+  const inFlight = pending.get(cacheKey);
+  if (!force && inFlight && inFlight.credential === key) return inFlight.promise;
+
+  const request = { credential: key, promise: loadProviderReport(provider, key, probe) };
+  pending.set(cacheKey, request);
+  try {
+    const report = await request.promise;
+    // Invalidations and forced refreshes supersede older requests, even if
+    // those finish last. Never repopulate the cache with the old result.
+    if (pending.get(cacheKey) === request) {
+      cache.set(cacheKey, { credential: key, report, expires: Date.now() + CACHE_TTL_MS });
+    }
+    return report;
+  } finally {
+    if (pending.get(cacheKey) === request) pending.delete(cacheKey);
+  }
+}
+
+async function loadProviderReport(
+  provider: AiProvider,
+  key: string | undefined,
+  probe: boolean,
+): Promise<ProviderReport> {
   if (!key) {
     const report: ProviderReport = {
       provider,
@@ -479,7 +517,6 @@ export async function getProviderReport(
       billingChecked: false,
       checkedAt: new Date().toISOString(),
     };
-    cache.set(cacheKey, { report, expires: Date.now() + CACHE_TTL_MS });
     return report;
   }
 
@@ -502,14 +539,12 @@ export async function getProviderReport(
     };
   }
 
-  const report: ProviderReport = { provider, ...partial, checkedAt: new Date().toISOString() };
-  cache.set(cacheKey, { report, expires: Date.now() + CACHE_TTL_MS });
-  return report;
+  return { provider, ...partial, checkedAt: new Date().toISOString() };
 }
 
 /** Models the active provider can serve, or an empty list when it can't be
  *  reached. Callers that need a model anyway use FALLBACK_MODEL. */
-export async function listModels(provider: AiProvider = resolveProvider()): Promise<readonly CatalogModel[]> {
+export async function listModels(provider?: AiProvider): Promise<readonly CatalogModel[]> {
   return (await getProviderReport(provider)).models;
 }
 

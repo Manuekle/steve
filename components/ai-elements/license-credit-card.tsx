@@ -202,7 +202,6 @@ export function LicenseCreditCard({
   const textBody = isDark ? "text-white/90" : "text-neutral-800";
   const textSoft = isDark ? "text-white/85" : "text-neutral-700";
   const textFaint = isDark ? "text-white/70" : "text-neutral-600";
-  const iconColor = isDark ? "text-white" : "text-neutral-900";
   const iconGhost = isDark ? "text-white/25" : "text-neutral-400";
   const face = cn(
     "absolute inset-0 overflow-hidden rounded-[14px] [backface-visibility:hidden]",
@@ -275,7 +274,13 @@ export function LicenseCreditCard({
               <div className="relative flex h-full flex-col justify-between p-5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
-                    <SenkaMark className={cn("h-[18px] w-auto", iconColor)} />
+                    {/* Milled, like the header and the sidebar. The face is
+                        the app's own polarity — dark card in dark, light card
+                        in light — so it takes the page-ground ramp, and a flat
+                        mark was the one thing on a guilloché card that did not
+                        catch the light. The ghost on the back stays flat: it
+                        is a watermark, and a watermark that glints is a logo. */}
+                    <SenkaMark className="h-[18px] w-auto" metal />
                     <span className={cn("font-heading text-[14px] leading-none font-semibold tracking-tight", textPrimary)}>
                       senka
                     </span>

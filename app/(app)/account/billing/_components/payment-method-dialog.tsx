@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { LockPasswordIcon, StripeIcon } from "@hugeicons/core-free-icons";
+import { CreditCardIcon, LockPasswordIcon } from "@hugeicons/core-free-icons";
 import {
   Dialog,
   DialogClose,
@@ -69,7 +69,9 @@ export function PaymentMethodDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("billing.paymentDialogTitle")}</DialogTitle>
+          <DialogTitle icon={<HugeiconsIcon icon={CreditCardIcon} size={18} strokeWidth={1.75} />}>
+            {t("billing.paymentDialogTitle")}
+          </DialogTitle>
           <DialogDescription>{t("billing.paymentDialogDescription")}</DialogDescription>
         </DialogHeader>
 
@@ -95,14 +97,10 @@ export function PaymentMethodDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">{t("billing.cancel")}</Button>
+            <Button variant="outline">{t("billing.cancel")}</Button>
           </DialogClose>
           <Button disabled={busy} onClick={() => void start()}>
-            {busy ? (
-              <Spinner />
-            ) : (
-              <HugeiconsIcon icon={StripeIcon} size={16} strokeWidth={1.75} />
-            )}
+            {busy && <Spinner />}
             {busy ? t("billing.opening") : t("billing.paymentContinue")}
           </Button>
         </DialogFooter>

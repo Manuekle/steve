@@ -258,18 +258,21 @@ export default function SetupPage() {
               icon={CheckmarkCircle02Icon}
               label={t("setup.countOk")}
               value={counts.ok}
+              sub={t(counts.ok > 0 ? "setup.countOkSub" : "setup.countOkSubNone")}
               visual={<KpiBars ratio={share(counts.ok)} tone="positive" />}
             />
             <KpiCard
               icon={AlertCircleIcon}
               label={t("setup.countWarn")}
               value={counts.warn}
+              sub={t(counts.warn > 0 ? "setup.countWarnSub" : "setup.countWarnSubNone")}
               visual={<KpiBars ratio={share(counts.warn)} tone="warning" />}
             />
             <KpiCard
               icon={CancelCircleIcon}
               label={t("setup.countFail")}
               value={counts.fail}
+              sub={t(counts.fail > 0 ? "setup.countFailSub" : "setup.countFailSubNone")}
               visual={<KpiBars ratio={share(counts.fail)} tone="critical" />}
             />
           </div>

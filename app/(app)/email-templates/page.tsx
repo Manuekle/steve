@@ -11,7 +11,7 @@ import {
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
-  ArtificialIntelligence08Icon,
+  AiMail01Icon,
   Copy01Icon,
   Mail02Icon,
   PanelLeftIcon,
@@ -479,7 +479,7 @@ export default function EmailTemplatesPage() {
                   "hover:border-input hover:bg-accent active:scale-[0.98]",
                 )}
               >
-                <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={14} strokeWidth={1.75} />
+                <HugeiconsIcon icon={AiMail01Icon} size={14} strokeWidth={1.75} />
                 {t("emailTemplates.generateWithAI")}
               </button>
             </Beam>
@@ -731,7 +731,9 @@ export default function EmailTemplatesPage() {
       <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("emailTemplates.generateDialogTitle")}</DialogTitle>
+            <DialogTitle icon={<HugeiconsIcon icon={AiMail01Icon} size={18} strokeWidth={1.75} />}>
+              {t("emailTemplates.generateDialogTitle")}
+            </DialogTitle>
             <DialogDescription>{t("emailTemplates.generateDialogDescription")}</DialogDescription>
           </DialogHeader>
 
@@ -748,7 +750,7 @@ export default function EmailTemplatesPage() {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary" disabled={aiGenerating}>
+              <Button variant="outline" disabled={aiGenerating}>
                 {t("common.cancel")}
               </Button>
             </DialogClose>
@@ -760,11 +762,7 @@ export default function EmailTemplatesPage() {
                 disabled={aiGenerating || !aiPrompt.trim()}
                 onClick={() => void handleGenerateWithAI()}
               >
-                {aiGenerating ? (
-                  <Spinner size={14} />
-                ) : (
-                  <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={14} strokeWidth={1.75} />
-                )}
+                {aiGenerating ? <Spinner size={14} /> : null}
                 {aiGenerating ? t("emailTemplates.generating") : t("emailTemplates.generateAction")}
               </Button>
             </Beam>

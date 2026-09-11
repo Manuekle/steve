@@ -8,7 +8,6 @@ import {
   Clock01Icon,
   ExternalLinkIcon,
   UserGroup02Icon,
-  ArrowRight01Icon,
   ArrowLeft02Icon,
   ArrowRight02Icon,
   Video01Icon,
@@ -219,7 +218,7 @@ export default function CalendarPage() {
                 <Button asChild size="sm" className="mt-1">
                   <Link href="/connections">
                     {t("calendar.goToConnections")}
-                    <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.75} />
+                    <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={1.75} />
                   </Link>
                 </Button>
               </div>
@@ -242,7 +241,7 @@ export default function CalendarPage() {
                   sub={stats.weekCount > 0 ? t("calendar.thisWeekSub") : t("calendar.thisWeekSubNone")}
                 />
                 <KpiCard
-                  icon={ArrowRight01Icon}
+                  icon={ArrowRight02Icon}
                   label={t("calendar.nextEvent")}
                   value={stats.next ? timeUntil(stats.next.start, locale) : "—"}
                   sub={stats.next ? stats.next.summary || t("calendar.untitled") : t("calendar.nextEventNone")}

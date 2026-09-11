@@ -319,63 +319,76 @@ export async function getContactByPhone(phone: string): Promise<Contact | undefi
   return (await readStore()).contacts.find((c) => normalizePhone(c.phone) === normalized);
 }
 
+/**
+ * The name a contact gets when nobody has said who they are.
+ *
+ * Contacts are created on the first inbound event, before anyone has
+ * introduced themselves, so `name` has to hold *something* — and on the web
+ * console, where the "contact" is the operator talking to their own agent, it
+ * never gets replaced. Exported so the callers that display a name can tell
+ * "we don't know yet" from an actual name, instead of printing this at people.
+ */
+export const UNNAMED_CONTACT = "Unknown";
+
 export async function upsertContact(
   input: Partial<Contact> & { sessionId?: string; phone?: string; email?: string },
 ): Promise<Contact> {
-  return updateStore((store) => {
-    const phone = normalizePhone(input.phone);
-    const existing = store.contacts.find((c) => {
-      if (input.id && c.id === input.id) return true;
-      if (input.sessionId && c.sessionId === input.sessionId) return true;
-      if (phone && normalizePhone(c.phone) === phone) return true;
-      if (input.externalId && c.externalId === input.externalId) return true;
-      if (input.email && c.email && c.email.toLowerCase() === input.email.toLowerCase()) {
-        return true;
-      }
-      return false;
-    });
+  return updateStore((store) => upsertContactInStore(store, input));
+}
 
-    if (existing) {
-      const next: Contact = {
-        ...existing,
-        name: input.name ?? existing.name,
-        phone: phone ?? existing.phone,
-        email: input.email ?? existing.email,
-        externalId: input.externalId ?? existing.externalId,
-        channel: input.channel ?? existing.channel,
-        sessionId: input.sessionId ?? existing.sessionId,
-        crmId: input.crmId ?? existing.crmId,
-        status: input.status ?? existing.status,
-        source: input.source ?? existing.source,
-        attributes: { ...existing.attributes, ...input.attributes },
-        lastMessage: input.lastMessage ?? existing.lastMessage,
-        lastMessageAt: input.lastMessageAt ?? existing.lastMessageAt,
-        notes: input.notes ?? existing.notes,
-      };
-      store.contacts = store.contacts.map((c) => (c.id === existing.id ? next : c));
-      return next;
+function upsertContactInStore(store: BusinessStore, input: Partial<Contact>): Contact {
+  const phone = normalizePhone(input.phone);
+  const existing = store.contacts.find((c) => {
+    if (input.id && c.id === input.id) return true;
+    if (input.sessionId && c.sessionId === input.sessionId) return true;
+    if (phone && normalizePhone(c.phone) === phone) return true;
+    if (input.externalId && c.externalId === input.externalId) return true;
+    if (input.email && c.email && c.email.toLowerCase() === input.email.toLowerCase()) {
+      return true;
     }
-
-    const created: Contact = {
-      id: newId("ct"),
-      name: input.name ?? phone ?? input.email ?? "Unknown",
-      phone,
-      email: input.email,
-      externalId: input.externalId,
-      channel: input.channel ?? "web",
-      sessionId: input.sessionId,
-      crmId: input.crmId,
-      status: input.status ?? "open",
-      source: input.source ?? "chat",
-      attributes: input.attributes ?? {},
-      lastMessage: input.lastMessage,
-      lastMessageAt: input.lastMessageAt ?? nowIso(),
-      createdAt: nowIso(),
-      notes: input.notes,
-    };
-    store.contacts = [created, ...store.contacts];
-    return created;
+    return false;
   });
+
+  if (existing) {
+    const next: Contact = {
+      ...existing,
+      name: input.name ?? existing.name,
+      phone: phone ?? existing.phone,
+      email: input.email ?? existing.email,
+      externalId: input.externalId ?? existing.externalId,
+      channel: input.channel ?? existing.channel,
+      sessionId: input.sessionId ?? existing.sessionId,
+      crmId: input.crmId ?? existing.crmId,
+      status: input.status ?? existing.status,
+      source: input.source ?? existing.source,
+      attributes: { ...existing.attributes, ...input.attributes },
+      lastMessage: input.lastMessage ?? existing.lastMessage,
+      lastMessageAt: input.lastMessageAt ?? existing.lastMessageAt,
+      notes: input.notes ?? existing.notes,
+    };
+    store.contacts = store.contacts.map((c) => (c.id === existing.id ? next : c));
+    return next;
+  }
+
+  const created: Contact = {
+    id: newId("ct"),
+    name: input.name ?? phone ?? input.email ?? UNNAMED_CONTACT,
+    phone,
+    email: input.email,
+    externalId: input.externalId,
+    channel: input.channel ?? "web",
+    sessionId: input.sessionId,
+    crmId: input.crmId,
+    status: input.status ?? "open",
+    source: input.source ?? "chat",
+    attributes: input.attributes ?? {},
+    lastMessage: input.lastMessage,
+    lastMessageAt: input.lastMessageAt ?? nowIso(),
+    createdAt: nowIso(),
+    notes: input.notes,
+  };
+  store.contacts = [created, ...store.contacts];
+  return created;
 }
 
 export async function setContactStatus(id: string, status: ContactStatus): Promise<Contact[]> {
@@ -421,21 +434,105 @@ export async function listChats(): Promise<ChatSummary[]> {
   return (await readStore()).chats;
 }
 
-export async function upsertChat(chat: Omit<ChatSummary, "id"> & { id?: string }): Promise<ChatSummary[]> {
-  return updateStore((store) => {
-    const existing = store.chats.find(
-      (c) =>
-        (chat.id && c.id === chat.id) ||
-        (chat.sessionId && c.sessionId === chat.sessionId),
-    );
-    if (existing) {
-      const next: ChatSummary = { ...existing, ...chat, id: existing.id };
-      store.chats = store.chats.map((c) => (c.id === existing.id ? next : c));
-      return store.chats;
-    }
-    const created: ChatSummary = { ...chat, id: chat.id ?? newId("conv") };
-    store.chats = [created, ...store.chats];
+/**
+ * Create or patch the history row for a conversation.
+ *
+ * A patch, not a whole record: the persist hook learns the pieces at different
+ * moments — the channel when the session opens, the title when the person
+ * says the first thing, the last message and the count on every turn — and
+ * requiring it to restate all of them each time is how a good title gets
+ * overwritten with a stand-in. Omitted keys keep whatever the row already has;
+ * a new row fills the gaps with empties.
+ */
+export async function upsertChat(
+  chat: Partial<Omit<ChatSummary, "id">> & { id?: string },
+): Promise<ChatSummary[]> {
+  return updateStore((store) => upsertChatInStore(store, chat));
+}
+
+function upsertChatInStore(
+  store: BusinessStore,
+  chat: Partial<ChatSummary>,
+): ChatSummary[] {
+  const existing = store.chats.find(
+    (c) =>
+      (chat.id && c.id === chat.id) ||
+      (chat.sessionId && c.sessionId === chat.sessionId),
+  );
+  if (existing) {
+    const next: ChatSummary = { ...existing, ...chat, id: existing.id };
+    store.chats = store.chats.map((c) => (c.id === existing.id ? next : c));
     return store.chats;
+  }
+  const created: ChatSummary = {
+    channel: "web",
+    lastMessage: "",
+    lastMessageAt: nowIso(),
+    messageCount: 0,
+    title: "",
+    ...chat,
+    id: chat.id ?? newId("conv"),
+  };
+  store.chats = [created, ...store.chats];
+  return store.chats;
+}
+
+/** Create the contact and history row in one transaction before the first turn. */
+export async function startChatSession(input: {
+  sessionId: string;
+  channel: ChannelId;
+  phone?: string;
+  externalId?: string;
+}): Promise<void> {
+  await updateStore((store) => {
+    upsertContactInStore(store, { ...input, source: input.channel });
+    // Replayed session events must not reset a populated history row.
+    upsertChatInStore(store, { sessionId: input.sessionId, channel: input.channel });
+  });
+}
+
+/** Persist a message's count, preview and transcript under the same row lock.
+ * Reading the count before acquiring that lock loses increments on overlap. */
+export async function recordChatMessage(input: {
+  sessionId: string;
+  channel: ChannelId;
+  role: "user" | "assistant";
+  content: string;
+}): Promise<void> {
+  await updateStore((store) => {
+    const { sessionId, channel, role, content } = input;
+    const existing = store.chats.find((chat) => chat.sessionId === sessionId);
+    let contact = store.contacts.find((item) => item.sessionId === sessionId);
+    const customer = channel === "whatsapp" || channel === "instagram";
+    const name = contact?.name?.trim();
+    const realName =
+      name && name !== UNNAMED_CONTACT && name !== contact?.phone && name !== contact?.externalId
+        ? name
+        : undefined;
+    const firstMessage = role === "user" ? content.trim().replace(/\s+/g, " ") : "";
+    let title: string | undefined;
+    if (customer && realName) title = realName;
+    else if (!existing?.title?.trim()) {
+      title = firstMessage.length > 60 ? `${firstMessage.slice(0, 59)}…` : firstMessage;
+    }
+    const lastMessage = content.slice(0, 240) || contact?.lastMessage;
+    const lastMessageAt = nowIso();
+    if (role === "assistant") {
+      contact = upsertContactInStore(store, { sessionId, channel, lastMessage, lastMessageAt });
+    }
+    upsertChatInStore(store, {
+      sessionId,
+      channel,
+      lastMessageAt,
+      messageCount: (existing?.messageCount ?? 0) + 1,
+      ...(title ? { title } : {}),
+      ...(role === "assistant"
+        ? { lastMessage: lastMessage || "", handoff: contact?.status === "waiting_human" }
+        : {}),
+    });
+    if (customer && content.trim()) {
+      appendConversationTurnInStore(store, { ...input, contactId: contact?.id, title: contact?.name });
+    }
   });
 }
 
@@ -913,29 +1010,35 @@ export async function appendConversationTurn(input: {
   const content = input.content.trim();
   if (!content) return undefined;
 
-  return updateStore((store) => {
-    const existing = store.channelConversations.find((c) => c.sessionId === input.sessionId);
-    const turn: AgentChatTurn = { role: input.role, content };
+  return updateStore((store) => appendConversationTurnInStore(store, input));
+}
 
-    const updated: ChannelConversation = {
-      id: existing?.id ?? newId("conv"),
-      sessionId: input.sessionId,
-      channel: input.channel,
-      contactId: input.contactId ?? existing?.contactId,
-      // A conversation is named after whoever is on the other end, and that
-      // name usually arrives a few turns in — so a real one always wins over
-      // the placeholder the first turn had to use.
-      title: input.title?.trim() || existing?.title || "",
-      turns: [...(existing?.turns ?? []), turn].slice(-MAX_CONVERSATION_TURNS),
-      startedAt: existing?.startedAt ?? nowIso(),
-      updatedAt: nowIso(),
-      prospect: existing?.prospect,
-    };
+function appendConversationTurnInStore(
+  store: BusinessStore,
+  input: Parameters<typeof appendConversationTurn>[0],
+): ChannelConversation {
+  const content = input.content.trim();
+  const existing = store.channelConversations.find((c) => c.sessionId === input.sessionId);
+  const turn: AgentChatTurn = { role: input.role, content };
 
-    const others = store.channelConversations.filter((c) => c.sessionId !== input.sessionId);
-    store.channelConversations = [updated, ...others].slice(0, MAX_CONVERSATIONS);
-    return updated;
-  });
+  const updated: ChannelConversation = {
+    id: existing?.id ?? newId("conv"),
+    sessionId: input.sessionId,
+    channel: input.channel,
+    contactId: input.contactId ?? existing?.contactId,
+    // A conversation is named after whoever is on the other end, and that
+    // name usually arrives a few turns in — so a real one always wins over
+    // the placeholder the first turn had to use.
+    title: input.title?.trim() || existing?.title || "",
+    turns: [...(existing?.turns ?? []), turn].slice(-MAX_CONVERSATION_TURNS),
+    startedAt: existing?.startedAt ?? nowIso(),
+    updatedAt: nowIso(),
+    prospect: existing?.prospect,
+  };
+
+  const others = store.channelConversations.filter((c) => c.sessionId !== input.sessionId);
+  store.channelConversations = [updated, ...others].slice(0, MAX_CONVERSATIONS);
+  return updated;
 }
 
 export async function setConversationProspect(

@@ -39,6 +39,21 @@ export const GET = withApiErrors(async function GET(
   // and the request's own origin covers localhost and preview URLs, where
   // nothing is configured but the link still has to work.
   const origin = SITE_URL_IS_CONFIGURED ? SITE_URL : request.nextUrl.origin;
+
+  // JSON mode: return the raw module grid for canvas animation.
+  if (request.nextUrl.searchParams.has("json")) {
+    const qr = QRCode.create(`${origin}/f/${form.slug}`, {
+      errorCorrectionLevel: "M",
+    });
+    // BitMatrix is a class with a flat Uint8Array, not a JSON row array.
+    const modules = Array.from({ length: qr.modules.size }, (_, row) =>
+      Array.from({ length: qr.modules.size }, (_, column) =>
+        Boolean(qr.modules.get(row, column)),
+      ),
+    );
+    return NextResponse.json({ modules }, { headers: { "cache-control": "no-cache" } });
+  }
+
   const svg = await QRCode.toString(`${origin}/f/${form.slug}`, QR_OPTIONS);
 
   // `download` is what the button sends; without it the same URL previews

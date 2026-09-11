@@ -6,7 +6,13 @@ import {
   translateApiError,
   uiErrorMessage,
 } from "./api-error-message";
-import { dictionaries } from "./i18n/dictionaries";
+// Both dictionaries, statically. The app loads `en` on demand — see
+// `lib/i18n/dictionaries.ts` — but a test comparing the two needs both in
+// memory, and a test file is not a client chunk.
+import { en } from "./i18n/dictionary-en";
+import { es } from "./i18n/dictionary-es";
+
+const dictionaries = { en, es };
 
 const t = (key: string, params?: Record<string, string | number>) => {
   const template = dictionaries.es[key];

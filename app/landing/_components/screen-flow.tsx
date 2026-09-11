@@ -1,13 +1,13 @@
 "use client";
 
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { ArtificialIntelligence08Icon, PanelLeftIcon } from "@hugeicons/core-free-icons";
+import { AiElementsIcon, PanelLeftIcon } from "@hugeicons/core-free-icons";
 import { FlowCanvas } from "@/components/ai-elements/flow-canvas";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/provider";
 import type { WorkflowStep } from "@/lib/types";
-import { MockSidebar } from "./screen-chrome";
+import { MockSidebar, MockTopBar } from "./screen-chrome";
 
 /**
  * The flow editor — read-only canvas with the same sidebar as every other
@@ -51,7 +51,7 @@ function buildSteps(t: (key: string) => string): readonly WorkflowStep[] {
   ];
 }
 
-export function FlowScreen() {
+export function FlowScreen({ compact = false }: { readonly compact?: boolean }) {
   const t = useT();
   const steps = buildSteps(t);
 
@@ -59,19 +59,22 @@ export function FlowScreen() {
     // Same window as `AppChrome`: this screen builds its own shell for the
     // full-bleed canvas, so it carries the same fixed height and clip.
     <div
-      className="relative flex h-[38rem] overflow-hidden bg-background text-foreground lg:h-[42rem]"
+      className={`relative flex overflow-hidden bg-background text-foreground ${compact ? "h-[28rem] sm:h-[32rem] lg:h-[37rem]" : "h-[38rem] lg:h-[42rem]"}`}
       // `inert` bloquea TODA interacción en el subtree: hover, click, focus,
       // context menu. Los children con pointer-events-auto son ignorados.
       // Los portales (ContextMenu) nunca se abren porque el evento trigger
       // nunca llega al handler.
       inert={true}
     >
-      <MockSidebar active="/automations" />
+      {!compact ? <MockSidebar active="/automations" /> : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {!compact ? <>
+        <MockTopBar />
+
         {/* Workspace header — same shape as the real flow editor. */}
         <div className="flex shrink-0 items-center gap-3 border-border border-b bg-card/40 px-3 py-2.5 backdrop-blur-sm sm:px-4">
-          <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={16} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
+          <HugeiconsIcon icon={AiElementsIcon} size={16} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {/* Mockup chrome, not a page heading — see screen-chrome.tsx. */}
             <h2 className="truncate text-sm font-semibold tracking-tight">{t("landing.demo.flow.title")}</h2>
@@ -97,10 +100,11 @@ export function FlowScreen() {
           <span className="h-3 w-px bg-border" />
           <span className="text-[11px] text-muted-foreground">{t("automations.draftHint")}</span>
         </div>
+        </> : null}
 
         {/* Canvas fills remaining space. Static on the landing: no pan, zoom or
             selection — the visitor only reads the flow, they don't drive it. */}
-        <div className="pointer-events-none relative flex-1">
+        <div className="pointer-events-none relative min-h-0 flex-1">
           <FlowCanvas
             steps={steps}
             selectedPath={null}

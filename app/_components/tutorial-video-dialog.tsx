@@ -8,6 +8,7 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -93,33 +94,30 @@ export function TutorialVideoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Wide on purpose: a screen recording of a vendor console is
           unreadable at dialog-default width. */}
-      <DialogContent className="max-h-[calc(100dvh-4rem)] gap-0 overflow-y-auto p-0 sm:max-w-5xl">
-        <DialogHeader className="flex-row items-start gap-3 px-6 pt-6 pr-14 pb-4 text-left">
-          <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-            <HugeiconsIcon icon={CursorInfo01Icon} size={16} strokeWidth={1.75} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <DialogTitle>{t("settings.tutorial.title", { name })}</DialogTitle>
-            <DialogDescription className="mt-1">
-              {t("settings.tutorial.subtitle", { name })}
-            </DialogDescription>
-          </div>
+      <DialogContent className="max-h-[calc(100dvh-4rem)] sm:max-w-5xl">
+        <DialogHeader>
+          <DialogTitle icon={<HugeiconsIcon icon={CursorInfo01Icon} size={18} strokeWidth={1.75} />}>
+            {t("settings.tutorial.title", { name })}
+          </DialogTitle>
+          <DialogDescription>
+            {t("settings.tutorial.subtitle", { name })}
+          </DialogDescription>
         </DialogHeader>
 
         {/* On a short viewport a 16:9 box at this width is taller than the
             screen, which pushed the footer out of reach. Capping the *width*
             by the height available keeps the ratio instead of letterboxing. */}
-        <div className="mx-auto w-full max-w-[calc((100dvh-17rem)*16/9)] px-6">
+        <div className="mx-auto w-full max-w-[calc((100dvh-17rem)*16/9)]">
           <TutorialPlayer id={id} />
         </div>
 
-        <div className="flex items-center justify-end gap-4 px-6 py-4">
+        <DialogFooter>
           <DialogClose asChild>
-            <Button size="sm" variant="secondary">
+            <Button variant="outline">
               {t("settings.tutorial.close")}
             </Button>
           </DialogClose>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { apiErrorBody, missingField } from "./api-error";
-import { dictionaries } from "./i18n/dictionaries";
+// Both dictionaries, statically. The app loads `en` on demand — see
+// `lib/i18n/dictionaries.ts` — but a test comparing the two needs both in
+// memory, and a test file is not a client chunk.
+import { en } from "./i18n/dictionary-en";
+import { es } from "./i18n/dictionary-es";
+
+const dictionaries = { en, es };
 
 // Every code the server can send has to have a sentence in both languages —
 // otherwise the UI silently falls back to the generic line and the person is

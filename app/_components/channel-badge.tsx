@@ -12,6 +12,15 @@ import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
 import { useT } from "@/lib/i18n/provider";
 import type { ChannelId, ChannelStatus, ContactChannel } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { CategoryBadge } from "@/components/ui/category-badge";
+
+const CHANNEL_HUES: Record<ContactChannel, number> = {
+  web: 250,
+  whatsapp: 165,
+  instagram: 345,
+  form: 65,
+  voice: 295,
+};
 
 const CHANNEL_ICONS: Record<ContactChannel, IconSvgElement> = {
   web: Globe02Icon,
@@ -53,10 +62,10 @@ export function ChannelBadge({ channel }: { readonly channel: ContactChannel }) 
     : channel === "voice" ? t("channel.voice")
     : (CHANNEL_LABELS[channel] ?? channel);
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-      <HugeiconsIcon icon={iconFor(channel)} size={14} strokeWidth={1.75} className="shrink-0" />
+    <CategoryBadge hue={CHANNEL_HUES[channel]} className="gap-1.5">
+      <HugeiconsIcon icon={iconFor(channel)} size={14} strokeWidth={1.75} className="shrink-0" aria-hidden="true" />
       {label}
-    </span>
+    </CategoryBadge>
   );
 }
 

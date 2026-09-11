@@ -7,6 +7,7 @@ import { recordUsage } from "./ai-usage";
 import { billingSourceForProvider, checkCreditGate } from "./credit-gate";
 import { getInstallationId } from "./license/installation";
 import { rateLimit } from "./rate-limit";
+import { warmCredentialCache } from "./credentials";
 
 /**
  * The two checks every model call made from a Next route was missing.
@@ -44,6 +45,7 @@ export async function guardAiRoute(
     return apiError("rate_limited", { status: 429 });
   }
 
+  await warmCredentialCache();
   const gate = await checkCreditGate(await billingSourceForProvider(resolveProvider()));
   if (!gate.allowed) {
     // 402 rather than the code's default: "you are out of credit" is not the

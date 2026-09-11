@@ -1,0 +1,21 @@
+.badge {
+  --category-ink: oklch(0.43 0.1 var(--category-hue));
+  --category-fill: oklch(0.95 0.025 var(--category-hue));
+  color: var(--category-ink, var(--muted-foreground));
+  background: var(--category-fill, var(--muted));
+}
+
+:global(.dark) .badge {
+  --category-ink: oklch(0.82 0.09 var(--category-hue));
+  --category-fill: oklch(0.28 0.035 var(--category-hue));
+}
+
+@media (prefers-contrast: more) {
+  .badge {
+    --category-ink: oklch(0.28 0.055 var(--category-hue));
+  }
+
+  :global(.dark) .badge {
+    --category-ink: oklch(0.97 0.015 var(--category-hue));
+  }
+}

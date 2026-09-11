@@ -7,26 +7,15 @@ import {
   MinusSignIcon,
 } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
-import { CHART_TONE_FILL, CHART_TONE_STROKE, type ChartTone } from "./chart";
+import { AnimatedNumber, CHART_TONE_FILL, CHART_TONE_STROKE, type ChartTone } from "./chart";
 import { Card } from "./dashboard-card";
 import { cn } from "@/lib/utils";
+import { MiniTrend } from "./charts/mini-trend";
 
 /**
- * The number tile used across the dashboard, automations, reminders, knowledge,
- * setup and ads.
- *
- * It used to be a brushed-metal plate with a 52px icon stamped into the corner
- * at 24% opacity. The icon was the largest thing on the tile and the only one
- * carrying no information — every card in a row had a different glyph doing
- * the same job the label underneath it already did, and at that size it
- * competed with the number for the eye. It is now 14px, on the label's line,
- * where an icon marks a category instead of decorating a card.
- *
- * The band between the number and the label is the tile's own: `visual` takes
- * whatever that particular metric is best shown as — a fill meter for a budget,
- * a sparkline for a latency series, a split bar for a set of statuses. Four
- * tiles in a row are four different pictures rather than the same card printed
- * four times.
+ * Shared metric tile: a quiet icon-and-label header above an inset metal plate.
+ * The plate groups the value, its context and the metric's optional visual.
+ * Surface tokens keep the same material in both light and dark themes.
  */
 
 /* One set of colour roles for every mark in the product — a tile's meter and a
@@ -68,7 +57,7 @@ const DIRECTION_TONE: Readonly<Record<KpiDelta["direction"], Tone>> = {
 function DeltaLine({ delta }: { readonly delta: KpiDelta }) {
   const tone = delta.tone ?? DIRECTION_TONE[delta.direction];
   return (
-    <p className="mt-2 flex items-center gap-1.5 text-xs">
+    <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
       <HugeiconsIcon
         className={cn("shrink-0", TONE_STROKE[tone])}
         icon={DIRECTION_ICON[delta.direction]}
@@ -76,7 +65,7 @@ function DeltaLine({ delta }: { readonly delta: KpiDelta }) {
         strokeWidth={2}
       />
       <span className={cn("font-medium tabular-nums", TONE_STROKE[tone])}>{delta.value}</span>
-      {delta.label ? <span className="truncate text-muted-foreground">{delta.label}</span> : null}
+      {delta.label ? <span className="min-w-0 text-pretty text-muted-foreground [overflow-wrap:anywhere]">{delta.label}</span> : null}
     </p>
   );
 }
@@ -125,40 +114,8 @@ export function KpiSparkline({
   readonly points: readonly number[];
   readonly tone?: Tone;
 }) {
-  if (points.length < 2) return <div className="h-6" />;
-
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  // A flat series has no range to divide by; park it on the centre line.
-  const span = max - min || 1;
-  const path = points
-    .map((value, i) => {
-      const x = (i / (points.length - 1)) * 100;
-      const y = max === min ? 16 : 28 - ((value - min) / span) * 24;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-
-  return (
-    <svg
-      aria-hidden="true"
-      className={cn("h-6 w-full", TONE_STROKE[tone])}
-      fill="none"
-      preserveAspectRatio="none"
-      viewBox="0 0 100 32"
-    >
-      <path
-        d={path}
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        /* The viewBox is stretched to the tile's width, which would stretch
-           the stroke with it. This keeps the line one weight everywhere. */
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
+  if (points.length < 2 || points.every((value) => value === 0)) return <div className="h-6" />;
+  return <MiniTrend points={points} tone={tone} />;
 }
 
 /**
@@ -207,6 +164,11 @@ export function KpiSplit({
 
 // ── Tile ────────────────────────────────────────────────────────────
 
+/** Every metric needs context below its value, either prose or a change. */
+type KpiContext =
+  | { readonly sub: string; readonly delta?: KpiDelta }
+  | { readonly sub?: string; readonly delta: KpiDelta };
+
 export function KpiCard({
   className,
   delta,
@@ -217,48 +179,34 @@ export function KpiCard({
   visual,
 }: {
   readonly className?: string;
-  /** The change line under the number. Takes the slot `sub` otherwise uses. */
-  readonly delta?: KpiDelta;
   readonly icon: IconSvgElement;
   readonly label: string;
-  /** Context line, for tiles whose story is a sentence rather than a delta. */
-  readonly sub?: string;
   /** This tile's own picture — `KpiBars`, `KpiSparkline`, `KpiSplit`, or any
    *  node. Tiles that have nothing worth drawing leave it out. */
   readonly visual?: ReactNode;
   readonly value: number | string;
-}) {
+} & KpiContext) {
   return (
     <Card className={cn("kpi-card", className)} interactive>
-      <div className="relative flex h-full flex-col p-5">
+      <div className="kpi-header">
+        <HugeiconsIcon aria-hidden="true" className="shrink-0 text-muted-foreground" icon={icon} size={16} strokeWidth={1.75} />
+        <p className="min-w-0 text-pretty text-sm font-medium leading-5 [overflow-wrap:anywhere]">{label}</p>
+      </div>
+
+      <div className="kpi-body">
         <div className="kpi-plate">
-          {/* Inter, tabular, and only as heavy as it needs to be. The figure is
-              already the biggest thing here; semibold on top of that was the
-              number shouting over its own size. `font-sans` is explicit so a
-              display face can never creep in from a heading rule. */}
-          <p className="kpi-value font-sans font-medium text-[28px] leading-none tracking-[-0.02em] tabular-nums">
-            {value}
+          <p className="kpi-value font-sans font-medium text-[32px] leading-none tracking-[-0.02em] tabular-nums [overflow-wrap:anywhere]">
+            {typeof value === "number" ? <AnimatedNumber value={value} /> : value}
           </p>
 
           {delta ? (
             <DeltaLine delta={delta} />
           ) : sub ? (
-            <p className="mt-2 truncate text-muted-foreground text-xs">{sub}</p>
+            <p className="mt-2 text-pretty text-muted-foreground text-xs leading-4 [overflow-wrap:anywhere]">{sub}</p>
           ) : null}
         </div>
 
-        {visual ? (
-          <div className="kpi-plate mt-4">{visual}</div>
-        ) : (
-          /* No picture: the label still has to sit on the floor of the tile,
-             or a row of mixed tiles has its labels at three different heights. */
-          <div className="flex-1" />
-        )}
-
-        <div className="kpi-plate mt-4 flex items-center gap-2 text-muted-foreground">
-          <HugeiconsIcon className="shrink-0" icon={icon} size={14} strokeWidth={1.75} />
-          <p className="truncate font-medium text-xs">{label}</p>
-        </div>
+        {visual ? <div className="kpi-plate mt-auto pt-4">{visual}</div> : null}
       </div>
     </Card>
   );

@@ -151,7 +151,8 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
   /** Nested routes light up their section: /crm/leads marks /crm, and
    *  /agents/x/voice marks /agents. */
   const isActivePath = (href: string): boolean =>
-    activePath === href || activePath.startsWith(`${href}/`);
+    activePath === href || activePath.startsWith(`${href}/`) ||
+    (href === "/crm" && (activePath === "/leads" || activePath.startsWith("/leads/")));
 
   /** Badges live here, not in the shared nav list, because they're runtime
    *  state — the palette has no use for them. */

@@ -24,18 +24,18 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { KpiBars, KpiCard } from "../../_components/kpi-card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton, AutomationsSkeleton } from "@/components/ai-elements/skeleton";
 import { AutomationDialog } from "@/components/ai-elements/automation-dialog";
-import { StatusBadge } from "../../_components/channel-badge";
+import { ChannelBadge, StatusBadge } from "../../_components/channel-badge";
+import { CategoryBadge } from "@/components/ui/category-badge";
 import { useT } from "@/lib/i18n/provider";
 import { useSound } from "@/components/sound-provider";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { STEP_ICONS, STEP_LABEL_KEYS } from "@/lib/workflow-step-meta";
+import { STEP_HUES, STEP_ICONS, STEP_LABEL_KEYS } from "@/lib/workflow-step-meta";
 import { useCelebrate } from "@/components/use-celebrate";
 import type { Automation, AutomationTrigger } from "@/lib/types";
 
@@ -201,21 +201,20 @@ export default function AutomationsPage() {
               {t("automations.subtitle")}
             </p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) setEditingAutomation(null);
-          }}>
-            <DialogTrigger asChild>
-              <button
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
-                onClick={() => setEditingAutomation(null)}
-              >
-                <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
-                <span className="hidden sm:inline">{t("automations.new")}</span>
-              </button>
-            </DialogTrigger>
+          <button
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
+            onClick={() => {
+              setEditingAutomation(null);
+              setDialogOpen(true);
+            }}
+          >
+            <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
+            <span className="hidden sm:inline">{t("automations.new")}</span>
+          </button>
+          {dialogOpen ? (
             <AutomationDialog
               key={editingAutomation?.id ?? "new"}
+              open={dialogOpen}
               editing={editingAutomation}
               onCreate={handleCreate}
               onUpdate={handleUpdate}
@@ -224,7 +223,7 @@ export default function AutomationsPage() {
                 setEditingAutomation(null);
               }}
             />
-          </Dialog>
+          ) : null}
         </header>
 
         {/* Stats bar */}
@@ -356,7 +355,12 @@ export default function AutomationsPage() {
                       : t("automations.neverTriggered")}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    {t("automations.channel")}: <span className="font-medium">{auto.channel === "all" ? t("automations.allChannels") : auto.channel}</span>
+                    {t("automations.channel")}:
+                    {auto.channel === "all" ? (
+                      <span className="font-medium">{t("automations.allChannels")}</span>
+                    ) : (
+                      <ChannelBadge channel={auto.channel} />
+                    )}
                   </span>
                 </div>
 
@@ -377,10 +381,10 @@ export default function AutomationsPage() {
                               {i > 0 ? (
                                 <span className="text-muted-foreground">→</span>
                               ) : null}
-                              <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-xs">
-                                <HugeiconsIcon icon={StepIcon} size={12} strokeWidth={1.75} className="text-muted-foreground" />
-                                {t(STEP_LABEL_KEYS[step.type])}
-                              </span>
+                               <CategoryBadge hue={STEP_HUES[step.type]}>
+                                 <HugeiconsIcon icon={StepIcon} size={12} strokeWidth={1.75} aria-hidden="true" />
+                                 {t(STEP_LABEL_KEYS[step.type])}
+                               </CategoryBadge>
                             </span>
                           );
                         })}
@@ -445,5 +449,4 @@ function RowAction({
     </Tooltip>
   );
 }
-
 

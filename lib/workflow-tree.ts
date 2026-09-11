@@ -1,4 +1,4 @@
-import type { WorkflowStep, WorkflowStepType } from "./types";
+import type { WorkflowConnection, WorkflowStep, WorkflowStepType } from "./types";
 
 // Addresses a step inside the recursive WorkflowStep tree. A plain number
 // indexes into a steps array; "then"/"else" descends into a condition
@@ -180,9 +180,44 @@ export function moveStepTo(
  * landing's live canvas, which runs the same handlers.
  */
 export function stripPositions(steps: readonly WorkflowStep[]): WorkflowStep[] {
-  return steps.map(({ position: _position, ...step }) => ({
+  return steps.map(({ position: _position, connection: _connection, ...step }) => ({
     ...step,
     ...(step.thenSteps ? { thenSteps: stripPositions(step.thenSteps) } : {}),
     ...(step.elseSteps ? { elseSteps: stripPositions(step.elseSteps) } : {}),
   }));
+}
+
+/** Resolve again after a move: array indexes are addresses, not identities. */
+export function findStepPath(steps: readonly WorkflowStep[], id: string, parent: StepPath = []): StepPath | null {
+  for (let index = 0; index < steps.length; index++) {
+    const step = steps[index]!;
+    const path = [...parent, index];
+    if (step.id === id) return path;
+    for (const branch of ["then", "else"] as const) {
+      const found = findStepPath(step[branchKey(branch)] ?? [], id, [...path, branch]);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/** Reconnect without moving the cards or changing an existing condition branch. */
+export function connectWorkflowSteps(
+  steps: readonly WorkflowStep[], source: StepPath, target: StepPath, connection?: WorkflowConnection,
+): WorkflowStep[] {
+  const from = getStepAt(steps, source);
+  const to = getStepAt(steps, target);
+  if (!from || !to || isAncestorPath(target, source)) return [...steps];
+  const sourceIndex = source[source.length - 1];
+  const targetIndex = target[target.length - 1];
+  const sameChain = pathsEqual(source.slice(0, -1), target.slice(0, -1));
+  const existing = (sameChain && typeof sourceIndex === "number" && targetIndex === sourceIndex + 1)
+    || (targetIndex === 0 && pathsEqual(target.slice(0, -2), source));
+  const attached = { ...to, isolated: false, connection: connection ? { ...connection, sourceId: from.id } : undefined };
+  if (existing) return updateStepAt(steps, target, () => attached);
+  if (isAncestorPath(source, target)) return [...steps];
+  const remaining = removeStepAt(steps, target);
+  const movedSource = findStepPath(remaining, from.id)!;
+  const index = movedSource[movedSource.length - 1] as number;
+  return insertStepAt(remaining, movedSource.slice(0, -1), index + 1, attached);
 }

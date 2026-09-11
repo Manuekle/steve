@@ -4,7 +4,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import { Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SenkaMark } from "@/components/icons/senka-mark";
 import { useSmoothScroll } from "@/components/motion/smooth-scroll";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,7 @@ export function Wordmark({ className }: { readonly className?: string }) {
 export function LandingHeader() {
   const t = useT();
   const headerRef = useRef<HTMLElement>(null);
+  const menuInnerRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const active = useActiveSection(SECTION_IDS);
@@ -159,6 +160,59 @@ export function LandingHeader() {
     setMenuOpen(false);
   }, [pathname]);
 
+  /**
+   * Publishes the drawer's natural height to the header as `--lp-menu-h`.
+   *
+   * The drawer opens by transitioning `height`, and `height: auto` does not
+   * transition — so something has to know the number. It is measured rather
+   * than guessed because the row count is not fixed: the last item depends on
+   * whether the reader is signed in, and every label is translated, so a
+   * two-line row in one locale is a row height the stylesheet cannot know.
+   *
+   * Written straight to the DOM instead of through state. A measurement that
+   * re-renders the header is a re-render on every rotation and on the frame
+   * the session resolves, for a value only CSS ever reads.
+   *
+   * Zero is never published. Above the breakpoint the drawer is `lg:hidden`,
+   * and a `display: none` element measures 0 — publish that and the menu opens
+   * to nothing the next time the window is narrow enough to have one.
+   */
+  const measureMenu = useCallback(() => {
+    const header = headerRef.current;
+    const inner = menuInnerRef.current;
+    if (!header || !inner) return;
+
+    const height = inner.offsetHeight;
+    if (height > 0) header.style.setProperty("--lp-menu-h", `${height}px`);
+  }, []);
+
+  /**
+   * Kept current while the page is open — a locale switch or the session
+   * resolving changes the height of a menu nobody has opened yet.
+   *
+   * The observer is not sufficient on its own, which is why the button
+   * measures too: an element that has been `display: none` since mount has
+   * never been observed at a real size, and coming back from none does not
+   * reliably deliver an entry. Crossing the breakpoint with the menu shut is
+   * exactly that case, and it is the common one — every desktop reader who
+   * narrows the window, and every phone that rotates.
+   */
+  useEffect(() => {
+    const inner = menuInnerRef.current;
+    if (!inner) return;
+
+    measureMenu();
+    const observer = new ResizeObserver(measureMenu);
+    observer.observe(inner);
+    return () => observer.disconnect();
+  }, [measureMenu]);
+
+  /** Measured on the way in, so the first open animates to the right height. */
+  const openMenu = () => {
+    measureMenu();
+    setMenuOpen(true);
+  };
+
   useEffect(() => {
     const wide = window.matchMedia("(min-width: 1024px)");
     const onChange = () => {
@@ -169,12 +223,18 @@ export function LandingHeader() {
   }, []);
 
   return (
-    <header className="lp-header" ref={headerRef}>
-      {/* The frost, as its own layer. The blur is a Tailwind utility rather
-          than a `backdrop-filter` in globals.css because only the utilities
-          resolve through the `--tw-backdrop-*` chain and come out of this
-          project's CSS pipeline intact — the same reason `.lp-veil` carries
-          its blurs on spans. `.lp-header-blur` fades it in on scroll. */}
+    <header className="lp-header" data-menu-open={menuOpen} ref={headerRef}>
+      {/* The frost, as its own layer, and — since the drawer below is part of
+          this element's box — the mobile menu's background too. One surface,
+          so the bar and the open menu cannot disagree about what colour they
+          are, which is what they used to do at the top of the page.
+
+          The blur is a Tailwind utility rather than a `backdrop-filter` in
+          globals.css because only the utilities resolve through the
+          `--tw-backdrop-*` chain and come out of this project's CSS pipeline
+          intact — the same reason `.lp-veil` carries its blurs on spans.
+          `.lp-header-blur` fades it in on scroll, and holds it up while the
+          menu is open however far down the page the reader is. */}
       <div aria-hidden="true" className="lp-header-blur backdrop-blur-xl backdrop-saturate-150" />
       <Shell className="relative flex h-16 items-center justify-between gap-6">
         <Link
@@ -225,7 +285,7 @@ export function LandingHeader() {
             <span aria-hidden="true" className="h-8 w-[7.5rem] rounded-xl bg-muted/60" />
           ) : session.signedIn ? (
             <Button asChild size="sm">
-              <Link href="/dashboard">{t("landing.cta.openApp")}</Link>
+              <Link href="/dashboard" prefetch={false}>{t("landing.cta.openApp")}</Link>
             </Button>
           ) : (
             /* No radius override: `size="sm"` already carries the system's
@@ -242,14 +302,14 @@ export function LandingHeader() {
             aria-expanded={menuOpen}
             aria-controls="lp-menu"
             aria-label={menuOpen ? t("nav.closeMenu") : t("nav.menu")}
-            onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
+            onClick={() => (menuOpen ? closeMenu() : openMenu())}
             className="lp-focus -mr-2 relative inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground lg:hidden"
           >
             {/* Both glyphs, stacked and cross-faded, rather than one swapped
                 on state. Swapping is a hard cut on the frame the click lands,
-                against a sheet that takes 400ms to arrive — the button was
-                already showing the close icon while the menu was still on its
-                way in. They turn as they trade, which is the same 45° the
+                against a drawer that takes half a second to come out — the
+                button was already showing the close icon while the menu was
+                still on its way in. They turn as they trade, which is the same 45° the
                 landing's accordions use to make a plus into a cross. */}
             {(
               [
@@ -274,40 +334,33 @@ export function LandingHeader() {
         </div>
       </Shell>
 
-      {/* Mounted always, `data-open` toggling — that is what `.t-panel-slide`
-          expects, and it is why the close half can animate at all. It used to
-          be conditionally rendered with a 140ms timer holding the unmount
-          open long enough for an exit keyframe to play, which is a race with
-          the animation dressed up as state.
+      {/* Mounted always, `data-open` toggling — that is what the drawer needs
+          to animate both halves, and it is also what lets the content be
+          measured while the menu is shut (see `--lp-menu-h` above).
 
-          `inert` while closed does the work that unmounting used to: no tab
-          stop, no screen reader, no click. The stylesheet only sets
-          `pointer-events: none`, which would have left every link in there
-          reachable by keyboard on a page that shows no menu. */}
-      {/* Opaque, and no `backdrop-blur`. It had `bg-background/95` plus
-          `backdrop-blur-xl` and frosted precisely nothing: `.t-panel-slide`
-          transitions `filter`, an element with a filter is a backdrop root,
-          and a backdrop root's own `backdrop-filter` samples an empty
-          backdrop. What shipped was a 95% sheet with the page legible straight
-          through it — the hero headline reading through the menu items.
+          `inert` while closed does the work unmounting used to: no tab stop,
+          no screen reader, no click. The stylesheet only clips it, which would
+          have left every link in there reachable by keyboard on a page that
+          shows no menu.
 
-          A full-width mobile sheet wants to be solid anyway; the shadow is
-          what lifts it off the page now that the blur is not pretending to. */}
-      <div
-        className="t-panel-slide border-border border-b bg-background shadow-[var(--shadow-float)] lg:hidden"
-        data-open={menuOpen}
-        id="lp-menu"
-        inert={!menuOpen}
-        style={{ "--panel-translate-y": "-14px" } as React.CSSProperties}
-      >
+          No background, no border, no shadow of its own. It is a window onto
+          content that already sits under the bar, and the frost layer above
+          is what the reader sees it through — a second opaque panel here is
+          exactly the seam this replaced. */}
+      <div className="lp-menu lg:hidden" data-open={menuOpen} id="lp-menu" inert={!menuOpen}>
+        {/* The measured element, and the drawer's scroll region on a screen
+            too short to hold the whole list. `data-lenis-prevent` keeps the
+            smooth-scroll driver off it. */}
+        <div className="lp-menu-inner" data-lenis-prevent ref={menuInnerRef}>
           <Shell className="flex flex-col gap-1 py-3">
-            {LINKS.map((link) => (
+            {LINKS.map((link, index) => (
               <a
                 key={link.id}
                 href={sectionHref(link.id)}
                 aria-current={active === link.id ? "true" : undefined}
                 onClick={closeMenu}
-                className="lp-focus rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground aria-[current]:text-foreground"
+                className="lp-menu-item lp-focus rounded-lg px-3 py-2.5 text-muted-foreground text-sm transition-colors duration-150 hover:bg-accent hover:text-foreground aria-[current]:text-foreground"
+                style={{ "--i": index } as React.CSSProperties}
               >
                 {t(link.labelKey)}
               </a>
@@ -317,18 +370,22 @@ export function LandingHeader() {
               session.signedIn
                 ? { href: "/dashboard", labelKey: "landing.cta.openApp" }
                 : { href: "/login", labelKey: session.claimed ? "landing.cta.signIn" : "landing.cta.start" },
-            ].map((page) => (
+            ].map((page, index) => (
               <Link
                 key={page.href}
                 href={page.href}
                 onClick={closeMenu}
-                className="lp-focus rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground aria-[current]:text-foreground"
+                className="lp-menu-item lp-focus rounded-lg px-3 py-2.5 text-muted-foreground text-sm transition-colors duration-150 hover:bg-accent hover:text-foreground aria-[current]:text-foreground"
                 aria-current={pathname === page.href ? "page" : undefined}
+                /* The stagger runs across both lists, so it carries on from
+                   where the section links left off rather than restarting. */
+                style={{ "--i": LINKS.length + index } as React.CSSProperties}
               >
                 {t(page.labelKey)}
               </Link>
             ))}
-        </Shell>
+          </Shell>
+        </div>
       </div>
     </header>
   );

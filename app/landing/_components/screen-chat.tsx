@@ -4,26 +4,20 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   ArrowDown01Icon,
-  ArtificialIntelligence08Icon,
+  ArrowUp02Icon,
+  FaceMimicIcon,
   Cancel01Icon,
+  PaperclipIcon,
+  Search01Icon,
+  StopIcon,
   Tick02Icon,
+  ToolCaseIcon,
 } from "@hugeicons/core-free-icons";
-import { type Ref, useEffect, useRef } from "react";
+import { type ReactNode, type Ref, useEffect, useRef } from "react";
 import { ToolResult } from "@/components/agents/tool-result";
 import { StreamingResponse } from "@/components/agents/streaming-response";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Message, MessageContent } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputSubmit,
-  PromptInputTextarea,
-} from "@/components/ai-elements/prompt-input";
+
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { ProviderLogo } from "@/components/provider-logo";
 import { Beam } from "@/components/ui/beam";
@@ -72,9 +66,10 @@ import { AppChrome } from "./screen-chrome";
  * product, the header with "New chat" only exists once there is a chat, and
  * the composer turns into a stop button while a turn is in flight.
  *
- * Nothing here is interactive — `ScreenFrame` is `pointer-events-none`. The
- * pointer on screen is the demo's, so it can never be confused with the
- * visitor's own.
+ * Nothing here is interactive — `ScreenFrame` marks the whole screen `inert`,
+ * so the composer, the copy buttons and the feedback controls are out of the
+ * tab order and the accessibility tree as well as unclickable. The pointer on
+ * screen is the demo's, so it can never be confused with the visitor's own.
  */
 
 // ── The script ──────────────────────────────────────────────────────
@@ -221,7 +216,10 @@ export function ChatScreen() {
 
   return (
     <AppChrome
-      active="/"
+      // `/chat`, not `/`. The app's chat moved off the root route, so the
+      // sidebar in the hero was lighting nothing at all — a shell with no
+      // active row is the one state the real nav never shows.
+      active="/chat"
       overlay={paletteOpen ? <ModelPalette picked={modelRow} /> : null}
       pattern
     >
@@ -246,7 +244,12 @@ export function ChatScreen() {
             talking ? "opacity-100" : "opacity-0",
           )}
         >
-          <span className="flex min-w-0 items-center gap-2.5">
+          {/* `flex-1` here and `shrink-0` on the group opposite. Both sides
+              could shrink and the right one is a status pill, a model name and
+              a button — none of which give ground — so the browser took the
+              whole squeeze out of the left and the agent's name rendered as
+              "sen…" on a tablet. */}
+          <span className="flex min-w-0 flex-1 items-center gap-2.5">
             {/* `StatusDot`. The halo belongs to a turn that is actually in
                 flight — idle is a flat dot with nothing around it. */}
             <span className="relative flex size-1.5">
@@ -263,12 +266,15 @@ export function ChatScreen() {
             <h2 className="truncate font-medium text-sm">senka</h2>
           </span>
 
-          <span className="flex min-w-0 items-center gap-2">
-            {/* Dropped below `sm` rather than squeezed, the way the shell drops
-                its sidebar at the same breakpoint. Three controls in a 328px
-                header push "New chat" off the edge, and a mockup with its own
-                button cropped reads as a broken screenshot. */}
-            <ProviderStatus className="hidden sm:inline-flex" />
+          <span className="flex shrink-0 items-center gap-2">
+            {/* Dropped rather than squeezed, and at `lg` rather than `sm`.
+                The three controls opposite the name measure 442px — the pill
+                alone is 144 of them — and the header inside this frame is
+                480px wide at tablet size, so the agent's name was left with
+                26px and rendered as "s.". The pill is the one of the three
+                that says the least on its own and the one the empty chat
+                repeats in the rail below, so it is the one that goes. */}
+            <ProviderStatus className="hidden lg:inline-flex" />
             <ModelTrigger
               label={model ?? t("models.autoWith", { model: AUTO_MODEL })}
               vendor={model ? "anthropic" : null}
@@ -297,7 +303,10 @@ export function ChatScreen() {
             against a whole window; this frame gives the page 920px, and a
             768px composer in it runs nearly wall to wall and stops reading
             as a field you type into. */}
-        <div className="mx-auto flex w-full min-h-0 max-w-2xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+        {/* Tighter on a phone. The three bands are sized for a 920px window;
+            at 390px the same padding and the same 24px gutters were spending
+            most of a 608px frame on air. */}
+        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6">
           <div
             className={cn(
               // Masked at the top rather than scrolled: a long turn runs out of
@@ -381,18 +390,12 @@ export function ChatScreen() {
           </div>
 
           <div className="w-full shrink-0" ref={composer}>
-            <PromptInput emptyErrorMessage={t("chat.emptyMessage")} onSubmit={NOOP}>
-              {/* Uncontrolled on purpose: `useTypewriter` writes the value onto
-                  the node. A controlled textarea would re-render this whole
-                  screen — sidebar included — once per letter. */}
-              <PromptInputTextarea placeholder={t("chat.sendPlaceholder")} readOnly ref={draft} />
-              {/* The ref is on the button, not on a wrapper. It was a `<span>`
-                  around it, and a span around an absolutely placed button
-                  measures 0×0 — so the pointer had nothing to aim at and
-                  stayed where it was: the click on "send" happened over the
-                  middle of the composer. */}
-              <PromptInputSubmit ref={send} status={busy ? "streaming" : "ready"} />
-            </PromptInput>
+            <MockComposer
+              busy={busy}
+              draft={draft}
+              hasDraft={on("typing", "reachSend")}
+              send={send}
+            />
           </div>
 
           {/* The empty chat's rail: the plan pill, the provider badge with the
@@ -403,7 +406,7 @@ export function ChatScreen() {
           <div
             aria-hidden={talking}
             className={cn(
-              "flex w-full shrink-0 flex-col items-center gap-5 text-center transition-opacity duration-300",
+              "flex w-full shrink-0 flex-col items-center gap-4 text-center transition-opacity duration-300 sm:gap-5",
               talking ? "opacity-0" : "opacity-100",
             )}
           >
@@ -424,13 +427,24 @@ export function ChatScreen() {
               ]}
               value="chat"
             />
+            {/* One starter below `sm`, two above it.
+            
+                This rail keeps its height when the chat is talking — that is
+                what holds the composer still while the pointer types into it —
+                so whatever it measures, the conversation pays for. Two chips
+                fit on one line at 920px and take three lines at 390px, and
+                those two extra lines were 240px of empty screen under the
+                composer on a phone: nearly half the window, blank, on the one
+                figure the page opens with. */}
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {[t("chat.promptChat1"), t("chat.promptChat2")].map((p) => (
-                <Beam active colorVariant="mono" key={p} strength={0.4}>
-                  <span className="rounded-full border border-border bg-card px-3.5 py-1.5 text-muted-foreground text-xs shadow-[var(--shadow-inset)]">
-                    {p}
-                  </span>
-                </Beam>
+              {[t("chat.promptChat1"), t("chat.promptChat2")].map((p, index) => (
+                <span className={cn(index > 0 && "hidden sm:contents")} key={p}>
+                  <Beam active colorVariant="mono" strength={0.4}>
+                    <span className="rounded-full border border-border bg-card px-3.5 py-1.5 text-muted-foreground text-xs shadow-[var(--shadow-inset)]">
+                      {p}
+                    </span>
+                  </Beam>
+                </span>
               ))}
             </div>
           </div>
@@ -439,6 +453,87 @@ export function ChatScreen() {
         <DemoCursor api={cursor} stage={stage} />
       </div>
     </AppChrome>
+  );
+}
+
+/**
+ * The composer, as `app/_components/chat/chat-input.tsx` draws it.
+ *
+ * A static twin rather than the component itself, and the two reasons are both
+ * hard blockers. `ChatInput` holds its text in React state, and the demo types
+ * by writing `node.value` straight onto the textarea — a controlled field
+ * would throw every letter away on the next render, and re-rendering this
+ * screen once per letter would re-render the sidebar with it. And it fetches
+ * `/api/chat/agents` on mount to populate the `@` menu, which is a request the
+ * marketing page has no business making.
+ *
+ * So the markup is copied and the behaviour is not: same card (`rounded-2xl`,
+ * `border-border/40`, the two-layer shadow), same bare textarea over a bottom
+ * bar, same attach and tools buttons, and the same send control — a solid
+ * `size-8 rounded-xl` square that turns into the destructive stop button while
+ * a turn is in flight, which is the swap the loop is built around. It replaced
+ * `PromptInput`, the pill with the round submit floating inside it, which the
+ * chat stopped using and only `/agents/[id]/chat` still does.
+ */
+function MockComposer({
+  busy,
+  draft,
+  hasDraft,
+  send,
+}: {
+  readonly busy: boolean;
+  readonly draft: Ref<HTMLTextAreaElement>;
+  /** Whether there is anything to send. The real button dims to 20% on an
+   *  empty field, and the loop spends a third of its lap there. */
+  readonly hasDraft: boolean;
+  readonly send: Ref<HTMLButtonElement>;
+}) {
+  const t = useT();
+
+  return (
+    <div className="relative w-full rounded-2xl border border-border/40 bg-card p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
+      {/* Uncontrolled on purpose — see the note above. */}
+      <textarea
+        className="max-h-56 w-full resize-none bg-transparent px-1 py-1 text-foreground text-sm leading-relaxed placeholder:text-muted-foreground/50 focus:outline-none"
+        placeholder={t("chat.sendPlaceholder")}
+        readOnly
+        ref={draft}
+        rows={1}
+      />
+
+      <div className="relative flex items-center gap-2 px-0.5 pt-4">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border/60 text-muted-foreground">
+          <HugeiconsIcon icon={PaperclipIcon} size={16} strokeWidth={2} />
+        </span>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border/60 text-muted-foreground">
+          <HugeiconsIcon icon={ToolCaseIcon} size={16} strokeWidth={2} />
+        </span>
+
+        <div className="flex-1" />
+
+        {/* The ref is on the button itself. It was on a wrapping `<span>`
+            once, and a span around an absolutely placed button measures 0×0 —
+            so the pointer had nothing to aim at and the click on "send"
+            landed over the middle of the composer. */}
+        <button
+          aria-label={busy ? t("chat.stop") : t("chat.send")}
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-xl transition-opacity",
+            busy
+              ? "bg-destructive text-destructive-foreground"
+              : cn("bg-foreground text-background", !hasDraft && "opacity-20"),
+          )}
+          ref={send}
+          type="button"
+        >
+          <HugeiconsIcon
+            icon={busy ? StopIcon : ArrowUp02Icon}
+            size={busy ? 14 : 15}
+            strokeWidth={busy ? 2 : 2.5}
+          />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -524,7 +619,7 @@ function ModelTrigger({
       {vendor ? (
         <ProviderLogo size={14} vendor={vendor} />
       ) : (
-        <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={14} strokeWidth={1.75} />
+        <HugeiconsIcon icon={FaceMimicIcon} size={14} strokeWidth={1.75} />
       )}
       <span className="truncate">{label}</span>
       <HugeiconsIcon
@@ -541,20 +636,18 @@ function ModelTrigger({
  * The palette the picker opens.
  *
  * `ModelPicker` mounts a `CommandDialog` — a search field over grouped rows,
- * not a dropdown — so that is what the demo opens, built from the same
- * `Command` parts the app builds it from and wearing `DialogContent`'s own
- * card, scrim, close button and open animation.
+ * not a dropdown — so that is what the demo opens, wearing `DialogContent`'s
+ * own card, scrim, close button and open animation.
  *
- * A replica rather than the component itself for one reason: the real dialog
+ * A replica rather than the component itself, for two reasons. The real dialog
  * portals to `document.body`, and a dialog that escapes the mockup to cover the
- * landing page is a bug, not a demo. Everything inside the card, though, is the
- * product's — the first pass hand-rolled the rows out of plain `<div>`s and it
- * showed, in the padding, the row height and a card that sat flat on the scrim
- * with none of the dialog's lift.
+ * landing page is a bug, not a demo. And `Command` underneath it moved the page
+ * on every open — see the note on the list below.
  *
- * `value` on `Command` is what parks the highlight on the row the demo is about
- * to choose; cmdk would otherwise select the first row, and the pointer would
- * be clicking something that was never lit.
+ * The card, the padding and the row heights are still the product's. An early
+ * pass hand-rolled the rows out of bare `<div>`s with invented spacing and it
+ * showed; what is hand-rolled now carries cmdk's own attributes and classes,
+ * so the only thing missing is the store.
  */
 function ModelPalette({
   picked,
@@ -566,9 +659,24 @@ function ModelPalette({
 
   return (
     <div className="absolute inset-0 z-40 flex items-start justify-center px-4 pt-[8%]">
+      {/* One scrim, two calibrations.
+      
+          The app's `DialogOverlay` is `bg-black/40` over the whole viewport,
+          and at that size a dark wash reads as the room lights going down.
+          Here the same wash is trapped inside a 1160×608 rectangle sitting on
+          a white page, and a rectangle two shades darker than everything
+          around it is not a dim — it is a slab. The sidebar, the header and
+          the composer all flatten to the same mud and the palette floats on
+          top of it.
+      
+          So in light mode the blur does the work and the black barely appears:
+          5% and 8px defocuses the window without moving its value, and the
+          palette's own card and float shadow carry the separation. 15% was
+          tried first and was still a slab. Dark mode keeps the app's own
+          numbers — against a dark ground a black wash is exactly right. */}
       <div
         aria-hidden="true"
-        className="t-scrim absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+        className="t-scrim absolute inset-0 bg-black/5 backdrop-blur-[8px] dark:bg-black/45 dark:backdrop-blur-[2px]"
         data-state="open"
       />
 
@@ -582,24 +690,58 @@ function ModelPalette({
           <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.75} />
         </span>
 
-        <Command
-          className="**:data-[slot=command-input-wrapper]:h-12 **:data-[slot=command-input-wrapper]:pr-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
-          shouldFilter={false}
-          value={PICKED_MODEL}
+        {/* The DOM cmdk builds, without cmdk.
+        
+            `Command` was here, and it moved the page. On mount cmdk scrolls
+            its selected row into view — `t.scrollIntoView({block:"nearest"})`
+            in its `ce()`, scheduled unconditionally — and `nearest` walks up
+            every scrollable ancestor, the document included. The hero frame is
+            672px tall in an 800px window, so it is nearly always part-way off
+            screen, and opening the palette yanked the whole landing down to
+            centre a row nobody had asked to see. Lenis then smoothed the jump
+            into a slide, which is why it read as the page moving by itself.
+      
+            Nothing cmdk does was wanted here: filtering is off, the input is
+            readOnly, the frame is `inert`, and the highlighted row is fixed by
+            the script. What is left is a store that fights the page. So the
+            attributes and classes are cmdk's exactly — `cmdk-item`, the
+            `data-selected` styling, the descendant rules on the root — and the
+            store is gone. It renders identically and it holds still. */}
+        <div
+          className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground **:data-[slot=command-input-wrapper]:h-12 **:data-[slot=command-input-wrapper]:pr-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+          cmdk-root=""
+          data-slot="command"
         >
-          <CommandInput placeholder={t("models.searchPlaceholder")} readOnly />
+          <div className="flex h-9 items-center gap-2 border-b px-3" data-slot="command-input-wrapper">
+            <HugeiconsIcon
+              className="shrink-0 opacity-50"
+              icon={Search01Icon}
+              size={16}
+              strokeWidth={1.75}
+            />
+            <input
+              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground"
+              cmdk-input=""
+              data-slot="command-input"
+              placeholder={t("models.searchPlaceholder")}
+              readOnly
+              type="text"
+            />
+          </div>
+
           {/* `pb-2` so the last row has the same air under it that the search
               row has over it — the app's list ends against a viewport, this
               one ends against the card's own edge. */}
-          <CommandList className="pb-2">
-            <CommandGroup heading={t("models.automatic")}>
-              <CommandItem value="auto">
+          <div
+            className="max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto pb-2"
+            cmdk-list=""
+            data-slot="command-list"
+            role="listbox"
+          >
+            <PaletteGroup heading={t("models.automatic")}>
+              <PaletteItem>
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <HugeiconsIcon
-                    icon={ArtificialIntelligence08Icon}
-                    size={16}
-                    strokeWidth={1.75}
-                  />
+                  <HugeiconsIcon icon={FaceMimicIcon} size={16} strokeWidth={1.75} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm">{t("models.auto")}</span>
                     <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
@@ -613,11 +755,12 @@ function ModelPalette({
                     strokeWidth={1.75}
                   />
                 </div>
-              </CommandItem>
-            </CommandGroup>
+              </PaletteItem>
+            </PaletteGroup>
 
-            <CommandGroup heading={t("models.recommendedGroup")}>
-              <CommandItem ref={picked} value={PICKED_MODEL}>
+            <PaletteGroup heading={t("models.recommendedGroup")}>
+              {/* The row the pointer lands on, and the only one lit. */}
+              <PaletteItem ref={picked} selected>
                 <ModelRow
                   context="200"
                   id={PICKED_MODEL}
@@ -626,11 +769,11 @@ function ModelPalette({
                   recommended
                   vendor="anthropic"
                 />
-              </CommandItem>
-            </CommandGroup>
+              </PaletteItem>
+            </PaletteGroup>
 
-            <CommandGroup heading={t("models.allGroup", { count: "1" })}>
-              <CommandItem value={AUTO_MODEL}>
+            <PaletteGroup heading={t("models.allGroup", { count: "1" })}>
+              <PaletteItem>
                 <ModelRow
                   context="400"
                   id={AUTO_MODEL}
@@ -638,11 +781,57 @@ function ModelPalette({
                   output="$2.00"
                   vendor="openai"
                 />
-              </CommandItem>
-            </CommandGroup>
-          </CommandList>
-        </Command>
+              </PaletteItem>
+            </PaletteGroup>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+/** `CommandGroup`'s markup: the heading, then the items in their own box. */
+function PaletteGroup({
+  children,
+  heading,
+}: {
+  readonly children: ReactNode;
+  readonly heading: string;
+}) {
+  return (
+    <div className="overflow-hidden p-1 text-foreground" cmdk-group="" role="presentation">
+      <div aria-hidden="true" cmdk-group-heading="" className="px-2 py-1.5 text-xs">
+        {heading}
+      </div>
+      <div cmdk-group-items="" role="group">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** `CommandItem`'s markup. `data-selected` is what carries the highlight — the
+ *  same attribute cmdk sets, so the class that reads it is unchanged. */
+function PaletteItem({
+  children,
+  ref,
+  selected = false,
+}: {
+  readonly children: ReactNode;
+  readonly ref?: Ref<HTMLDivElement>;
+  readonly selected?: boolean;
+}) {
+  return (
+    <div
+      aria-selected={selected}
+      className="relative flex cursor-default select-none items-center gap-2 rounded-md text-sm outline-hidden data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground"
+      cmdk-item=""
+      data-selected={selected}
+      data-slot="command-item"
+      ref={ref}
+      role="option"
+    >
+      {children}
     </div>
   );
 }

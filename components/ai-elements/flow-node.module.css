@@ -1,0 +1,58 @@
+.tone {
+  --flow-accent: oklch(0.45 0.1 var(--flow-hue));
+  --flow-surface: color-mix(in oklch, var(--flow-accent) 5%, var(--card));
+  --flow-inset: color-mix(in oklch, var(--flow-accent) 10%, var(--card));
+  --flow-border: color-mix(in oklch, var(--flow-accent) 24%, var(--card));
+}
+
+:global(.dark) .tone {
+  --flow-accent: oklch(0.78 0.1 var(--flow-hue));
+  --flow-surface: color-mix(in oklch, var(--flow-accent) 10%, var(--card));
+  --flow-inset: color-mix(in oklch, var(--flow-accent) 17%, var(--card));
+  --flow-border: color-mix(in oklch, var(--flow-accent) 26%, var(--card));
+}
+
+.card {
+  background: var(--flow-surface);
+  border-color: var(--flow-border);
+  box-shadow: var(--shadow-soft);
+}
+
+.card:hover {
+  border-color: color-mix(in oklch, var(--flow-accent) 50%, var(--card));
+  box-shadow: var(--shadow-elevated);
+}
+
+.card[aria-pressed="true"] {
+  border-color: var(--flow-accent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--flow-accent) 14%, transparent), var(--shadow-elevated);
+}
+
+.card[data-dragging="true"],
+.card[data-link-target="true"] {
+  border-color: var(--flow-accent);
+  box-shadow: var(--shadow-float);
+}
+
+.header {
+  color: var(--flow-accent);
+}
+
+.badge,
+.body {
+  background: var(--flow-inset);
+}
+
+.body {
+  color: color-mix(in oklch, var(--foreground) 78%, var(--flow-inset));
+}
+
+.port {
+  border-color: var(--flow-border);
+  background: var(--flow-surface);
+  color: var(--flow-accent);
+}
+
+.port:hover {
+  border-color: var(--flow-accent);
+}

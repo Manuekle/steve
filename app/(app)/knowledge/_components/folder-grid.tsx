@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   Add01Icon,
   Delete02Icon,
+  Folder01Icon,
   MoreHorizontalIcon,
   PencilEdit02Icon,
 } from "@hugeicons/core-free-icons";
@@ -183,7 +184,7 @@ export function FolderDialog({
     <Dialog open onOpenChange={(next) => (next ? undefined : onClose())}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle icon={<HugeiconsIcon icon={Folder01Icon} size={18} strokeWidth={1.75} />}>
             {folder ? t("knowledge.folderRename") : t("knowledge.folderNew")}
           </DialogTitle>
           <DialogDescription>{t("knowledge.folderDialogDescription")}</DialogDescription>
@@ -225,7 +226,7 @@ export function FolderDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose}>
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={!name.trim()}>

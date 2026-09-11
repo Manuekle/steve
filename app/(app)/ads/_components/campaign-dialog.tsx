@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { HugeiconsIcon } from "@/components/icons/icon";
+import { Megaphone01Icon } from "@hugeicons/core-free-icons";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -151,137 +154,139 @@ export function CampaignDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t(editing ? "ads.editTitle" : "ads.createTitle")}</DialogTitle>
-          <DialogDescription>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-w-2xl">
+        <DrawerHeader>
+          <DrawerTitle icon={<HugeiconsIcon icon={Megaphone01Icon} size={18} strokeWidth={1.75} />}>
+            {t(editing ? "ads.editTitle" : "ads.createTitle")}
+          </DrawerTitle>
+          <DrawerDescription>
             {t(editing ? "ads.editDescription" : "ads.createDescription")}
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerBody className="min-h-0">
+          <div className="space-y-4">
+            <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
-        <div className="space-y-4">
-          <ErrorBanner error={error} onDismiss={() => setError(null)} />
-
-          <div className="space-y-1.5">
-            <label className="font-medium text-sm" htmlFor="campaign-name">
-              {t("ads.fieldName")}
-            </label>
-            <Input
-              id="campaign-name"
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t("ads.fieldNamePlaceholder")}
-              value={name}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="font-medium text-sm" htmlFor="campaign-objective">
-              {t("ads.fieldObjective")}
-            </label>
-            {editing ? (
-              /* Meta fixes the objective at creation. A select here would only
-                 offer a change that the save is going to refuse. */
-              <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
-                {t(
-                  OBJECTIVE_OPTIONS.find((o) => o.value === campaign.objective)?.key ??
-                    "ads.objTraffic",
-                )}
-                <span className="mt-0.5 block text-xs">{t("ads.objectiveLocked")}</span>
-              </p>
-            ) : (
-              <Select onValueChange={setObjective} value={objective}>
-                <SelectTrigger className="w-full" id="campaign-objective">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {OBJECTIVE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {t(option.key)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="font-medium text-sm" htmlFor="campaign-budget-kind">
-                {t("ads.fieldBudgetType")}
-              </label>
-              <Select
-                onValueChange={(next) => setBudgetKind(next as BudgetKind)}
-                value={budgetKind}
-              >
-                <SelectTrigger className="w-full" id="campaign-budget-kind">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">{t("ads.budgetDaily")}</SelectItem>
-                  <SelectItem value="lifetime">{t("ads.budgetLifetime")}</SelectItem>
-                  <SelectItem value="none">{t("ads.budgetAtAdSet")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="font-medium text-sm" htmlFor="campaign-budget">
-                {t("ads.fieldBudgetAmount")}
+              <label className="font-medium text-sm" htmlFor="campaign-name">
+                {t("ads.fieldName")}
               </label>
               <Input
-                disabled={!budgetNeeded}
-                id="campaign-budget"
-                inputMode="decimal"
-                min="0"
-                onChange={(e) => setBudget(e.target.value)}
-                placeholder="0.00"
-                step="0.01"
-                type="number"
-                value={budgetNeeded ? budget : ""}
+                id="campaign-name"
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t("ads.fieldNamePlaceholder")}
+                value={name}
               />
             </div>
-          </div>
 
-          {!editing && (
             <div className="space-y-1.5">
-              <label className="font-medium text-sm" htmlFor="campaign-special">
-                {t("ads.fieldSpecialCategory")}
+              <label className="font-medium text-sm" htmlFor="campaign-objective">
+                {t("ads.fieldObjective")}
               </label>
-              <Select onValueChange={setSpecial} value={special}>
-                <SelectTrigger className="w-full" id="campaign-special">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NONE">{t("ads.specialNone")}</SelectItem>
-                  {SPECIAL_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {t(option.key)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-muted-foreground text-xs">
-                {t("ads.specialCategoryHint")}
-              </p>
+              {editing ? (
+                /* Meta fixes the objective at creation. A select here would only
+                   offer a change that the save is going to refuse. */
+                <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
+                  {t(
+                    OBJECTIVE_OPTIONS.find((o) => o.value === campaign.objective)?.key ??
+                      "ads.objTraffic",
+                  )}
+                  <span className="mt-0.5 block text-xs">{t("ads.objectiveLocked")}</span>
+                </p>
+              ) : (
+                <Select onValueChange={setObjective} value={objective}>
+                  <SelectTrigger className="w-full" id="campaign-objective">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OBJECTIVE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {t(option.key)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-          )}
 
-          {!editing && (
-            <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
-              {t("ads.createdPausedHint")}
-            </p>
-          )}
-        </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="font-medium text-sm" htmlFor="campaign-budget-kind">
+                  {t("ads.fieldBudgetType")}
+                </label>
+                <Select
+                  onValueChange={(next) => setBudgetKind(next as BudgetKind)}
+                  value={budgetKind}
+                >
+                  <SelectTrigger className="w-full" id="campaign-budget-kind">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">{t("ads.budgetDaily")}</SelectItem>
+                    <SelectItem value="lifetime">{t("ads.budgetLifetime")}</SelectItem>
+                    <SelectItem value="none">{t("ads.budgetAtAdSet")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="font-medium text-sm" htmlFor="campaign-budget">
+                  {t("ads.fieldBudgetAmount")}
+                </label>
+                <Input
+                  disabled={!budgetNeeded}
+                  id="campaign-budget"
+                  inputMode="decimal"
+                  min="0"
+                  onChange={(e) => setBudget(e.target.value)}
+                  placeholder="0.00"
+                  step="0.01"
+                  type="number"
+                  value={budgetNeeded ? budget : ""}
+                />
+              </div>
+            </div>
 
-        <DialogFooter>
+            {!editing && (
+              <div className="space-y-1.5">
+                <label className="font-medium text-sm" htmlFor="campaign-special">
+                  {t("ads.fieldSpecialCategory")}
+                </label>
+                <Select onValueChange={setSpecial} value={special}>
+                  <SelectTrigger className="w-full" id="campaign-special">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">{t("ads.specialNone")}</SelectItem>
+                    {SPECIAL_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {t(option.key)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-xs">
+                  {t("ads.specialCategoryHint")}
+                </p>
+              </div>
+            )}
+
+            {!editing && (
+              <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
+                {t("ads.createdPausedHint")}
+              </p>
+            )}
+          </div>
+        </DrawerBody>
+        <DrawerFooter>
           <Button onClick={() => onOpenChange(false)} type="button" variant="outline">
             {t("common.cancel")}
           </Button>
           <Button disabled={!canSave} onClick={() => void submit()} type="button">
             {t(editing ? "common.save" : "ads.createAction")}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

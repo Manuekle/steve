@@ -3,7 +3,6 @@
 import {
   AnimatePresence,
   motion,
-  useReducedMotion,
 } from "motion/react";
 import {
   useCallback,
@@ -11,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { EASE_OUT, SPRING_SWAP } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
@@ -151,14 +151,14 @@ export function DownloadAnimation({
   className,
   classNames,
 }: DownloadAnimationProps) {
-  const reduce = useReducedMotion() ?? false;
   const triggerRef = useRef<HTMLDivElement>(null);
   const [particles, setParticles] = useState<
     Array<{ id: number; x: number; y: number }>
   >([]);
 
   const spawn = useCallback(() => {
-    if (disabled || reduce) {
+    if (disabled) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       onDownload();
       return;
     }
@@ -183,7 +183,7 @@ export function DownloadAnimation({
     setTimeout(() => {
       setParticles((prev) => prev.filter((p) => p.id !== id));
     }, 1800);
-  }, [disabled, onDownload, reduce]);
+  }, [disabled, onDownload]);
 
   const FileIcon = FILE_ICON[fileType];
 
@@ -192,9 +192,6 @@ export function DownloadAnimation({
       <div
         ref={triggerRef}
         onClick={spawn}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") spawn();
-        }}
         className={cn(
           "inline-flex",
           disabled && "pointer-events-none opacity-50",
@@ -205,8 +202,9 @@ export function DownloadAnimation({
         {children}
       </div>
 
-      {/* Animated particles */}
-      <AnimatePresence>
+      {/* Escape transformed/scrolling panels; these coordinates are viewport-relative.
+          Native trigger buttons already dispatch clicks for Enter and Space. */}
+      {particles.length > 0 ? createPortal(<AnimatePresence>
         {particles.map((particle) => (
           <motion.div
             key={particle.id}
@@ -246,7 +244,7 @@ export function DownloadAnimation({
             />
           </motion.div>
         ))}
-      </AnimatePresence>
+      </AnimatePresence>, document.body) : null}
     </>
   );
 }

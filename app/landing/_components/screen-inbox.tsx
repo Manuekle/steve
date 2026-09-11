@@ -18,6 +18,7 @@ import { Card } from "@/app/_components/dashboard-card";
 import { ChannelIcon } from "@/app/_components/channel-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useT } from "@/lib/i18n/provider";
 import type { ChannelId } from "@/lib/types";
 import { AppChrome, HeaderAction } from "./screen-chrome";
@@ -186,11 +187,23 @@ export function InboxScreen() {
                     <ChannelIcon channel={contact.channel} />
                   </div>
                   <div className="min-w-0 flex-1">
+                    {/* `StatusBadge`, the pill the row actually prints — the
+                        hand-rolled grey chip here was the one place in these
+                        screens where a shared component had been redrawn, so
+                        the demo missed the amber/pending colour the real inbox
+                        uses to say a contact is waiting.
+
+                        `min-w-0 flex-1` on the name and `shrink-0` on the pill:
+                        a truncating <p> has `min-width: 0`, so on a 390px row
+                        the name collapsed to nothing and the contact showed as
+                        a chip with a message under it and no one's name. */}
                     <div className="flex items-center gap-2">
-                      <p className="truncate font-medium text-sm">{contact.name}</p>
-                      <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                        {contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
-                      </span>
+                      <p className="min-w-0 flex-1 truncate font-medium text-sm">{contact.name}</p>
+                      <StatusBadge
+                        className="shrink-0"
+                        label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
+                        status={contact.status === "followup_due" ? "pending" : "warning"}
+                      />
                     </div>
                     <p className="truncate text-muted-foreground text-xs">{contact.lastMessage}</p>
                   </div>
@@ -210,9 +223,13 @@ export function InboxScreen() {
                       </span>
                     </span>
                   </Button>
-                  <Button size="sm" variant="outline">
+                  {/* Icon-only below `sm`, the way the page's own header
+                      actions collapse there. The label is 90 of the 350
+                      pixels a 390px row has, and the row spends them before
+                      it gets to the contact's name. */}
+                  <Button aria-label={t("inbox.resume")} size="sm" variant="outline">
                     <HugeiconsIcon icon={CheckIcon} size={14} strokeWidth={1.75} />
-                    {t("inbox.resume")}
+                    <span className="hidden sm:inline">{t("inbox.resume")}</span>
                   </Button>
                 </div>
 

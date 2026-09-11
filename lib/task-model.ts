@@ -3,6 +3,7 @@ import { resolveLanguageModel, resolveProvider, type AiProvider } from "./ai-pro
 import { FALLBACK_MODEL, pickForTask, type ModelTask } from "./model-catalog";
 import { listModels } from "./provider-catalog";
 import { readAccess } from "./model-access";
+import { warmCredentialCache } from "./credentials";
 
 // "Use the right model for this job" in one call.
 //
@@ -13,8 +14,10 @@ import { readAccess } from "./model-access";
 /** The id to use for a task, checked against what the provider offers. */
 export async function modelIdForTask(
   task: ModelTask,
-  provider: AiProvider = resolveProvider(),
+  providerOverride?: AiProvider,
 ): Promise<string> {
+  await warmCredentialCache();
+  const provider = providerOverride ?? resolveProvider();
   try {
     const restricted = (await readAccess()).restricted;
     // A model the account is not allowed to call is not a candidate, however
@@ -31,7 +34,7 @@ export async function modelIdForTask(
 /** A callable model for a task, routed through whichever provider is active. */
 export async function languageModelForTask(
   task: ModelTask,
-  provider: AiProvider = resolveProvider(),
+  provider?: AiProvider,
 ): Promise<LanguageModel> {
   return resolveLanguageModel(await modelIdForTask(task, provider));
 }

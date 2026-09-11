@@ -8,12 +8,13 @@ import {
   File01Icon,
   AlertCircleIcon,
   SearchIcon,
-  ArtificialIntelligence08Icon,
-  ArrowLeft01Icon,
+  AiWiperIcon,
+  ArrowLeft02Icon,
   Delete02Icon,
   Image01Icon,
   MoreHorizontalIcon,
   FolderAddIcon,
+  GlobalEducationIcon,
 } from "@hugeicons/core-free-icons";
 import { GoogleDriveBrandIcon } from "@/components/icons/connection-icons";
 import {
@@ -41,6 +42,7 @@ import { useSound } from "@/components/sound-provider";
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { useToast } from "@/components/toast-provider";
 import type { KnowledgeDocument, KnowledgeMatch } from "@/lib/knowledge-store";
+import type { AgentSkill } from "@/lib/types";
 import type { MediaAssetMatch } from "@/lib/media-store";
 import { PageContainer } from "../../_components/page-container";
 import { KpiCard, KpiSplit } from "../../_components/kpi-card";
@@ -103,6 +105,12 @@ export default function KnowledgePage() {
   const [queue, setQueue] = useState<FileUploadItem[]>([]);
   const [syncingDrive, setSyncingDrive] = useState(false);
 
+  // Which documents have already been promoted into a skill, so the menu can
+  // offer the action once and then link to the result instead of making a
+  // second near-identical skill.
+  const [skillByDoc, setSkillByDoc] = useState<Record<string, AgentSkill>>({});
+  const [promoting, setPromoting] = useState<string | null>(null);
+
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<KnowledgeMatch[] | null>(null);
   const [mediaMatches, setMediaMatches] = useState<MediaAssetMatch[] | null>(null);
@@ -142,10 +150,67 @@ export default function KnowledgePage() {
     }
   }, []);
 
+  /**
+   * The skills already promoted from a document, indexed by that document's
+   * id. Read once here rather than per row: the menu needs it to decide
+   * between "convertir" and "ya es una habilidad", and six rows asking the
+   * same endpoint six times would be six requests for one answer.
+   */
+  const loadSkills = useCallback(async () => {
+    try {
+      const res = await fetch("/api/skills");
+      if (!res.ok) return;
+      const data = (await res.json()) as { skills?: AgentSkill[] };
+      const byDoc: Record<string, AgentSkill> = {};
+      for (const skill of data.skills ?? []) {
+        if (skill.documentId) byDoc[skill.documentId] = skill;
+      }
+      setSkillByDoc(byDoc);
+    } catch {
+      // The menu simply offers "convertir" again; the API refuses a duplicate.
+    }
+  }, []);
+
+  /**
+   * Turn one document into a skill.
+   *
+   * The model rewrites it — see app/api/skills/from-document/route.ts for why
+   * a copy would be the wrong thing — so this is slow enough to need its own
+   * pending state on the row, and the result always lands disabled. The toast
+   * says so and points at where to review it.
+   */
+  const promoteToSkill = useCallback(
+    async (doc: KnowledgeDocument) => {
+      setPromoting(doc.id);
+      const result = await fetchJson<{ skill?: AgentSkill }>("/api/skills/from-document", t, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ documentId: doc.id }),
+      });
+      setPromoting(null);
+      if (!result.ok) {
+        toast({
+          title: isApiError(result.error) ? result.error.message : t(result.error.messageKey),
+          status: "error",
+        });
+        return;
+      }
+      await loadSkills();
+      cue("success");
+      toast({
+        title: `"${result.data.skill?.name ?? doc.name}" quedó como habilidad`,
+        description: "Está apagada hasta que la revises en Habilidades.",
+        status: "success",
+      });
+    },
+    [cue, loadSkills, t, toast],
+  );
+
   useEffect(() => {
     void loadDocuments();
     void loadFolders();
-  }, [loadDocuments, loadFolders]);
+    void loadSkills();
+  }, [loadDocuments, loadFolders, loadSkills]);
 
   const patchQueueItem = useCallback((id: string, patch: Partial<FileUploadItem>) => {
     setQueue((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
@@ -505,6 +570,7 @@ export default function KnowledgePage() {
                 icon={LibraryIcon}
                 label={t("knowledge.kpiDocuments")}
                 value={documents.length}
+                sub={t(documents.length > 0 ? "knowledge.kpiDocumentsSub" : "knowledge.kpiDocumentsSubNone")}
                 visual={
                   <KpiSplit
                     parts={documents.map((doc) => ({
@@ -531,10 +597,12 @@ export default function KnowledgePage() {
                 sub={t("knowledge.kpiMediaSub", { count: String(folders.length) })}
               />
               <KpiCard
-                icon={ArtificialIntelligence08Icon}
+                icon={AiWiperIcon}
                 label={t("knowledge.kpiEmbeddings")}
                 value={embeddings.available ? embeddings.route : "—"}
-                sub={embeddings.available ? embeddings.model : undefined}
+                sub={embeddings.available
+                  ? embeddings.model || t("knowledge.kpiEmbeddingsSub")
+                  : t("knowledge.embeddingsOff")}
               />
             </div>
           ) : null}
@@ -560,7 +628,7 @@ export default function KnowledgePage() {
                     onClick={() => setFolderId(null)}
                     className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
                   >
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={2} />
+                    <HugeiconsIcon icon={ArrowLeft02Icon} size={14} strokeWidth={2} />
                     {t("knowledge.folderBack")}
                   </button>
                   <img
@@ -692,6 +760,43 @@ export default function KnowledgePage() {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {/* A document is looked up; a skill is followed.
+                                  Promoting rewrites the document into a
+                                  procedure the agent loads whole — see
+                                  app/api/skills/from-document/route.ts. */}
+                              {skillByDoc[doc.id] ? (
+                                <DropdownMenuItem asChild>
+                                  <Link href="/skills">
+                                    <HugeiconsIcon
+                                      icon={GlobalEducationIcon}
+                                      size={15}
+                                      strokeWidth={1.75}
+                                    />
+                                    Ya es una habilidad
+                                  </Link>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  disabled={promoting !== null}
+                                  onSelect={(event) => {
+                                    // Keep the menu's own close from racing the
+                                    // request: the row has to keep showing its
+                                    // pending state while the model rewrites.
+                                    event.preventDefault();
+                                    void promoteToSkill(doc);
+                                  }}
+                                >
+                                  <HugeiconsIcon
+                                    icon={GlobalEducationIcon}
+                                    size={15}
+                                    strokeWidth={1.75}
+                                  />
+                                  {promoting === doc.id
+                                    ? "Convirtiendo…"
+                                    : "Convertir en habilidad"}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
                               <DropdownMenuSub>
                                 <DropdownMenuSubTrigger>
                                   {t("knowledge.moveToFolder")}
@@ -745,7 +850,7 @@ export default function KnowledgePage() {
           <Card>
             <CardHeader>
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={ArtificialIntelligence08Icon} size={17} strokeWidth={1.75} />
+                <HugeiconsIcon icon={AiWiperIcon} size={17} strokeWidth={1.75} />
               </div>
               <div className="min-w-0 flex-1">
                 <CardTitle>{t("knowledge.searchTitle")}</CardTitle>

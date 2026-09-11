@@ -19,6 +19,9 @@ export type WorkflowStepInput = {
   readonly method?: string;
   readonly body?: string;
   readonly phone?: string;
+  readonly emailTo?: string;
+  readonly emailSubject?: string;
+  readonly emailTemplate?: string;
   readonly service?: "slack" | "discord";
   readonly webhookUrl?: string;
   readonly contactStatus?: string;
@@ -172,6 +175,11 @@ export const workflowPlanSchema = z.object({
 });
 
 export type WorkflowPlan = z.infer<typeof workflowPlanSchema>;
+/** A conversation can answer or clarify without proposing a canvas replacement. */
+export const workflowAssistantResponseSchema = z.object({
+  reply: z.string().describe("A brief conversational reply in the user's language."),
+  plan: workflowPlanSchema.nullable().describe("The proposed complete flow only when the user requested a concrete change. null for greetings, questions, or clarification."),
+});
 export type WorkflowPlanLeaf = z.infer<typeof leafStepSchema>;
 /** One step of an AI plan: a leaf, optionally carrying condition branches. */
 export type WorkflowPlanStep = WorkflowPlanLeaf & {
@@ -233,11 +241,19 @@ export function planToInput(steps: readonly WorkflowPlanStep[]): WorkflowStepInp
  * because that object is genuinely the union of every step type's fields and
  * each step reads only its own.
  */
+const pointSchema = z.object({ x: z.number().finite(), y: z.number().finite() });
+const portSchema = z.object({ side: z.enum(["top", "right", "bottom", "left"]), offset: z.number().min(0).max(1) });
+
 export const storedWorkflowStepSchema: z.ZodType<WorkflowStep> = z.lazy(() =>
   z.object({
     id: z.string().min(1),
     type: workflowStepTypeSchema,
     config: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]).optional()),
+    position: pointSchema.optional(),
+    isolated: z.boolean().optional(),
+    disabled: z.boolean().optional(),
+    connector: z.enum(["solid", "dashed"]).optional(),
+    connection: z.object({ sourceId: z.string().min(1), from: portSchema, to: portSchema, waypoint: pointSchema.optional(), routing: z.object({ axis: z.enum(["x", "y", "xy"]), offset: pointSchema }).optional() }).optional(),
     thenSteps: z.array(storedWorkflowStepSchema).optional(),
     elseSteps: z.array(storedWorkflowStepSchema).optional(),
   }),
@@ -272,6 +288,9 @@ export function toWorkflowSteps(steps: readonly WorkflowStepInput[]): WorkflowSt
         method: s.method,
         body: s.body,
         phone: s.phone,
+        emailTo: s.emailTo,
+        emailSubject: s.emailSubject,
+        emailTemplate: s.emailTemplate,
         service: s.service,
         webhookUrl: s.webhookUrl,
         spreadsheetId: s.spreadsheetId,

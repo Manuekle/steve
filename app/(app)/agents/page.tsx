@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { CategoryBadge } from "@/components/ui/category-badge";
 import { useT } from "@/lib/i18n/provider";
 import { useToast } from "@/components/toast-provider";
 import { useConfirmDialog } from "@/components/confirm-dialog";
@@ -36,7 +37,7 @@ import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { cn } from "@/lib/utils";
 import type { Agent } from "@/lib/types";
-import { toCapabilityIds } from "@/lib/agent-capabilities";
+import { CAPABILITY_HUES, toCapabilityIds } from "@/lib/agent-capabilities";
 
 // The team, as a list of who you have hired.
 //
@@ -352,9 +353,9 @@ function AgentCard({
         {capabilities.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {capabilities.slice(0, 5).map((id) => (
-              <span key={id} className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+              <CategoryBadge key={id} hue={CAPABILITY_HUES[id]} className="text-[10px]">
                 {t(`capability.${id}`)}
-              </span>
+              </CategoryBadge>
             ))}
             {capabilities.length > 5 ? (
               <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">

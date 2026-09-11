@@ -8,7 +8,7 @@ import {
   UserIcon,
   Timer01Icon,
   ZapIcon,
-  ArtificialIntelligence08Icon,
+  AiReplaceIcon,
   CheckIcon,
 } from "@hugeicons/core-free-icons";
 import {
@@ -96,7 +96,7 @@ export function SidebarNotifications({
   if (health && !health.checks.ai) {
     items.push({
       id: "ai",
-      icon: ArtificialIntelligence08Icon,
+      icon: AiReplaceIcon,
       label: t("notifications.missingKey"),
       hint: t("notifications.missingKeyHint"),
       href: "/settings",

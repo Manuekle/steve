@@ -13,12 +13,14 @@ import {
 import {
   STEP_DESCRIPTION_KEYS,
   STEP_GROUPS,
+  STEP_HUES,
   STEP_ICONS,
   STEP_LABEL_KEYS,
 } from "@/lib/workflow-step-meta";
 import { useT } from "@/lib/i18n/provider";
 import type { WorkflowStepType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { CategoryBadge } from "@/components/ui/category-badge";
 
 /**
  * The step picker, as a centred modal rather than a full-bleed sheet dropping
@@ -80,7 +82,7 @@ export function StepPalette({
         // max-height, and the group that fell past the fold could not be
         // reached at all — the pane had nothing to scroll. As a column the
         // list is the one item that flexes, so the overflow lands on it.
-        className="flex max-h-[min(78vh,640px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+        className="flex max-h-[min(78vh,640px)] flex-col gap-0 overflow-hidden overflow-y-hidden p-0 sm:max-w-md"
         // Centred in the 44px search row rather than sitting at the padding
         // inset this dialog no longer has.
         closeClassName="top-2 right-3"
@@ -160,12 +162,13 @@ export function StepPalette({
                               "focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]",
                             )}
                           >
-                            <span
-                              className="mt-px flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/70"
+                            <CategoryBadge
+                              hue={STEP_HUES[type]}
+                              className="mt-px size-7 justify-center rounded-lg p-0"
                               aria-hidden="true"
                             >
                               <HugeiconsIcon icon={STEP_ICONS[type]} size={14} strokeWidth={1.75} />
-                            </span>
+                            </CategoryBadge>
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-[13px] font-medium">
                                 {t(STEP_LABEL_KEYS[type])}

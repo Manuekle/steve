@@ -7,8 +7,8 @@ import type { StepPath } from "./workflow-tree";
 // taller of the two branches, re-centered on the fork's own x — matching
 // how n8n/most flow tools draw an IF node's branches rejoining downstream.
 
-export const NODE_W = 244;
-export const NODE_H = 88;
+export const NODE_W = 216;
+export const NODE_H = 76;
 const V_GAP = 56;
 const H_GAP = 40;
 const BRANCH_LABEL_GAP = 24;
@@ -196,7 +196,7 @@ export function layoutChain(
     }
   });
 
-  slots.push({
+  if (steps.length === 0) slots.push({
     path,
     index: steps.length,
     x: centerX,

@@ -51,6 +51,18 @@ async function seed() {
 }
 
 describe("PUT /api/automations", () => {
+  it("round-trips manual node positions and incoming connection anchors", async () => {
+    const seeded = await seed();
+    const steps = [
+      { id: "source", type: "message", config: {}, position: { x: 80, y: -20 } },
+      { id: "target", type: "wait", config: { duration: "5min" }, disabled: true, connector: "dashed", connection: {
+        sourceId: "source", from: { side: "right", offset: 0.25 }, to: { side: "left", offset: 0.75 }, waypoint: { x: 240, y: 150 },
+      } },
+    ];
+    const response = await route.PUT(json("PUT", { id: seeded.id, steps }) as AnyRequest);
+    expect(response.status).toBe(200);
+    expect((await listAutomations())[0].steps).toEqual(steps);
+  });
   it("saves the fields a screen owns", async () => {
     const seeded = await seed();
     const response = await route.PUT(

@@ -147,7 +147,13 @@ export function SectionIntro({
         {cta ? (
           <a
             href={cta.href}
-            className="group mt-6 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-foreground"
+            // `min-h-6` is the WCAG 2.2 target-size floor (24px). This renders
+            // as a 20px line box, and it is a standalone link on its own line
+            // rather than one inside a sentence, so the inline exemption does
+            // not apply — a thumb on a phone had four pixels less than the
+            // minimum to aim at. The height grows the hit box without moving
+            // the text, which stays centred in it.
+            className="group mt-6 inline-flex min-h-6 w-fit items-center gap-1.5 text-sm font-medium text-foreground"
           >
             {cta.label}
             <HugeiconsIcon
@@ -454,12 +460,32 @@ export function ScreenFrame({
         ) : null}
 
         {/* Two elements, two borders: the bezel and the screen inside it. */}
-        <div className={cn("lp-frame", className)}>
-          <div
-            aria-label={label}
-            className="lp-frame-inner pointer-events-none flex flex-col"
-            role="group"
-          >
+        {/* `role="img"` on the bezel and `inert` on everything inside it.
+            Both halves matter.
+
+            These are screenshots. They are built out of the product's real
+            components, so the chat mockup contains a real `<textarea>`, real
+            copy buttons, real thumbs-up/thumbs-down, and the flow canvas
+            contains a button on every node — 108 focusable controls across the
+            five frames on this page, against 68 that a visitor can actually
+            use. Tabbing from the header to the pricing button went through all
+            of them, and a screen reader announced every one as an operable
+            control that does nothing: the composer is `readOnly` with a no-op
+            submit, the tool output is a fixed string.
+
+            `pointer-events-none` was here and only solved the mouse. `inert`
+            is the property that says "this subtree is a picture": out of the
+            tab order, out of the accessibility tree, and no pointer events
+            either, so it replaces the class rather than joining it. The
+            animations are unaffected — they are driven by state and by writing
+            to the nodes directly, not by dispatching events.
+
+            The frame then has to say what it is, which is what `role="img"`
+            and the label do: one image with a name, where there used to be a
+            group of a hundred phantom buttons. */}
+        <div aria-label={label} className={cn("lp-frame", className)} role="img">
+          {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: `inert` is the point — see above. */}
+          <div className="lp-frame-inner flex flex-col" inert>
             {url ? <BrowserChrome url={url} /> : null}
             {children}
           </div>

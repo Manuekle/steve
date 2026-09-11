@@ -4,7 +4,7 @@ import {
   DocumentAttachmentIcon,
   ZapIcon,
   Settings01Icon,
-  ArtificialIntelligence08Icon,
+  ChatSpark01Icon,
   InboxIcon,
   Timer01Icon,
   Calendar03Icon,
@@ -17,9 +17,11 @@ import {
   UserCircleIcon,
   Blockchain05Icon,
   TelevisionTableIcon,
-  UserGroup02Icon,
   PiggyBankIcon,
-  GlobalSearchIcon,
+  SeoIcon,
+  SmartPhone01Icon,
+  GlobalEducationIcon,
+  BulbChargingIcon,
 } from "@hugeicons/core-free-icons";
 
 export type NavItem = {
@@ -45,7 +47,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     id: "main",
     items: [
-      { href: "/chat", labelKey: "nav.chat", icon: ArtificialIntelligence08Icon },
+      { href: "/chat", labelKey: "nav.chat", icon: ChatSpark01Icon },
       { href: "/dashboard", labelKey: "nav.dashboard", icon: DashboardSquare01Icon },
     ],
   },
@@ -63,7 +65,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { href: "/crm", labelKey: "nav.crm", icon: TelevisionTableIcon },
       { href: "/pipeline", labelKey: "nav.pipeline", icon: PiggyBankIcon },
-      { href: "/leads", labelKey: "nav.leads", icon: UserGroup02Icon },
       { href: "/forms", labelKey: "nav.forms", icon: FileEditIcon },
     ],
   },
@@ -74,16 +75,24 @@ export const NAV_GROUPS: readonly NavGroup[] = [
       { href: "/automations", labelKey: "nav.automations", icon: ZapIcon },
       { href: "/calendar", labelKey: "nav.calendar", icon: Calendar03Icon },
       { href: "/agents", labelKey: "nav.agents", icon: AiImagineIcon },
+      // Next to the agents on purpose: the only question this page answers is
+      // which agent holds which line.
+      { href: "/numbers", labelKey: "nav.numbers", icon: SmartPhone01Icon },
       { href: "/email-templates", labelKey: "nav.emailTemplates", icon: Mail02Icon },
       { href: "/reminders", labelKey: "nav.reminders", icon: Timer01Icon },
       { href: "/ads", labelKey: "nav.ads", icon: MetaIcon },
-      { href: "/seo", labelKey: "nav.seo", icon: GlobalSearchIcon },
+      { href: "/seo", labelKey: "nav.seo", icon: SeoIcon },
     ],
   },
   {
     id: "knowledge",
     labelKey: "nav.groupKnowledge",
-    items: [{ href: "/knowledge", labelKey: "nav.knowledge", icon: LibraryIcon }],
+    items: [
+      { href: "/knowledge", labelKey: "nav.knowledge", icon: LibraryIcon },
+      // A document is consulted, a skill is followed — two different things
+      // that both live in what the business "knows", so they group together.
+      { href: "/skills", labelKey: "nav.skills", icon: GlobalEducationIcon },
+    ],
   },
   {
     id: "system",
@@ -91,6 +100,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { href: "/account", labelKey: "nav.account", icon: UserCircleIcon },
       { href: "/connections", labelKey: "nav.connections", icon: Blockchain05Icon },
+      { href: "/runtime", labelKey: "nav.runtime", icon: BulbChargingIcon },
       { href: "/settings", labelKey: "nav.settings", icon: Settings01Icon },
       { href: "/setup", labelKey: "nav.setup", icon: FilterHorizontalIcon },
     ],

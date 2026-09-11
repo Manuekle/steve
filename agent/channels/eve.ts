@@ -62,5 +62,4 @@ export default eveChannel({
     process.env.NODE_ENV === "production"
       ? [appSession(), productionAuth]
       : [localDev(), appSession(), productionAuth],
-  uploadPolicy: "disabled",
 });

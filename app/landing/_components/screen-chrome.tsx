@@ -8,6 +8,7 @@ import {
   CustomerSupportIcon,
   Globe02Icon,
   Logout01Icon,
+  Menu01Icon,
   Moon02Icon,
   PanelLeftCloseIcon,
   SearchIcon,
@@ -94,7 +95,13 @@ export const MockSidebar = memo(function MockSidebar({ active }: { readonly acti
         </span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-hidden px-3 py-2">
+      {/* `overflow-y-auto scrollbar-hide`, the real sidebar's own class. The
+          list is twenty-two rows under six headings and the window is 608px
+          tall, so it was always going to be cut — `overflow-hidden` cut it
+          without saying so, which reads as a nav that stops at "CRM". A scroll
+          region cut at the same place reads as a list with more below it,
+          which is what the app shows at this height. */}
+      <nav className="scrollbar-hide flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-2">
         {NAV_GROUPS.map((group, groupIndex) => (
           <div key={group.id} className={cn("flex flex-col gap-1", groupIndex > 0 && "mt-3")}>
             {group.labelKey ? (
@@ -172,6 +179,37 @@ export const MockSidebar = memo(function MockSidebar({ active }: { readonly acti
   );
 });
 
+// ── Mobile bar ──────────────────────────────────────────────────────
+
+/**
+ * What the shell shows where the sidebar is not: the 56px bar with the
+ * wordmark and the menu button, from `app-shell.tsx`.
+ *
+ * The mockups dropped the sidebar below `md` and put nothing in its place, so
+ * on a phone every screen opened with the page header and no product around
+ * it — a screenshot of a document rather than of an app. The real shell has a
+ * bar there, and the badge on its button is the two sidebar badges added
+ * together, which is what the shell does when the nav it would show is closed.
+ */
+export const MockTopBar = memo(function MockTopBar() {
+  const t = useT();
+  const total = Object.values(NAV_BADGES).reduce((sum, count) => sum + count, 0);
+
+  return (
+    <div className="flex h-14 shrink-0 items-center justify-between border-border border-b px-4 md:hidden">
+      {/* The mark is on the desktop sidebar and not here, same as the app. */}
+      <span className="font-semibold text-foreground text-lg">senka</span>
+      <span
+        aria-label={t("nav.menu")}
+        className="relative inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground"
+      >
+        <HugeiconsIcon icon={Menu01Icon} size={20} strokeWidth={1.75} />
+        <NotificationBadge count={total} />
+      </span>
+    </div>
+  );
+});
+
 // ── Page chrome ─────────────────────────────────────────────────────
 
 /**
@@ -223,37 +261,48 @@ export function AppChrome({
     <div className="relative flex h-[38rem] overflow-hidden bg-background text-foreground lg:h-[42rem]">
       <MockSidebar active={active} />
 
-      {/* The pattern gets its own layer, as it does in PageContainer:
-          `bg-pattern-fade` is a mask, and a mask on the content wrapper fades
-          the content with it. */}
-      <div className="relative flex min-w-0 flex-1 flex-col">
-        {pattern ? (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-pattern bg-pattern-grid bg-pattern-fade opacity-30"
-          />
-        ) : null}
-        {title ? (
-          <div className="relative mx-auto w-full max-w-6xl px-5 py-8 sm:px-6 sm:py-10">
-            <header className="mb-8 flex items-center justify-between gap-4">
-              <div>
-                {/* A <p>, not an <h1>. This frame is a product mockup that
-                    the landing renders three times, so it contributed three
-                    page-level headings to the real document outline — a screen
-                    reader navigating by heading found six <h1> on one page.
-                    aria-hidden was not an option: these mockups are deliberately
-                    interactive, and hiding focusable content from the
-                    accessibility tree is worse than the heading noise. */}
-                <h2 className="font-semibold text-2xl ">{title}</h2>
-                {subtitle ? <p className="mt-1 text-muted-foreground text-sm">{subtitle}</p> : null}
-              </div>
-              {actions}
-            </header>
-            {children}
-          </div>
-        ) : (
-          <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
-        )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <MockTopBar />
+
+        {/* The pattern gets its own layer, as it does in PageContainer:
+            `bg-pattern-fade` is a mask, and a mask on the content wrapper fades
+            the content with it. Below the bar, not behind it — in the app the
+            pattern belongs to the page, and the shell's bar sits above it. */}
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+          {pattern ? (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-pattern bg-pattern-grid bg-pattern-fade opacity-30"
+            />
+          ) : null}
+          {title ? (
+            <div className="relative mx-auto w-full max-w-6xl px-5 py-8 sm:px-6 sm:py-10">
+              {/* `flex-wrap` on the row and `min-w-0` on the heading: the
+                  actions are a filter `Select`, a status pill and a button,
+                  and at 390px they were being crushed into the title rather
+                  than dropping under it. */}
+              <header className="mb-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+                <div className="min-w-0">
+                  {/* A <p>, not an <h1>. This frame is a product mockup that
+                      the landing renders three times, so it contributed three
+                      page-level headings to the real document outline — a screen
+                      reader navigating by heading found six <h1> on one page.
+                      aria-hidden was not an option: these mockups are deliberately
+                      interactive, and hiding focusable content from the
+                      accessibility tree is worse than the heading noise. */}
+                  <h2 className="font-semibold text-2xl">{title}</h2>
+                  {subtitle ? (
+                    <p className="mt-1 text-muted-foreground text-sm">{subtitle}</p>
+                  ) : null}
+                </div>
+                {actions}
+              </header>
+              {children}
+            </div>
+          ) : (
+            <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
+          )}
+        </div>
       </div>
 
       {overlay}

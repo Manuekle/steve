@@ -35,10 +35,16 @@ import { type RefObject, useEffect, useRef, useState } from "react";
  *   `DemoCursor`    the pointer, driven through a `CursorApi` handle
  *   `useTypewriter` text typed straight into an input, no render per letter
  *
- * The frame is `pointer-events-none` (see `ScreenFrame`), so none of this
- * competes with a real cursor: what the visitor's own pointer does over the
- * mockup is nothing, which is what makes a simulated one honest rather than
- * confusing.
+ * The frame is `inert` (see `ScreenFrame`), so none of this competes with a
+ * real cursor: what the visitor's own pointer does over the mockup is nothing,
+ * which is what makes a simulated one honest rather than confusing. `inert`
+ * also keeps the mockup's hundred-odd buttons out of the tab order and the
+ * accessibility tree, which `pointer-events-none` — what used to be here —
+ * never did.
+ *
+ * None of the steps below dispatch events or move focus: the cursor is a
+ * rendered element and `useTypewriter` writes to the node directly, so an
+ * inert subtree animates exactly as it did.
  */
 
 // ── The script ──────────────────────────────────────────────────────

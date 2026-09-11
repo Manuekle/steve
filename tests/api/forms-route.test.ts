@@ -3,6 +3,10 @@ import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type { FormStep } from "@/lib/types";
+import QRCode from "qrcode";
+import { NextRequest } from "next/server";
+import { SITE_URL, SITE_URL_IS_CONFIGURED } from "@/lib/site";
+import { advanceQrClock, CELL, createQrScene, drawQrFrame, FADE, isQrMatrix, TOTAL } from "@/components/motion/qr-canvas";
 
 /**
  * What the form routes refuse before they touch the store.
@@ -23,6 +27,7 @@ vi.mock("node:os", async () => {
 
 const formRoute = await import("@/app/api/forms/[id]/route");
 const formsRoute = await import("@/app/api/forms/route");
+const qrRoute = await import("@/app/api/forms/[id]/qr/route");
 const { createForm, getForm } = await import("@/lib/business-store");
 
 beforeEach(() => {
@@ -187,5 +192,99 @@ describe("POST /api/forms", () => {
       json("http://localhost/api/forms", "POST", { templateId: "nope" }) as AnyRequest,
     );
     expect(response.status).toBe(400);
+  });
+});
+
+describe("form QR", () => {
+  async function qrResponse(download = false) {
+    const form = await seed();
+    const request = new NextRequest(`http://localhost:3000/api/forms/${form.id}/qr?${download ? "download" : "json"}`);
+    const response = await qrRoute.GET(request, { params: Promise.resolve({ id: form.id }) });
+    const origin = SITE_URL_IS_CONFIGURED ? SITE_URL : request.nextUrl.origin;
+    const expected = QRCode.create(`${origin}/f/${form.slug}`, { errorCorrectionLevel: "M" });
+    return { response, expected };
+  }
+
+  it("serializes the complete URL matrix as boolean rows, including modules beyond 21", async () => {
+    const { response, expected } = await qrResponse();
+    expect(response.status).toBe(200);
+    const { modules } = await response.json();
+    expect(isQrMatrix(modules)).toBe(true);
+    expect(modules.length).toBeGreaterThan(21);
+    expect(modules).toHaveLength(expected.modules.size);
+    for (let row = 0; row < modules.length; row++) {
+      for (let column = 0; column < modules.length; column++) {
+        expect(modules[row][column]).toBe(Boolean(expected.modules.get(row, column)));
+      }
+    }
+    expect(response.headers.get("cache-control")).toBe("no-cache");
+  });
+
+  it("lands every dark module by 1320ms without replacing the canvas DPR transform", async () => {
+    const { response } = await qrResponse();
+    const { modules } = await response.json();
+    const scene = createQrScene(modules);
+    const ctx = {
+      save: vi.fn(), restore: vi.fn(), fillRect: vi.fn(),
+      translate: vi.fn(), rotate: vi.fn(), setTransform: vi.fn(),
+    };
+    drawQrFrame(ctx as unknown as CanvasRenderingContext2D, scene, TOTAL, false);
+    const darkCells = modules.flat().filter(Boolean).length;
+    expect(scene.marks).toHaveLength(darkCells);
+    expect(Math.min(...scene.marks.map((mark) => mark.start))).toBe(0);
+    expect(Math.max(...scene.marks.map((mark) => mark.start))).toBe(700);
+    expect(ctx.fillRect).toHaveBeenCalledTimes(darkCells + 1);
+    expect(ctx.translate).not.toHaveBeenCalled();
+    expect(ctx.rotate).not.toHaveBeenCalled();
+    expect(ctx.setTransform).not.toHaveBeenCalled();
+    for (const mark of scene.marks) {
+      expect(ctx.fillRect).toHaveBeenCalledWith(mark.x, mark.y, CELL, CELL);
+      expect(Number.isInteger(mark.x)).toBe(true);
+      expect(Number.isInteger(mark.y)).toBe(true);
+    }
+    ctx.fillRect.mockClear();
+    drawQrFrame(ctx as unknown as CanvasRenderingContext2D, scene, 0, false);
+    expect(ctx.fillRect).toHaveBeenCalledTimes(1); // Only the background.
+  });
+
+  it("reverses from the current millisecond clock and reopens after reaching zero", () => {
+    const entered = advanceQrClock(0, 500, true, false);
+    expect(entered).toBe(500);
+    const reversed = advanceQrClock(entered, 100, false, false);
+    expect(reversed).toBe(330);
+    expect(advanceQrClock(reversed, 100, true, false)).toBe(430);
+    const hidden = advanceQrClock(reversed, 1000, false, false);
+    expect(hidden).toBe(0);
+    expect(advanceQrClock(hidden, 1320, true, false)).toBe(TOTAL);
+  });
+
+  it("uses only opacity for reduced motion, with a 200ms fade both ways", async () => {
+    const { response } = await qrResponse();
+    const scene = createQrScene((await response.json()).modules);
+    const alphas: number[] = [];
+    const ctx = {
+      globalAlpha: 1,
+      save: vi.fn(), restore: vi.fn(), translate: vi.fn(), rotate: vi.fn(),
+      fillRect: vi.fn(() => alphas.push(ctx.globalAlpha)),
+    };
+    drawQrFrame(ctx as unknown as CanvasRenderingContext2D, scene, FADE / 2, true);
+    expect(alphas[0]).toBe(1);
+    expect(alphas.slice(1).every((alpha) => alpha === 0.5)).toBe(true);
+    expect(ctx.translate).not.toHaveBeenCalled();
+    expect(ctx.rotate).not.toHaveBeenCalled();
+    expect(advanceQrClock(0, 200, true, true)).toBe(FADE);
+    expect(advanceQrClock(FADE, 100, false, true)).toBe(100);
+    expect(advanceQrClock(FADE, 200, false, true)).toBe(0);
+  });
+
+  it("keeps the SVG download and missing-form response working", async () => {
+    const { response } = await qrResponse(true);
+    expect(response.headers.get("content-type")).toContain("image/svg+xml");
+    expect(response.headers.get("content-disposition")).toMatch(/^attachment;/);
+    expect(await response.text()).toContain("<svg");
+    const missing = await qrRoute.GET(new NextRequest("http://localhost:3000/api/forms/missing/qr?json"), {
+      params: Promise.resolve({ id: "missing" }),
+    });
+    expect(missing.status).toBe(404);
   });
 });

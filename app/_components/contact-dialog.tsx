@@ -1,6 +1,8 @@
 "use client";
 
 import { type FormEvent, useId, useState } from "react";
+import { HugeiconsIcon } from "@/components/icons/icon";
+import { UserIcon } from "@hugeicons/core-free-icons";
 import {
   DialogContent,
   DialogDescription,
@@ -110,7 +112,9 @@ export function ContactDialog({
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>{isEditing ? t("contactDialog.editTitle") : t("contactDialog.addTitle")}</DialogTitle>
+        <DialogTitle icon={<HugeiconsIcon icon={UserIcon} size={18} strokeWidth={1.75} />}>
+          {isEditing ? t("contactDialog.editTitle") : t("contactDialog.addTitle")}
+        </DialogTitle>
         <DialogDescription>
           {isEditing ? t("contactDialog.editDescription") : t("contactDialog.addDescription")}
         </DialogDescription>

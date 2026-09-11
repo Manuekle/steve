@@ -7,7 +7,7 @@ import {
   Blockchain05Icon,
   BubbleChatIcon,
   Call02Icon,
-  ArtificialIntelligence08Icon,
+  AiPaintbrushIcon,
   LibraryIcon,
 } from "@hugeicons/core-free-icons";
 
@@ -36,7 +36,7 @@ export const SECTION_ICONS: Record<SectionId, IconSvgElement> = {
   prompt: FileEditIcon,
   capabilities: Blockchain05Icon,
   channels: BubbleChatIcon,
-  model: ArtificialIntelligence08Icon,
+  model: AiPaintbrushIcon,
   voice: Call02Icon,
   business: LibraryIcon,
 };

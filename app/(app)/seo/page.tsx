@@ -8,11 +8,11 @@ import {
   ChartLineData01Icon,
   MouseLeftClick01Icon,
   Delete01Icon,
-  ScanEyeIcon,
+  ScanSearchIcon as ScanSearchAreaIcon,
   SearchIcon,
   Target02Icon,
-  GlobalSearchIcon,
 } from "@hugeicons/core-free-icons";
+import { GoogleMark } from "@/app/landing/_components/brand-marks";
 import { PageContainer } from "../../_components/page-container";
 import {
   Card,
@@ -22,7 +22,7 @@ import {
   CardTitle,
 } from "../../_components/dashboard-card";
 import { KpiCard, KpiSparkline } from "../../_components/kpi-card";
-import { RankedBars, TimeSeries, type ChartTone } from "../../_components/chart";
+import { ChartPeriod, ChartSelector, DonutChart, RankedBars, TimeSeries, type ChartTone } from "../../_components/chart";
 import { Pagination } from "@/components/ai-elements/pagination";
 import { SkeletonBar } from "@/components/ai-elements/skeleton";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
@@ -518,11 +518,11 @@ export default function SeoPage() {
      hand-written dependency array here only stopped it from doing so. */
   const deltas = totals
     ? {
-        clicks: metricDelta(totals.current.clicks, totals.previous.clicks),
-        impressions: metricDelta(totals.current.impressions, totals.previous.impressions),
-        ctr: metricDelta(totals.current.ctr, totals.previous.ctr),
-        position: metricDelta(totals.current.position, totals.previous.position),
-      }
+      clicks: metricDelta(totals.current.clicks, totals.previous.clicks),
+      impressions: metricDelta(totals.current.impressions, totals.previous.impressions),
+      ctr: metricDelta(totals.current.ctr, totals.previous.ctr),
+      position: metricDelta(totals.current.position, totals.previous.position),
+    }
     : null;
 
   const needle = search.trim().toLowerCase();
@@ -574,9 +574,9 @@ export default function SeoPage() {
             <p className="mt-1 text-muted-foreground text-sm">
               {period
                 ? t("seo.subtitleDated", {
-                    from: fullDay(period.start, locale),
-                    to: fullDay(period.end, locale),
-                  })
+                  from: fullDay(period.start, locale),
+                  to: fullDay(period.end, locale),
+                })
                 : t("seo.subtitle")}
             </p>
           </div>
@@ -585,9 +585,9 @@ export default function SeoPage() {
             <div className="flex flex-wrap items-center gap-2">
               {sites.length > 1 ? (
                 <Select onValueChange={(next) => {
-                    setPage(1);
-                    void switchSite(next);
-                  }} value={site ?? undefined}>
+                  setPage(1);
+                  void switchSite(next);
+                }} value={site ?? undefined}>
                   <SelectTrigger aria-label={t("seo.property")} className="w-[210px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -600,21 +600,10 @@ export default function SeoPage() {
                   </SelectContent>
                 </Select>
               ) : null}
-              <Select onValueChange={(next) => {
-                    setPage(1);
-                    setRange(next as RangeId);
-                  }} value={range}>
-                <SelectTrigger aria-label={t("common.filterByPeriod")} className="w-[150px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {RANGE_IDS.map((id) => (
-                    <SelectItem key={id} value={id}>
-                      {t(`seo.range.${id}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ChartSelector onChange={(next) => {
+                setPage(1);
+                setRange(next as RangeId);
+              }} value={range} label={t("common.filterByPeriod")} options={RANGE_IDS.map((id) => ({ value: id, label: t(`seo.range.${id}`) }))} />
             </div>
           ) : null}
         </header>
@@ -668,9 +657,9 @@ export default function SeoPage() {
                   {tab === "overview" ? null : (
                     <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                       <Select onValueChange={(next) => {
-                          setPage(1);
-                          setSort(next as SortKey);
-                        }} value={sort}>
+                        setPage(1);
+                        setSort(next as SortKey);
+                      }} value={sort}>
                         <SelectTrigger aria-label={t("seo.sortBy")} className="w-[170px]">
                           <SelectValue />
                         </SelectTrigger>
@@ -724,7 +713,7 @@ export default function SeoPage() {
                           />
                           <KpiCard
                             delta={tileDelta(deltas.impressions, t("seo.vsPrevious"))}
-                            icon={ScanEyeIcon}
+                            icon={ScanSearchAreaIcon}
                             label={t("seo.impressions")}
                             value={formatCount(totals.current.impressions, locale)}
                             visual={<KpiSparkline points={series.map((row) => row.impressions)} />}
@@ -765,6 +754,7 @@ export default function SeoPage() {
                         <CardHeader>
                           <CardTitle>{t("seo.trafficTitle")}</CardTitle>
                           <CardDescription>{t("seo.trafficSubtitle")}</CardDescription>
+                          <span className="ml-auto"><ChartPeriod value={range}>{t(`seo.range.${range}`)}</ChartPeriod></span>
                         </CardHeader>
                         <CardBody>
                           <TrafficChart changes={changes} locale={locale} series={series} t={t} />
@@ -778,8 +768,8 @@ export default function SeoPage() {
                             <CardDescription>{t("seo.devicesSubtitle")}</CardDescription>
                           </CardHeader>
                           <CardBody>
-                            <RankedBars
-                              bars={(data?.devices ?? []).map((row) => ({
+                            <DonutChart
+                              data={(data?.devices ?? []).map((row) => ({
                                 formatted: formatCount(row.clicks, locale),
                                 key: row.key,
                                 label: DEVICE_KEYS[row.key] ? t(DEVICE_KEYS[row.key]) : row.key,
@@ -910,16 +900,14 @@ function EmptyState({
   const external = action.href.startsWith("http");
   return (
     <Card>
-      <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-        <HugeiconsIcon
-          className="text-muted-foreground"
-          icon={GlobalSearchIcon}
-          size={28}
-          strokeWidth={1.5}
-        />
+      <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
+
+        <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+          <GoogleMark size={20} />
+        </div>
         <div>
-          <p className="font-medium">{title}</p>
-          <p className="mx-auto mt-1 max-w-md text-muted-foreground text-sm">{body}</p>
+          <p className="text-sm font-medium">{title}</p>
+          <p className="max-w-xs text-xs text-muted-foreground">{body}</p>
         </div>
         <Button asChild size="sm" variant="secondary">
           <a

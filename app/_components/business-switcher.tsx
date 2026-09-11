@@ -19,8 +19,10 @@ import {
 } from "@/components/ui/command";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -238,7 +240,9 @@ export function BusinessSwitcher({ collapsed = false }: { readonly collapsed?: b
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("business.create")}</DialogTitle>
+            <DialogTitle icon={<HugeiconsIcon icon={Building06Icon} size={18} strokeWidth={1.75} />}>
+              {t("business.create")}
+            </DialogTitle>
             <DialogDescription>{t("business.createDescription")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={(event) => void create(event)} className="space-y-4">
@@ -254,20 +258,25 @@ export function BusinessSwitcher({ collapsed = false }: { readonly collapsed?: b
               />
             </label>
             {error ? <p className="text-xs text-destructive">{uiErrorMessage(t, error)}</p> : null}
-            <div className="flex items-center justify-between gap-3">
-              <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
-                <HugeiconsIcon
-                  icon={Building06Icon}
-                  size={12}
-                  strokeWidth={1.75}
-                  className="mt-0.5 shrink-0"
-                />
-                {t("business.createNote")}
-              </p>
+            <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              <HugeiconsIcon
+                icon={Building06Icon}
+                size={12}
+                strokeWidth={1.75}
+                className="mt-0.5 shrink-0"
+              />
+              {t("business.createNote")}
+            </p>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button" onClick={() => setCreateOpen(false)}>
+                  {t("common.cancel")}
+                </Button>
+              </DialogClose>
               <Button type="submit" disabled={!newName.trim() || busy}>
                 {busy ? t("business.creating") : t("business.createAction")}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

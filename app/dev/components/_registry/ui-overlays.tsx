@@ -198,7 +198,6 @@ const ORB_STATES: readonly OrbState[] = [
   "solving",
   "listening",
   "connecting",
-  "weaving",
   "composing",
   "breathing",
   "shaping",
@@ -229,6 +228,9 @@ export function uiOverlays(_locale?: string): Section {
         "DialogTitle",
         "DialogDescription",
         "DialogClose",
+        "DialogBody",
+        "DialogCancel",
+        "DialogShortcut",
         "useDialogOpenCue",
       ],
       props: [
@@ -249,12 +251,16 @@ export function uiOverlays(_locale?: string): Section {
   </DialogTrigger>
   <DialogContent>
     <DialogHeader>
-      <DialogTitle>Editar agente</DialogTitle>
+      <DialogTitle icon={<HugeiconsIcon icon={PencilEdit02Icon} size={18} strokeWidth={1.75} />}>
+        Editar agente
+      </DialogTitle>
       <DialogDescription>Cambia el nombre con el que responde.</DialogDescription>
     </DialogHeader>
     <Input defaultValue="Agente de ventas" />
     <DialogFooter>
-      <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+      <DialogClose asChild>
+        <Button variant="outline">Cancelar</Button>
+      </DialogClose>
       <Button>Guardar</Button>
     </DialogFooter>
   </DialogContent>
@@ -266,7 +272,9 @@ export function uiOverlays(_locale?: string): Section {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Editar agente</DialogTitle>
+                  <DialogTitle icon={<HugeiconsIcon icon={PencilEdit02Icon} size={18} strokeWidth={1.75} />}>
+                    Editar agente
+                  </DialogTitle>
                   <DialogDescription>Cambia el nombre con el que responde.</DialogDescription>
                 </DialogHeader>
                 <Input defaultValue="Agente de ventas" />
@@ -312,7 +320,9 @@ export function uiOverlays(_locale?: string): Section {
   </AlertDialogTrigger>
   <AlertDialogContent>
     <AlertDialogHeader>
-      <AlertDialogTitle>¿Eliminar el agente?</AlertDialogTitle>
+      <AlertDialogTitle icon={<HugeiconsIcon icon={Delete02Icon} size={18} strokeWidth={1.75} />}>
+        ¿Eliminar el agente?
+      </AlertDialogTitle>
       <AlertDialogDescription>
         Se borran también sus conversaciones. No se puede deshacer.
       </AlertDialogDescription>
@@ -330,7 +340,9 @@ export function uiOverlays(_locale?: string): Section {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>¿Eliminar el agente?</AlertDialogTitle>
+                  <AlertDialogTitle icon={<HugeiconsIcon icon={Delete02Icon} size={18} strokeWidth={1.75} />}>
+                    ¿Eliminar el agente?
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
                     Se borran también sus conversaciones. No se puede deshacer.
                   </AlertDialogDescription>
@@ -712,7 +724,7 @@ export function uiOverlays(_locale?: string): Section {
         {
           id: "orb-states",
           title: ct("overlays.orb.states.title"),
-          code: '<Orb state="weaving" />',
+          code: '<Orb state="composing" />',
           render: (
             <div className="grid w-full grid-cols-3 gap-4 sm:grid-cols-5">
               {ORB_STATES.map((state) => (
@@ -727,8 +739,8 @@ export function uiOverlays(_locale?: string): Section {
         {
           id: "orb-large",
           title: ct("overlays.orb.large.title"),
-          code: '<Orb state="connecting" size={64} />',
-          render: <Orb state="connecting" size={64} />,
+          code: '<Orb state="composing" size={64} />',
+          render: <Orb state="composing" size={64} />,
         },
       ],
     },

@@ -14,7 +14,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AlertCircleIcon,
   ArrowLeft02Icon,
-  EyeIcon,
+  SearchAreaIcon,
   FileEditIcon,
   PanelLeftIcon,
   RefreshIcon,
@@ -457,7 +457,7 @@ export default function FormWorkspacePage() {
 
           {!dockOpen ? (
             <DockReopenButton
-              icon={EyeIcon}
+              icon={SearchAreaIcon}
               label={t("forms.builder.previewTitle")}
               onClick={() => setDockOpenPersisted(true)}
             />
@@ -591,6 +591,7 @@ export default function FormWorkspacePage() {
               <div className={cn("h-full", dockTab === "settings" ? "block" : "hidden")}>
                 {form && draft ? (
                   <SettingsPane
+                    active={dockOpen && dockTab === "settings"}
                     form={form}
                     draft={draft}
                     ceiling={ceiling}

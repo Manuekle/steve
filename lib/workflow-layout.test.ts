@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { layoutChain, NODE_W, NODE_H } from "./workflow-layout";
+import { layoutChain, NODE_W } from "./workflow-layout";
 import { newStep } from "./workflow-tree";
 import type { WorkflowStep } from "./types";
 
@@ -79,24 +79,18 @@ describe("workflow-layout", () => {
     expect(result.nodes.some((n) => n.path.join("/") === "0/then/0")).toBe(true);
   });
 
-  it("hangs the chain-tip slot off the merge point, not the condition", () => {
+  it("does not leave a trailing add button or tail after populated chains", () => {
     const cond: WorkflowStep = {
       ...newStep("condition"),
       thenSteps: [newStep("message"), newStep("message")],
       elseSteps: [newStep("message")],
     };
     const result = layoutChain([cond], [], 0, 0, null);
-    const tip = result.slots.find((s) => s.path.length === 0);
-    const condNode = result.nodes.find((n) => n.path.join("/") === "0")!;
-    const lowestBranch = Math.max(
-      ...result.nodes.filter((n) => n.path.length > 1).map((n) => n.y + NODE_H),
-    );
-    // Starting the tail at the condition's own bottom would run it back up
-    // through the fork; it has to start below the taller branch instead.
-    expect(tip?.from?.y).toBe(lowestBranch);
-    expect(tip!.from!.y).toBeGreaterThan(condNode.y + NODE_H);
-    // ...and stay on the fork's own centre line.
-    expect(tip?.from?.x).toBe(condNode.x);
-    expect(tip?.x).toBe(condNode.x);
+    expect(result.slots).toEqual([]);
+    expect(layoutChain([newStep("message")], [], 0, 0, null).slots).toEqual([]);
+  });
+
+  it("keeps one starting button for an empty canvas", () => {
+    expect(layoutChain([], [], 0, 0, null).slots).toMatchObject([{ path: [], index: 0 }]);
   });
 });

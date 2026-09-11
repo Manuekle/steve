@@ -7,6 +7,8 @@ import type {
   ActivityPoint,
 } from "./types";
 
+export type { ChatSummary };
+
 // In-browser store for dashboard metadata. Uses localStorage so data
 // survives reloads. The Eve runtime owns the actual session state; this
 // store layers app-level metadata (chat titles, automations, channel
@@ -205,14 +207,85 @@ export function getStats(chats: ChatSummary[], automations: Automation[]): Dashb
   };
 }
 
+/**
+ * One list from the two stores that know about a conversation.
+ *
+ * The browser writes a row the moment a turn finishes (`saveConversation`) and
+ * the server writes one from the agent's own hooks; the Eve session id is the
+ * only key they agree on. Neither is authoritative on every field — the
+ * browser sees the whole message list and so knows the real count, the server
+ * sees the contact and so knows the name — so this merges per field rather
+ * than letting the later store win outright.
+ *
+ * The rule is: never replace something with nothing. That is what used to make
+ * a conversation titled after the operator's first question come back from a
+ * refresh titled "Unknown" — the server row carried a placeholder in `title`
+ * and a blanket spread handed it the field.
+ */
 export function mergeChats(local: ChatSummary[], server: ChatSummary[]): ChatSummary[] {
   const byKey = new Map<string, ChatSummary>();
   for (const chat of [...local, ...server]) {
     const key = chat.sessionId ?? chat.id;
     const prev = byKey.get(key);
-    byKey.set(key, prev ? { ...prev, ...chat, id: prev.id } : chat);
+    byKey.set(key, prev ? mergeChat(prev, chat) : chat);
   }
   return [...byKey.values()];
+}
+
+/**
+ * Titles the agent used to write when it had nothing better, and which are
+ * still sitting in the stores of every install that ran that build: the
+ * contact placeholder from `upsertContact`, and the literal the persist hook
+ * stamped on a session the moment it opened. Reading them as "no title" is
+ * what makes an existing history list recover — the browser's own row for the
+ * same conversation is titled after the first thing the person asked, and it
+ * now wins instead of being overwritten.
+ */
+const PLACEHOLDER_TITLES: ReadonlySet<string> = new Set(["Unknown", "Conversation"]);
+
+function realTitle(title: string | undefined): string | undefined {
+  const trimmed = title?.trim();
+  return trimmed && !PLACEHOLDER_TITLES.has(trimmed) ? trimmed : undefined;
+}
+
+/**
+ * What to print for a conversation, or `undefined` when it has no name yet —
+ * a row that only ever reached the server, or one created before anybody had
+ * said anything. Callers supply their own localized fallback.
+ */
+export function chatTitle(chat: ChatSummary): string | undefined {
+  return realTitle(chat.title);
+}
+
+function mergeChat(prev: ChatSummary, next: ChatSummary): ChatSummary {
+  return {
+    ...prev,
+    ...next,
+    id: prev.id,
+    title: firstFilled(realTitle(next.title), realTitle(prev.title)),
+    lastMessage: firstFilled(next.lastMessage, prev.lastMessage),
+    // The two stores count differently — the browser counts rendered messages,
+    // the agent counts turns it persisted — and a row that has seen more is the
+    // row that has seen more of the conversation.
+    messageCount: Math.max(prev.messageCount ?? 0, next.messageCount ?? 0),
+    lastMessageAt: laterOf(prev.lastMessageAt, next.lastMessageAt),
+    // Pinning happens in the browser and is written through to the server, so
+    // an unset flag on either side means "not set here", not "unpinned".
+    pinned: prev.pinned || next.pinned,
+    handoff: prev.handoff || next.handoff,
+  };
+}
+
+function firstFilled(...values: readonly (string | undefined)[]): string {
+  return values.find((value) => value?.trim())?.trim() ?? "";
+}
+
+function laterOf(a: string, b: string): string {
+  const left = Date.parse(a);
+  const right = Date.parse(b);
+  if (!Number.isFinite(left)) return b;
+  if (!Number.isFinite(right)) return a;
+  return right >= left ? b : a;
 }
 
 // Monday-first, matching the `(getDay() + 6) % 7` shift below.

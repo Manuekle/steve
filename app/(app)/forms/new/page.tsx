@@ -16,7 +16,7 @@ import {
   PencilEdit01Icon,
   Ticket01Icon,
   File01Icon,
-  SparklesIcon,
+  ChatSpark01Icon,
   Calendar03Icon,
   CustomerSupportIcon,
 } from "@hugeicons/core-free-icons";
@@ -69,7 +69,7 @@ const PURPOSE_ICONS: Record<FormPurpose, IconSvgElement> = {
   feedback: PencilEdit01Icon,
   event: Ticket01Icon,
   applications: File01Icon,
-  other: SparklesIcon,
+  other: ChatSpark01Icon,
 };
 
 const PURPOSES: ReadonlyArray<{ id: FormPurpose; labelKey: string }> = [

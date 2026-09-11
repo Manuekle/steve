@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { CheckIcon } from "@hugeicons/core-free-icons";
+import { AuthorizedIcon } from "@hugeicons/core-free-icons";
 import {
   Dialog,
   DialogClose,
@@ -203,7 +203,9 @@ export function ManualKeyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("connections.manualDialogTitle", { provider: stableLabel.current })}</DialogTitle>
+          <DialogTitle icon={<HugeiconsIcon icon={AuthorizedIcon} size={20} strokeWidth={1.75} />}>
+            {t("connections.manualDialogTitle", { provider: stableLabel.current })}
+          </DialogTitle>
           <DialogDescription>{t(stableDescriptionKey.current)}</DialogDescription>
         </DialogHeader>
 
@@ -249,14 +251,12 @@ export function ManualKeyDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="secondary">{t("billing.cancel")}</Button>
+            <Button variant="outline" className="text-muted-foreground hover:text-foreground">
+              {t("billing.cancel")}
+            </Button>
           </DialogClose>
           <Button disabled={saving || loading || !group} onClick={() => void submit()}>
-            {saving ? (
-              <Spinner />
-            ) : (
-              <HugeiconsIcon icon={CheckIcon} size={16} strokeWidth={1.75} />
-            )}
+            {saving && <Spinner />}
             {saving ? t("settings.saving") : t("settings.saveChanges")}
           </Button>
         </DialogFooter>

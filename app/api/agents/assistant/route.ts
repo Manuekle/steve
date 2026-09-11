@@ -11,6 +11,7 @@ import { getBusinessIdentity, getBusinessProfile } from "@/lib/business-profile-
 import { listDocuments } from "@/lib/knowledge-store";
 import { normalizeBrief } from "@/lib/agent-brief";
 import type { AgentBrief } from "@/lib/types";
+import { aiGenerationFailure } from "@/lib/ai-generation-error";
 
 // POST /api/agents/assistant
 //
@@ -39,15 +40,15 @@ import type { AgentBrief } from "@/lib/types";
 const MAX_TURNS = 24;
 
 const briefPatchSchema = z.object({
-  role: z.string().optional(),
-  goal: z.string().optional(),
-  audience: z.string().optional(),
-  tone: z.string().optional(),
-  language: z.string().optional(),
-  greeting: z.string().optional(),
-  rules: z.array(z.string()).optional(),
-  avoid: z.array(z.string()).optional(),
-  handoff: z.string().optional(),
+  role: z.string().nullable(),
+  goal: z.string().nullable(),
+  audience: z.string().nullable(),
+  tone: z.string().nullable(),
+  language: z.string().nullable(),
+  greeting: z.string().nullable(),
+  rules: z.array(z.string()).nullable(),
+  avoid: z.array(z.string()).nullable(),
+  handoff: z.string().nullable(),
 });
 
 const answerSchema = z.object({
@@ -58,15 +59,15 @@ const answerSchema = z.object({
     ),
   patch: z
     .object({
-      name: z.string().optional().describe("Agent name, 2-4 words. Only when it should change."),
-      description: z.string().optional().describe("One line describing what the agent does."),
-      brief: briefPatchSchema.optional(),
+      name: z.string().nullable().describe("Agent name, 2-4 words. null when unchanged."),
+      description: z.string().nullable().describe("One line describing what the agent does. null when unchanged."),
+      brief: briefPatchSchema.nullable(),
       capabilities: z
         .array(z.string())
-        .optional()
+        .nullable()
         .describe("Capability ids from the catalog. The complete list the agent should end up with."),
     })
-    .describe("Only the fields this turn actually decided. Leave everything else out."),
+    .describe("Only the fields this turn actually decided. Set unchanged fields to null."),
   questions: z
     .array(
       z.object({
@@ -238,7 +239,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     "## Output",
     "",
     `Write every user-facing string in ${locale === "en" ? "English" : "Spanish (rioplatense, voseo)"}.`,
-    "Fill `patch` with only what this turn decided — repeating unchanged fields",
+    "Set unchanged patch fields to null. Fill changed fields with what this turn decided — repeating unchanged fields",
     "makes the proposal unreadable. Set `done` once role, goal, tone, handoff and",
     "capabilities are all settled and the agent is worth testing.",
   ].join("\n");
@@ -266,10 +267,14 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     // Only the proposal comes back. Composing the prompt happens in one place
     // — the PUT that saves the applied brief — so that a patch shown here and
     // a prompt stored later can never be two different pieces of writing.
-    return NextResponse.json({ answer: result.object });
+    const { patch, ...answer } = result.object;
+    // null means unchanged; preserve explicit empty strings/arrays as edits.
+    const compact = (value: Record<string, unknown>) => Object.fromEntries(Object.entries(value).filter(([, field]) => field !== null));
+    return NextResponse.json({ answer: { ...answer, patch: compact({
+      ...patch,
+      brief: patch.brief === null ? null : compact(patch.brief),
+    }) } });
   } catch (error) {
-    return apiError("generation_failed", {
-      detail: error instanceof Error ? error.message : String(error),
-    });
+    return aiGenerationFailure(error, "agents-assistant");
   }
 });

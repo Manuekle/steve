@@ -149,6 +149,9 @@
   --billing: oklch(0.48 0.23 296);
   --border: oklch(0 0 0 / 0.1);
   --input: oklch(0 0 0 / 0.08);
+  /* The goo outline is flooded inside an SVG filter, which paints a flat
+     colour and cannot honour the alpha in `--border`: it has to be opaque. */
+  --goo-outline: #dfe2e8;
   /* Tuned by eye to sit just above `--border`, which paints at 1.25:1: the
      ring is meant to read like a soft shadow around the control, not like a
      stroke. L=0.75 lands at 2.23:1 on a card and 2.05:1 on the page.
@@ -278,6 +281,37 @@
   --status-expired-bg: oklch(0.95 0 0);
   --status-expired-fg: oklch(0.55 0 0);
 
+  /* ── Mermaid diagrams (light) ──────────────────────────────── */
+  /* The palette `components/ai-elements/mermaid-plugin.ts` hands the SVG
+     renderer. Deliberately the raw zinc ramp rather than the app's surface
+     tokens: a diagram is a drawing, and drawing it in `--card` on `--card`
+     with `--border` between them is what made every flow read as a grey box
+     inside a grey box. Zinc is flatter and one step cooler, which is what the
+     nodes want and what the chart series below are tuned against. */
+  --diagram-bg: #ffffff;          /* white         */
+  --diagram-fg: #27272a;          /* zinc-800      */
+  --diagram-line: #a1a1aa;        /* zinc-400      */
+  --diagram-accent: #52525b;      /* zinc-600      */
+  --diagram-muted: #71717a;       /* zinc-500      */
+  --diagram-surface: #fafafa;     /* zinc-50       */
+  --diagram-border: #d4d4d8;      /* zinc-300      */
+
+  /* xychart series. The renderer would otherwise draw series 0 in
+     `--diagram-accent` and derive the rest from it, i.e. a bar chart in five
+     greys. Blue is the one hue that sits on zinc without fighting it; the ramp
+     walks blue -> indigo -> sky and back rather than shading one hue, because
+     two shades of the same blue are indistinguishable once they are bar fills
+     at 25 %. Eight is more series than any chat answer should have — past that
+     the renderer's own derived shade stays as the fallback. */
+  --diagram-series-0: #3b82f6;    /* blue-500      */
+  --diagram-series-1: #4338ca;    /* indigo-700    */
+  --diagram-series-2: #0ea5e9;    /* sky-500       */
+  --diagram-series-3: #1e3a8a;    /* blue-900      */
+  --diagram-series-4: #6366f1;    /* indigo-500    */
+  --diagram-series-5: #0369a1;    /* sky-700       */
+  --diagram-series-6: #60a5fa;    /* blue-400      */
+  --diagram-series-7: #a5b4fc;    /* indigo-300    */
+
   /* ── KPI plate — brushed metal ─────────────────────────────── */
   /* Diagonal sheen over the whole tile — bright corner, dark far corner. */
   --kpi-sheen: linear-gradient(138deg,
@@ -324,6 +358,7 @@
   --billing: oklch(0.75 0.16 296);
   --border: oklch(1 0 0 / 0.1);
   --input: oklch(1 0 0 / 0.1);
+  --goo-outline: #3a3a3a;
   /* Same intent as light, from the other side: 2.22:1 on a card, 2.31:1 on
      the page — a shadow, not a stroke. Compliant value was L=0.55 (3.88:1),
      restored under `prefers-contrast: more`. */
@@ -410,6 +445,31 @@
 
   /* Button easing */
   --btn-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* ── Mermaid diagrams (dark) ───────────────────────────────── */
+  /* Same roles, the zinc ramp read from the other end. `--diagram-bg` is the
+     colour `color-mix()` blends against inside the SVG — it has to be the
+     surface the diagram actually sits on, not black, or every tint comes out
+     too dark. */
+  --diagram-bg: #18181b;          /* zinc-900      */
+  --diagram-fg: #fafafa;          /* zinc-50       */
+  --diagram-line: #52525b;        /* zinc-600      */
+  --diagram-accent: #a1a1aa;      /* zinc-400      */
+  --diagram-muted: #a1a1aa;       /* zinc-400      */
+  --diagram-surface: #27272a;     /* zinc-800      */
+  --diagram-border: #3f3f46;      /* zinc-700      */
+
+  /* The same three hues, lifted a step or two: blue-700 on zinc-900 is nearly
+     invisible, so the dark ramp starts brighter and never goes below
+     blue-600. */
+  --diagram-series-0: #60a5fa;    /* blue-400      */
+  --diagram-series-1: #a5b4fc;    /* indigo-300    */
+  --diagram-series-2: #38bdf8;    /* sky-400       */
+  --diagram-series-3: #3b82f6;    /* blue-500      */
+  --diagram-series-4: #818cf8;    /* indigo-400    */
+  --diagram-series-5: #7dd3fc;    /* sky-300       */
+  --diagram-series-6: #2563eb;    /* blue-600      */
+  --diagram-series-7: #c7d2fe;    /* indigo-200    */
 
   /* ── Status badge palette (dark) ───────────────────────────── */
   --status-pending-bg: oklch(0.28 0.04 60);
@@ -671,11 +731,29 @@ textarea {
 }
 
 .t-dropdown {
-  animation: dropdown-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
-  transform-origin: var(--radix-select-content-transform-origin);
+  animation: dropdown-in 0.19s cubic-bezier(0.23, 1, 0.32, 1) both;
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin, var(--radix-select-content-transform-origin, center top));
 }
 .t-dropdown[data-state="closed"] {
-  animation: dropdown-out 0.12s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: dropdown-out 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* The goo menu's geometry is driven in JS off one progress value, so these
+   animations change nothing visually. They exist only so Radix's Presence has
+   something to wait for before it unmounts, which is what lets the close run
+   its own shorter curve instead of the open played backwards. */
+@keyframes goo-menu-hold {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+.t-goo-menu {
+  animation: goo-menu-hold 0.19s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.t-goo-menu[data-state="closed"] {
+  animation: goo-menu-hold 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-goo-menu { animation-duration: 0.01s !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1838,20 +1916,159 @@ textarea {
   font-weight: 600;
 }
 
-/* ── KPI card — large decorative icon clipped by card ──────────────── */
+/* ── Report artifact typography ─────────────────────────────────── */
+/* The report is the one surface in the app set as a document rather than as
+   a panel, and the whole design is carried by three faces and the space
+   between them — no rules, no boxes, no icons. Two classes are all it needs
+   beyond Tailwind: everything else is spacing.
+   See `app/_components/chat/artifacts/report-artifact.tsx`. */
 
-/* ── KPI plate ───────────────────────────────────────────────────── */
+/* The running head: section numbers, column headers, KPI labels, the download
+   control. Geist Mono, small and tracked out, so a label never competes with
+   the thing it labels. `0.62rem` rather than a Tailwind step because at 10px
+   Geist Mono's caps are the exact height that sits level with Cooper's
+   x-height in the pairs above. */
+.rp-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
 
-/* `isolation` keeps the glow and sheen in this card's own stacking context,
-   so a blurred halo can never bleed over a neighbouring tile. */
+/* Report prose. Wider leading and a hard measure — a report is read, not
+   scanned like a chat turn, and a 90-character line is where that stops
+   working. Streamdown sets the paragraphs inside; they inherit from here. */
+.rp-prose {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  max-width: 68ch;
+  color: var(--foreground);
+}
+
+.rp-prose :is(ul, ol) {
+  margin-block: 0.5rem;
+  padding-inline-start: 1.15rem;
+}
+
+/* An em dash rather than a bullet, and the same one `lib/report-pdf.ts` draws.
+   A dot is a chat convention; a document marks a list with a rule of the same
+   weight as its text. */
+.rp-prose ul {
+  list-style-type: "—";
+}
+
+.rp-prose ul > li {
+  padding-inline-start: 0.45rem;
+}
+
+.rp-prose :is(ul, ol) > li::marker {
+  color: var(--muted-foreground);
+}
+
+.rp-prose li + li {
+  margin-top: 0.2rem;
+}
+
+.rp-prose strong {
+  font-weight: 600;
+}
+
+/* Streamdown's own paragraph rhythm is tuned for a chat bubble. In a document
+   the gap between paragraphs is what replaces the missing rules. */
+.rp-prose > * + * {
+  margin-top: 0.7rem;
+}
+
+/* ── Mermaid block — chrome off ─────────────────────────────────── */
+/* Streamdown wraps every ```mermaid fence in a card: a rounded `bg-sidebar`
+   panel, a lowercase "mermaid" caption above it, a copy/download/fullscreen
+   bar, and a pan-zoom surface inside a second bordered `bg-background` box.
+   In a chat column that is two nested boxes and a filename around a picture
+   the reader is meant to just look at.
+   `controls={{ mermaid: false }}` in `message-response.tsx` drops the buttons.
+   What it cannot drop is the caption, the two boxes, or the pan-zoom wrapper —
+   those render unconditionally — so they come off here.
+   The pan-zoom wrapper is the one that matters beyond looks: it binds a
+   non-passive `wheel` handler, so scrolling the conversation with the pointer
+   over a diagram zoomed the diagram instead of moving the page.
+   `pointer-events: none` on the diagram means those handlers never see an
+   event, which also drops the `grab` cursor it sets inline. */
+[data-streamdown="mermaid-block"] {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  gap: 0;
+}
+
+/* The caption row. First child of the block, ahead of the (now absent) action
+   bar and the diagram itself. */
+[data-streamdown="mermaid-block"] > :first-child {
+  display: none;
+}
+
+/* The inner framed box. Matched by position rather than by `:has()` on the
+   diagram inside it, because while a diagram is still rendering that box holds
+   a placeholder instead — and a frame that appears for a moment and then goes
+   is worse than one that never appears. */
+[data-streamdown="mermaid-block"] > :last-child {
+  border: 0;
+  background: transparent;
+}
+
+[data-streamdown="mermaid"] {
+  pointer-events: none;
+}
+
+/* `min-h-28` on the pan-zoom root pads a three-node flow out to 112px. */
+[data-streamdown="mermaid"] > * {
+  min-height: 0;
+}
+
+/* ── KPI card — header and inset metal plate ──────────────────────── */
+
 .kpi-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.5rem;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  isolation: isolate;
+  transition-property: box-shadow, border-color;
+}
+
+.kpi-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem 0.75rem;
+}
+
+/* An 8px inset keeps the 24px shell and 16px plate concentric. The existing
+   sheen and bevel now belong to the metric, leaving its header uncluttered. */
+.kpi-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 7rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--background);
+  box-shadow: var(--shadow-inset);
   overflow: hidden;
   isolation: isolate;
 }
 
 /* Surface sheen. */
-.kpi-card::before {
+.kpi-body::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1861,7 +2078,7 @@ textarea {
 }
 
 /* Bevel highlight on the top edge. */
-.kpi-card::after {
+.kpi-body::after {
   content: "";
   position: absolute;
   top: 0;
@@ -2685,18 +2902,53 @@ html.lenis body {
 
    The tint moved onto the layer with the blur. On one element a background
    paints on top of its own filtered backdrop; split across two, a tint left up
-   here would sit *behind* the layer and be blurred along with the page. */
+   here would sit *behind* the layer and be blurred along with the page.
+
+   No fixed height any more. The bar is 64px of content and the drawer below it
+   is 0 tall until it opens, so the header box is exactly the surface the reader
+   sees — which is what lets the one frost layer cover both halves, and the one
+   hairline sit at the bottom of the whole thing rather than across the middle
+   of it. Nothing measures this element and it is `fixed`, so growing it costs
+   the document no layout. */
 .lp-header {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 50;
-  height: 64px;
   border-bottom: 1px solid transparent;
   transition: border-color 260ms var(--lp-ease);
+
+  /* Timings for the mobile drawer, declared here because the drawer and the
+     frost behind it have to move as one thing and they are two elements. */
+  --lp-menu-h: 0px;
+  --lp-menu-radius: 24px;
+  --lp-menu-open-dur: 520ms;
+  --lp-menu-close-dur: 340ms;
+  /* Opening overshoots: the sheet travels past its resting height and settles
+     back. That, and the corner radius swelling past its final value on the
+     same beat, is the whole trick — a rectangle that unfolds reads as a panel,
+     a body that overshoots and relaxes reads as something soft being pushed
+     out of the bar. Closing does not overshoot; a menu that bounces on the way
+     out feels broken rather than alive.
+
+     3% at the peak, which is 14px on the ten-row Spanish menu. It is worth
+     being precise about: the same curve shape at `1.56` — the overshoot the
+     radius uses, where 10% of 24px is 2px — would be a 46px flap here. The
+     amount that reads as weight on one property reads as a bug on another. */
+  --lp-menu-ease: cubic-bezier(0.34, 1.3, 0.5, 1);
+  --lp-menu-ease-close: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .lp-header.is-stuck {
   border-bottom-color: var(--lp-hairline);
+}
+
+/* The seam, which is the bug this is fixing. The hairline is drawn at the
+   bottom of the header box; with the drawer open that edge is the drawer's
+   own rounded bottom, and a square 1px line has no business being drawn
+   across it. The frosted body's edge is the boundary while the menu is out.
+   Placed after `.is-stuck` deliberately: same specificity, later wins. */
+.lp-header[data-menu-open="true"] {
+  border-bottom-color: transparent;
 }
 
 /* Fades rather than switching: `opacity` interpolates, a filter list going
@@ -2745,13 +2997,45 @@ html.lenis body {
   z-index: -1;
   opacity: 0;
   pointer-events: none;
+  border-radius: 0;
+  box-shadow: none;
   background-color: var(--background);
   background-color: oklch(from var(--background) l c h / 0.45);
-  transition: opacity 260ms var(--lp-ease);
+  transition:
+    opacity 300ms var(--lp-ease),
+    background-color 300ms var(--lp-ease),
+    box-shadow var(--lp-menu-close-dur) var(--lp-menu-ease-close),
+    border-radius var(--lp-menu-close-dur) var(--lp-menu-ease-close);
 }
 
 .lp-header.is-stuck .lp-header-blur {
   opacity: 1;
+}
+
+/* With the menu open this layer stops being a frost over a bar and becomes
+   the sheet the menu is written on — so it is here, on the one element that
+   already owns the blur, that the mobile menu gets its background. It used to
+   get its own opaque `bg-background` panel underneath a translucent bar, and
+   the two never matched: at the top of the page the bar was fully clear and
+   the panel below it was solid, which is the hard horizontal edge under the
+   wordmark in the bug report.
+
+   The tint climbs to 0.9 because this is now type on a sheet rather than a
+   32px strip of chrome — 0.45 over a moving hero is not a background a menu
+   can be read on. The radius swells past its resting value on the way out
+   (the overshoot bezier) and eases straight back on the way in. */
+.lp-header[data-menu-open="true"] .lp-header-blur {
+  opacity: 1;
+  background-color: var(--background);
+  background-color: oklch(from var(--background) l c h / 0.9);
+  border-radius: 0 0 var(--lp-menu-radius) var(--lp-menu-radius) /
+    0 0 calc(var(--lp-menu-radius) * 1.25) calc(var(--lp-menu-radius) * 1.25);
+  box-shadow: var(--shadow-float);
+  transition:
+    opacity 200ms var(--lp-ease),
+    background-color 260ms var(--lp-ease),
+    box-shadow var(--lp-menu-open-dur) var(--lp-ease-soft),
+    border-radius var(--lp-menu-open-dur) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2804,10 +3088,93 @@ html.lenis body {
 }
 
 /* ── Mobile menu ────────────────────────────────────────────────── */
-/* No rules of its own any more. It had a keyframe pair and a `data-closing`
-   attribute driven by a timer that held the unmount open long enough for the
-   exit to play; it uses `.t-panel-slide` now, which transitions between two
-   states instead of animating between two mounts and needs no timer. */
+/* A drawer inside the header rather than a sheet hung below it.
+
+   It was `.t-panel-slide`: an opaque panel, its own border, its own shadow,
+   sliding 14px down from behind a translucent bar. Three things were wrong
+   with that and they were all the same thing — it was a second object. Its
+   background could not match the bar's frost (and at the top of the page,
+   where the frost is at zero opacity, it did not even try), the bar's hairline
+   ran across the join, and it arrived as a rectangle appearing rather than as
+   the bar producing it.
+
+   Now it is a clipping box that grows. The content sits at full height
+   underneath the whole time and `overflow: hidden` decides how much of it has
+   been let out, so the links are extruded from under the bar rather than
+   sliding in beside it; the frost covers the box because it is the same
+   box. */
+.lp-menu {
+  height: 0;
+  overflow: hidden;
+  transition: height var(--lp-menu-close-dur) var(--lp-menu-ease-close);
+}
+
+/* `--lp-menu-h` is written by the header from a ResizeObserver on the content.
+   `height: auto` cannot be transitioned, and the alternatives — a `0fr→1fr`
+   grid row, or `interpolate-size` — either lose the overshoot (an `fr` row in
+   an auto-height container clamps at max-content, so a bezier that goes past 1
+   does nothing) or are one engine deep. */
+.lp-menu[data-open="true"] {
+  height: var(--lp-menu-h);
+  transition: height var(--lp-menu-open-dur) var(--lp-menu-ease);
+}
+
+/* No `will-change` on any of this. The old panel asked for a compositor layer
+   and had a use for one — it moved on `transform` and `opacity`. Height is a
+   layout property: there is no layer that spares the browser the work, and the
+   hint would only cost a full-width sheet on every marketing page a layer for
+   the whole session. The work is a relayout of ten rows inside a `fixed`
+   element, which the document never sees. */
+
+.lp-menu-inner {
+  /* The drawer never grows past the viewport. On a short phone in landscape
+     the rows are taller than the screen, and a menu whose last item is under
+     the fold with nothing to say so is worse than one that scrolls.
+     `--lp-menu-h` follows this, because it is measured from this element. */
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* The rows arrive on a stagger, behind the growing edge. The clip alone would
+   reveal them — this is what stops the reveal reading as a curtain raised on
+   a finished list: each row is still settling as the edge passes it, so the
+   sheet looks like it is filling rather than sliding.
+
+   The `filter` here is safe where the old panel's was not: it is on a
+   descendant of the header, not on an ancestor of `.lp-header-blur`, so
+   nothing between the frost and the page is a backdrop root. */
+.lp-menu-item {
+  opacity: 0;
+  translate: 0 -10px;
+  filter: blur(3px);
+  transition:
+    opacity 160ms var(--lp-ease),
+    translate 160ms var(--lp-ease),
+    filter 160ms var(--lp-ease);
+}
+
+.lp-menu[data-open="true"] .lp-menu-item {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+  transition:
+    opacity 380ms var(--lp-ease-soft),
+    translate 380ms var(--lp-ease-soft),
+    filter 380ms var(--lp-ease-soft);
+  transition-delay: calc(var(--i) * 26ms + 70ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-menu,
+  .lp-menu[data-open="true"],
+  .lp-menu-item,
+  .lp-menu[data-open="true"] .lp-menu-item {
+    transition: none;
+    transition-delay: 0s;
+  }
+}
 
 /* ── Hero backdrop ──────────────────────────────────────────────── */
 /* Three stacked layers, cheapest first: a hairline grid, a wide soft glow
@@ -3922,6 +4289,15 @@ html.lenis body {
   --lp-lumen-mid: oklch(0.4 0 0);
   --lp-lumen-lo: oklch(0.66 0 0);
   --lp-lumen-bloom: oklch(0 0 0 / 0.18);
+  /* The same mill, for a mark drawn on a ground of the opposite polarity —
+     the login tile, which is `--foreground` on a `--background` page. The ramp
+     above would put a dark mark on a dark tile there. This one is the other
+     theme's values, not a lightened copy of these: the light is still overhead
+     and still falls to the baseline, it is only the surface underneath that
+     swapped, so what changes is which end of the range the metal sits in. */
+  --lp-lumen-inv-hi: oklch(1 0 0);
+  --lp-lumen-inv-mid: oklch(0.88 0 0);
+  --lp-lumen-inv-lo: oklch(0.58 0 0);
 }
 
 :root.dark,
@@ -3940,6 +4316,9 @@ html.lenis body {
   --lp-lumen-mid: oklch(0.88 0 0);
   --lp-lumen-lo: oklch(0.58 0 0);
   --lp-lumen-bloom: oklch(1 0 0 / 0.3);
+  --lp-lumen-inv-hi: oklch(0.24 0 0);
+  --lp-lumen-inv-mid: oklch(0.4 0 0);
+  --lp-lumen-inv-lo: oklch(0.66 0 0);
 }
 
 /* ── Strip light ─────────────────────────────────────────────────────
@@ -4729,6 +5108,73 @@ html.lenis body {
   opacity: 0.55;
 }
 
+/* ── Licence gate ────────────────────────────────────────────────────
+   The locked page behind the buy card.
+
+   What it replaced was one flat pane: `blur-[6px]` on the content plus
+   `backdrop-blur-xl` over it, both uniform. A single blur radius applied to a
+   whole column is the "frosted screenshot" look — every row equally illegible,
+   including the ones next to the card where the eye is actually looking, and
+   nothing anywhere that says the card is nearer than the page.
+
+   This is a ramp instead: three stacked backdrops, each masked to its own
+   band, so focus goes out with depth — the top of the column stays nearly
+   readable and the foot is gone. Radii stack where the ramps overlap (2, then
+   2+7, then 2+7+18), which is what makes the fall-off read as continuous
+   rather than as three bands.
+
+   Only the ramps live here. The blur itself is a `backdrop-blur-[Npx]` utility
+   on each span — see the note above `.lp-overlay` for why a hand-written
+   `backdrop-filter` does not survive the build. Three layers rather than the
+   landing's two: the cost of a `backdrop-filter` is a pass per layer per
+   *frame it changes*, and nothing under this one moves — the subtree is inert
+   and the page behind it does not scroll. */
+.gate-haze {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gate-haze > span {
+  position: absolute;
+  inset: 0;
+}
+
+/* The first span gets no rule at all — it is unmasked on purpose, so the whole
+   column sits a hair off sharp. Without it the ramp starts partway down and
+   reads as an unstyled page with a blur bolted onto its lower half. The other
+   two are each masked to their own band, overlapping by twenty points so no
+   single mask edge ever lands on its own. */
+.gate-haze > span:nth-child(2) {
+  mask-image: linear-gradient(to bottom, transparent 6%, #000 58%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 6%, #000 58%);
+}
+.gate-haze > span:nth-child(3) {
+  mask-image: linear-gradient(to bottom, transparent 38%, #000 96%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 96%);
+}
+
+/* The wash, and it runs the same way the blur does: air at the top, page
+   colour at the foot. A flat `bg-background/60` was the other half of why the
+   old gate read as a pane — an even tint over an even blur is a sheet of
+   frosted glass, and a sheet has no depth in it.
+
+   Eased stops rather than a straight ramp, for the reason `.lp-veil` sets out:
+   a linear fade to the ground colour does nothing for its first half and then
+   arrives all at once. */
+.gate-haze > span:nth-child(4) {
+  /* The straight ramp, for a browser without relative colour. */
+  background: linear-gradient(to bottom, transparent 0%, var(--background) 100%);
+  background: linear-gradient(
+    to bottom,
+    oklch(from var(--background) l c h / 0.04) 0%,
+    oklch(from var(--background) l c h / 0.26) 26%,
+    oklch(from var(--background) l c h / 0.52) 52%,
+    oklch(from var(--background) l c h / 0.76) 76%,
+    oklch(from var(--background) l c h / 0.9) 100%
+  );
+}
+
 /* ── Reduced motion ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .lp [data-reveal] {
@@ -4791,5 +5237,310 @@ html.lenis body {
   }
 }
 
+
+
+
+/* ── Data-visualisation series palette ──────────────────────── */
+/* The categorical slots a chart draws series with. Six, in fixed order,
+   assigned by position and never cycled: a filter that drops a series must
+   not repaint the ones that survive, or the reader reads last week's chart.
+   Six because a share chart folds its tail at six slices, which is the widest
+   any form here gets — a grouped chart caps at four series in the schema.
+
+   The app's own palette is achromatic on purpose, and a chart cannot be. Grey
+   is what "not this series" looks like here, so a grey *series* is ambiguous
+   with the de-emphasised rest — which is also what the palette validator says
+   when it rejects a slot for reading grey. Single-series charts therefore stay
+   achromatic (`--viz-mono`, the same foreground wash the dashboard bars use)
+   and these four come out only when there are series to tell apart.
+
+   Kept as hex, alone in this file, because they are validated values rather
+   than chosen ones: both sets clear the lightness band, the chroma floor, the
+   colour-blind separation floor (worst adjacent ΔE 9.1 light / 8.4 dark) and
+   the normal-vision floor against this app's own card surfaces. Re-run the
+   check before editing one — an eyeballed substitution is how a palette stops
+   being colour-blind-safe without anyone noticing. Order matters as much as
+   the values: the separation floors are measured on *adjacent* pairs, so
+   re-ordering these invalidates the result.
+
+   Three light slots sit under 3:1 on white, which is legal only with a second
+   encoding: the chart always draws a legend at two or more series and offers
+   the table view. Do not remove either. */
+:root {
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-4: #eda100;
+  --viz-5: #e87ba4;
+  --viz-6: #008300;
+  --viz-mono: oklch(0.16 0 0 / 0.5);
+  --viz-grid: oklch(0 0 0 / 0.07);
+}
+
+:root.dark,
+.dark {
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-4: #c98500;
+  --viz-5: #d55181;
+  --viz-6: #008300;
+  --viz-mono: oklch(0.93 0 0 / 0.45);
+  --viz-grid: oklch(1 0 0 / 0.08);
+}
+
+
+/* ── Chat loading stage ─────────────────────────────────────────── */
+/* The screen between opening a conversation and reading it — see
+   `app/_components/chat/agent-loading.tsx` for what it says and why.
+
+   Lighting and type, nothing else: no plate, no border, no surface. What
+   there is, is built the way the marketing rig builds light — the long note
+   above `.lp-beam` is the argument, and this scene follows three of its
+   rules, having failed each of them once:
+
+   1. Gradients, not `filter: blur()`. A soft blob is a blurred rectangle,
+      and a blurred rectangle over half the viewport is a full offscreen pass
+      per frame for a shape a conic gradient draws exactly. It also *looks*
+      like a blurred rectangle: the smudge that costs the most is the one
+      that reads as cheapest.
+   2. A cone, not a disc. Light comes from somewhere. A radial bloom centred
+      on the text is a grey oval with no source, which is the difference
+      between a lit room and a stain; a cone swept about a point above the
+      screen has a direction, and the eye reads direction as lighting.
+   3. It does not move. "A light that pulses is a notification; a light that
+      sits still is a room." The only motion on this screen is the spinner
+      and the sweep across the label — the two things that are actually
+      claiming the app is still working.
+
+   Both themes get the same fixture at different exposures. On dark the light
+   is white at a low alpha over a ground that is nearly black at the corners;
+   on light, white at a *high* alpha over a near-white page, where the whole
+   range between `--background` and white is three points of lightness and
+   every stop has to spend them carefully.
+
+   Colours are written out at each alpha instead of derived with `color-mix`:
+   Lightning CSS mangles `color-mix(…, transparent)` in this project and ships
+   it at full alpha, which here would be a white rectangle across the top of
+   the screen. */
+.chat-loading {
+  /* The cone, from its core out to the last of the spill. */
+  --stage-cone-1: oklch(1 0 0 / 0.9);
+  --stage-cone-2: oklch(1 0 0 / 0.48);
+  --stage-cone-3: oklch(1 0 0 / 0.15);
+  /* The pool the light makes where it lands, on the words. */
+  --stage-pool: oklch(1 0 0 / 0.8);
+  --stage-pool-spill: oklch(1 0 0 / 0.42);
+  /* Corners. Barely anything in light theme — the job here is depth, and a
+     vignette heavy enough to see is a grey box drawn around the page. */
+  --stage-vignette: oklch(0.5 0 0 / 0.07);
+  /* The ring: its unlit side, and the arc facing the light. */
+  --stage-ring: oklch(0.55 0 0 / 0.14);
+  --stage-ring-hot: oklch(0.42 0 0 / 0.7);
+  --stage-grain: 0.016;
+  /* The page ground in light theme: the room is already the brightest thing
+     the light could land on. */
+  --stage-ground: var(--background);
+
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* The product gives it the viewport; the dev catalog boxes it. */
+  height: var(--stage-height, 100dvh);
+  overflow: hidden;
+  background: var(--stage-ground);
+}
+
+:root.dark .chat-loading,
+.dark .chat-loading {
+  --stage-cone-1: oklch(1 0 0 / 0.085);
+  --stage-cone-2: oklch(1 0 0 / 0.05);
+  --stage-cone-3: oklch(1 0 0 / 0.018);
+  --stage-pool: oklch(1 0 0 / 0.085);
+  --stage-pool-spill: oklch(1 0 0 / 0.035);
+  /* Deeper here, and it is not decoration: `--background` is 0.155, which is
+     a long way from black, and a cone needs somewhere darker than itself to
+     fall into or it reads as fog. */
+  --stage-vignette: oklch(0 0 0 / 0.5);
+  /* A stop and a half under `--background`. A cone needs somewhere darker
+     than itself to fall into, and 0.155 is a long way from black — every
+     alpha above lands as grey haze on it rather than as light. The step is
+     small enough that arriving from the chat and leaving for it are not two
+     flashes of a different black. */
+  --stage-ground: oklch(0.128 0 0);
+  --stage-ring: oklch(1 0 0 / 0.13);
+  --stage-ring-hot: oklch(1 0 0 / 0.82);
+  --stage-grain: 0.035;
+}
+
+/* Vignette first, grain over it — grain under a vignette gets washed out at
+   exactly the edges where it is doing the most work. The grain is here for
+   banding, not for texture: a 40rem gradient at these alphas steps visibly on
+   an 8-bit panel, and a couple of percent of noise is what hides the steps. */
+.chat-loading::before,
+.chat-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chat-loading::before {
+  background: radial-gradient(
+    ellipse 78% 66% at 50% 42%,
+    transparent 0%,
+    var(--stage-vignette) 100%
+  );
+}
+
+.chat-loading::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: var(--stage-grain);
+  mix-blend-mode: overlay;
+}
+
+/* ── The light ──────────────────────────────────────────────────── */
+
+/* The fixture is out of frame; this is the cone it throws.
+
+   Swept about a point above the top edge (`at 50% -12%`), so it is already
+   open where it enters rather than converging to a point on screen — a cone
+   that comes to a point is a triangle, and a real one starts at the width of
+   its lens. The sides are soft for free: a beam's shoulders are a falloff in
+   *angle*, which is what a conic gradient interpolates.
+
+   The mask is the distance falloff and only that — how far the light carries,
+   as opposed to how wide it opens. It ramps in over the first eighth so the
+   cone is never cut off at full brightness by the top of the screen, and is
+   gone by 92% so the light finishes before the element does. */
+.chat-loading__cone {
+  position: absolute;
+  inset: 0 -12% auto -12%;
+  height: min(92vh, 46rem);
+  pointer-events: none;
+  background: conic-gradient(
+    from 150deg at 50% -55%,
+    transparent 0deg,
+    var(--stage-cone-3) 9deg,
+    var(--stage-cone-2) 19deg,
+    var(--stage-cone-1) 27deg,
+    var(--stage-cone-1) 33deg,
+    var(--stage-cone-2) 41deg,
+    var(--stage-cone-3) 51deg,
+    transparent 60deg
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    oklch(0 0 0 / 0.5) 10%,
+    #000 42%,
+    oklch(0 0 0 / 0.38) 72%,
+    transparent 94%
+  );
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    oklch(0 0 0 / 0.5) 10%,
+    #000 42%,
+    oklch(0 0 0 / 0.38) 72%,
+    transparent 94%
+  );
+}
+
+/* Where the cone lands. Anchored on the words rather than at the top, because
+   it is the light *around* the object rather than the light falling *past*
+   it — without it the type sits in a beam that never arrives anywhere, which
+   is the same nothing as a bloom with no source. */
+.chat-loading__pool {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(120vw, 44rem);
+  height: min(58vh, 20rem);
+  translate: -50% -52%;
+  pointer-events: none;
+  /* Two stops from the same centre — where the beam actually lands, and the
+     spill around it. One ellipse alone is a flat oval; the pair is a falloff,
+     and the difference is the whole distance between light and a smudge. */
+  background:
+    radial-gradient(36% 44% at 50% 47%, var(--stage-pool) 0%, transparent 74%),
+    radial-gradient(58% 64% at 50% 52%, var(--stage-pool-spill) 0%, transparent 78%);
+}
+
+/* ── The words ──────────────────────────────────────────────────── */
+
+.chat-loading__stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(88vw, 26rem);
+  text-align: center;
+}
+
+/* A ring that catches the light, the way `.lp-arc` does on the landing, and
+   not the icon spinner the buttons use: on a screen whose only two materials
+   are light and type, a 20px glyph of a dashed circle is a third one.
+
+   The stroke is a conic gradient masked to a 1.5px donut — bright where it
+   faces the lamp above it, gone where it turns away — so the thing that is
+   spinning is an arc of light rather than a shape. Starts at 90deg so the lit
+   end is under the cone at rest. */
+.chat-loading__spinner {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 90deg,
+    transparent 0deg,
+    var(--stage-ring) 120deg,
+    var(--stage-ring-hot) 330deg,
+    var(--stage-ring-hot) 360deg
+  );
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1.5px));
+  -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1.5px));
+  animation: chat-loading-spin 1.05s linear infinite;
+}
+
+/* The shimmer is the wait said in type: one pass across the line at the pace
+   a person reads it, which is a light crossing the words rather than a
+   loading bar wearing them as a costume. Colour comes from `TextShimmer`
+   (`--muted-foreground` to `--foreground`), so it is one sweep in both themes
+   and needs nothing here. */
+.chat-loading__label {
+  margin-top: 1.125rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+
+/* Mounted from the start and revealed by opacity: appearing into the layout
+   would move the spinner and the label mid-wait, which is a jolt on the one
+   screen whose whole job is to feel calm. */
+.chat-loading__hint {
+  margin-top: 0.5rem;
+  max-width: 30ch;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+.chat-loading__hint[data-visible="true"] { opacity: 0.75; }
+
+@keyframes chat-loading-spin {
+  to { rotate: 360deg; }
+}
+
+/* The room does not move, so there is nothing here to calm but the two things
+   that do: the ring stops on its lit arc, and the shimmer stops itself
+   through `TEXT_SHIMMER_KEYFRAMES`. */
+@media (prefers-reduced-motion: reduce) {
+  .chat-loading__spinner { animation: none; }
+  .chat-loading__hint { transition: none; }
+}
 
 

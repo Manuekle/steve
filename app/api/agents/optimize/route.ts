@@ -6,6 +6,7 @@ import { getProviderReport } from "@/lib/provider-catalog";
 import { z } from "zod";
 import { apiError, missingField, withApiErrors } from "@/lib/api-error";
 import { guardAiRoute, recordRouteUsage } from "@/lib/ai-route-guard";
+import { aiGenerationFailure } from "@/lib/ai-generation-error";
 
 // POST /api/agents/optimize
 // Takes a free-text description and returns a structured agent config
@@ -106,8 +107,6 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     await recordRouteUsage({ model: modelId, usage: result.usage, conversationId: "agents-optimize" });
     return NextResponse.json({ config: result.object });
   } catch (error) {
-    return apiError("generation_failed", {
-      detail: error instanceof Error ? error.message : String(error),
-    });
+    return aiGenerationFailure(error, "agents-optimize");
   }
 });
