@@ -173,7 +173,7 @@ export function ContactDialog({
         {fieldError ? <p className="text-xs text-destructive">{fieldError}</p> : null}
         <ErrorBanner error={saveError} onDismiss={() => setSaveError(null)} />
 
-        <DialogFooter>
+        <DialogFooter className="pt-0">
           <Button type="button" variant="outline" onClick={onClose}>
             {t("contactDialog.cancel")}
           </Button>

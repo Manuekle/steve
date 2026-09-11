@@ -428,7 +428,7 @@ export function CrmBoard({
       className="relative min-w-0"
     >
       <p className="sr-only" role="status">{announcement}</p>
-      <div ref={scrollerRef} className="overflow-auto overscroll-contain" style={{ maxHeight: `calc(100dvh - ${q(240)})`, padding: q(8) }} onScroll={(event) => {
+      <div ref={scrollerRef} className="overscroll-contain" style={{ padding: q(8) }} onScroll={(event) => {
         const own = session.current?.scrolls.find((scroll) => scroll.el === event.currentTarget);
         if (own) { scrollX.set(event.currentTarget.scrollLeft - own.x); scrollY.set(event.currentTarget.scrollTop - own.y); }
       }}>
@@ -524,9 +524,9 @@ const ContactCard = memo(function ContactCard({
       aria-label={contact.name}
       aria-keyshortcuts={overlay ? undefined : "Alt+ArrowUp Alt+ArrowDown"}
       className={cn(
-        "group relative grid min-w-0 touch-none select-none items-center border border-border bg-background text-left text-card-foreground shadow-[var(--shadow-inset)]",
+        "group relative grid min-w-0 touch-none select-none items-center bg-background/75 text-left text-card-foreground transition-[border-color] duration-200",
         "focus-visible:outline-solid focus-visible:outline-[color:var(--ring)]",
-        !overlay && "cursor-grab hover:border-ring/40",
+        !overlay && "cursor-grab hover:border-border",
       )}
       style={{
         height: q(list ? 56 : 148), paddingInline: q(16), paddingBlock: list ? 0 : q(12),
@@ -543,12 +543,12 @@ const ContactCard = memo(function ContactCard({
       </span>
       <span title={note} className="min-w-0 truncate font-normal text-muted-foreground" style={{ fontSize: q(12.5), lineHeight: q(17), gridColumn: list ? 3 : "1 / -1", gridRow: list ? 1 : 3 }}>{note || "\u00a0"}</span>
       <span title={relativeTime(contact.lastMessageAt, locale)} className="min-w-0 truncate text-right text-muted-foreground tabular-nums" style={{ fontSize: q(10), lineHeight: q(17), gridColumn: list ? 4 : 2, gridRow: 1 }}>{relativeTime(contact.lastMessageAt, locale)}</span>
-      <div data-card-actions inert={overlay || moving} className={cn("flex min-w-0 items-center", !list && "border-t border-border")}
+      <div data-card-actions inert={overlay || moving} className={cn("flex min-w-0 items-center", !list && "border-t border-border/50")}
         onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}
         style={{ gridColumn: list ? 5 : "1 / -1", gridRow: list ? 1 : 4, height: q(36), gap: q(6), paddingTop: list ? 0 : q(6) }}>
         <Select disabled={overlay || moving} value={contact.status} onValueChange={(status) => onMove(contact.id, status as ContactStatus)}>
           <SelectTrigger size="sm" aria-label={locale === "es" ? `Cambiar etapa de ${contact.name}` : `Change stage for ${contact.name}`}
-             onPointerDown={(event) => event.stopPropagation()} className="min-w-0 flex-1 rounded-[9px] bg-card shadow-none"
+             onPointerDown={(event) => event.stopPropagation()} className="min-w-0 flex-1 rounded-[9px] bg-card/60 shadow-none hover:bg-card"
             style={{ height: q(28), fontSize: q(11), paddingInline: q(8) }}>
             <SelectValue />
           </SelectTrigger>
@@ -557,9 +557,9 @@ const ContactCard = memo(function ContactCard({
           </SelectContent>
         </Select>
         <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={locale === "es" ? `Abrir ${contact.name}` : `Open ${contact.name}`} onClick={() => onEdit(contact)} onPointerDown={(event) => event.stopPropagation()}
-            className="bg-card text-muted-foreground shadow-[var(--shadow-inset)] hover:bg-accent hover:text-foreground" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} /></Button>
+            className="text-muted-foreground hover:bg-accent/70 hover:text-foreground" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} /></Button>
         <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={t("crm.delete")} onClick={() => onDelete(contact.id)} onPointerDown={(event) => event.stopPropagation()}
-            className="bg-card text-muted-foreground shadow-[var(--shadow-inset)] hover:bg-destructive/10 hover:text-destructive" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} /></Button>
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} /></Button>
       </div>
     </motion.article>
   );
