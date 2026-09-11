@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { EASE_DRAWER, EASE_OUT, SPRING_PANEL } from "@/lib/ease";
+import { EASE_OUT, SPRING_PANEL } from "@/lib/ease";
 import { PresenceGate } from "@/lib/presence-gate";
 import { cn } from "@/lib/utils";
 
@@ -13,13 +13,15 @@ import { Cancel01Icon } from "@hugeicons/core-free-icons";
 interface DrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  panelClassName?: string;
   children: React.ReactNode;
 }
 
 const DrawerContext = React.createContext<{ onOpenChange: (open: boolean) => void } | null>(null);
 
-function Drawer({ open, onOpenChange, children }: DrawerProps) {
+function Drawer({ open, onOpenChange, panelClassName, children }: DrawerProps) {
   const [mounted, setMounted] = React.useState(false);
+  const [visible, setVisible] = React.useState(open);
   const reduce = useReducedMotion();
   const panelVariants = reduce
     ? {
@@ -29,7 +31,7 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
     : {
         closed: {
           x: "calc(100% + 4rem)",
-          transition: { duration: 0.2, ease: EASE_DRAWER },
+          transition: SPRING_PANEL,
         },
         open: { x: 0, transition: SPRING_PANEL },
       };
@@ -37,6 +39,19 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  React.useEffect(() => {
+    if (open) setVisible(true);
+    else setVisible(false);
+  }, [open]);
+
+  const requestClose = React.useCallback(() => {
+    setVisible(false);
+  }, []);
+
+  const finishClose = React.useCallback(() => {
+    if (!visible && open) onOpenChange(false);
+  }, [onOpenChange, open, visible]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -49,27 +64,27 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
 
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange(false);
+      if (e.key === "Escape") requestClose();
     };
     if (open) {
       document.addEventListener("keydown", handleEscape);
       return () => document.removeEventListener("keydown", handleEscape);
     }
-  }, [open, onOpenChange]);
+  }, [open, requestClose]);
 
   if (!mounted) return null;
 
   return createPortal(
-    <DrawerContext.Provider value={{ onOpenChange }}>
-      <AnimatePresence>
-        {open ? (
+    <DrawerContext.Provider value={{ onOpenChange: requestClose }}>
+      <AnimatePresence onExitComplete={finishClose}>
+        {visible ? (
           <PresenceGate key="backdrop">
             {({ gate }) => (
               <motion.button
                 type="button"
                 aria-label="Close"
                 tabIndex={0}
-                onClick={() => onOpenChange(false)}
+                onClick={requestClose}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -80,7 +95,7 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
             )}
           </PresenceGate>
         ) : null}
-        {open ? (
+        {visible ? (
           <PresenceGate key="panel">
             {({ gate }) => (
               <motion.aside
@@ -91,7 +106,10 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
                 exit="closed"
                 variants={panelVariants}
                 {...gate}
-                className="fixed inset-y-4 right-4 z-50 flex h-[calc(100%-2rem)] w-[calc(100%-2rem)] max-w-2xl flex-col sm:inset-y-6 sm:right-6 sm:h-[calc(100%-3rem)] sm:w-[calc(100%-3rem)]"
+                className={cn(
+                  "fixed inset-y-4 right-4 z-50 flex h-[calc(100%-2rem)] w-[calc(100%-2rem)] max-w-2xl flex-col sm:inset-y-6 sm:right-6 sm:h-[calc(100%-3rem)] sm:w-[calc(100%-3rem)]",
+                  panelClassName,
+                )}
               >
                 {children}
               </motion.aside>
@@ -140,7 +158,7 @@ function DrawerContent({
     return (
       <div
         data-slot="drawer-content"
-        className={cn(
+      className={cn(
           "relative z-50 flex h-full max-h-full w-full max-w-lg flex-col rounded-xl border border-border bg-card shadow-[var(--shadow-float)]",
           className,
         )}
@@ -168,8 +186,8 @@ function DrawerContent({
   return (
     <div
       data-slot="drawer-content"
-      className={cn(
-        "relative z-50 flex h-full max-h-full w-full max-w-lg flex-col rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]",
+        className={cn(
+        "relative z-50 flex h-full min-h-0 max-h-full w-full max-w-lg flex-col rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]",
         className,
       )}
       {...props}
@@ -197,7 +215,7 @@ function DrawerContent({
           </button>
         )}
       </div>
-      <div data-slot="drawer-footer-wrapper" className="px-2 pt-2 pb-1">
+      <div data-slot="drawer-footer-wrapper" className="shrink-0 px-2 pt-2 pb-1">
         {footerChild}
       </div>
     </div>
@@ -211,7 +229,7 @@ function DrawerHeader({
   return (
     <div
       data-slot="drawer-header"
-      className={cn("flex flex-col gap-1.5 p-5 pb-3 border-b border-border/40 text-left", className)}
+      className={cn("flex shrink-0 flex-col gap-1.5 border-b border-border/40 p-5 pb-3 text-left", className)}
       {...props}
     />
   );
@@ -263,7 +281,7 @@ function DrawerBody({
   return (
     <div
       data-slot="drawer-body"
-      className={cn("flex-1 overflow-y-auto p-5", className)}
+      className={cn("min-h-0 min-w-0 flex-1 overflow-y-auto p-5", className)}
       {...props}
     />
   );

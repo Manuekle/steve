@@ -1324,7 +1324,7 @@ textarea {
   height: 30px;
   width: 0;
   background: var(--tabs-pill-bg);
-  border: 1px solid var(--tabs-pill-border);
+  border: 1px solid var(--btn-primary-border);
   border-radius: 48px;
   box-shadow: var(--tabs-pill-shadow);
   transform: translateX(0);
@@ -1357,11 +1357,32 @@ textarea {
 }
 
 .t-pager-pages {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 3px;
   /* The number strip keeps its own breathing room from the raised end caps. */
   padding-inline: 0.25rem;
+}
+
+.t-pager-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 30px;
+  width: 0;
+  border-radius: 10px;
+  background: var(--btn-primary-bg);
+  background-image: none;
+  border: 1px solid var(--btn-primary-border);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.12);
+  pointer-events: none;
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
 }
 
 /* Prev / Next — raised pills at the ends, the same surface as the tab pill. */
@@ -1420,9 +1441,9 @@ textarea {
   font-variant-numeric: tabular-nums;
   color: var(--tabs-text-muted);
   cursor: pointer;
-  transition:
-    background-color var(--tabs-dur) var(--tabs-ease),
-    color var(--tabs-dur) var(--tabs-ease);
+  transition: color var(--tabs-dur) var(--tabs-ease);
+  position: relative;
+  z-index: 1;
 }
 
 .t-pager-page:hover:not([aria-current="page"]) {
@@ -1430,13 +1451,15 @@ textarea {
   color: var(--tabs-text-active);
 }
 
+.t-pager-page:active:not([aria-current="page"]) {
+  transform: scale(0.96);
+}
+
 /* The current page is the one filled element in the bar. */
 .t-pager-page[aria-current="page"] {
-  background: var(--btn-primary-bg);
   color: var(--btn-primary-fg);
   font-weight: 600;
   cursor: default;
-  box-shadow: var(--shadow-soft);
 }
 
 .t-pager-gap {
@@ -1449,6 +1472,13 @@ textarea {
   font-size: 0.8125rem;
   color: var(--tabs-text-muted);
   user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-pager-pill,
+  .t-pager-page {
+    transition: none !important;
+  }
 }
 
 .t-pager-edge:focus-visible,

@@ -207,9 +207,9 @@ export default function RuntimePage() {
               <span className="hidden sm:inline">{t("runtime.refresh")}</span>
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="text-destructive hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
               onClick={() => void clearLogs()}
             >
               <HugeiconsIcon icon={Delete01Icon} size={15} strokeWidth={1.75} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
@@ -38,11 +39,51 @@ export function Pagination({
 }: PaginationProps) {
   const t = useT();
   const { cue } = useSound();
+  const showPages = pageCount > 1;
+  const showSizes = pageSize !== undefined && onPageSizeChange !== undefined;
+  const pagesRef = useRef<HTMLSpanElement>(null);
+  const pagePillRef = useRef<HTMLSpanElement>(null);
+  const pageRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const hasPositionedPill = useRef(false);
+
+  const positionPagePill = useCallback((animate: boolean) => {
+    const pill = pagePillRef.current;
+    const pages = pagesRef.current;
+    const active = pageRefs.current.get(page);
+    if (!pill || !pages) return;
+    if (!active) {
+      pill.style.transition = "none";
+      pill.style.width = "0px";
+      pill.style.transform = "translateX(0px)";
+      return;
+    }
+    pill.style.transition = animate ? "" : "none";
+    pill.style.width = `${active.offsetWidth}px`;
+    // The pill and page buttons share `.t-pager-pages` as their offset parent.
+    // Subtracting the parent offset here moved the indicator twice whenever
+    // the pager sat inside a centered layout.
+    pill.style.transform = `translateX(${active.offsetLeft}px)`;
+    if (!animate) {
+      void pill.offsetWidth;
+      pill.style.transition = "";
+    }
+  }, [page]);
+
+  useLayoutEffect(() => {
+    if (!showPages) return;
+    positionPagePill(hasPositionedPill.current);
+    hasPositionedPill.current = true;
+  }, [page, pageCount, positionPagePill, showPages]);
+
+  useEffect(() => {
+    if (!showPages || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => positionPagePill(false));
+    if (pagesRef.current) observer.observe(pagesRef.current);
+    return () => observer.disconnect();
+  }, [positionPagePill, showPages]);
 
   // One page is not a choice — but the rows control still is, so the bar goes
   // and the size tabs stay.
-  const showPages = pageCount > 1;
-  const showSizes = pageSize !== undefined && onPageSizeChange !== undefined;
   if (!showPages && !showSizes) return null;
 
   const goTo = (next: number) => {
@@ -70,7 +111,8 @@ export function Pagination({
             <span className="hidden sm:inline">{t("pagination.prev")}</span>
           </button>
 
-          <span className="t-pager-pages">
+          <span className="t-pager-pages" ref={pagesRef}>
+            <span ref={pagePillRef} className="t-pager-pill" aria-hidden="true" />
             {pageItems(page, pageCount).map((item, index) =>
               item === "gap" ? (
                 <span
@@ -89,6 +131,10 @@ export function Pagination({
                   className="t-pager-page"
                   key={item}
                   onClick={() => goTo(item)}
+                  ref={(element) => {
+                    if (element) pageRefs.current.set(item, element);
+                    else pageRefs.current.delete(item);
+                  }}
                   type="button"
                 >
                   {item}
@@ -115,9 +161,10 @@ export function Pagination({
           onValueChange={(id) => onPageSizeChange(Number(id))}
           tabs={pageSizeOptions.map((size) => ({
             id: String(size),
-            // The unit rides on the selected option only — repeating "rows"
-            // three times is noise once the first one has explained the row.
-            label: size === pageSize ? t("pagination.rows", { count: size }) : String(size),
+            // Keep every option's label shape stable. Changing the selected
+            // option from "20" to "20 rows" made the pill resize and looked
+            // like the tab was wrapping the number only after selection.
+            label: t("pagination.rows", { count: size }),
           }))}
           value={String(pageSize)}
         />

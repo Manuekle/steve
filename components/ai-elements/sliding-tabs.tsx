@@ -54,6 +54,7 @@ export function SlidingTabs({
   const valueRef = useRef(value);
   const hasSnappedRef = useRef(false);
   const [ready, setReady] = useState(false);
+  const activeTab = tabs.some((tab) => tab.id === value);
 
   // Keep valueRef in sync so positionPill can read the latest value
   // without being recreated on every change — this prevents the
@@ -68,7 +69,16 @@ export function SlidingTabs({
   const positionPill = useCallback((animate: boolean) => {
     const pill = pillRef.current;
     const tab = tabRefs.current.get(valueRef.current);
-    if (!pill || !tab) return;
+    if (!pill) return;
+
+    if (!tab) {
+      pill.style.transition = "none";
+      pill.style.width = "0px";
+      pill.style.transform = "translateX(0px)";
+      void pill.offsetWidth;
+      pill.style.transition = "";
+      return;
+    }
 
     if (!animate) {
       pill.style.transition = "none";
@@ -96,6 +106,16 @@ export function SlidingTabs({
     positionPill(true);
   }, [value, positionPill]);
 
+  // A tab's label can change without its value changing — for example,
+  // `Log` becoming `Log (61)`. Observe the tab buttons so the active pill
+  // grows with its content instead of leaving a badge outside the selection.
+  useEffect(() => {
+    if (!hasSnappedRef.current || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => positionPill(true));
+    for (const tab of tabRefs.current.values()) observer.observe(tab);
+    return () => observer.disconnect();
+  }, [tabs, positionPill]);
+
   // Re-snap on resize (no animation)
   useEffect(() => {
     if (!hasSnappedRef.current) return;
@@ -109,7 +129,7 @@ export function SlidingTabs({
       <span
         className="t-tabs-pill"
         ref={pillRef}
-        style={{ visibility: ready ? "visible" : "hidden" } as CSSProperties}
+        style={{ visibility: ready && activeTab ? "visible" : "hidden" } as CSSProperties}
         aria-hidden="true"
       />
       {tabs.map((tab) => (

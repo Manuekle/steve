@@ -439,21 +439,24 @@ export function CrmBoard({
             const count = cards.length + (lifted && drop?.status === status ? 1 : 0);
             return (
               <section key={status} ref={(el) => { if (el) zones.current.set(status, el); else zones.current.delete(status); }}
-                className="min-w-0 border border-border bg-card shadow-[var(--shadow-soft)]" style={{ borderRadius: q(14), padding: q(6) }}>
-                <header className={cn("flex items-center", (view === "kanban" || count > 0) && "border-b border-border")} style={{ height: q(48), gap: q(8), paddingInline: q(16), marginBottom: q(count > 0 || view === "kanban" ? 8 : 0) }}>
+                className="kpi-card min-w-0 bg-card" style={{ borderRadius: q(18), padding: q(8), boxShadow: "var(--shadow-soft)" }}>
+                <header className="kpi-header flex items-center" style={{ minHeight: q(44), height: q(44), gap: q(8), paddingInline: q(8), paddingBlock: 0 }}>
                   <HugeiconsIcon icon={theme.icon} size={q(14)} strokeWidth={1.75} style={{ color: theme.tone, flexShrink: 0 }} />
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate font-medium text-foreground" style={{ fontSize: q(13), lineHeight: q(17), fontFamily: "inherit" }}>{t(`contactStatus.${status}`)}</h2>
-                    {count === 0 ? <p className="text-muted-foreground" style={{ fontSize: q(12), lineHeight: q(16) }}>{t("crm.columnEmpty")}</p> : null}
+                    <div className="mt-1 flex h-[3px] gap-[2px]" aria-hidden="true">
+                      {Array.from({ length: 8 }, (_, index) => <span key={index} className="flex-1 rounded-full" style={{ background: index < Math.min(count, 8) ? theme.tone : "var(--muted)" }} />)}
+                    </div>
                   </div>
-                  <span className="relative ml-auto overflow-hidden text-right text-muted-foreground tabular-nums" style={{ minWidth: q(24), height: q(17), fontSize: q(12), lineHeight: q(17) }}>
+                  <span className="relative ml-auto overflow-hidden text-right font-medium text-foreground tabular-nums" style={{ minWidth: q(24), height: q(20), fontSize: q(14), lineHeight: q(20) }}>
                     <AnimatePresence initial={false} mode="popLayout">
                       <motion.span key={count} className="block" initial={{ y: reduce ? 0 : q(-8), opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: reduce ? 0 : q(8), opacity: 0 }} transition={{ duration: reduce ? 0 : 0.2, ease: EASE_OUT }}>{count}</motion.span>
                     </AnimatePresence>
                   </span>
                 </header>
                 <div data-stage-list className={cn("relative min-w-0", view === "list" && "overflow-hidden")}
-                  style={{ borderRadius: q(12), padding: q(6) }}>
+                  style={{ minHeight: q(88), padding: q(8), marginTop: q(2) }}>
+                  {count === 0 ? <p className="flex min-h-16 items-center justify-center text-center text-muted-foreground" style={{ fontSize: q(12), lineHeight: q(16) }}>{t("crm.columnEmpty")}</p> : null}
                   {Array.from({ length: cards.length + 1 }, (_, index) => {
                     const key = `${status}:${index}`;
                     const contact = cards[index];
@@ -463,7 +466,7 @@ export function CrmBoard({
                           if (el) { slots.current.set(key, el); el.style.height = `${heights.current.get(key) ?? 0}px`; }
                           else slots.current.delete(key);
                         }}>
-                          {lifted && drop?.status === status && drop.index === index ? <div className="absolute inset-x-0 top-0 border border-dashed" style={{ height: lifted.height, borderRadius: q(12), background: `color-mix(in oklch, ${theme.tone} 8%, var(--card))`, borderColor: `color-mix(in oklch, ${theme.tone} 45%, var(--border))` }} /> : null}
+                          {lifted && drop?.status === status && drop.index === index ? <div className="absolute inset-x-0 top-0 border border-dashed" style={{ height: lifted.height, borderRadius: q(10), background: `color-mix(in oklch, ${theme.tone} 8%, var(--card))`, borderColor: `color-mix(in oklch, ${theme.tone} 45%, var(--border))` }} /> : null}
                         </div>
                         {contact ? <ContactCard contact={contact} view={view} moving={!!lifted} onEdit={onEdit} onDelete={onDelete} onMove={onMove} /> : null}
                       </div>
@@ -521,7 +524,7 @@ const ContactCard = memo(function ContactCard({
       aria-label={contact.name}
       aria-keyshortcuts={overlay ? undefined : "Alt+ArrowUp Alt+ArrowDown"}
       className={cn(
-        "group relative grid min-w-0 touch-none select-none items-center border border-border bg-card text-left text-card-foreground",
+        "group relative grid min-w-0 touch-none select-none items-center border border-border bg-background text-left text-card-foreground shadow-[var(--shadow-inset)]",
         "focus-visible:outline-solid focus-visible:outline-[color:var(--ring)]",
         !overlay && "cursor-grab hover:border-ring/40",
       )}
@@ -530,8 +533,7 @@ const ContactCard = memo(function ContactCard({
         gridTemplateColumns: list ? `minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 2fr) ${q(48)} ${q(216)}` : `minmax(0, 1fr) ${q(36)}`,
         gridTemplateRows: list ? "minmax(0, 1fr)" : `${q(17)} ${q(17)} minmax(0, 1fr) ${q(36)}`,
         columnGap: q(12), rowGap: list ? 0 : q(8), outlineWidth: q(2), outlineOffset: q(-2),
-        borderRadius: q(12), marginBottom: overlay ? 0 : q(8),
-        boxShadow: "var(--shadow-soft)",
+        borderRadius: q(14), marginBottom: overlay ? 0 : q(8),
       }}
     >
       <span title={contact.name} className="min-w-0 truncate font-medium text-foreground" style={{ fontSize: q(list ? 13 : 14), lineHeight: q(17), gridColumn: 1, gridRow: 1 }}>{contact.name}</span>
@@ -546,7 +548,7 @@ const ContactCard = memo(function ContactCard({
         style={{ gridColumn: list ? 5 : "1 / -1", gridRow: list ? 1 : 4, height: q(36), gap: q(6), paddingTop: list ? 0 : q(6) }}>
         <Select disabled={overlay || moving} value={contact.status} onValueChange={(status) => onMove(contact.id, status as ContactStatus)}>
           <SelectTrigger size="sm" aria-label={locale === "es" ? `Cambiar etapa de ${contact.name}` : `Change stage for ${contact.name}`}
-            onPointerDown={(event) => event.stopPropagation()} className="min-w-0 flex-1 bg-card shadow-none"
+             onPointerDown={(event) => event.stopPropagation()} className="min-w-0 flex-1 rounded-[9px] bg-card shadow-none"
             style={{ height: q(28), fontSize: q(11), paddingInline: q(8) }}>
             <SelectValue />
           </SelectTrigger>
@@ -555,9 +557,9 @@ const ContactCard = memo(function ContactCard({
           </SelectContent>
         </Select>
         <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={locale === "es" ? `Abrir ${contact.name}` : `Open ${contact.name}`} onClick={() => onEdit(contact)} onPointerDown={(event) => event.stopPropagation()}
-          className="text-muted-foreground" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} /></Button>
+            className="bg-card text-muted-foreground shadow-[var(--shadow-inset)] hover:bg-accent hover:text-foreground" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} /></Button>
         <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={t("crm.delete")} onClick={() => onDelete(contact.id)} onPointerDown={(event) => event.stopPropagation()}
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} /></Button>
+            className="bg-card text-muted-foreground shadow-[var(--shadow-inset)] hover:bg-destructive/10 hover:text-destructive" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} /></Button>
       </div>
     </motion.article>
   );

@@ -1,11 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
-  Mail02Icon,
-  WebhookIcon,
   Blockchain05Icon,
   AuthorizedIcon,
   CheckmarkCircle02Icon,
@@ -36,7 +33,6 @@ import { notifyCredentialsChanged } from "@/lib/credentials-changed";
 import { useT } from "@/lib/i18n/provider";
 import { useCelebrate } from "@/components/use-celebrate";
 import { cn } from "@/lib/utils";
-import type { Form } from "@/lib/types";
 import { PageContainer } from "../../_components/page-container";
 import {
   Card,
@@ -91,10 +87,7 @@ type ManualSummary = {
   readonly keyPreview?: string;
 };
 
-type FormRow = Form & { readonly responseCount?: number };
-
 const ICONS: Record<string, IconSvgElement> = {
-  smtp: Mail02Icon,
 };
 
 /** The vendors with a real brand mark on hand — everything else falls back
@@ -124,16 +117,6 @@ function ConnectionIcon({ id, size }: { readonly id: string; readonly size: numb
   return <HugeiconsIcon icon={ICONS[id] ?? Blockchain05Icon} size={size} strokeWidth={1.75} />;
 }
 
-/** Only the host is worth reading in a list: the path of a webhook URL is
- *  usually a token nobody can check by eye. */
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host;
-  } catch {
-    return url;
-  }
-}
-
 export default function ConnectionsPage() {
   const t = useT();
   const celebrate = useCelebrate();
@@ -144,7 +127,6 @@ export default function ConnectionsPage() {
   const enterprise = useEnterpriseAllowed();
   const [connections, setConnections] = useState<OAuthSummary[]>([]);
   const [manual, setManual] = useState<ManualSummary[]>([]);
-  const [forms, setForms] = useState<FormRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<UiError | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -197,18 +179,6 @@ export default function ConnectionsPage() {
 
     void (async () => {
       await load();
-      // Forms are a nice-to-have on this page: the webhook list is a mirror of
-      // what each form already says, so a forms outage should not take the
-      // connection cards down with it.
-      try {
-        const response = await fetch("/api/forms");
-        if (response.ok) {
-          const data = (await response.json()) as { forms?: FormRow[] };
-          setForms(data.forms ?? []);
-        }
-      } catch {
-        // Leave the webhook section on its empty state.
-      }
       setLoading(false);
     })();
     // `celebrate` is listed for the linter's sake, not because a re-run could
@@ -247,11 +217,6 @@ export default function ConnectionsPage() {
     }
     setBusy(null);
   };
-
-  const webhookForms = useMemo(
-    () => forms.filter((form) => Boolean(form.webhookUrl?.trim())),
-    [forms],
-  );
 
   const outcomeLabel = outcome
     ? (connections.find((c) => c.id === outcome.provider)?.label ?? outcome.provider)
@@ -429,55 +394,6 @@ export default function ConnectionsPage() {
             <McpSection />
           </section>
 
-          {/* ── Webhooks ── */}
-          <section className="mt-10">
-            <SectionHeading
-              icon={WebhookIcon}
-              title={t("connections.webhooksTitle")}
-              description={t("connections.webhooksDescription")}
-            />
-            {webhookForms.length > 0 ? (
-              <Card>
-                {webhookForms.map((form, index) => (
-                  <div key={form.id}>
-                    {index > 0 ? <CardSeparator /> : null}
-                    <div className="flex items-center gap-3 px-5 py-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{form.name}</p>
-                        <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-                          {hostOf(form.webhookUrl ?? "")}
-                        </p>
-                      </div>
-                      <Link
-                        href={`/forms/${form.id}`}
-                        className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {t("connections.openForm")}
-                        <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={1.75} />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </Card>
-            ) : (
-              <Card>
-                <div className="flex flex-col items-start gap-3 px-5 py-8 text-center sm:items-center">
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                    <HugeiconsIcon icon={WebhookIcon} size={18} strokeWidth={1.75} />
-                  </div>
-                  <div className="sm:text-center">
-                    <p className="text-sm font-medium">{t("connections.webhooksEmptyTitle")}</p>
-                    <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
-                      {t("connections.webhooksEmptyHint")}
-                    </p>
-                  </div>
-                  <Button asChild variant="outline" size="sm" className="sm:mx-auto">
-                    <Link href="/forms">{t("connections.goToForms")}</Link>
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </section>
         </div>
       </Skeleton>
 
