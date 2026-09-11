@@ -3853,16 +3853,33 @@ html.lenis body {
 
 /* Light pooling on the surface behind an object. Positioned and sized by the
    caller; this is only the gradient. Closest-side so the falloff is a circle
-   at any aspect ratio the caller asks for, and it stops at 72% rather than
-   100% because a radial that reaches its own edge has a visible rim. */
+   at any aspect ratio the caller asks for, and it stops short of 100% because
+   a radial that reaches its own edge has a visible rim.
+
+   The ramp is six stops rather than two, and there is no `filter: blur()` over
+   it. A two-stop radial has mathematically straight isolines and the eye finds
+   them at this size — the disc reads as a grey blob with an edge rather than
+   as light — which is what the blur used to hide. But a filter renders the
+   element into its own layer and then smears that layer outwards, so the light
+   ended up *wider than the box the caller placed*, and every scene here sits
+   inside a card that crops: `.lp-scene`'s and `.guaranteeArt`'s `overflow:
+   hidden` were slicing the smear and leaving a straight bright edge across the
+   glow. Cropping a panel reads as a drawing running off the page; cropping
+   light reads as a bug.
+
+   Baked into the gradient instead, the falloff is the same S-curve and the
+   alpha is genuinely zero before the element's own edge — so there is nothing
+   left for a card to cut, and one composite less to pay for. */
 .lp-bloom {
-  background: radial-gradient(closest-side, var(--lp-halo), transparent 70%);
-  /* Blurred, and that is not belt and braces over a gradient that already
-     fades: a radial ramp still has mathematically straight isolines, and at
-     this size the eye finds them — the disc reads as a grey blob with an edge
-     rather than as light. One static blur costs one composite and is what
-     turns the shape into atmosphere. */
-  filter: blur(16px);
+  background: radial-gradient(
+    closest-side,
+    var(--lp-halo) 0%,
+    oklch(from var(--lp-halo) l c h / calc(alpha * 0.85)) 16%,
+    oklch(from var(--lp-halo) l c h / calc(alpha * 0.56)) 34%,
+    oklch(from var(--lp-halo) l c h / calc(alpha * 0.28)) 52%,
+    oklch(from var(--lp-halo) l c h / calc(alpha * 0.08)) 68%,
+    transparent 80%
+  );
 }
 
 /* The fine dot grid on the screens inside scenes — a texture, at the density

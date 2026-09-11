@@ -373,8 +373,11 @@ export function VoiceScene() {
   return (
     <Scene>
       {/* The lamp is the microphone: the waveform is lit from its end, which
-          is why the bloom sits on the plate and not under the bars. */}
-      <Bloom className="-translate-y-1/2 top-1/2 left-[-1.5rem] h-32 w-32" />
+          is why the bloom sits on the plate and not under the bars. Flush with
+          the scene rather than hanging off it — the card crops, and the 24px
+          this used to poke out to the left came back as a straight edge down
+          the side of the glow. */}
+      <Bloom className="-translate-y-1/2 top-1/2 left-0 h-32 w-32" />
 
       <div className="flex items-center gap-4">
         <Plate active className="size-11 rounded-xl" icon={Mic01Icon} size={19} tint="cyan" />

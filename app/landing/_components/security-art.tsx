@@ -137,7 +137,7 @@ export function WebhookScene() {
     <Scene>
       {/* Low and under the second row: the signature check is the half that
           matters, so the light is where the digests meet. */}
-      <Bloom className="-bottom-6 left-0 h-32 w-56 opacity-50 transition-opacity duration-700 group-hover:opacity-100" />
+      <Bloom className="bottom-0 left-0 h-32 w-56 opacity-50 transition-opacity duration-700 group-hover:opacity-100" />
 
       <div className="space-y-2">
         <Row>
@@ -281,7 +281,7 @@ export function TracesScene() {
 
   return (
     <Scene>
-      <Bloom className="-translate-y-1/2 top-[0.9rem] left-[-1rem] h-24 w-32" />
+      <Bloom className="-translate-y-1/2 top-[0.9rem] left-0 h-24 w-32" />
 
       <div className="space-y-2.5">
         <div className="flex items-center gap-3">

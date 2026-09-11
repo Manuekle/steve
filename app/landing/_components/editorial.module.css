@@ -155,12 +155,22 @@
   padding: 3rem 1rem 1.5rem;
 }
 
+/* The light the card sits in.
+
+   The box is deliberately much larger than the figure. A radial gradient with
+   no explicit size is `farthest-corner`, which scales its radii to the box it
+   is in — so `transparent 70%` landed *past* the top edge of a box that
+   stopped at the figure, and the wash was still a third of its strength there.
+   The result was a straight horizontal line across the page where the light
+   should have faded. Growing the box and sizing the ramp off the closest side
+   puts the whole falloff inside it: the alpha is zero well before any edge, so
+   there is nothing for the element's bounds to cut. */
 .installation::before {
   content: "";
   position: absolute;
-  inset: 0 -10%;
+  inset: -30% -20%;
   z-index: -1;
-  background: radial-gradient(ellipse at 50% 40%, var(--editorial-light), transparent 70%);
+  background: radial-gradient(closest-side at 50% 40%, var(--editorial-light), transparent 85%);
 }
 
 .serverStack {
