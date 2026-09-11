@@ -18,6 +18,8 @@ import type {
   LeadInput,
   ProspectAssessment,
   Reminder,
+  ReminderActivity,
+  ReminderActivityType,
   ReminderStatus,
   VoiceCall,
   VoiceCallSource,
@@ -70,6 +72,7 @@ type BusinessStore = {
   deals: Deal[];
   chats: ChatSummary[];
   reminders: Reminder[];
+  reminderActivity: ReminderActivity[];
   agents: Agent[];
   forms: Form[];
   formResponses: FormResponse[];
@@ -87,6 +90,7 @@ function emptyStore(): BusinessStore {
     deals: [],
     chats: [],
     reminders: [],
+    reminderActivity: [],
     agents: [],
     forms: [],
     formResponses: [],
@@ -188,6 +192,7 @@ function normalize(parsed: Partial<BusinessStore>): BusinessStore {
     deals: parsed.deals ?? [],
     chats: parsed.chats ?? [],
     reminders: parsed.reminders ?? [],
+    reminderActivity: parsed.reminderActivity ?? [],
     agents: parsed.agents ?? [],
     forms: parsed.forms ?? [],
     formResponses: parsed.formResponses ?? [],
@@ -602,6 +607,30 @@ export async function listReminders(contactId?: string): Promise<Reminder[]> {
   return store.reminders;
 }
 
+export async function listReminderActivity(): Promise<ReminderActivity[]> {
+  const store = await readStore();
+  return store.reminderActivity;
+}
+
+function addReminderActivity(
+  store: BusinessStore,
+  reminder: Reminder,
+  type: ReminderActivityType,
+): void {
+  store.reminderActivity = [
+    {
+      id: newId("rem-activity"),
+      reminder_id: reminder.id,
+      type,
+      message: type === "created" ? "Reminder created" : `Reminder ${type}`,
+      reminder_message: reminder.message,
+      datetime: reminder.datetime,
+      created_at: nowIso(),
+    },
+    ...store.reminderActivity,
+  ];
+}
+
 
 export async function createReminder(input: {
   contact_id: string;
@@ -619,6 +648,7 @@ export async function createReminder(input: {
       created_at: nowIso(),
     };
     store.reminders = [reminder, ...store.reminders];
+    addReminderActivity(store, reminder, "created");
     return reminder;
   });
 }
@@ -632,12 +662,22 @@ export async function updateReminder(
     if (!existing) return undefined;
     const updated: Reminder = { ...existing, ...updates };
     store.reminders = store.reminders.map((r) => (r.id === id ? updated : r));
+    if (
+      updates.status &&
+      updates.status !== existing.status &&
+      updates.status !== "pending"
+    ) {
+      addReminderActivity(store, updated, updates.status);
+    }
     return updated;
   });
 }
 
 export async function deleteReminder(id: string): Promise<boolean> {
   return updateStore((store) => {
+    const reminder = store.reminders.find((r) => r.id === id);
+    if (!reminder) return false;
+    addReminderActivity(store, reminder, "deleted");
     const before = store.reminders.length;
     store.reminders = store.reminders.filter((r) => r.id !== id);
     return store.reminders.length < before;

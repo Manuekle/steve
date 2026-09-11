@@ -26,7 +26,8 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { useSound } from "@/components/sound-provider";
 import { fullTime, relativeTime, timeUntil } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Reminder, ReminderStatus } from "@/lib/types";
+import type { Reminder, ReminderActivity, ReminderActivityType, ReminderStatus } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 
 /** Reminder status → the shared badge vocabulary the rest of the app uses. */
 const STATUS_VARIANT: Record<ReminderStatus, StatusVariant> = {
@@ -51,14 +52,16 @@ export default function RemindersPage() {
   const { toast } = useToast();
   const reduce = useReducedMotion();
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [activity, setActivity] = useState<ReminderActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [error, setError] = useState<UiError | null>(null);
 
   const fetchReminders = useCallback(async () => {
-    const result = await fetchJson<{ reminders?: Reminder[] }>("/api/reminders", t);
+    const result = await fetchJson<{ reminders?: Reminder[]; activity?: ReminderActivity[] }>("/api/reminders", t);
     if (result.ok) {
       setReminders(result.data.reminders ?? []);
+      setActivity(result.data.activity ?? []);
       setError(null);
     } else {
       // A list that silently stays empty on a failed load reads as "you have
@@ -88,6 +91,7 @@ export default function RemindersPage() {
       setError(result.error);
       toast({ title: t("common.somethingWentWrong"), description: t("common.somethingWentWrongDescription"), status: "error" });
     } else {
+      await fetchReminders();
       toast({ title: t("common.deleted"), description: t("common.deletedDescription"), status: "success" });
     }
   };
@@ -129,9 +133,18 @@ export default function RemindersPage() {
       ),
     [reminders, matches],
   );
+  const filteredActivity = useMemo(
+    () => {
+      const q = search.trim().toLowerCase();
+      return activity
+        .filter((entry) => !q || entry.reminder_message.toLowerCase().includes(q))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    },
+    [activity, search],
+  );
 
   const searching = search.trim().length > 0;
-  const noMatches = searching && pending.length === 0 && history.length === 0;
+  const noMatches = searching && pending.length === 0 && history.length === 0 && filteredActivity.length === 0;
 
   return (
     <PageContainer maxWidth="max-w-6xl" pattern="grid">
@@ -172,7 +185,7 @@ export default function RemindersPage() {
             ) : null}
           </header>
 
-          {reminders.length === 0 ? (
+          {reminders.length === 0 && activity.length === 0 ? (
             <Card>
               <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
@@ -258,6 +271,7 @@ export default function RemindersPage() {
                     items={history}
                     reduce={reduce}
                   />
+                  <ActivitySection items={filteredActivity} reduce={reduce} />
                 </div>
               )}
             </>
@@ -350,13 +364,16 @@ function ReminderRow({
         {onDelete ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
+                type="button"
                 onClick={() => void onDelete(reminder.id)}
                 aria-label={t("reminders.delete")}
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground"
+                size="icon-sm"
+                variant="ghost"
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive"
               >
                 <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={1.75} />
-              </button>
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">{t("reminders.delete")}</TooltipContent>
           </Tooltip>
@@ -380,6 +397,64 @@ function ReminderRow({
         </span>
       </div>
     </Card>
+  );
+}
+
+const ACTIVITY_STATUS: Record<ReminderActivityType, StatusVariant> = {
+  created: "pending",
+  sent: "success",
+  failed: "failed",
+  cancelled: "expired",
+  deleted: "expired",
+};
+
+const ACTIVITY_LABEL: Record<ReminderActivityType, string> = {
+  created: "reminders.activityCreated",
+  sent: "reminders.activitySent",
+  failed: "reminders.activityFailed",
+  cancelled: "reminders.activityCancelled",
+  deleted: "reminders.activityDeleted",
+};
+
+function ActivitySection({
+  items,
+  reduce,
+}: {
+  readonly items: readonly ReminderActivity[];
+  readonly reduce: boolean | null;
+}) {
+  const { t, locale } = useI18n();
+  if (items.length === 0) return null;
+  return (
+    <section>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        {t("reminders.activity")}
+        <span className="tabular-nums text-muted-foreground">{items.length}</span>
+      </h2>
+      <Card>
+        <div className="divide-y divide-border">
+          <AnimatePresence initial={false}>
+            {items.map((entry) => (
+              <motion.div
+                key={entry.id}
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 px-5 py-3"
+              >
+                <StatusBadge
+                  status={ACTIVITY_STATUS[entry.type]}
+                  label={t(ACTIVITY_LABEL[entry.type] as Parameters<typeof t>[0])}
+                />
+                <span className="min-w-0 flex-1 truncate text-sm">{entry.reminder_message}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {relativeTime(entry.created_at, locale)}
+                </span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </Card>
+    </section>
   );
 }
 

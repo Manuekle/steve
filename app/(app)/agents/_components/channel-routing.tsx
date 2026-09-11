@@ -203,13 +203,18 @@ function ChannelAgentPicker({
       </button>
 
       <CommandDialog
+        className="rounded-[18px] border-border/70 bg-muted/50 p-0 shadow-[var(--shadow-float)] [&_[data-slot=command]]:rounded-none [&_[data-slot=command]]:border-0 [&_[data-slot=command]]:bg-transparent [&_[data-slot=command]]:shadow-none [&_[data-slot=command-input-wrapper]]:mx-2 [&_[data-slot=command-input-wrapper]]:mt-1.5 [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input-wrapper]]:rounded-lg [&_[data-slot=command-input-wrapper]]:border-0 [&_[data-slot=command-input-wrapper]]:bg-transparent [&_[data-slot=command-input-wrapper]]:px-0 [&_[cmdk-input]]:!h-10 [&_[cmdk-group]]:p-0 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-2"
+        closeClassName="top-3"
         description={t("agents.routingPickDescription", { channel: CHANNEL_LABELS[channel] })}
         onOpenChange={setOpen}
         open={open}
         title={t("agents.routingPick", { channel: CHANNEL_LABELS[channel] })}
       >
-        <CommandInput placeholder={t("agents.routingSearch")} />
-        <CommandList className="max-h-[min(24rem,60vh)]">
+        <CommandInput
+          className="!h-10 rounded-lg border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+          placeholder={t("agents.routingSearch")}
+        />
+        <CommandList className="mx-2 mb-2 py-[0.5em] max-h-[min(24rem,60vh)] rounded-[12px] border border-border bg-card">
           <CommandEmpty>{t("agents.routingNoneFound")}</CommandEmpty>
           <CommandGroup>
             <CommandItem onSelect={() => choose(UNASSIGNED)} value={t("agents.routingNone")}>
@@ -236,7 +241,7 @@ function ChannelAgentPicker({
         </CommandList>
 
         {dangling ? (
-          <div className="border-border flex items-center gap-1.5 border-t px-3 py-2 text-[12px] text-amber-600 dark:text-amber-500">
+          <div className="mx-2 mb-2 flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[12px] text-amber-600 dark:text-amber-500">
             <HugeiconsIcon icon={AlertCircleIcon} size={12} strokeWidth={2} />
             {t("agents.routingMissingHelp")}
           </div>
@@ -272,10 +277,15 @@ function AgentRow({
         )}
       >
         {active ? (
-          <HugeiconsIcon className="size-[11px]!" icon={CheckIcon} size={11} strokeWidth={2.5} />
+          <HugeiconsIcon
+            className="size-[11px]! text-primary-foreground"
+            icon={CheckIcon}
+            size={11}
+            strokeWidth={2.5}
+          />
         ) : null}
       </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
+      <span className="flex min-w-0 flex-col gap-0.5 leading-tight">
         <span className="text-[13px] font-medium">{name}</span>
         {description ? (
           <span className="text-muted-foreground line-clamp-2 text-[11px] leading-snug">

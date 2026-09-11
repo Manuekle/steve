@@ -80,7 +80,7 @@ export function AgentCreateDialog({
         <DialogDescription>{t("builder.createDescription")}</DialogDescription>
       </DialogHeader>
 
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit}>
         <label className="block space-y-1.5">
           <span className="text-sm font-medium">{t("agents.name")}</span>
           <Input

@@ -661,6 +661,18 @@ export type Agent = {
  */
 export type ReminderStatus = "pending" | "sent" | "failed" | "cancelled";
 
+export type ReminderActivityType = "created" | "sent" | "failed" | "cancelled" | "deleted";
+
+export type ReminderActivity = {
+  readonly id: string;
+  readonly reminder_id: string;
+  readonly type: ReminderActivityType;
+  readonly message: string;
+  readonly reminder_message: string;
+  readonly datetime: string;
+  readonly created_at: string;
+};
+
 export type Reminder = {
   readonly id: string;
   readonly contact_id: string;

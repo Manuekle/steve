@@ -32,12 +32,14 @@ function CommandDialog({
   description = "Search for a command to run...",
   children,
   className,
+  closeClassName,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string;
   description?: string;
   className?: string;
+  closeClassName?: string;
   showCloseButton?: boolean;
 }) {
   return (
@@ -52,7 +54,7 @@ function CommandDialog({
         // The first row here is the search field, not a padded header, so the
         // default `top-4` inset dropped the ✕ below the row's centre line and
         // onto its bottom rule. 10px centres a 28px button in the 48px row.
-        closeClassName="top-2.5 right-3"
+        closeClassName={cn("top-2.5 right-3", closeClassName)}
       >
         <Command className={cn(
           "bg-transparent border-0 rounded-none shadow-none",

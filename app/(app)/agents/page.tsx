@@ -324,84 +324,92 @@ function AgentCard({
   const capabilities = toCapabilityIds(agent.tools);
 
   return (
-    <Card className="flex flex-col">
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <div className="flex items-start gap-3">
-          <div
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
-              isActive ? "bg-muted text-foreground" : "bg-muted/50 text-muted-foreground",
-            )}
-          >
-            <HugeiconsIcon icon={AiImagineIcon} size={20} strokeWidth={1.75} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <Link href={`/agents/${agent.id}`} className="min-w-0 truncate text-sm font-medium hover:underline">
-                {agent.name}
-              </Link>
-              <StatusBadge
-                status={isActive ? "active" : agent.status === "draft" ? "draft" : "paused"}
-              />
+    <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+      <div className="flex min-h-full flex-col">
+        <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-[14px] border border-border/50 bg-card p-5 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
+                isActive ? "bg-muted text-foreground" : "bg-muted/50 text-muted-foreground",
+              )}
+            >
+              <HugeiconsIcon icon={AiImagineIcon} size={20} strokeWidth={1.75} />
             </div>
-            <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-              {agent.description || t("agents.emptyHint")}
-            </p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <Link href={`/agents/${agent.id}`} className="min-w-0 truncate text-sm font-medium hover:underline">
+                  {agent.name}
+                </Link>
+                <StatusBadge
+                  status={isActive ? "active" : agent.status === "draft" ? "draft" : "paused"}
+                />
+              </div>
+              <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                {agent.description || t("agents.emptyHint")}
+              </p>
+            </div>
           </div>
+
+          {capabilities.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {capabilities.slice(0, 5).map((id) => (
+                <CategoryBadge key={id} hue={CAPABILITY_HUES[id]} className="text-[10px]">
+                  {t(`capability.${id}`)}
+                </CategoryBadge>
+              ))}
+              {capabilities.length > 5 ? (
+                <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  +{capabilities.length - 5}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        {capabilities.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {capabilities.slice(0, 5).map((id) => (
-              <CategoryBadge key={id} hue={CAPABILITY_HUES[id]} className="text-[10px]">
-                {t(`capability.${id}`)}
-              </CategoryBadge>
-            ))}
-            {capabilities.length > 5 ? (
-              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                +{capabilities.length - 5}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="flex items-center gap-1 border-t border-border px-3 py-2">
-        <Button asChild size="sm" variant="ghost">
-          <Link href={`/agents/${agent.id}`}>
-            <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
-            {t("builder.open")}
-          </Link>
-        </Button>
-        <span className="ml-auto flex items-center gap-0.5">
-          <IconAction
-            label={t("agents.chatAction")}
-            href={`/agents/${agent.id}/chat`}
-            icon={BubbleChatIcon}
-          />
-          <IconAction label={t("agents.callAction")} href={`/agents/${agent.id}/voice`} icon={Call02Icon} />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label={isActive ? t("agents.deactivate") : t("agents.activate")}
-                size="icon-sm"
-                variant="ghost"
-                onClick={(event) => onToggle(event.currentTarget)}
-              >
-                <HugeiconsIcon icon={isActive ? PauseIcon : PlayIcon} size={14} strokeWidth={1.75} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{isActive ? t("agents.deactivate") : t("agents.activate")}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button aria-label={t("agents.delete")} size="icon-sm" variant="ghost" onClick={onDelete}>
-                <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={1.75} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("agents.delete")}</TooltipContent>
-          </Tooltip>
-        </span>
+        <div className="flex items-center gap-1 px-2 pt-2 pb-0.5">
+          <Button asChild size="sm" variant="ghost">
+            <Link href={`/agents/${agent.id}`}>
+              <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
+              {t("builder.open")}
+            </Link>
+          </Button>
+          <span className="ml-auto flex items-center gap-0.5">
+            <IconAction
+              label={t("agents.chatAction")}
+              href={`/agents/${agent.id}/chat`}
+              icon={BubbleChatIcon}
+            />
+            <IconAction label={t("agents.callAction")} href={`/agents/${agent.id}/voice`} icon={Call02Icon} />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={isActive ? t("agents.deactivate") : t("agents.activate")}
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={(event) => onToggle(event.currentTarget)}
+                >
+                  <HugeiconsIcon icon={isActive ? PauseIcon : PlayIcon} size={14} strokeWidth={1.75} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isActive ? t("agents.deactivate") : t("agents.activate")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={t("agents.delete")}
+                  size="icon-sm"
+                  variant="ghost"
+                  className="hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive"
+                  onClick={onDelete}
+                >
+                  <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={1.75} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("agents.delete")}</TooltipContent>
+            </Tooltip>
+          </span>
+        </div>
       </div>
     </Card>
   );
