@@ -78,3 +78,7 @@ export const AGENT_TEMPLATES: readonly AgentTemplate[] = [
     tools: ["reminder", "upsert_contact", "http_request", "transfer_human"],
   },
 ];
+
+export function getAgentTemplate(iconKey: string | undefined): AgentTemplate | undefined {
+  return AGENT_TEMPLATES.find((template) => template.id === iconKey);
+}

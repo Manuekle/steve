@@ -53,6 +53,7 @@ export function AgentTemplates({
         description: t(`agentTemplates.${template.id}.description`),
         systemPrompt: t(`agentTemplates.${template.id}.prompt`),
         tools: [...template.tools],
+        iconKey: template.id,
         model: null,
       }),
     });

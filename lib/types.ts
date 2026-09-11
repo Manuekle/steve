@@ -637,6 +637,8 @@ export type Agent = {
   readonly description: string;
   readonly systemPrompt: string;
   readonly tools: string[];
+  /** Template icon key. Missing on agents created before template icons were persisted. */
+  readonly iconKey?: string;
   readonly createdAt: string;
   readonly status: AgentStatus;
   /** Absent on agents made before the builder existed, and on any hired

@@ -241,8 +241,7 @@ function ChannelAgentPicker({
         </CommandList>
 
         {dangling ? (
-          <div className="mx-2 mb-2 flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[12px] text-amber-600 dark:text-amber-500">
-            <HugeiconsIcon icon={AlertCircleIcon} size={12} strokeWidth={2} />
+          <div className="mx-2 mb-2 flex items-start gap-1.5 rounded-[12px] border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-[12px] text-amber-600 dark:text-amber-500">
             {t("agents.routingMissingHelp")}
           </div>
         ) : null}

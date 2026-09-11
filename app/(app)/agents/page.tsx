@@ -38,6 +38,7 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { cn } from "@/lib/utils";
 import type { Agent } from "@/lib/types";
 import { CAPABILITY_HUES, toCapabilityIds } from "@/lib/agent-capabilities";
+import { getAgentTemplate } from "@/lib/agent-templates";
 
 // The team, as a list of who you have hired.
 //
@@ -322,6 +323,7 @@ function AgentCard({
   const t = useT();
   const isActive = agent.status === "active";
   const capabilities = toCapabilityIds(agent.tools);
+  const template = getAgentTemplate(agent.iconKey);
 
   return (
     <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
@@ -331,10 +333,10 @@ function AgentCard({
             <div
               className={cn(
                 "flex size-10 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
-                isActive ? "bg-muted text-foreground" : "bg-muted/50 text-muted-foreground",
+                template?.accent ?? (isActive ? "bg-muted text-foreground" : "bg-muted/50 text-muted-foreground"),
               )}
             >
-              <HugeiconsIcon icon={AiImagineIcon} size={20} strokeWidth={1.75} />
+              <HugeiconsIcon icon={template?.icon ?? AiImagineIcon} size={20} strokeWidth={1.75} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">

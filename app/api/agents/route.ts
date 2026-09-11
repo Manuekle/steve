@@ -91,6 +91,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
     description?: string;
     systemPrompt?: string;
     tools?: string[];
+    iconKey?: string;
     model?: unknown;
     brief?: unknown;
     status?: unknown;
@@ -114,6 +115,7 @@ export const POST = withApiErrors(async function POST(request: NextRequest) {
       ? promptFor(brief, input.systemPrompt?.trim(), "", input.locale)
       : (input.systemPrompt?.trim() ?? ""),
     tools: input.tools ?? [],
+    ...(input.iconKey ? { iconKey: input.iconKey } : {}),
     model: model.value,
     ...(brief ? { brief } : {}),
     ...(status ? { status } : {}),

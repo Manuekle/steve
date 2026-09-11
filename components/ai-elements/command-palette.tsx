@@ -105,13 +105,15 @@ export function CommandPalette({
       </Tooltip>
 
       <CommandDialog
+        className="rounded-[18px] border-border/70 bg-muted/50 p-0 shadow-[var(--shadow-float)] [&_[data-slot=command]]:rounded-none [&_[data-slot=command]]:border-0 [&_[data-slot=command]]:bg-transparent [&_[data-slot=command]]:shadow-none [&_[data-slot=command-input-wrapper]]:mx-2 [&_[data-slot=command-input-wrapper]]:mt-1.5 [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input-wrapper]]:rounded-lg [&_[data-slot=command-input-wrapper]]:border-0 [&_[data-slot=command-input-wrapper]]:bg-transparent [&_[data-slot=command-input-wrapper]]:px-0 [&_[cmdk-input]]:!h-10 [&_[cmdk-group]]:p-0 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-2"
+        closeClassName="top-3"
         open={open}
         onOpenChange={setOpen}
         title={t("nav.search")}
         description={t("palette.placeholder")}
       >
         <CommandInput placeholder={t("palette.placeholder")} />
-        <CommandList>
+        <CommandList className="mx-2 mb-2 py-[0.5em] max-h-[min(24rem,60vh)] rounded-[12px] border border-border bg-card">
           <CommandEmpty>{t("palette.empty")}</CommandEmpty>
 
           <CommandGroup heading={t("palette.navigation")}>
