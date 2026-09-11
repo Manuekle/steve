@@ -5342,18 +5342,18 @@ html.lenis body {
    the screen. */
 .chat-loading {
   /* The cone, from its core out to the last of the spill. */
-  --stage-cone-1: oklch(1 0 0 / 0.9);
-  --stage-cone-2: oklch(1 0 0 / 0.48);
-  --stage-cone-3: oklch(1 0 0 / 0.15);
+   --stage-cone-1: oklch(1 0 0 / 0.94);
+   --stage-cone-2: oklch(1 0 0 / 0.56);
+   --stage-cone-3: oklch(1 0 0 / 0.18);
   /* The pool the light makes where it lands, on the words. */
-  --stage-pool: oklch(1 0 0 / 0.8);
-  --stage-pool-spill: oklch(1 0 0 / 0.42);
+   --stage-pool: oklch(1 0 0 / 0.86);
+   --stage-pool-spill: oklch(1 0 0 / 0.46);
   /* Corners. Barely anything in light theme — the job here is depth, and a
      vignette heavy enough to see is a grey box drawn around the page. */
   --stage-vignette: oklch(0.5 0 0 / 0.07);
   /* The ring: its unlit side, and the arc facing the light. */
   --stage-ring: oklch(0.55 0 0 / 0.14);
-  --stage-ring-hot: oklch(0.42 0 0 / 0.7);
+   --stage-ring-hot: oklch(0.42 0 0 / 0.78);
   --stage-grain: 0.016;
   /* The page ground in light theme: the room is already the brightest thing
      the light could land on. */
@@ -5370,11 +5370,11 @@ html.lenis body {
 
 :root.dark .chat-loading,
 .dark .chat-loading {
-  --stage-cone-1: oklch(1 0 0 / 0.085);
-  --stage-cone-2: oklch(1 0 0 / 0.05);
-  --stage-cone-3: oklch(1 0 0 / 0.018);
-  --stage-pool: oklch(1 0 0 / 0.085);
-  --stage-pool-spill: oklch(1 0 0 / 0.035);
+   --stage-cone-1: oklch(1 0 0 / 0.12);
+   --stage-cone-2: oklch(1 0 0 / 0.068);
+   --stage-cone-3: oklch(1 0 0 / 0.024);
+   --stage-pool: oklch(1 0 0 / 0.12);
+   --stage-pool-spill: oklch(1 0 0 / 0.045);
   /* Deeper here, and it is not decoration: `--background` is 0.155, which is
      a long way from black, and a cone needs somewhere darker than itself to
      fall into or it reads as fog. */
@@ -5386,7 +5386,7 @@ html.lenis body {
      flashes of a different black. */
   --stage-ground: oklch(0.128 0 0);
   --stage-ring: oklch(1 0 0 / 0.13);
-  --stage-ring-hot: oklch(1 0 0 / 0.82);
+   --stage-ring-hot: oklch(1 0 0 / 0.9);
   --stage-grain: 0.035;
 }
 
@@ -5496,6 +5496,34 @@ html.lenis body {
   text-align: center;
 }
 
+/* Small pool directly behind indicator. It gives light visible focal point,
+   instead of leaving cone to illuminate empty space around label. */
+.chat-loading__stage::before {
+  content: "";
+  position: absolute;
+  top: -4rem;
+  left: 50%;
+  width: 13rem;
+  height: 10rem;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--stage-pool) 0%, var(--stage-pool-spill) 35%, transparent 74%);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+/* Restoring is replay work: broader, calmer wash. Connecting is a narrower
+   arrival beam, so state has visual meaning without adding color. */
+.chat-loading[data-loading-mode="restoring"] {
+  --stage-pool: oklch(1 0 0 / 0.1);
+  --stage-pool-spill: oklch(1 0 0 / 0.038);
+}
+
+.chat-loading[data-loading-mode="connecting"] .chat-loading__cone {
+  transform: scaleX(0.88);
+  transform-origin: 50% 0;
+}
+
 /* A ring that catches the light, the way `.lp-arc` does on the landing, and
    not the icon spinner the buttons use: on a screen whose only two materials
    are light and type, a 20px glyph of a dashed circle is a third one.
@@ -5518,6 +5546,7 @@ html.lenis body {
   mask-image: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1.5px));
   -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1.5px));
   animation: chat-loading-spin 1.05s linear infinite;
+  filter: drop-shadow(0 0 0.65rem var(--stage-pool-spill));
 }
 
 /* The shimmer is the wait said in type: one pass across the line at the pace
@@ -5559,5 +5588,3 @@ html.lenis body {
   .chat-loading__spinner { animation: none; }
   .chat-loading__hint { transition: none; }
 }
-
-

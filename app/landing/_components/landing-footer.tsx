@@ -8,7 +8,9 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth/use-session";
-import { useT } from "@/lib/i18n/provider";
+import { useI18n, useT } from "@/lib/i18n/provider";
+import { LEGAL_LINKS } from "@/lib/legal";
+import { PrivacyPreferencesButton } from "@/components/privacy-consent";
 import { InstagramMark, MetaMark, WhatsAppMark } from "./brand-marks";
 import { LINKS, PAGES, Wordmark } from "./landing-header";
 import { BrandGlow, Halo, LightBar } from "./lighting";
@@ -34,8 +36,6 @@ import { Grain } from "./grain";
  */
 const RESOURCES = [
   ...PAGES,
-  { href: "/terms", labelKey: "landing.footer.linkTerms" },
-  { href: "/privacy", labelKey: "landing.footer.linkPrivacy" },
 ] as const;
 
 /**
@@ -316,6 +316,7 @@ function ClosingPanel({ editorial }: { readonly editorial: boolean }) {
  */
 export function LandingFooter({ editorial = false }: { readonly editorial?: boolean }) {
   const t = useT();
+  const { locale } = useI18n();
   const pathname = usePathname();
   const year = new Date().getFullYear();
 
@@ -388,6 +389,10 @@ export function LandingFooter({ editorial = false }: { readonly editorial?: bool
                   </Link>
                 </li>
               ))}
+              {LEGAL_LINKS.map((link) => <li key={link.href}>
+                <Link className="lp-focus text-[13px] text-muted-foreground hover:text-foreground" href={link.href}>{link[locale]}</Link>
+              </li>)}
+              <li><PrivacyPreferencesButton className="lp-focus min-h-11 text-left text-[13px] text-muted-foreground hover:text-foreground" /></li>
             </ul>
           </div>
         </div>

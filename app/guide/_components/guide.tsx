@@ -2,6 +2,8 @@
 
 import { Clause } from "@/app/landing/_components/legal-page";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
+import styles from "@/app/landing/_components/editorial.module.css";
+import { Grain } from "@/app/landing/_components/grain";
 import { Shell } from "@/app/landing/_components/primitives";
 import { useT } from "@/lib/i18n/provider";
 
@@ -40,8 +42,9 @@ export function Guide() {
         lede={t("guide.lede")}
       />
 
-      <section className="py-16 sm:py-20">
-        <Shell>
+      <section className={`${styles.surface} ${styles.publicBody} py-16 sm:py-20`}>
+        <Grain />
+        <Shell className={styles.publicBodyContent}>
           <div className="max-w-[72ch]">
             <Clause title={t("guide.audience.title")}>
               <p>{t("guide.audience.body")}</p>

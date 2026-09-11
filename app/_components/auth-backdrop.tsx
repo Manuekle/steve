@@ -1,6 +1,7 @@
 "use client";
 
-import { Spotlight } from "@/app/landing/_components/lighting";
+import styles from "@/app/landing/_components/editorial.module.css";
+import { Grain } from "@/app/landing/_components/grain";
 
 /**
  * The backdrop behind every auth screen: sign-in, the two password screens and
@@ -31,10 +32,10 @@ export function AuthBackdrop() {
     <>
       <div aria-hidden="true" className="auth-glow" />
       <div aria-hidden="true" className="auth-grid" />
-      <Spotlight
-        className="top-0 left-1/2 h-[30rem] w-[min(38rem,116vw)] -translate-x-1/2"
-        intensity={0.85}
-      />
+      <div aria-hidden="true" className={styles.authAtmosphere}>
+        <div className={styles.heroLight} />
+        <Grain variant="hero" />
+      </div>
     </>
   );
 }

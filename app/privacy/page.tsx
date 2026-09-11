@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import { marketingMetadata } from "@/lib/site";
+import { legalMetadata } from "@/lib/legal";
 import { Privacy } from "./_components/privacy";
 
-export const metadata: Metadata = marketingMetadata({
-  path: "/privacy",
-  title: "Privacidad — senka",
-  description:
-    "Qué datos guarda senka, dónde viven y qué sale de tu servidor. La aplicación es autoalojada: las conversaciones quedan en tu propia base de datos.",
-});
+export const metadata: Metadata = legalMetadata("/privacy", "Política de privacidad",
+  "Cómo trata Senka los datos personales en sus planes alojados y Enterprise: finalidades, proveedores, conservación y derechos de privacidad.");
 
 export default function PrivacyPage() {
   return <Privacy />;

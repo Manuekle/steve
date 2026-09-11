@@ -60,7 +60,7 @@ export function AgentLoading({ mode = "connecting" }: { readonly mode?: AgentLoa
   }, []);
 
   return (
-    <div className="chat-loading">
+    <div className="chat-loading" data-loading-mode={mode}>
       <span aria-hidden className="chat-loading__cone" />
       <span aria-hidden className="chat-loading__pool" />
 

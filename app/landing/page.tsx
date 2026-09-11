@@ -6,9 +6,19 @@ export const metadata: Metadata = marketingMetadata({
   path: "/",
   title: "senka — el sistema de atención para tu negocio y tus agentes",
   description:
-    "WhatsApp, Instagram y Meta Ads en una sola bandeja. Los agentes responden lo que saben y te pasan el resto. Autoalojado, con tus claves y tu base de datos.",
+    "Gestiona WhatsApp, Instagram y Meta Ads con agentes de IA y atención humana. Elige un plan alojado o instala Senka en tu infraestructura con Enterprise.",
 });
 
 export default function LandingPage() {
-  return <Landing />;
+  return <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Senka",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description: "Agentes de IA, conversaciones y automatizaciones para WhatsApp, Instagram y Meta Ads. Planes alojados y licencia Enterprise.",
+    }).replace(/</g, "\\u003c") }} />
+    <Landing />
+  </>;
 }

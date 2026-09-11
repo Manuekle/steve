@@ -12,6 +12,8 @@ import { DigitPop, Disclosure, Reveal, Shell } from "@/app/landing/_components/p
 import { formatUSD, monthlyEquivalent, priceFor, type BillingPeriod } from "@/lib/plans";
 import { SalesContactDialog } from "@/app/landing/_components/sales-contact-dialog";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
+import styles from "@/app/landing/_components/editorial.module.css";
+import { Grain } from "@/app/landing/_components/grain";
 import { useT } from "@/lib/i18n/provider";
 
 /* Precios en USD: Pro $79/mes o $790/año (100K AI Credits/mes), Managed
@@ -233,8 +235,9 @@ export function Pricing() {
         lede={t("pricing.lede")}
       />
 
-      <section className="py-20 sm:py-24">
-        <Shell>
+      <section className={`${styles.surface} ${styles.publicBody} py-20 sm:py-24`}>
+        <Grain />
+        <Shell className={styles.publicBodyContent}>
           {/* `mb-14`, not `mb-8`. Same reason as the landing band: the emphasised
               card carries a fixture, and at the old spacing its tube and halo
               landed a dozen pixels under the billing toggle — a control and a

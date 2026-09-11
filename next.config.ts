@@ -54,6 +54,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/:path(login|forgot-password|reset-password|onboarding|f)/:rest*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
         source: "/:path*",
         headers: [
           // Two years, on the domain and its subdomains. Caddy terminates TLS

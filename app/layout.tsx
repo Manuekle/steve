@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { SoundProvider } from "@/components/sound-provider";
 import { ToastProvider } from "@/components/toast-provider";
+import { PrivacyConsent } from "@/components/privacy-consent";
 import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import "./globals.css";
@@ -28,9 +29,10 @@ export const metadata: Metadata = {
   // this — the auto-attached `opengraph-image`, and the `icon.svg` /
   // `apple-icon` links Next emits from the file convention.
   metadataBase: new URL(SITE_URL),
-  title: "senka — AI agent manager",
+  title: "senka — agentes de IA para atención al cliente",
   description:
-    "A self-hosted AI agent manager for the Meta ecosystem — WhatsApp, Instagram, and Meta Ads.",
+    "Gestiona agentes de IA, conversaciones y automatizaciones para WhatsApp, Instagram y Meta Ads. Planes alojados y licencia Enterprise autoalojada.",
+  robots: process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
 };
 
 /**
@@ -90,7 +92,7 @@ export default function RootLayout({
           <I18nProvider>
             <SoundProvider>
               <TooltipProvider>
-                <ToastProvider>{children}</ToastProvider>
+                <ToastProvider>{children}<PrivacyConsent /></ToastProvider>
               </TooltipProvider>
             </SoundProvider>
           </I18nProvider>
@@ -99,4 +101,3 @@ export default function RootLayout({
     </html>
   );
 }
-

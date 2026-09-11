@@ -33,6 +33,7 @@
     "@ai-sdk/anthropic": "4.0.16",
     "@ai-sdk/google": "4.0.16",
     "@ai-sdk/openai": "4.0.16",
+    "@ai-sdk/openai-compatible": "^3.0.47",
     "@chat-adapter/instagram": "4.38.1",
     "@chat-adapter/messenger": "^4.38.1",
     "@chat-adapter/state-memory": "^4.38.1",

@@ -73,11 +73,12 @@ export function marketingMetadata({
     metadataBase: new URL(SITE_URL),
     title,
     description,
+    ...(process.env.VERCEL_ENV === "preview" ? { robots: { index: false, follow: false } } : {}),
     alternates: { canonical: url },
     openGraph: {
       description,
       images: [OG_IMAGE],
-      locale: "es_AR",
+      locale: "es_CO",
       siteName: SITE_NAME,
       title,
       type: "website" as const,

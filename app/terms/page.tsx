@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import { marketingMetadata } from "@/lib/site";
+import { legalMetadata } from "@/lib/legal";
 import { Terms } from "./_components/terms";
 
-export const metadata: Metadata = marketingMetadata({
-  path: "/terms",
-  title: "Términos — senka",
-  description:
-    "Condiciones de uso de senka: qué se te licencia, qué responsabilidades quedan de tu lado al autoalojarlo, y qué cubre el soporte.",
-});
+export const metadata: Metadata = legalMetadata("/terms", "Términos y condiciones",
+  "Condiciones de Senka: planes Pro y Managed, licencia Enterprise, pagos, renovación, cancelación, uso de IA y responsabilidades.");
 
 export default function TermsPage() {
   return <Terms />;

@@ -1,6 +1,8 @@
 {
-  "name": "Tu Razón Social S.A.",
-  "address": "Av. Ejemplo 123, CABA, Argentina",
-  "jurisdiction": "Ciudad Autónoma de Buenos Aires, Argentina",
-  "email": "contacto@tuempresa.com"
+  "name": null,
+  "address": null,
+  "jurisdiction": "Colombia",
+  "email": null,
+  "phone": null,
+  "taxId": null
 }

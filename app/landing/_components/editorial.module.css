@@ -45,6 +45,60 @@
   isolation: isolate;
 }
 
+.publicHeader {
+  isolation: isolate;
+}
+
+.publicHeader :global(.lp-grid) {
+  opacity: 0.65;
+}
+
+.authAtmosphere {
+  --editorial-light: oklch(0 0 0 / 0.04);
+  --editorial-spill: oklch(0 0 0 / 0.012);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(black 8%, transparent 86%);
+}
+
+:global(.dark) .authAtmosphere {
+  --editorial-light: oklch(1 0 0 / 0.09);
+  --editorial-spill: oklch(1 0 0 / 0.022);
+}
+
+.authAtmosphere .grain {
+  opacity: 0.018;
+  mix-blend-mode: soft-light;
+}
+
+:global(.dark) .authAtmosphere .grain {
+  opacity: 0.032;
+  mix-blend-mode: overlay;
+}
+
+.authAtmosphere .heroLight {
+  inset: -12% -25% auto;
+  height: 42rem;
+  mask-image: linear-gradient(black 8%, transparent 92%);
+}
+
+.authAtmosphere .grain {
+  mask-image: radial-gradient(ellipse 62% 58% at 50% 30%, black 12%, transparent 100%);
+}
+
+.publicBody {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.publicBodyContent {
+  position: relative;
+  z-index: 1;
+}
+
 .heroAtmosphere {
   position: absolute;
   inset: 0 0 auto;

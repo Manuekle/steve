@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/app/_components/app-shell";
 
+export const metadata = { robots: { index: false, follow: false } };
+
 /**
  * Every signed-in route renders inside the shell. It lives here rather than in
  * each page so the sidebar mounts once and stays mounted across navigation —

@@ -138,14 +138,21 @@ export function KnowledgeScene() {
 export function HandoffScene() {
   return (
     <Scene>
-      {/* One bloom, and it moves. The handoff is a transfer, so the light
-          travels the same distance the conversation does — it starts over the
-          bot and ends over the person. Two blooms, one per plate, would say
-          both are lit and the card would have no subject. */}
-      <Bloom className="-translate-x-1/2 -translate-y-1/2 top-[2.1rem] left-[calc(50%-2.6rem)] h-32 w-32 transition-[translate] duration-700 group-hover:translate-x-[calc(-50%+5.2rem)]" />
-
       <div className="flex flex-col items-center gap-4">
-        <div className="flex items-center gap-4">
+        {/* One bloom, and it moves. The handoff is a transfer, so the light
+            travels the same distance the conversation does — it starts over
+            the bot and ends over the person. Two blooms, one per plate, would
+            say both are lit and the card would have no subject.
+
+            It hangs off the row, not off the scene. The scene is as tall as
+            the grid row and centres what is in it, so a bloom placed from the
+            scene's own top ended up wherever the row happened to leave it —
+            on a tall row, a pool of light floating above the plates it was
+            supposed to be on. Anchored here, the two plates are 5.75rem apart
+            whatever the card does, and the travel is that number. */}
+        <div className="relative flex items-center gap-4">
+          <Bloom className="-translate-x-1/2 -translate-y-1/2 top-1/2 left-[calc(50%-2.875rem)] h-32 w-32 transition-[translate] duration-700 group-hover:translate-x-[calc(-50%+5.75rem)]" />
+
           <Plate
             className="size-11 rounded-xl transition-opacity duration-500 group-hover:opacity-40"
             icon={BotIcon}
@@ -359,39 +366,148 @@ export function PaymentsScene() {
 
 // ── 06 · Agentes de voz ─────────────────────────────────────────────
 
+/** The line's own geometry, in the units its `viewBox` is written in.
+ *
+ *  Wider than it will ever be drawn, on purpose. `slice` scales to cover, so
+ *  whichever axis is relatively tighter is the one that gets cropped: a
+ *  viewBox this much wider than the card's own ratio guarantees that axis is
+ *  the horizontal, and the wave runs off the right edge instead of having its
+ *  peaks sheared off the top. */
+const WAVE_W = 360;
+const WAVE_H = 72;
+/** Peak travel from the centreline. Short of `WAVE_H / 2` on purpose: a
+ *  Catmull-Rom overshoots a little between points, and the headroom is what
+ *  keeps the tallest peak from being flattened against the top of the box. */
+const WAVE_A = 30;
+
+/** Eleven heights, −1 (floor) to 1 (ceiling). Fixed rather than random, so it
+ *  is the same voice every time the reader comes back, and enough of them that
+ *  the part the card has room for still carries the whole shape: a shoulder, a
+ *  deep trough, the peak the call is about, and the fall out of it. */
+const WAVE = [0.9, 0.3, -0.9, 0.25, 0.45, 1, -0.6, -0.25, 0.55, -0.35, 0.4] as const;
+
+/** The halo, painted as blurred copies of the line beneath the crisp one.
+ *
+ *  Three of them rather than one: a single blur is a soft edge, and what the
+ *  eye reads as *light* is the near-exponential falloff you only get by
+ *  stacking a tight bright one on a wide faint one. Stroke widths grow with
+ *  the blur so each layer has something to smear. */
+const WAVE_GLOW = [
+  { blur: 18, opacity: 0.22, width: 4 },
+  { blur: 7, opacity: 0.34, width: 2.5 },
+  { blur: 2, opacity: 0.5, width: 1.25 },
+] as const;
+
+/**
+ * A smooth line through evenly spaced heights, as one path.
+ *
+ * Catmull-Rom written out as cubic béziers: the tangent at every point is the
+ * slope between its neighbours, which is what makes the curve pass *through*
+ * each height instead of being tugged off it the way hand-placed control
+ * points would. That matters here because the heights are the content — they
+ * are what the drawing is of — and a spline that misses them is a different
+ * waveform than the one the array says.
+ */
+function wavePath(values: readonly number[]): string {
+  const step = WAVE_W / (values.length - 1);
+  const pts = values.map((v, i) => [i * step, WAVE_H / 2 - v * WAVE_A] as const);
+  const n = (value: number) => Math.round(value * 100) / 100;
+
+  let d = `M${n(pts[0][0])} ${n(pts[0][1])}`;
+  for (let i = 0; i < pts.length - 1; i += 1) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    d += ` C${n(p1[0] + (p2[0] - p0[0]) / 6)} ${n(p1[1] + (p2[1] - p0[1]) / 6)}`;
+    d += ` ${n(p2[0] - (p3[0] - p1[0]) / 6)} ${n(p2[1] - (p3[1] - p1[1]) / 6)}`;
+    d += ` ${n(p2[0])} ${n(p2[1])}`;
+  }
+  return d;
+}
+
 /**
  * A call, and what is being said on it.
  *
- * At rest the waveform is low — the line is open and nobody is talking. On
- * hover it comes alive, bar by bar from the left, which is the one thing a
- * voice agent looks like. The heights are a fixed pattern rather than a random
- * one, so it is the same waveform every time the reader comes back.
+ * One continuous line rather than a row of bars. Bars are what a level meter
+ * looks like; a line is what a voice looks like, and it is the only drawing in
+ * the section that emits its own light instead of being lit by the card's
+ * lamp — which is the right way round for a card about sound coming down a
+ * wire.
+ *
+ * At rest the line is nearly flat: the call is connected and nobody is
+ * talking. On hover it comes up to full travel in one move, because a voice
+ * does not arrive left to right — the whole line moves at once.
  */
 export function VoiceScene() {
-  const bars = [42, 64, 100, 76, 92, 54, 80, 100, 68, 88, 50, 72, 46];
+  const d = wavePath(WAVE);
 
   return (
     <Scene>
-      {/* The lamp is the microphone: the waveform is lit from its end, which
-          is why the bloom sits on the plate and not under the bars. Flush with
-          the scene rather than hanging off it — the card crops, and the 24px
-          this used to poke out to the left came back as a straight edge down
-          the side of the glow. */}
-      <Bloom className="-translate-y-1/2 top-1/2 left-0 h-32 w-32" />
+      {/* The lamp is the microphone, and now only the microphone: the line
+          carries its own glow. Centred on the plate, which is 3.125rem in:
+          half the bloom's own width less that leaves it 0.75rem to the left of
+          the scene. It used to hang a full 1.5rem out, far enough that the
+          card's crop took a straight edge off the side of the glow. */}
+      <Bloom className="-translate-y-1/2 top-1/2 left-[-0.75rem] h-32 w-32" />
 
       <div className="flex items-center gap-4">
         <Plate active className="size-11 rounded-xl" icon={Mic01Icon} size={19} tint="cyan" />
 
-        <div className="flex h-11 flex-1 items-center justify-between gap-1">
-          {bars.map((height, index) => (
-            <span
-              className="w-1 origin-center scale-y-[0.55] rounded-full bg-foreground/25 transition-all duration-500 group-hover:scale-y-100 group-hover:bg-foreground/70"
-              // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, positional waveform
-              key={index}
-              style={{ ...at(index * 35), height: `${height}%` }}
+        {/* `slice`, not a stretch. Fitting the box would squash the curve at
+            narrow widths and stretch the glow with it; slicing keeps the wave
+            at the shape it was drawn and lets the right-hand end run off the
+            card, which is what stops the drawing reading as an icon centred in
+            a box. The negative margin cancels the scene's own right padding so
+            the line reaches the card's edge.
+
+            `overflow-visible` is what decides *which* edge does the cutting.
+            An SVG viewport clips by default, and the glow is wider than the
+            line it belongs to — so the box was taking a straight-sided bite
+            out of the halo a good 20px before the card did, which is a lit
+            rectangle sitting in the middle of a dark card. Let the drawing
+            out of its own box and the only thing that crops it is the card,
+            at the edge the line is already running off. */}
+        <svg
+          aria-hidden="true"
+          className="-mr-7 h-20 min-w-0 flex-1 overflow-visible text-foreground/45 transition-colors duration-700 group-hover:text-foreground"
+          preserveAspectRatio="xMinYMid slice"
+          viewBox={`0 0 ${WAVE_W} ${WAVE_H}`}
+        >
+          {/* `view-box` rather than the default: the origin has to be the
+              centreline of the drawing, and the path's own bounding box is not
+              centred on it. */}
+          <g
+            className="origin-center scale-y-[0.18] transition-transform duration-700 ease-out group-hover:scale-y-100"
+            style={{ transformBox: "view-box" }}
+          >
+            {WAVE_GLOW.map((layer) => (
+              <path
+                d={d}
+                fill="none"
+                key={layer.blur}
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeOpacity={layer.opacity}
+                strokeWidth={layer.width}
+                style={{ filter: `blur(${layer.blur}px)` }}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+
+            {/* The line itself. One device pixel whatever the card's width
+                does to the viewBox — a hairline is the whole look, and a
+                hairline that scales is a smudge at some widths. */}
+            <path
+              d={d}
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
             />
-          ))}
-        </div>
+          </g>
+        </svg>
       </div>
     </Scene>
   );

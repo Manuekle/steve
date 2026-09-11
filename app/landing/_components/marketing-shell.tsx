@@ -5,7 +5,8 @@ import { SmoothScroll } from "@/components/motion/smooth-scroll";
 import { useReveal } from "@/lib/hooks/use-reveal";
 import { LandingFooter } from "./landing-footer";
 import { LandingHeader } from "./landing-header";
-import { Spotlight } from "./lighting";
+import styles from "./editorial.module.css";
+import { Grain } from "./grain";
 
 /**
  * The frame every marketing page sits in: the dark wrapper, the header, the
@@ -31,7 +32,7 @@ import { Spotlight } from "./lighting";
  */
 export function MarketingShell({
   children,
-  editorial = false,
+  editorial = true,
 }: {
   readonly children: ReactNode;
   readonly editorial?: boolean;
@@ -105,15 +106,13 @@ export function PageHeader({
   readonly titleClassName?: string;
 }) {
   return (
-    <header className="relative overflow-hidden border-border border-b pt-32 pb-16 sm:pt-40 sm:pb-20">
+    <header className={`${styles.surface} ${styles.publicHeader} relative overflow-hidden border-border border-b pt-32 pb-16 sm:pt-40 sm:pb-20`}>
       <div aria-hidden="true" className="lp-grid" />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 mx-auto w-full max-w-[1120px] px-6 sm:px-8"
-      >
-        <Spotlight className="top-0 left-0 h-[32rem] w-[min(40rem,100%)]" intensity={0.8} />
+      <div aria-hidden="true" className={styles.heroAtmosphere}>
+        <div className={styles.heroLight} />
+        <Grain variant="hero" />
       </div>
-      <div className="relative mx-auto w-full max-w-[1120px] px-6 sm:px-8">
+      <div className="relative z-[1] mx-auto w-full max-w-[1120px] px-6 sm:px-8">
         <p className="lp-eyebrow">{eyebrow}</p>
         {/* Milled, like the landing's own headline. These four pages open on
             the biggest type they contain and it was flat `--foreground` — the

@@ -11,7 +11,9 @@ import { ThinkingText } from "@/components/motion/thinking-text";
 import { GoogleLogo } from "@/components/provider-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useT } from "@/lib/i18n/provider";
+import { useI18n, useT } from "@/lib/i18n/provider";
+import { LEGAL_LINKS } from "@/lib/legal";
+import { PrivacyPreferencesButton } from "@/components/privacy-consent";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +28,7 @@ type Mode = "signin" | "signup";
  */
 function LoginForm() {
   const t = useT();
+  const { locale } = useI18n();
   const router = useRouter();
   const params = useSearchParams();
 
@@ -443,6 +446,11 @@ function LoginForm() {
           </button>
         </form>
 
+
+        <nav aria-label={locale === "es" ? "Información legal y privacidad" : "Legal and privacy information"} className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          {LEGAL_LINKS.map((link) => <Link key={link.href} href={link.href} className="lp-focus inline-flex min-h-6 items-center underline underline-offset-4">{link[locale]}</Link>)}
+          <PrivacyPreferencesButton className="lp-focus min-h-11 underline underline-offset-4" />
+        </nav>
 
         {/* Out to the marketing page, which is the only other thing someone
             who cannot get in can reach. `/`, not `history.back()`: an

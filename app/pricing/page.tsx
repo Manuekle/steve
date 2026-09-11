@@ -6,7 +6,7 @@ export const metadata: Metadata = marketingMetadata({
   path: "/pricing",
   title: "Precios — senka",
   description:
-    "senka corre en tu servidor con tus claves, así que no hay licencia ni asientos. Lo que se cobra es el soporte y el hosting, si los querés.",
+    "Compara Pro y Managed, los planes alojados de Senka, y Enterprise, la licencia de pago único para tu infraestructura. Consulta precios y facturación anual.",
 });
 
 export default function PricingPage() {

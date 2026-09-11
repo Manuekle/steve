@@ -5,6 +5,8 @@ import entityData from "@/content/entity.json";
 import { useT } from "@/lib/i18n/provider";
 import { Reveal, Shell } from "./primitives";
 import { MarketingShell, PageHeader } from "./marketing-shell";
+import styles from "./editorial.module.css";
+import { Grain } from "./grain";
 
 export const ENTITY: {
   readonly address: string | null;
@@ -12,10 +14,10 @@ export const ENTITY: {
   readonly jurisdiction: string | null;
   readonly name: string | null;
 } = {
-  address: (entityData as { address?: string }).address ?? null,
-  email: (entityData as { email?: string }).email ?? null,
-  jurisdiction: (entityData as { jurisdiction?: string }).jurisdiction ?? null,
-  name: (entityData as { name?: string }).name ?? null,
+  address: entityData.address ?? null,
+  email: entityData.email ?? null,
+  jurisdiction: entityData.jurisdiction ?? null,
+  name: entityData.name ?? null,
 };
 
 const ENTITY_LABEL_KEY = {
@@ -81,8 +83,9 @@ export function LegalPage({
         lede={lede}
       />
 
-      <section className="py-16 sm:py-20">
-        <Shell>
+      <section className={`${styles.surface} ${styles.publicBody} py-16 sm:py-20`}>
+        <Grain />
+        <Shell className={styles.publicBodyContent}>
           <div className="max-w-[72ch]">{children}</div>
         </Shell>
       </section>
