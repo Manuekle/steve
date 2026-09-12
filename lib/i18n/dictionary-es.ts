@@ -3148,10 +3148,10 @@ export const es: Dictionary = {
   "connections.failedUnconfigured": "Esta instalación no tiene registrada la app OAuth de ese proveedor.",
   "connections.failedExchange": "El proveedor no aceptó el intercambio. Probá de nuevo.",
   "connections.google.description":
-    "Hojas, agenda, archivos y correo con la cuenta de Google que ya usás.",
+    "Hojas, agenda, archivos en drive y correo con la cuenta de Google que ya usás.",
   "connections.google.unlockSheets": "Hojas de cálculo",
   "connections.google.unlockCalendar": "Calendario",
-  "connections.google.unlockDrive": "Archivos en Drive",
+  "connections.google.unlockDrive": "Drive",
   "connections.google.unlockGmail": "Enviar correo",
   "connections.hubspot.description":
     "Sincroniza respuestas con contactos de HubSpot y asigna preguntas a propiedades de contacto.",
@@ -3472,7 +3472,7 @@ export const es: Dictionary = {
   "seo.noProperties": "Sin propiedades verificadas",
   "seo.noPropertiesBody": "Esta cuenta de Google no tiene ningún sitio verificado en Search Console. Verifica el tuyo y vuelve aquí.",
   "seo.openSearchConsole": "Abrir Search Console",
-  "connections.google.unlockSearchConsole": "Métricas de SEO desde Search Console",
+  "connections.google.unlockSearchConsole": "Métricas de SEO",
   "nav.numbers": "Mis números",
   "nav.skills": "Habilidades",
   "nav.runtime": "Runtime",

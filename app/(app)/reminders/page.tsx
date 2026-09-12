@@ -346,64 +346,69 @@ function ReminderRow({
   const done = reminder.status !== "pending";
 
   return (
-    <Card>
-      <CardHeader>
-        <div
-          className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
-            done ? "bg-muted text-muted-foreground" : "bg-accent text-foreground",
-          )}
-        >
-          <HugeiconsIcon icon={Timer01Icon} size={16} strokeWidth={1.75} />
+    <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+      <div className="flex flex-col">
+        <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+          <CardHeader>
+            <div
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
+                done ? "bg-muted text-muted-foreground" : "bg-accent text-foreground",
+              )}
+            >
+              <HugeiconsIcon icon={Timer01Icon} size={16} strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className={cn("truncate", done && "text-muted-foreground")}>
+                  {reminder.message}
+                </CardTitle>
+                <StatusBadge
+                  status={STATUS_VARIANT[reminder.status]}
+                  label={t(STATUS_LABEL[reminder.status])}
+                />
+              </div>
+              <CardDescription>
+                {t("reminders.scheduledFor")} {fullTime(reminder.datetime, locale)}
+              </CardDescription>
+            </div>
+          </CardHeader>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle className={cn("truncate", done && "text-muted-foreground")}>
-              {reminder.message}
-            </CardTitle>
-            <StatusBadge
-              status={STATUS_VARIANT[reminder.status]}
-              label={t(STATUS_LABEL[reminder.status])}
-            />
+
+        {/* Metadata + actions — outside the inner border */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 pt-2 pb-0.5">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            {/* A pending reminder is in the future, so it counts down. A closed
+                one has its outcome in the badge already — repeating it here would
+                just be the same word twice on one card. */}
+            {done ? null : (
+              <span className="inline-flex items-center gap-1.5">
+                <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={1.75} />
+                {timeUntil(reminder.datetime, locale)}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1.5">
+              {t("reminders.created")} · {relativeTime(reminder.created_at, locale)}
+            </span>
           </div>
-          <CardDescription>
-            {t("reminders.scheduledFor")} {fullTime(reminder.datetime, locale)}
-          </CardDescription>
+          {onDelete ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  onClick={() => void onDelete(reminder.id)}
+                  aria-label={t("reminders.delete")}
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive"
+                >
+                  <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={1.75} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{t("reminders.delete")}</TooltipContent>
+            </Tooltip>
+          ) : null}
         </div>
-        {onDelete ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                onClick={() => void onDelete(reminder.id)}
-                aria-label={t("reminders.delete")}
-                size="icon-sm"
-                variant="ghost"
-                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive"
-              >
-                <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={1.75} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t("reminders.delete")}</TooltipContent>
-          </Tooltip>
-        ) : null}
-      </CardHeader>
-
-      <CardSeparator />
-
-      <div className="flex flex-wrap items-center gap-4 px-5 py-3 text-xs text-muted-foreground">
-        {/* A pending reminder is in the future, so it counts down. A closed
-            one has its outcome in the badge already — repeating it here would
-            just be the same word twice on one card. */}
-        {done ? null : (
-          <span className="inline-flex items-center gap-1.5">
-            <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={1.75} />
-            {timeUntil(reminder.datetime, locale)}
-          </span>
-        )}
-        <span className="inline-flex items-center gap-1.5">
-          {t("reminders.created")} · {relativeTime(reminder.created_at, locale)}
-        </span>
       </div>
     </Card>
   );
@@ -440,29 +445,32 @@ function ActivitySection({
         {t("reminders.activity")}
         <span className="tabular-nums text-muted-foreground">{items.length}</span>
       </h2>
-      <Card>
-        <div className="divide-y divide-border">
-          <AnimatePresence initial={false}>
-            {items.map((entry) => (
-              <motion.div
-                key={entry.id}
-                initial={reduce ? false : { opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap items-center gap-3 px-5 py-3"
-              >
-                <StatusBadge
-                  status={ACTIVITY_STATUS[entry.type]}
-                  label={t(ACTIVITY_LABEL[entry.type] as Parameters<typeof t>[0])}
-                />
-                <span className="min-w-0 flex-1 truncate text-sm">{entry.reminder_message}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {relativeTime(entry.created_at, locale)}
-                </span>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </Card>
+      <div className="space-y-3">
+        <AnimatePresence initial={false}>
+          {items.map((entry) => (
+            <motion.div
+              key={entry.id}
+              initial={reduce ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+                <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+                  <div className="flex flex-wrap items-center gap-3 px-5 py-3">
+                    <StatusBadge
+                      status={ACTIVITY_STATUS[entry.type]}
+                      label={t(ACTIVITY_LABEL[entry.type] as Parameters<typeof t>[0])}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm">{entry.reminder_message}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {relativeTime(entry.created_at, locale)}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </section>
   );
 }

@@ -38,7 +38,6 @@ import {
   Card,
   CardDescription,
   CardHeader,
-  CardSeparator,
   CardTitle,
 } from "../../_components/dashboard-card";
 import { ManualKeyDialog } from "./_components/manual-key-dialog";
@@ -298,89 +297,89 @@ export default function ConnectionsPage() {
               title={t("connections.manualTitle")}
               description={t("connections.manualDescription")}
             />
-            <Card>
-              {manual.map((integration, index) => (
-                <div key={integration.id}>
-                  {index > 0 ? <CardSeparator /> : null}
-                  <div className="flex items-center gap-3 px-5 py-4">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                      <ConnectionIcon id={integration.id} size={16} />
+            <div className="space-y-3">
+              {manual.map((integration) => (
+                <Card key={integration.id} className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+                  <div className="flex flex-col">
+                    <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+                      <div className="flex items-center gap-3 px-5 py-4">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                          <ConnectionIcon id={integration.id} size={16} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-2 text-sm font-medium">
+                            {integration.label}
+                            {integration.configured ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                                <span className="size-1.5 rounded-full bg-emerald-500" />
+                                {t("connections.statusConfigured")}
+                              </span>
+                            ) : null}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-2 text-sm font-medium">
-                        {integration.label}
-                        {integration.configured ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                            <span className="size-1.5 rounded-full bg-emerald-500" />
-                            {t("connections.statusConfigured")}
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {/* Status + actions — outside the inner border */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 pt-2 pb-0.5">
+                      <p className="truncate text-xs text-muted-foreground">
                         {integration.configured && integration.keyPreview
                           ? integration.source === "env"
                             ? `${integration.keyPreview} · ${t("connections.fromEnv")}`
                             : integration.keyPreview
                           : t(integration.reasonKey)}
                       </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => setManualTarget(integration)}
-                            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-                          >
-                            {integration.configured
-                              ? t("connections.review")
-                              : t("connections.addKey")}
-                            <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={1.75} />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs text-pretty">
-                          {integration.configured
-                            ? t("connections.reviewHint", { provider: integration.label })
-                            : t("connections.addKeyHint", { provider: integration.label })}
-                        </TooltipContent>
-                      </Tooltip>
-                      {integration.configured && integration.source !== "env" ? (
-                        // Icon-only until it is armed, so it says what it does
-                        // on hover and to a screen reader — the label is not
-                        // optional just because the glyph is unambiguous to
-                        // whoever drew it. Hidden for an env-provided key:
-                        // clearing the store would not remove it, so the
-                        // button would promise something it cannot do.
+                      <div className="flex shrink-0 items-center gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant={confirming === integration.id ? "destructive" : "ghost"}
-                              size="sm"
-                              onClick={() => void disconnect(integration.id)}
-                              disabled={busy === integration.id}
-                              aria-label={t("connections.removeKey")}
-                              className="ml-1"
+                            <button
+                              type="button"
+                              onClick={() => setManualTarget(integration)}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                             >
-                              {busy === integration.id ? (
-                                <Spinner size={13} />
-                              ) : (
-                                <HugeiconsIcon icon={Unlink01Icon} size={13} strokeWidth={1.75} />
-                              )}
-                              {confirming === integration.id ? t("connections.confirmDisconnect") : null}
-                            </Button>
+                              {integration.configured
+                                ? t("connections.review")
+                                : t("connections.addKey")}
+                              <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={1.75} />
+                            </button>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            {confirming === integration.id
-                              ? t("connections.confirmDisconnectHint")
-                              : t("connections.removeKey")}
+                          <TooltipContent className="max-w-xs text-pretty">
+                            {integration.configured
+                              ? t("connections.reviewHint", { provider: integration.label })
+                              : t("connections.addKeyHint", { provider: integration.label })}
                           </TooltipContent>
                         </Tooltip>
-                      ) : null}
+                        {integration.configured && integration.source !== "env" ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant={confirming === integration.id ? "destructive" : "ghost"}
+                                size="sm"
+                                onClick={() => void disconnect(integration.id)}
+                                disabled={busy === integration.id}
+                                aria-label={t("connections.removeKey")}
+                                className="ml-1"
+                              >
+                                {busy === integration.id ? (
+                                  <Spinner size={13} />
+                                ) : (
+                                  <HugeiconsIcon icon={Unlink01Icon} size={13} strokeWidth={1.75} />
+                                )}
+                                {confirming === integration.id ? t("connections.confirmDisconnect") : null}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {confirming === integration.id
+                                ? t("connections.confirmDisconnectHint")
+                                : t("connections.removeKey")}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               ))}
-            </Card>
+            </div>
           </section>
 
           {/* ── MCP servers ──
@@ -472,115 +471,109 @@ function ConnectionCard({
   const needsReconnect = connection.status === "needs_reconnect";
 
   return (
-    <Card interactive className="flex flex-col">
-      <CardHeader>
-        <div
-          className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
-            connected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground",
-          )}
-        >
-          <ConnectionIcon id={connection.id} size={16} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <CardTitle>{connection.label}</CardTitle>
-          <CardDescription>{t(connection.descriptionKey)}</CardDescription>
-        </div>
-      </CardHeader>
+    <Card interactive className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+      <div className="flex flex-col">
+        <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+          <CardHeader>
+            <div
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-xl shadow-[var(--shadow-inset)]",
+                connected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground",
+              )}
+            >
+              <ConnectionIcon id={connection.id} size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <CardTitle>{connection.label}</CardTitle>
+              <CardDescription>{t(connection.descriptionKey)}</CardDescription>
+            </div>
+          </CardHeader>
 
-      <div className="flex flex-wrap gap-1.5 px-5 pb-4">
-        {connection.unlockKeys.map((key) => (
-          <span
-            key={key}
-            className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground"
-          >
-            {t(key)}
-          </span>
-        ))}
-      </div>
-
-      <CardSeparator />
-
-      <div className="mt-auto flex items-center justify-between gap-3 px-5 py-3.5">
-        <div className="min-w-0">
-          {connected ? (
-            <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-              <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
-              <span className="truncate">
-                {connection.accountLabel ?? t("connections.statusConnected")}
+          <div className="flex flex-wrap gap-1.5 px-5 pb-4">
+            {connection.unlockKeys.map((key) => (
+              <span
+                key={key}
+                className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground"
+              >
+                {t(key)}
               </span>
-            </p>
-          ) : needsReconnect ? (
-            <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-              <HugeiconsIcon icon={AlertCircleIcon} size={13} strokeWidth={1.75} />
-              {t("connections.statusExpired")}
-            </p>
-          ) : unavailable ? (
-            // The vendor's developer docs are the right next click only for
-            // whoever is going to register the app. On a managed install that
-            // link is a dead end, so it says who to ask instead.
-            canSetUpApp ? (
-              <a
-                href={connection.appDocsUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {t("connections.statusUnavailable")}
-                <HugeiconsIcon icon={ExternalLinkIcon} size={12} strokeWidth={1.75} />
-              </a>
-            ) : (
-              <p className="text-xs text-muted-foreground">{t("connections.statusNotEnabled")}</p>
-            )
-          ) : (
-            <p className="text-xs text-muted-foreground">{t("connections.statusDisconnected")}</p>
-          )}
+            ))}
+          </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          {connected || needsReconnect ? (
-            <>
-              <Button variant="ghost" size="sm" onClick={onConnect} disabled={busy}>
-                {t("connections.reconnect")}
+        {/* Status + actions — outside the inner border */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 pt-2 pb-0.5">
+          <div className="flex items-center">
+            {connected ? (
+              <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <span className="truncate">
+                  {connection.accountLabel ?? t("connections.statusConnected")}
+                </span>
+              </p>
+            ) : needsReconnect ? (
+              <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                <HugeiconsIcon icon={AlertCircleIcon} size={13} strokeWidth={1.75} />
+                {t("connections.statusExpired")}
+              </p>
+            ) : unavailable ? (
+              canSetUpApp ? (
+                <a
+                  href={connection.appDocsUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {t("connections.statusUnavailable")}
+                  <HugeiconsIcon icon={ExternalLinkIcon} size={12} strokeWidth={1.75} />
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t("connections.statusNotEnabled")}</p>
+              )
+            ) : (
+              <p className="text-xs text-muted-foreground">{t("connections.statusDisconnected")}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {connected || needsReconnect ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={onConnect} disabled={busy}>
+                  {t("connections.reconnect")}
+                </Button>
+                <Button
+                  variant={confirming ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={onDisconnect}
+                  disabled={busy}
+                >
+                  {busy ? (
+                    <Spinner size={14} />
+                  ) : confirming ? null : (
+                    <HugeiconsIcon icon={Unlink01Icon} size={14} strokeWidth={1.75} />
+                  )}
+                  {confirming ? t("connections.confirmDisconnect") : t("connections.disconnect")}
+                </Button>
+              </>
+            ) : unavailable ? (
+              canSetUpApp ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={onSetUpApp}>
+                      <HugeiconsIcon icon={AuthorizedIcon} size={14} strokeWidth={1.75} />
+                      {t("connections.setUpApp")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-pretty">
+                    {t("connections.setUpAppHint", { provider: connection.label })}
+                  </TooltipContent>
+                </Tooltip>
+              ) : null
+            ) : (
+              <Button size="sm" onClick={onConnect}>
+                {t("connections.connect")}
               </Button>
-              <Button
-                variant={confirming ? "destructive" : "outline"}
-                size="sm"
-                onClick={onDisconnect}
-                disabled={busy}
-              >
-                {busy ? (
-                  <Spinner size={14} />
-                ) : confirming ? null : (
-                  <HugeiconsIcon icon={Unlink01Icon} size={14} strokeWidth={1.75} />
-                )}
-                {confirming ? t("connections.confirmDisconnect") : t("connections.disconnect")}
-              </Button>
-            </>
-          ) : unavailable ? (
-            // Two different audiences behind one status. A self-hoster can fix
-            // this by registering the app, so they get the form. Everyone else
-            // is on an install whose operator hasn't wired this provider yet —
-            // a disabled Connect button told them nothing, and a "go register a
-            // Google project" button would be worse.
-            canSetUpApp ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={onSetUpApp}>
-                    <HugeiconsIcon icon={AuthorizedIcon} size={14} strokeWidth={1.75} />
-                    {t("connections.setUpApp")}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs text-pretty">
-                  {t("connections.setUpAppHint", { provider: connection.label })}
-                </TooltipContent>
-              </Tooltip>
-            ) : null
-          ) : (
-            <Button size="sm" onClick={onConnect}>
-              {t("connections.connect")}
-            </Button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </Card>

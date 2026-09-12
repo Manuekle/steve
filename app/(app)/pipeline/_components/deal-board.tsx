@@ -528,7 +528,7 @@ export function DealBoard({
         id={`${boardId}-scroller`}
         className={
           view === "kanban"
-            ? "x-fade overscroll-contain overflow-x-auto scrollbar-hide"
+            ? "x-fade overscroll-x-contain overflow-x-auto overflow-y-clip scrollbar-hide"
             : "overscroll-contain w-full"
         }
         style={{ padding: q(8), paddingBottom: view === "kanban" ? q(12) : undefined }}
@@ -663,7 +663,7 @@ export function DealBoard({
                               className="absolute inset-x-0 top-0 border border-dashed"
                               style={{
                                 height: lifted.height,
-                                borderRadius: q(10),
+                                borderRadius: q(20),
                                 background: `color-mix(in oklch, ${theme.tone} 8%, var(--card))`,
                                 borderColor: `color-mix(in oklch, ${theme.tone} 45%, var(--border))`,
                               }}
@@ -693,7 +693,7 @@ export function DealBoard({
           })}
         </div>
       </div>
-      {lifted ? <motion.div aria-hidden inert className="pointer-events-none absolute z-50 shadow-[var(--shadow-float)]" style={{ left: lifted.left, top: lifted.top, x: overlayX, y: overlayY, rotate: reduce ? 0 : rotate, scale, width: lifted.width, height: lifted.height, borderRadius: q(12) }}><DealCard deal={lifted.deal} view={view} locale={locale} now={now} contactName={contactName.get(lifted.deal.contactId)} moving overlay onMove={onMove} onEdit={onEdit} onDelete={onDelete} /><motion.div className="absolute inset-0" style={{ opacity: ring, borderRadius: q(12), boxShadow: `0 0 0 ${q(1.5)} ${DEAL_THEME[drop?.stage ?? lifted.deal.stage].tone}` }} /></motion.div> : null}
+      {lifted ? <motion.div aria-hidden inert className="pointer-events-none absolute z-50 shadow-[var(--shadow-float)]" style={{ left: lifted.left, top: lifted.top, x: overlayX, y: overlayY, rotate: reduce ? 0 : rotate, scale, width: lifted.width, height: lifted.height, borderRadius: q(20) }}><DealCard deal={lifted.deal} view={view} locale={locale} now={now} contactName={contactName.get(lifted.deal.contactId)} moving overlay onMove={onMove} onEdit={onEdit} onDelete={onDelete} /><motion.div className="absolute inset-0" style={{ opacity: ring, borderRadius: q(20), boxShadow: `0 0 0 ${q(1.5)} ${DEAL_THEME[drop?.stage ?? lifted.deal.stage].tone}` }} /></motion.div> : null}
       {/* Page-bottom slider via portal: the board root is a container-query
           container, which would re-anchor `fixed` to itself instead of the
           viewport. It only lives while the kanban overflows, and fades out
@@ -815,9 +815,6 @@ const DealCard = memo(function DealCard({
       initial={false}
       transition={{ duration: reduce ? 0 : 0.24, ease: EASE_OUT }}
       draggable={false}
-      // `onDragStartCapture`, not `onDragStart`: motion's article types that
-      // name as its pan-gesture hook, so the native DnD event only keeps its
-      // `dataTransfer` type on the capture variant.
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
@@ -829,178 +826,223 @@ const DealCard = memo(function DealCard({
       tabIndex={0}
       aria-label={deal.title}
       style={{
-        ...(list ? {
-          paddingInline: q(16),
-          paddingBlock: q(10),
-          gridTemplateColumns: `minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1fr) ${q(216)}`,
-          gridTemplateRows: "minmax(0, 1fr)",
-          columnGap: q(12),
-          rowGap: 0,
-        } : {
-          height: q(148),
-          paddingInline: q(16),
-          paddingBlock: q(12),
-          gridTemplateColumns: `minmax(0, 1fr) ${q(64)}`,
-          gridTemplateRows: `${q(17)} ${q(17)} minmax(0, 1fr) ${q(36)}`,
-          columnGap: q(12),
-          rowGap: q(6),
-        }),
         outlineWidth: q(2),
         outlineOffset: q(-2),
-        borderRadius: q(14),
+        borderRadius: list ? q(16) : q(20),
         marginBottom: q(8),
         opacity: dimmed && !overlay ? 0.4 : 1,
-        // The card being flown carries its stage colour as a ring, so the
-        // eye never loses which deal is in the air. The column stays
-        // neutral — it is the cards that move, not the lanes.
         boxShadow: dimmed && !overlay ? `0 0 0 2px ${DEAL_THEME[deal.stage].tone}` : undefined,
       }}
       className={cn(
-        "group relative min-w-0 cursor-grab touch-none select-none bg-background/75 text-left text-card-foreground active:cursor-grabbing",
+        "group relative min-w-0 cursor-grab touch-none select-none text-left text-card-foreground active:cursor-grabbing",
         "focus-visible:outline-solid focus-visible:outline-[color:var(--ring)]",
-        list ? "flex flex-col gap-1 @sm:grid @sm:items-center" : "grid items-center",
       )}
     >
-      <span
-        title={deal.title}
-        className="min-w-0 truncate font-medium text-foreground"
-        style={{ fontSize: q(list ? 13 : 14), lineHeight: q(17), gridColumn: 1, gridRow: 1 }}
-      >
-        {deal.title}
-      </span>
-      <span
-        title={formatMoney(deal.value, deal.currency, locale)}
-        className="min-w-0 truncate text-right font-semibold text-foreground tabular-nums @sm:text-left"
-        style={{
-          fontSize: q(13),
-          lineHeight: q(17),
-          gridColumn: list ? 2 : 2,
-          gridRow: 1,
-        }}
-      >
-        {formatMoney(deal.value, deal.currency, locale)}
-      </span>
-      <span
-        title={contactName ?? ""}
-        className="flex min-w-0 items-center text-foreground/80"
-        style={{
-          gap: q(7),
-          fontSize: q(12.5),
-          lineHeight: q(17),
-          gridColumn: list ? 3 : "1 / -1",
-          gridRow: list ? 1 : 2,
-        }}
-      >
-        <span className="min-w-0 truncate">{contactName ?? "—"}</span>
-      </span>
-      <span
-        className="flex min-w-0 flex-wrap items-center"
-        style={{
-          gap: q(4),
-          gridColumn: list ? 4 : "1 / -1",
-          gridRow: list ? 1 : 3,
-          fontSize: q(10),
-          lineHeight: q(17),
-        }}
-      >
-        {overdue ? (
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px]"
-            style={{
-              background: "var(--status-review-bg)",
-              color: "var(--status-review-fg)",
-            }}
+      {list ? (
+        <>
+          {/* List mode: double-border matching kanban style */}
+          <div
+            className="min-w-0 border border-border/70 bg-muted/40"
+            style={{ borderRadius: q(16), padding: q(5), boxShadow: "var(--shadow-soft)" }}
           >
-            <HugeiconsIcon icon={AlertCircleIcon} size={10} strokeWidth={1.75} />
-            {t("pipeline.flag.overdue")}
-          </span>
-        ) : null}
-        {stale ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            <HugeiconsIcon icon={Clock01Icon} size={10} strokeWidth={1.75} />
-            {t("pipeline.flag.stale")}
-          </span>
-        ) : null}
-        {deal.expectedCloseAt && !overdue ? (
-          <span className="truncate text-muted-foreground">
-            {t("pipeline.closesIn", { when: timeUntil(deal.expectedCloseAt, locale) })}
-          </span>
-        ) : null}
-        {!overdue && !stale && !deal.expectedCloseAt ? (
-          <span className="truncate text-muted-foreground/60">{"\u00a0"}</span>
-        ) : null}
-        {deal.stage === "lost" && deal.lostReason && !list ? (
-          <span className="block w-full truncate text-muted-foreground" title={deal.lostReason}>
-            {deal.lostReason}
-          </span>
-        ) : null}
-      </span>
-      <div
-        data-card-actions
-        aria-hidden={moving || undefined}
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
-        onDragStart={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        draggable={false}
-        className={cn(
-          "flex min-w-0 items-center",
-          !list && "border-t border-border/50",
-          moving && "pointer-events-none opacity-50",
-        )}
-        style={{
-          gridColumn: list ? 5 : "1 / -1",
-          gridRow: list ? 1 : 4,
-          height: q(36),
-          gap: q(6),
-          paddingTop: list ? 0 : q(6),
-        }}
-      >
-        <Select value={deal.stage} onValueChange={(stage) => onMove(deal.id, stage as DealStage)}>
-          <SelectTrigger
-            size="sm"
-            aria-label={locale === "es" ? `Cambiar etapa de ${deal.title}` : `Change stage for ${deal.title}`}
-            onPointerDown={(event) => event.stopPropagation()}
-            className="min-w-0 flex-1 rounded-[9px] bg-card/60 shadow-none hover:bg-card"
-            style={{ height: q(28), fontSize: q(11), paddingInline: q(8) }}
+            <div
+              className="min-w-0 border border-border/50 bg-card"
+              style={{
+                borderRadius: q(12),
+                paddingInline: q(14),
+                paddingBlock: q(8),
+                display: "grid",
+                gridTemplateColumns: `minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1fr) auto`,
+                gridTemplateRows: "minmax(0, 1fr)",
+                columnGap: q(10),
+                alignItems: "center",
+              }}
+            >
+              <span title={deal.title} className="min-w-0 truncate font-medium text-foreground" style={{ fontSize: q(13), lineHeight: q(17), gridColumn: 1 }}>
+                {deal.title}
+              </span>
+              <span title={formatMoney(deal.value, deal.currency, locale)} className="min-w-0 truncate font-semibold tabular-nums" style={{ fontSize: q(12), lineHeight: q(17), gridColumn: 2, color: `color-mix(in oklch, ${DEAL_THEME[deal.stage].tone} 85%, var(--foreground))` }}>
+                {formatMoney(deal.value, deal.currency, locale)}
+              </span>
+              <span title={contactName ?? ""} className="min-w-0 truncate text-muted-foreground" style={{ fontSize: q(12), lineHeight: q(17), gridColumn: 3 }}>
+                {contactName ?? "—"}
+              </span>
+              <span className="flex min-w-0 flex-wrap items-center" style={{ gap: q(4), gridColumn: 4, fontSize: q(10), lineHeight: q(17) }}>
+                {overdue ? (
+                  <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5" style={{ fontSize: q(10), background: "var(--status-review-bg)", color: "var(--status-review-fg)" }}>
+                    <HugeiconsIcon icon={AlertCircleIcon} size={q(9)} strokeWidth={1.75} />
+                    {t("pipeline.flag.overdue")}
+                  </span>
+                ) : null}
+                {stale ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: q(10) }}>
+                    <HugeiconsIcon icon={Clock01Icon} size={q(9)} strokeWidth={1.75} />
+                    {t("pipeline.flag.stale")}
+                  </span>
+                ) : null}
+                {deal.expectedCloseAt && !overdue ? (
+                  <span className="truncate text-muted-foreground/70" style={{ fontSize: q(10) }}>{t("pipeline.closesIn", { when: timeUntil(deal.expectedCloseAt, locale) })}</span>
+                ) : null}
+                {!overdue && !stale && !deal.expectedCloseAt ? <span className="text-muted-foreground/0">{"\u00a0"}</span> : null}
+              </span>
+              <div
+                data-card-actions
+                aria-hidden={moving || undefined}
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
+                draggable={false}
+                className={cn("flex shrink-0 items-center", moving && "pointer-events-none opacity-50")}
+                style={{ gridColumn: 5, gap: q(4) }}
+              >
+                <Select value={deal.stage} onValueChange={(stage) => onMove(deal.id, stage as DealStage)}>
+                  <SelectTrigger size="sm" aria-label={locale === "es" ? `Cambiar etapa de ${deal.title}` : `Change stage for ${deal.title}`} onPointerDown={(event) => event.stopPropagation()} className="min-w-0 rounded-lg border-transparent bg-transparent shadow-none hover:bg-accent/60" style={{ height: q(28), fontSize: q(11), paddingInline: q(6) }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    {DEAL_COLUMNS.map((stage) => <SelectItem key={stage} value={stage}>{t(`pipeline.stage.${stage}`)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="ghost" size="icon-xs" aria-label={locale === "es" ? `Abrir ${deal.title}` : `Open ${deal.title}`} onClick={() => onEdit(deal)} onPointerDown={(event) => event.stopPropagation()} className="text-muted-foreground hover:bg-accent/70 hover:text-foreground" style={{ width: q(28), height: q(28) }}>
+                  <HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} />
+                </Button>
+                <Button type="button" variant="ghost" size="icon-xs" aria-label={t("pipeline.delete")} onClick={() => onDelete(deal)} onPointerDown={(event) => event.stopPropagation()} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" style={{ width: q(28), height: q(28) }}>
+                  <HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Kanban mode: outer border + inner content border, actions at bottom — matches /agents card style */}
+          <div
+            className="min-w-0 border border-border/70 bg-muted/40"
+            style={{ borderRadius: q(20), padding: q(6), boxShadow: "var(--shadow-float)" }}
           >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            {DEAL_COLUMNS.map((stage) => (
-              <SelectItem key={stage} value={stage}>
-                {t(`pipeline.stage.${stage}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label={locale === "es" ? `Abrir ${deal.title}` : `Open ${deal.title}`}
-          onClick={() => onEdit(deal)}
-          onPointerDown={(event) => event.stopPropagation()}
-          className="text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-          style={{ width: q(28), height: q(28) }}
-        >
-          <HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t("pipeline.delete")}
-          onClick={() => onDelete(deal)}
-          onPointerDown={(event) => event.stopPropagation()}
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-          style={{ width: q(28), height: q(28) }}
-        >
-          <HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} />
-        </Button>
-      </div>
+            {/* Inner content block */}
+            <div
+              className="min-w-0 border border-border/50 bg-card"
+              style={{
+                borderRadius: q(14),
+                padding: `${q(12)} ${q(14)}`,
+                boxShadow: "var(--shadow-xs, 0 1px 2px rgba(0,0,0,.06))",
+                display: "grid",
+                gridTemplateColumns: `minmax(0, 1fr) auto`,
+                rowGap: q(5),
+                columnGap: q(8),
+              }}
+            >
+              {/* Title */}
+              <span
+                title={deal.title}
+                className="min-w-0 truncate font-medium text-foreground"
+                style={{ fontSize: q(13), lineHeight: q(18), gridColumn: 1, gridRow: 1 }}
+              >
+                {deal.title}
+              </span>
+              {/* Value — top right, tinted by stage */}
+              <span
+                title={formatMoney(deal.value, deal.currency, locale)}
+                className="shrink-0 text-right font-semibold tabular-nums"
+                style={{
+                  fontSize: q(12),
+                  lineHeight: q(18),
+                  gridColumn: 2,
+                  gridRow: 1,
+                  color: `color-mix(in oklch, ${DEAL_THEME[deal.stage].tone} 85%, var(--foreground))`,
+                }}
+              >
+                {formatMoney(deal.value, deal.currency, locale)}
+              </span>
+              {/* Contact name */}
+              <span
+                title={contactName ?? ""}
+                className="col-span-2 min-w-0 truncate text-muted-foreground"
+                style={{ fontSize: q(11.5), lineHeight: q(16), gridColumn: "1 / -1", gridRow: 2 }}
+              >
+                {contactName ?? "—"}
+              </span>
+              {/* Status tags — only rendered when there's something to show */}
+              {(overdue || stale || deal.expectedCloseAt || (deal.stage === "lost" && deal.lostReason)) ? (
+                <div
+                  className="col-span-2 flex min-w-0 flex-wrap items-center"
+                  style={{ gap: q(4), gridColumn: "1 / -1", gridRow: 3 }}
+                >
+                  {overdue ? (
+                    <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5" style={{ fontSize: q(10), background: "var(--status-review-bg)", color: "var(--status-review-fg)" }}>
+                      <HugeiconsIcon icon={AlertCircleIcon} size={q(9)} strokeWidth={1.75} />
+                      {t("pipeline.flag.overdue")}
+                    </span>
+                  ) : null}
+                  {stale ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground" style={{ fontSize: q(10) }}>
+                      <HugeiconsIcon icon={Clock01Icon} size={q(9)} strokeWidth={1.75} />
+                      {t("pipeline.flag.stale")}
+                    </span>
+                  ) : null}
+                  {deal.expectedCloseAt && !overdue ? (
+                    <span className="truncate text-muted-foreground/60" style={{ fontSize: q(10) }}>
+                      {t("pipeline.closesIn", { when: timeUntil(deal.expectedCloseAt, locale) })}
+                    </span>
+                  ) : null}
+                  {deal.stage === "lost" && deal.lostReason ? (
+                    <span className="min-w-0 truncate text-muted-foreground/60" title={deal.lostReason} style={{ fontSize: q(10) }}>
+                      {deal.lostReason}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            {/* Actions — below inner border, no separator */}
+            <div
+              data-card-actions
+              aria-hidden={moving || undefined}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+              draggable={false}
+              className={cn("flex min-w-0 items-center", moving && "pointer-events-none")}
+              style={{ gap: q(4), paddingInline: q(6), paddingTop: q(6), paddingBottom: q(2) }}
+            >
+              <Select value={deal.stage} onValueChange={(stage) => onMove(deal.id, stage as DealStage)}>
+                <SelectTrigger
+                  size="sm"
+                  aria-label={locale === "es" ? `Cambiar etapa de ${deal.title}` : `Change stage for ${deal.title}`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  className="min-w-0 flex-1 rounded-lg border-transparent bg-transparent shadow-none hover:bg-accent/60"
+                  style={{ height: q(28), fontSize: q(11), paddingInline: q(6) }}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {DEAL_COLUMNS.map((stage) => (
+                    <SelectItem key={stage} value={stage}>{t(`pipeline.stage.${stage}`)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button" variant="ghost" size="icon-xs"
+                aria-label={locale === "es" ? `Abrir ${deal.title}` : `Open ${deal.title}`}
+                onClick={() => onEdit(deal)}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="shrink-0 text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                style={{ width: q(28), height: q(28) }}
+              >
+                <HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} />
+              </Button>
+              <Button
+                type="button" variant="ghost" size="icon-xs"
+                aria-label={t("pipeline.delete")}
+                onClick={() => onDelete(deal)}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                style={{ width: q(28), height: q(28) }}
+              >
+                <HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} />
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </motion.article>
   );
 });

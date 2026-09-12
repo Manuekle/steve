@@ -292,65 +292,69 @@ export default function SkillsPage() {
               {skills.map((skill) => {
                 const blanks = countPlaceholders(skill.markdown);
                 return (
-                  <Card key={skill.id} className="flex flex-col p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="flex min-w-0 flex-1 gap-3">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                          <HugeiconsIcon icon={GlobalEducationIcon} size={16} strokeWidth={1.75} />
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-1.5">
-                          <div className="flex flex-wrap items-baseline gap-2">
-                            <span className="text-sm font-medium text-foreground">{skill.name}</span>
-                            <span className="font-mono text-[11px] text-muted-foreground">
-                              {skill.slug}
-                            </span>
+                  <Card key={skill.id} className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+                    <div className="flex flex-col">
+                      <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card p-5 shadow-xs">
+                        <div className="flex min-w-0 gap-3">
+                          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                            <HugeiconsIcon icon={GlobalEducationIcon} size={16} strokeWidth={1.75} />
                           </div>
-                          <p className="text-xs leading-relaxed text-muted-foreground">
-                            {skill.description}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                            <span>{t(SOURCE_LABEL[skill.source])}</span>
-                            <span>·</span>
-                            <span>{agentNames(skill.agentIds)}</span>
-                            {blanks > 0 ? (
-                              <>
-                                <span>·</span>
-                                <span className="flex items-center gap-1 text-[color:var(--status-pending-fg)]">
-                                  <HugeiconsIcon icon={AlertCircleIcon} size={12} strokeWidth={2} />
-                                  {t("skills.blanks", { count: blanks })}
-                                </span>
-                              </>
-                            ) : null}
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <div className="flex flex-wrap items-baseline gap-2">
+                              <span className="text-sm font-medium text-foreground">{skill.name}</span>
+                              <span className="font-mono text-[11px] text-muted-foreground">
+                                {skill.slug}
+                              </span>
+                            </div>
+                            <p className="text-xs leading-relaxed text-muted-foreground">
+                              {skill.description}
+                            </p>
                           </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-1">
-                        <Switch
-                          checked={skill.enabled}
-                          onCheckedChange={(checked) => void toggle(skill, checked)}
-                          label={skill.enabled ? t("skills.disable") : t("skills.enable")}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={t("skills.editorEditTitle")}
-                          onClick={() => {
-                            setEditing(skill);
-                            setSeed(undefined);
-                            setEditorOpen(true);
-                          }}
-                        >
-                          <HugeiconsIcon icon={PencilEdit01Icon} size={15} strokeWidth={1.75} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={t("skills.deleteConfirm", { name: skill.name })}
-                          onClick={() => void remove(skill)}
-                        >
-                          <HugeiconsIcon icon={Delete01Icon} size={15} strokeWidth={1.75} />
-                        </Button>
+                      {/* Metadata + actions — outside the inner border */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 pt-2 pb-0.5">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                          <span>{t(SOURCE_LABEL[skill.source])}</span>
+                          <span>·</span>
+                          <span>{agentNames(skill.agentIds)}</span>
+                          {blanks > 0 ? (
+                            <>
+                              <span>·</span>
+                              <span className="flex items-center gap-1 text-[color:var(--status-pending-fg)]">
+                                <HugeiconsIcon icon={AlertCircleIcon} size={12} strokeWidth={2} />
+                                {t("skills.blanks", { count: blanks })}
+                              </span>
+                            </>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Switch
+                            checked={skill.enabled}
+                            onCheckedChange={(checked) => void toggle(skill, checked)}
+                            label={skill.enabled ? t("skills.disable") : t("skills.enable")}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={t("skills.editorEditTitle")}
+                            onClick={() => {
+                              setEditing(skill);
+                              setSeed(undefined);
+                              setEditorOpen(true);
+                            }}
+                          >
+                            <HugeiconsIcon icon={PencilEdit01Icon} size={15} strokeWidth={1.75} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={t("skills.deleteConfirm", { name: skill.name })}
+                            onClick={() => void remove(skill)}
+                          >
+                            <HugeiconsIcon icon={Delete01Icon} size={15} strokeWidth={1.75} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </Card>

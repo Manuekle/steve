@@ -171,37 +171,34 @@ export default function FormsPage() {
               </div>
             </Card>
           ) : (
-            <Card>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border text-xs text-muted-foreground">
+            <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+              <div className="scroll-fade-x overflow-x-auto rounded-[14px]">
+                <table className="w-full border-separate border-spacing-y-1.5 px-1.5 text-sm">
+                  <thead className="text-xs text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium">{t("forms.columnName")}</th>
-                      <th className="px-4 py-2 text-left font-medium">{t("forms.columnStatus")}</th>
-                      <th className="px-4 py-2 text-left font-medium">
+                      <th className="px-3 py-1.5 text-left font-medium">{t("forms.columnName")}</th>
+                      <th className="px-3 py-1.5 text-left font-medium">{t("forms.columnStatus")}</th>
+                      <th className="px-3 py-1.5 text-left font-medium">
                         {t("forms.columnResponses")}
                       </th>
-                      <th className="px-4 py-2 text-left font-medium">
+                      <th className="px-3 py-1.5 text-left font-medium">
                         {t("forms.columnUpdated")}
                       </th>
-                      <th className="px-4 py-2 text-right font-medium">
+                      <th className="px-3 py-1.5 text-right font-medium">
                         {t("forms.columnActions")}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {forms.map((form) => (
-                      <tr
-                        key={form.id}
-                        className="border-b border-border/50 last:border-0 hover:bg-muted/30"
-                      >
-                        <td className="px-4 py-2.5">
+                      <tr key={form.id} className="transition-colors hover:[&>td]:bg-muted/40">
+                        <td className="rounded-l-[14px] border-y border-l border-border/50 bg-card px-3 py-2.5 shadow-xs">
                           <Link href={`/forms/${form.id}`} className="font-medium hover:underline">
                             {form.name}
                           </Link>
                           <p className="text-xs text-muted-foreground">/f/{form.slug}</p>
                         </td>
-                        <td className="px-4 py-2.5">
+                        <td className="border-y border-border/50 bg-card px-3 py-2.5">
                           <button type="button" onClick={() => void togglePublished(form)}>
                             <StatusBadge
                               status={form.status === "published" ? "active" : "draft"}
@@ -212,7 +209,7 @@ export default function FormsPage() {
                             />
                           </button>
                         </td>
-                        <td className="px-4 py-2.5">
+                        <td className="border-y border-border/50 bg-card px-3 py-2.5">
                           <span>{t("forms.responses", { count: form.responseCount })}</span>
                           {form.responseCount > 0 ? (
                             <p className="text-xs text-muted-foreground">
@@ -223,10 +220,10 @@ export default function FormsPage() {
                             </p>
                           ) : null}
                         </td>
-                        <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                        <td className="border-y border-border/50 bg-card px-3 py-2.5 text-xs text-muted-foreground">
                           {relativeTime(form.updatedAt, locale)}
                         </td>
-                        <td className="px-4 py-2.5">
+                        <td className="rounded-r-[14px] border-y border-r border-border/50 bg-card px-3 py-2.5 shadow-xs">
                           <div className="flex items-center justify-end gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -236,10 +233,6 @@ export default function FormsPage() {
                                   className="inline-flex rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                                   aria-label={t("forms.copyLink")}
                                 >
-                                  {/* The tooltip already says "Copiado", but
-                                      it is only on screen while the pointer
-                                      stays put. The icon is the confirmation
-                                      that survives moving the mouse away. */}
                                   <span
                                     className="t-icon-swap"
                                     data-state={copied === form.id ? "b" : "a"}

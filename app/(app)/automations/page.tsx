@@ -283,33 +283,98 @@ export default function AutomationsPage() {
             sorted.map((auto) => {
             const TriggerIcon = TRIGGER_ICONS[auto.trigger];
             return (
-              <Card key={auto.id}>
-                <CardHeader>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+              <Card key={auto.id} className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+                <div className="flex flex-col">
+                  <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+                    <CardHeader>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => router.push(`/automations/${auto.id}`)}
+                            aria-label={t("automations.openFlow")}
+                            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)] transition-colors hover:text-foreground"
+                          >
+                            <HugeiconsIcon icon={TriggerIcon} size={16} strokeWidth={1.75} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">{t(TRIGGER_LABELS[auto.trigger])}</TooltipContent>
+                      </Tooltip>
                       <button
                         onClick={() => router.push(`/automations/${auto.id}`)}
-                        aria-label={t("automations.openFlow")}
-                        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)] transition-colors hover:text-foreground"
+                        className="min-w-0 flex-1 text-left"
                       >
-                        <HugeiconsIcon icon={TriggerIcon} size={16} strokeWidth={1.75} />
+                        <div className="flex items-center gap-2">
+                          <CardTitle>{auto.name}</CardTitle>
+                          <StatusBadge status={auto.status} />
+                        </div>
+                        <CardDescription>{auto.description}</CardDescription>
                       </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">{t(TRIGGER_LABELS[auto.trigger])}</TooltipContent>
-                  </Tooltip>
-                  <button
-                    onClick={() => router.push(`/automations/${auto.id}`)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CardTitle>{auto.name}</CardTitle>
-                      <StatusBadge status={auto.status} />
-                    </div>
-                    <CardDescription>{auto.description}</CardDescription>
-                  </button>
+                    </CardHeader>
 
-                  {/* Actions */}
-                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                    <CardSeparator />
+
+                    {/* Trigger info */}
+                    <div className="flex flex-wrap items-center gap-4 px-5 py-3 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <HugeiconsIcon icon={ZapIcon} size={14} strokeWidth={1.75} />
+                        {t(TRIGGER_LABELS[auto.trigger])}
+                        {auto.triggerValue ? (
+                          <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs shadow-[var(--shadow-inset)]">
+                            {auto.triggerValue}
+                          </code>
+                        ) : null}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={1.75} />
+                        {auto.responseCount} {t("automations.responses")}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        {auto.lastTriggeredAt
+                          ? t("automations.lastTrigger", { time: relativeTime(auto.lastTriggeredAt) })
+                          : t("automations.neverTriggered")}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        {t("automations.channel")}:
+                        {auto.channel === "all" ? (
+                          <span className="font-medium">{t("automations.allChannels")}</span>
+                        ) : (
+                          <ChannelBadge channel={auto.channel} />
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Workflow steps preview */}
+                    {auto.steps && auto.steps.length > 0 ? (
+                      <CardSeparator />
+                    ) : null}
+                    {auto.steps && auto.steps.length > 0 ? (
+                      <div className="px-5 py-3">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <HugeiconsIcon icon={GitBranchIcon} size={14} strokeWidth={1.75} />
+                          <span className="font-medium">{t("automations.workflow")}</span>
+                          <div className="flex flex-wrap items-center gap-1">
+                            {auto.steps.map((step, i) => {
+                              const StepIcon = STEP_ICONS[step.type];
+                              return (
+                                <span key={step.id} className="inline-flex items-center gap-1">
+                                  {i > 0 ? (
+                                    <span className="text-muted-foreground">→</span>
+                                  ) : null}
+                                   <CategoryBadge hue={STEP_HUES[step.type]}>
+                                     <HugeiconsIcon icon={StepIcon} size={12} strokeWidth={1.75} aria-hidden="true" />
+                                     {t(STEP_LABEL_KEYS[step.type])}
+                                   </CategoryBadge>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Action bar — below inner border, no separator */}
+                  <div className="flex items-center justify-end gap-1 px-2 pt-2 pb-0.5">
                     <RowAction
                       icon={GitBranchIcon}
                       label={t("automations.openFlow")}
@@ -339,68 +404,7 @@ export default function AutomationsPage() {
                       onClick={() => void handleDelete(auto.id)}
                     />
                   </div>
-                </CardHeader>
-
-                <CardSeparator />
-
-                {/* Trigger info */}
-                <div className="flex flex-wrap items-center gap-4 px-5 py-3 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <HugeiconsIcon icon={ZapIcon} size={14} strokeWidth={1.75} />
-                    {t(TRIGGER_LABELS[auto.trigger])}
-                    {auto.triggerValue ? (
-                      <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs shadow-[var(--shadow-inset)]">
-                        {auto.triggerValue}
-                      </code>
-                    ) : null}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={1.75} />
-                    {auto.responseCount} {t("automations.responses")}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    {auto.lastTriggeredAt
-                      ? t("automations.lastTrigger", { time: relativeTime(auto.lastTriggeredAt) })
-                      : t("automations.neverTriggered")}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    {t("automations.channel")}:
-                    {auto.channel === "all" ? (
-                      <span className="font-medium">{t("automations.allChannels")}</span>
-                    ) : (
-                      <ChannelBadge channel={auto.channel} />
-                    )}
-                  </span>
                 </div>
-
-                {/* Workflow steps preview */}
-                {auto.steps && auto.steps.length > 0 ? (
-                  <CardSeparator />
-                ) : null}
-                {auto.steps && auto.steps.length > 0 ? (
-                  <div className="px-5 py-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <HugeiconsIcon icon={GitBranchIcon} size={14} strokeWidth={1.75} />
-                      <span className="font-medium">{t("automations.workflow")}</span>
-                      <div className="flex flex-wrap items-center gap-1">
-                        {auto.steps.map((step, i) => {
-                          const StepIcon = STEP_ICONS[step.type];
-                          return (
-                            <span key={step.id} className="inline-flex items-center gap-1">
-                              {i > 0 ? (
-                                <span className="text-muted-foreground">→</span>
-                              ) : null}
-                               <CategoryBadge hue={STEP_HUES[step.type]}>
-                                 <HugeiconsIcon icon={StepIcon} size={12} strokeWidth={1.75} aria-hidden="true" />
-                                 {t(STEP_LABEL_KEYS[step.type])}
-                               </CategoryBadge>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
               </Card>
             );
           })

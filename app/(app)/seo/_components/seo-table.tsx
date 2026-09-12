@@ -100,7 +100,7 @@ function MetricCell({
   readonly percent?: string | null;
 }) {
   return (
-    <td className="px-4 py-2.5 text-right">
+    <td className="border-y border-border/50 bg-card px-3 py-2.5 text-right">
       <div className="flex flex-col items-end gap-0.5">
         <span className="font-medium tabular-nums">{formatted}</span>
         {isNew ? (
@@ -154,25 +154,25 @@ export function SeoTable({
     /* Five numeric columns do not fit a phone, and squeezing them wraps every
        keyword onto four lines. The table keeps its width and scrolls inside
        its own card instead — the page itself never scrolls sideways. */
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[42rem] text-sm">
-        <thead className="border-border border-b text-muted-foreground text-xs">
+    <div className="scroll-fade-x overflow-x-auto">
+      <table className="w-full min-w-[42rem] border-separate border-spacing-y-1.5 px-1.5 text-sm">
+        <thead className="text-muted-foreground text-xs">
           <tr>
-            <th className="px-4 py-2 text-left font-medium">
+            <th className="px-3 py-1.5 text-left font-medium">
               {t(kind === "query" ? "seo.columnQuery" : "seo.columnPage")}
             </th>
-            <th className="px-4 py-2 text-right font-medium">{t("seo.clicks")}</th>
-            <th className="px-4 py-2 text-right font-medium">{t("seo.impressions")}</th>
-            <th className="px-4 py-2 text-right font-medium">{t("seo.ctr")}</th>
-            <th className="px-4 py-2 text-right font-medium">{t("seo.position")}</th>
+            <th className="px-3 py-1.5 text-right font-medium">{t("seo.clicks")}</th>
+            <th className="px-3 py-1.5 text-right font-medium">{t("seo.impressions")}</th>
+            <th className="px-3 py-1.5 text-right font-medium">{t("seo.ctr")}</th>
+            <th className="px-3 py-1.5 text-right font-medium">{t("seo.position")}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => {
             const positionMoved = formatPositionChange(row.positionChange);
             return (
-              <tr className="border-border/50 border-b last:border-0 hover:bg-muted/30" key={row.key}>
-                <td className="max-w-[22rem] px-4 py-2.5">
+              <tr className="transition-colors hover:[&>td]:bg-muted/40" key={row.key}>
+                <td className="max-w-[22rem] rounded-l-[14px] border-y border-l border-border/50 bg-card px-3 py-2.5 shadow-xs">
                   {kind === "page" ? (
                     <a
                       className="inline-flex items-center gap-1.5 truncate font-medium hover:underline"
@@ -213,9 +213,6 @@ export function SeoTable({
                   formatted={formatRate(row.current.ctr)}
                   isNew={row.isNew}
                   newLabel={t("seo.new")}
-                  /* Percentage points, not percent: a CTR that went from 1% to
-                     2% did double, but "+100%" next to a column of percentages
-                     reads as a rate of 100%. */
                   percent={
                     row.ctrChange === 0
                       ? "0"
@@ -223,7 +220,7 @@ export function SeoTable({
                   }
                 />
 
-                <td className="px-4 py-2.5 text-right">
+                <td className="rounded-r-[14px] border-y border-r border-border/50 bg-card px-3 py-2.5 text-right shadow-xs">
                   <div className="flex flex-col items-end gap-0.5">
                     <span className="font-medium tabular-nums">
                       {formatPosition(row.current.position)}
@@ -231,8 +228,6 @@ export function SeoTable({
                     {row.isNew ? (
                       <span className="text-[11px] text-emerald-500">{t("seo.new")}</span>
                     ) : positionMoved ? (
-                      /* Already signed as places climbed, so a positive number
-                         is green here even though the underlying figure fell. */
                       <DeltaChip compact tone={toneForChange(row.positionChange)} value={positionMoved} />
                     ) : (
                       <span className="text-[11px] text-muted-foreground">{t("seo.unchanged")}</span>

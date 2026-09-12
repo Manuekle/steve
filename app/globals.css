@@ -1376,6 +1376,7 @@ textarea {
   cursor: pointer;
   border-radius: 48px;
   z-index: 1;
+  white-space: nowrap;
   transition: color var(--tabs-dur) var(--tabs-ease);
 }
 /* `aria-pressed`, not `aria-selected`: these are toggle buttons, not a
@@ -1406,6 +1407,28 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .t-tabs-pill, .t-tab { transition: none !important; }
+}
+
+/* ── Scroll-fade ─────────────────────────────────────────────────── */
+/* Apply directly to an overflow-x-auto element. Uses mask-image so
+   the fade is purely visual and never clips interactive content.
+   The 48px transparent sliver on each side cues scrollability without
+   competing with a pseudo-element background. */
+.scroll-fade-x {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
 }
 
 /* ── Pagination ──────────────────────────────────────────────────── */

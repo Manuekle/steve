@@ -108,10 +108,10 @@ export function EnterpriseGate({ children }: { readonly children: React.ReactNod
             on the card's face (`z-10`), the pool stays under it. */}
         <div className="relative w-full max-w-[420px]">
           <LightBar
-            className="inset-x-[16%] top-0 z-10"
-            drop="15rem"
-            gap="16px"
-            intensity={1}
+            className="inset-x-[14%] top-0 z-10"
+            drop="14rem"
+            gap="0px"
+            intensity={0.9}
           />
           <Halo className="-inset-x-12 -bottom-20 h-52" />
 

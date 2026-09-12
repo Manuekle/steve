@@ -43,13 +43,14 @@ export function ChartPeriod({ value, children }: { value: string; children: Reac
   );
 }
 
-export function ChartSelector({ options, value, onChange, label }: {
+export function ChartSelector({ options, value, onChange, label, className }: {
   options: readonly { value: string; label: ReactNode }[];
   value: string;
   onChange: (value: string) => void;
   label: string;
+  className?: string;
 }) {
-  return <div className="mt-4 flex max-w-full justify-center" role="group" aria-label={label}>
+  return <div className={cn("mt-4 flex max-w-full justify-center overflow-x-auto", className)} role="group" aria-label={label}>
     <SlidingTabs tabs={options.map((option) => ({ id: option.value, label: option.label }))} value={value} onValueChange={onChange} />
   </div>;
 }

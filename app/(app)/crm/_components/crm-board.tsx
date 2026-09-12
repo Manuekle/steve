@@ -433,7 +433,7 @@ export function CrmBoard({
           sharing the wrapper would capture scroll events even when there's
           nothing to scroll horizontally. */}
       <div ref={scrollerRef}
-        className={view === "kanban" ? "x-fade overscroll-contain overflow-x-auto scrollbar-hide" : "overscroll-contain w-full"}
+        className={view === "kanban" ? "x-fade overscroll-x-contain overflow-x-auto overflow-y-clip scrollbar-hide" : "overscroll-contain w-full"}
         style={{ padding: q(8) }}
         onScroll={(event) => {
           const scroller = event.currentTarget;
@@ -491,7 +491,7 @@ export function CrmBoard({
                           if (el) { slots.current.set(key, el); el.style.height = `${heights.current.get(key) ?? 0}px`; }
                           else slots.current.delete(key);
                         }}>
-                          {lifted && drop?.status === status && drop.index === index ? <div className="absolute inset-x-0 top-0 border border-dashed" style={{ height: lifted.height, borderRadius: q(10), background: `color-mix(in oklch, ${theme.tone} 8%, var(--card))`, borderColor: `color-mix(in oklch, ${theme.tone} 45%, var(--border))` }} /> : null}
+                          {lifted && drop?.status === status && drop.index === index ? <div className="absolute inset-x-0 top-0 border border-dashed" style={{ height: lifted.height, borderRadius: q(20), background: `color-mix(in oklch, ${theme.tone} 8%, var(--card))`, borderColor: `color-mix(in oklch, ${theme.tone} 45%, var(--border))` }} /> : null}
                         </div>
                         {contact ? <ContactCard contact={contact} view={view} moving={!!lifted} onEdit={onEdit} onDelete={onDelete} onMove={onMove} /> : null}
                       </div>
@@ -503,9 +503,9 @@ export function CrmBoard({
           })}
         </div>
       </div>
-      {lifted ? <motion.div aria-hidden inert className="pointer-events-none absolute z-50 shadow-[var(--shadow-float)]" style={{ left: lifted.left, top: lifted.top, x: overlayX, y: overlayY, rotate: reduce ? 0 : rotate, scale, width: lifted.width, height: lifted.height, borderRadius: q(12) }}>
+      {lifted ? <motion.div aria-hidden inert className="pointer-events-none absolute z-50 shadow-[var(--shadow-float)]" style={{ left: lifted.left, top: lifted.top, x: overlayX, y: overlayY, rotate: reduce ? 0 : rotate, scale, width: lifted.width, height: lifted.height, borderRadius: q(20) }}>
         <ContactCard contact={lifted.contact} view={view} overlay moving onEdit={onEdit} onDelete={onDelete} onMove={onMove} />
-        <motion.div className="absolute inset-0" style={{ opacity: ring, borderRadius: q(12), boxShadow: `0 0 0 ${q(1.5)} ${STATUS_THEME[drop?.status ?? lifted.contact.status].tone}` }} />
+        <motion.div className="absolute inset-0" style={{ opacity: ring, borderRadius: q(20), boxShadow: `0 0 0 ${q(1.5)} ${STATUS_THEME[drop?.status ?? lifted.contact.status].tone}` }} />
       </motion.div> : null}
     </div>
   );
@@ -549,146 +549,189 @@ const ContactCard = memo(function ContactCard({
       aria-label={contact.name}
       aria-keyshortcuts={overlay ? undefined : "Alt+ArrowUp Alt+ArrowDown"}
       className={cn(
-        "group relative min-w-0 touch-none select-none bg-background/75 text-left text-card-foreground",
+        "group relative min-w-0 touch-none select-none text-left text-card-foreground",
         "focus-visible:outline-solid focus-visible:outline-[color:var(--ring)]",
         !overlay && "cursor-grab",
-        list ? "flex flex-col gap-1 @sm:grid @sm:items-center" : "grid items-center",
       )}
       style={{
-        // Kanban: fixed row heights via grid; list: flexible height that wraps on mobile
-        ...(list ? {
-          paddingInline: q(16),
-          paddingBlock: q(10),
-          gridTemplateColumns: `minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 2fr) ${q(48)} ${q(216)}`,
-          gridTemplateRows: "minmax(0, 1fr)",
-          columnGap: q(12),
-          outlineWidth: q(2),
-          outlineOffset: q(-2),
-          borderRadius: q(14),
-          marginBottom: overlay ? 0 : q(8),
-        } : {
-          height: q(148),
-          paddingInline: q(16),
-          paddingBlock: q(12),
-          gridTemplateColumns: `minmax(0, 1fr) ${q(36)}`,
-          gridTemplateRows: `${q(17)} ${q(17)} minmax(0, 1fr) ${q(36)}`,
-          columnGap: q(12),
-          rowGap: q(8),
-          outlineWidth: q(2),
-          outlineOffset: q(-2),
-          borderRadius: q(14),
-          marginBottom: overlay ? 0 : q(8),
-        }),
+        outlineWidth: q(2),
+        outlineOffset: q(-2),
+        borderRadius: list ? q(16) : q(20),
+        marginBottom: overlay ? 0 : q(8),
       }}
     >
-      {/* Name */}
-      <span
-        title={contact.name}
-        className="min-w-0 truncate font-medium text-foreground"
-        style={{
-          fontSize: q(list ? 13 : 14),
-          lineHeight: q(17),
-          gridColumn: 1,
-          gridRow: 1,
-        }}
-      >
-        {contact.name}
-      </span>
-      {/* Phone/email */}
-      <span
-        title={detail}
-        className="flex min-w-0 items-center text-foreground/80 tabular-nums"
-        style={{
-          gap: q(7),
-          fontSize: q(12.5),
-          lineHeight: q(17),
-          gridColumn: list ? 2 : "1 / -1",
-          gridRow: list ? 1 : 2,
-        }}
-      >
-        <HugeiconsIcon icon={contact.phone ? Call02Icon : BubbleChatIcon} size={q(12)} strokeWidth={1.5} className="shrink-0 text-muted-foreground" />
-        <span className="min-w-0 truncate">{detail}</span>
-      </span>
-      {/* Note / last message */}
-      <span
-        title={note}
-        className="min-w-0 truncate font-normal text-muted-foreground"
-        style={{
-          fontSize: q(12.5),
-          lineHeight: q(17),
-          gridColumn: list ? 3 : "1 / -1",
-          gridRow: list ? 1 : 3,
-        }}
-      >
-        {note || "\u00a0"}
-      </span>
-      {/* Time */}
-      <span
-        title={relativeTime(contact.lastMessageAt, locale)}
-        className="min-w-0 truncate text-right text-muted-foreground tabular-nums @sm:text-right"
-        style={{
-          fontSize: q(10),
-          lineHeight: q(17),
-          gridColumn: list ? 4 : 2,
-          gridRow: 1,
-        }}
-      >
-        {relativeTime(contact.lastMessageAt, locale)}
-      </span>
-      {/* Actions row */}
-      <div
-        data-card-actions
-        inert={overlay || moving}
-        className={cn("flex min-w-0 items-center", !list && "border-t border-border/50")}
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
-        style={{
-          gridColumn: list ? 5 : "1 / -1",
-          gridRow: list ? 1 : 4,
-          height: q(36),
-          gap: q(6),
-          paddingTop: list ? 0 : q(6),
-        }}
-      >
-        <Select disabled={overlay || moving} value={contact.status} onValueChange={(status) => onMove(contact.id, status as ContactStatus)}>
-          <SelectTrigger
-            size="sm"
-            aria-label={locale === "es" ? `Cambiar etapa de ${contact.name}` : `Change stage for ${contact.name}`}
-            onPointerDown={(event) => event.stopPropagation()}
-            className="min-w-0 flex-1 rounded-[9px] bg-card/60 shadow-none hover:bg-card"
-            style={{ height: q(28), fontSize: q(11), paddingInline: q(8) }}
+      {list ? (
+        <>
+          {/* List mode: outer border + inner content/actions layout matching kanban double-border style */}
+          <div
+            className="min-w-0 border border-border/70 bg-muted/40 @container"
+            style={{ borderRadius: q(16), padding: q(5), boxShadow: "var(--shadow-soft)" }}
           >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            {CRM_COLUMNS.map((status) => (
-              <SelectItem key={status} value={status}>{t(`contactStatus.${status}`)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button" variant="ghost" size="icon-xs"
-          disabled={overlay || moving}
-          aria-label={locale === "es" ? `Abrir ${contact.name}` : `Open ${contact.name}`}
-          onClick={() => onEdit(contact)}
-          onPointerDown={(event) => event.stopPropagation()}
-          className="text-muted-foreground hover:bg-accent/70 hover:text-foreground"
-          style={{ width: q(28), height: q(28) }}
-        >
-          <HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} />
-        </Button>
-        <Button
-          type="button" variant="ghost" size="icon-xs"
-          disabled={overlay || moving}
-          aria-label={t("crm.delete")}
-          onClick={() => onDelete(contact.id)}
-          onPointerDown={(event) => event.stopPropagation()}
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-          style={{ width: q(28), height: q(28) }}
-        >
-          <HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} />
-        </Button>
-      </div>
+            <div
+              className="min-w-0 border border-border/50 bg-card"
+              style={{
+                borderRadius: q(12),
+                paddingInline: q(14),
+                paddingBlock: q(8),
+                display: "grid",
+                gridTemplateColumns: `minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 2fr) auto auto`,
+                gridTemplateRows: "minmax(0, 1fr)",
+                columnGap: q(10),
+                alignItems: "center",
+              }}
+            >
+              <span title={contact.name} className="min-w-0 truncate font-medium text-foreground" style={{ fontSize: q(13), lineHeight: q(17), gridColumn: 1 }}>
+                {contact.name}
+              </span>
+              <span title={detail} className="flex min-w-0 items-center text-muted-foreground tabular-nums" style={{ gap: q(6), fontSize: q(12), lineHeight: q(17), gridColumn: 2 }}>
+                <HugeiconsIcon icon={contact.phone ? Call02Icon : BubbleChatIcon} size={q(11)} strokeWidth={1.5} className="shrink-0 opacity-60" />
+                <span className="min-w-0 truncate">{detail}</span>
+              </span>
+              <span title={note} className="min-w-0 truncate text-muted-foreground/70" style={{ fontSize: q(12), lineHeight: q(17), gridColumn: 3 }}>
+                {note || "\u00a0"}
+              </span>
+              <span title={relativeTime(contact.lastMessageAt, locale)} className="shrink-0 text-right text-muted-foreground tabular-nums" style={{ fontSize: q(10), lineHeight: q(17), gridColumn: 4 }}>
+                {relativeTime(contact.lastMessageAt, locale)}
+              </span>
+              <div
+                data-card-actions
+                inert={overlay || moving}
+                className="flex shrink-0 items-center"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
+                style={{ gridColumn: 5, gap: q(4) }}
+              >
+                <Select disabled={overlay || moving} value={contact.status} onValueChange={(status) => onMove(contact.id, status as ContactStatus)}>
+                  <SelectTrigger size="sm" aria-label={locale === "es" ? `Cambiar etapa de ${contact.name}` : `Change stage for ${contact.name}`} onPointerDown={(event) => event.stopPropagation()} className="min-w-0 rounded-lg border-transparent bg-transparent shadow-none hover:bg-accent/60" style={{ height: q(28), fontSize: q(11), paddingInline: q(6) }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    {CRM_COLUMNS.map((status) => (
+                      <SelectItem key={status} value={status}>{t(`contactStatus.${status}`)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={locale === "es" ? `Abrir ${contact.name}` : `Open ${contact.name}`} onClick={() => onEdit(contact)} onPointerDown={(event) => event.stopPropagation()} className="text-muted-foreground hover:bg-accent/70 hover:text-foreground" style={{ width: q(28), height: q(28) }}>
+                  <HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} />
+                </Button>
+                <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={t("crm.delete")} onClick={() => onDelete(contact.id)} onPointerDown={(event) => event.stopPropagation()} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" style={{ width: q(28), height: q(28) }}>
+                  <HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Kanban mode: outer border + inner content border, actions at bottom — matches /agents card style */}
+          <div
+            className="min-w-0 border border-border/70 bg-muted/40"
+            style={{
+              borderRadius: q(20),
+              padding: q(6),
+              boxShadow: "var(--shadow-float)",
+            }}
+          >
+            {/* Inner content block */}
+            <div
+              className="min-w-0 border border-border/50 bg-card"
+              style={{
+                borderRadius: q(14),
+                padding: `${q(12)} ${q(14)}`,
+                boxShadow: "var(--shadow-xs, 0 1px 2px rgba(0,0,0,.06))",
+                display: "grid",
+                gridTemplateColumns: `minmax(0, 1fr) auto`,
+                rowGap: q(5),
+                columnGap: q(8),
+              }}
+            >
+              {/* Name */}
+              <span
+                title={contact.name}
+                className="min-w-0 truncate font-medium text-foreground"
+                style={{ fontSize: q(13), lineHeight: q(18), gridColumn: 1, gridRow: 1 }}
+              >
+                {contact.name}
+              </span>
+              {/* Time — top right */}
+              <span
+                title={relativeTime(contact.lastMessageAt, locale)}
+                className="shrink-0 text-right text-muted-foreground tabular-nums"
+                style={{ fontSize: q(10), lineHeight: q(18), gridColumn: 2, gridRow: 1 }}
+              >
+                {relativeTime(contact.lastMessageAt, locale)}
+              </span>
+              {/* Phone/email */}
+              <span
+                title={detail}
+                className="col-span-2 flex min-w-0 items-center text-muted-foreground"
+                style={{ gap: q(5), fontSize: q(11.5), lineHeight: q(16), gridColumn: "1 / -1", gridRow: 2 }}
+              >
+                <HugeiconsIcon icon={contact.phone ? Call02Icon : BubbleChatIcon} size={q(11)} strokeWidth={1.5} className="shrink-0 opacity-60" />
+                <span className="min-w-0 truncate">{detail}</span>
+              </span>
+              {/* Note / last message */}
+              {(contact.notes || contact.lastMessage) ? (
+                <span
+                  title={note}
+                  className="col-span-2 min-w-0 truncate text-muted-foreground/60"
+                  style={{ fontSize: q(11), lineHeight: q(15), gridColumn: "1 / -1", gridRow: 3 }}
+                >
+                  {note}
+                </span>
+              ) : null}
+            </div>
+            {/* Actions — below inner border, flush with outer card, no separator */}
+            <div
+              data-card-actions
+              inert={overlay || moving}
+              className="flex min-w-0 items-center"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+              style={{ gap: q(4), paddingInline: q(6), paddingTop: q(6), paddingBottom: q(2) }}
+            >
+              <Select disabled={overlay || moving} value={contact.status} onValueChange={(status) => onMove(contact.id, status as ContactStatus)}>
+                <SelectTrigger
+                  size="sm"
+                  aria-label={locale === "es" ? `Cambiar etapa de ${contact.name}` : `Change stage for ${contact.name}`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  className="min-w-0 flex-1 rounded-lg border-transparent bg-transparent shadow-none hover:bg-accent/60"
+                  style={{ height: q(28), fontSize: q(11), paddingInline: q(6) }}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {CRM_COLUMNS.map((status) => (
+                    <SelectItem key={status} value={status}>{t(`contactStatus.${status}`)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button" variant="ghost" size="icon-xs"
+                disabled={overlay || moving}
+                aria-label={locale === "es" ? `Abrir ${contact.name}` : `Open ${contact.name}`}
+                onClick={() => onEdit(contact)}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="shrink-0 text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+                style={{ width: q(28), height: q(28) }}
+              >
+                <HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} />
+              </Button>
+              <Button
+                type="button" variant="ghost" size="icon-xs"
+                disabled={overlay || moving}
+                aria-label={t("crm.delete")}
+                onClick={() => onDelete(contact.id)}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                style={{ width: q(28), height: q(28) }}
+              >
+                <HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} />
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </motion.article>
   );
 });

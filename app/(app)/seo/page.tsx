@@ -604,7 +604,7 @@ export default function SeoPage() {
               <ChartSelector onChange={(next) => {
                 setPage(1);
                 setRange(next as RangeId);
-              }} value={range} label={t("common.filterByPeriod")} options={RANGE_IDS.map((id) => ({ value: id, label: t(`seo.range.${id}`) }))} />
+              }} value={range} label={t("common.filterByPeriod")} options={RANGE_IDS.map((id) => ({ value: id, label: t(`seo.range.${id}`) }))} className="mt-0 justify-start" />
             </div>
           ) : null}
         </header>
@@ -641,7 +641,7 @@ export default function SeoPage() {
             ) : (
               <>
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                  <div className="overflow-x-auto">
+                  <div className="scroll-fade-x overflow-x-auto">
                     <SlidingTabs
                       onValueChange={(next) => {
                         setPage(1);
@@ -824,7 +824,8 @@ export default function SeoPage() {
                     <div className="space-y-4">
                       <Movers kind={kind} locale={locale} rows={data?.rows ?? []} t={t} />
 
-                      <Card>
+                      <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+                        <div className="overflow-hidden rounded-[14px]">
                         <CardHeader>
                           <CardTitle>
                             {t(kind === "page" ? "seo.pagesTitle" : "seo.queriesTitle")}
@@ -840,6 +841,7 @@ export default function SeoPage() {
                           rows={visible}
                           t={t}
                         />
+                        </div>
                       </Card>
 
                       {filtered.length > 0 ? (

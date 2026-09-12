@@ -3467,7 +3467,7 @@ export const en: Dictionary = {
   "seo.noProperties": "No verified properties",
   "seo.noPropertiesBody": "This Google account has no site verified in Search Console. Verify yours and come back.",
   "seo.openSearchConsole": "Open Search Console",
-  "connections.google.unlockSearchConsole": "SEO metrics from Search Console",
+  "connections.google.unlockSearchConsole": "SEO metrics",
   "nav.numbers": "My numbers",
   "nav.skills": "Skills",
   "nav.runtime": "Runtime",

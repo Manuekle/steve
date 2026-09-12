@@ -380,7 +380,8 @@ export default function AiUsagePage() {
           </div>
 
           {/* ── Details ── */}
-          <Card>
+          <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+            <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
             <CardHeader>
               <div className="min-w-0 flex-1">
                 <CardTitle>{t("aiUsage.detailsTitle")}</CardTitle>
@@ -435,25 +436,25 @@ export default function AiUsagePage() {
             ) : details.rows.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-muted-foreground">{t("aiUsage.detailsEmpty")}</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="scroll-fade-x overflow-x-auto">
+                <table className="w-full border-separate border-spacing-y-1.5 px-1.5 text-left text-xs">
                   <thead>
-                    <tr className="border-b border-border text-muted-foreground">
-                      <th className="px-5 py-2 font-medium">{t("aiUsage.col.date")}</th>
-                      <th className="px-2 py-2 font-medium">{t("aiUsage.col.provider")}</th>
-                      <th className="px-2 py-2 font-medium">{t("aiUsage.col.model")}</th>
-                      <th className="px-2 py-2 font-medium">{t("aiUsage.col.channel")}</th>
-                      <th className="px-2 py-2 text-right font-medium tabular-nums">{t("aiUsage.col.input")}</th>
-                      <th className="px-2 py-2 text-right font-medium tabular-nums">{t("aiUsage.col.output")}</th>
-                      <th className="px-2 py-2 text-right font-medium tabular-nums">{t("aiUsage.col.cost")}</th>
-                      <th className="px-2 py-2 text-right font-medium tabular-nums">{t("aiUsage.col.credits")}</th>
-                      <th className="px-5 py-2 font-medium">{t("aiUsage.col.source")}</th>
+                    <tr className="text-muted-foreground">
+                      <th className="px-4 py-1.5 font-medium">{t("aiUsage.col.date")}</th>
+                      <th className="px-2 py-1.5 font-medium">{t("aiUsage.col.provider")}</th>
+                      <th className="px-2 py-1.5 font-medium">{t("aiUsage.col.model")}</th>
+                      <th className="px-2 py-1.5 font-medium">{t("aiUsage.col.channel")}</th>
+                      <th className="px-2 py-1.5 text-right font-medium tabular-nums">{t("aiUsage.col.input")}</th>
+                      <th className="px-2 py-1.5 text-right font-medium tabular-nums">{t("aiUsage.col.output")}</th>
+                      <th className="px-2 py-1.5 text-right font-medium tabular-nums">{t("aiUsage.col.cost")}</th>
+                      <th className="px-2 py-1.5 text-right font-medium tabular-nums">{t("aiUsage.col.credits")}</th>
+                      <th className="px-4 py-1.5 font-medium">{t("aiUsage.col.source")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {details.rows.map((row) => (
-                      <tr key={row.id} className="border-b border-border/60 last:border-0">
-                        <td className="px-5 py-2 whitespace-nowrap text-muted-foreground">
+                      <tr key={row.id} className="transition-colors hover:[&>td]:bg-muted/40">
+                        <td className="rounded-l-[12px] border-y border-l border-border/50 bg-card px-4 py-2 whitespace-nowrap text-muted-foreground shadow-xs">
                           {new Date(row.createdAt).toLocaleDateString(locale === "es" ? "es-AR" : "en-US", {
                             day: "2-digit",
                             month: "2-digit",
@@ -461,25 +462,25 @@ export default function AiUsagePage() {
                             minute: "2-digit",
                           })}
                         </td>
-                        <td className="px-2 py-2">
+                        <td className="border-y border-border/50 bg-card px-2 py-2">
                           <span className="flex items-center gap-1.5">
                             <ProviderLogo vendor={row.provider} size={13} />
                             {row.provider}
                           </span>
                         </td>
-                        <td className="max-w-[160px] truncate px-2 py-2 font-mono">{row.model}</td>
-                        <td className="px-2 py-2 text-muted-foreground">{channelLabel(row.channel, "—")}</td>
-                        <td className="px-2 py-2 text-right tabular-nums">
+                        <td className="max-w-[160px] truncate border-y border-border/50 bg-card px-2 py-2 font-mono">{row.model}</td>
+                        <td className="border-y border-border/50 bg-card px-2 py-2 text-muted-foreground">{channelLabel(row.channel, "—")}</td>
+                        <td className="border-y border-border/50 bg-card px-2 py-2 text-right tabular-nums">
                           {row.characters !== null ? `${formatTokens(row.characters)} ch` : formatTokens(row.inputTokens)}
                         </td>
-                        <td className="px-2 py-2 text-right tabular-nums">{formatTokens(row.outputTokens)}</td>
-                        <td className="px-2 py-2 text-right tabular-nums">
+                        <td className="border-y border-border/50 bg-card px-2 py-2 text-right tabular-nums">{formatTokens(row.outputTokens)}</td>
+                        <td className="border-y border-border/50 bg-card px-2 py-2 text-right tabular-nums">
                           {row.providerCost === null ? "—" : formatUsd(row.providerCost)}
                         </td>
-                        <td className="px-2 py-2 text-right tabular-nums">
+                        <td className="border-y border-border/50 bg-card px-2 py-2 text-right tabular-nums">
                           {row.credits > 0 ? formatCredits(row.credits, locale) : "—"}
                         </td>
-                        <td className="px-5 py-2">
+                        <td className="rounded-r-[12px] border-y border-r border-border/50 bg-card px-4 py-2 shadow-xs">
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
@@ -521,6 +522,7 @@ export default function AiUsagePage() {
                 </div>
               </div>
             ) : null}
+            </div>
           </Card>
         </div>
       </Skeleton>
