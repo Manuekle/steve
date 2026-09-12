@@ -427,7 +427,7 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
             something to land on. `tabIndex={-1}` makes it focusable by that
             link without adding it to the tab order; `outline-none` keeps the
             focus ring off a region the size of the page. */}
-        <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col overflow-hidden outline-none">
+        <main id="main-content" tabIndex={-1} className="relative flex flex-1 flex-col overflow-hidden outline-none">
           {children}
         </main>
       </div>

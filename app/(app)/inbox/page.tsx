@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
@@ -99,6 +100,13 @@ export default function InboxPage() {
   const [editNotes, setEditNotes] = useState("");
   const [editStatus, setEditStatus] = useState<ContactStatus>("open");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Portal target for floating bulk bar: `main#main-content` has no animated
+  // transform, while `.page-enter`/`.content-enter` keep `translateY(0)` via
+  // fill-mode `both` — which would hijack any `fixed` descendant.
+  const [mainEl, setMainEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setMainEl(document.getElementById("main-content"));
+  }, []);
 
   // Create form state
   const [newName, setNewName] = useState("");
@@ -571,37 +579,6 @@ export default function InboxPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {/* Bulk action bar */}
-              {selectedIds.size > 0 && (
-                <Card className="border-border/60 bg-accent/30">
-                  <div className="flex items-center gap-3 px-5 py-3">
-                    <span className="text-sm font-medium">
-                      {selectedIds.size} {t("inbox.selected")}
-                    </span>
-                    <div className="flex-1" />
-                    <Button size="sm" variant="outline" onClick={() => bulkStatus("open")}>
-                      <HugeiconsIcon icon={CheckIcon} size={14} strokeWidth={1.75} />
-                      {t("inbox.bulkReopen")}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => bulkStatus("closed")}>
-                      {t("inbox.bulkClose")}
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={bulkDelete}>
-                      <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={1.75} />
-                      {t("inbox.bulkDelete")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => exportCSV(contacts.filter((c) => selectedIds.has(c.id)))}
-                    >
-                      <HugeiconsIcon icon={Download01Icon} size={14} strokeWidth={1.75} />
-                      CSV
-                    </Button>
-                  </div>
-                </Card>
-              )}
-
               {/* Select all */}
               <div className="flex items-center gap-2 px-1">
                 <Checkbox
@@ -633,22 +610,16 @@ export default function InboxPage() {
                         <ChannelIcon channel={contact.channel} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        {/* `min-w-0 flex-1` on the name, `shrink-0` on the
-                            pill. A truncating <p> resolves `min-width` to 0,
-                            so on a narrow row the name lost every pixel to the
-                            badge beside it and the contact rendered as a status
-                            chip with no one's name on it. */}
-                        <div className="flex items-center gap-2">
-                          <p className="min-w-0 flex-1 truncate text-sm font-medium">{contact.name}</p>
-                          <StatusBadge
-                            className="shrink-0"
-                            status={contact.status === "followup_due" ? "pending" : "warning"}
-                            label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
-                          />
-                        </div>
+                        <p className="truncate text-sm font-medium">{contact.name}</p>
                         <p className="truncate text-xs text-muted-foreground">
                           {contact.lastMessage || contact.email || contact.phone || contact.source}
                         </p>
+                      </div>
+                      <div className="flex shrink-0 items-center justify-center sm:min-w-[110px]">
+                        <StatusBadge
+                          status={contact.status === "followup_due" ? "pending" : "warning"}
+                          label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
+                        />
                       </div>
                       <span className="hidden text-xs text-muted-foreground sm:block">
                         {relativeTime(contact.lastMessageAt)}
@@ -803,6 +774,55 @@ export default function InboxPage() {
                 pageCount={pageCount}
                 pageSize={pageSize}
               />
+
+              {/* Floating bulk action bar — portaled to `main`, absolute to
+                  its bottom, centered. Escapes the animated wrappers. */}
+              {mainEl &&
+                createPortal(
+                  <AnimatePresence>
+                    {selectedIds.size > 0 && (
+                      <div
+                        key="bulk-bar-wrap"
+                        className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-4"
+                      >
+                        <motion.div
+                          key="bulk-bar"
+                          initial={{ opacity: 0, y: 24 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 24 }}
+                          transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
+                          className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-card/95 px-4 py-3 shadow-lg backdrop-blur"
+                        >
+                      <span className="px-1 text-sm font-medium whitespace-nowrap">
+                        {selectedIds.size} {t("inbox.selected")}
+                      </span>
+                      <Button size="sm" variant="outline" onClick={() => bulkStatus("open")}>
+                        <HugeiconsIcon icon={CheckIcon} size={14} strokeWidth={1.75} />
+                        {t("inbox.bulkReopen")}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => bulkStatus("closed")}>
+                        {t("inbox.bulkClose")}
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={bulkDelete}>
+                        <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={1.75} />
+                        {t("inbox.bulkDelete")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => exportCSV(contacts.filter((c) => selectedIds.has(c.id)))}
+                      >
+                        <HugeiconsIcon icon={Download01Icon} size={14} strokeWidth={1.75} />
+                        CSV
+                      </Button>
+                    </motion.div>
+                      </div>
+                    )}
+                  </AnimatePresence>,
+                  mainEl,
+                )}
+              {/* Spacer so floating bar never covers pagination */}
+              {selectedIds.size > 0 && <div aria-hidden="true" className="h-20" />}
             </div>
           )}
         </div>

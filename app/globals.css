@@ -800,6 +800,7 @@ textarea {
 }
 .t-dropdown[data-state="closed"] {
   animation: dropdown-out 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  pointer-events: none;
 }
 
 /* The goo menu's geometry is driven in JS off one progress value, so these
@@ -825,6 +826,7 @@ textarea {
   .content-enter,
   .t-reveal,
   .t-dropdown { animation: none !important; }
+  .t-dropdown[data-state="closed"] { visibility: hidden; }
 }
 
 /* ── List item fade-in (search results) ────────────────────────────── */

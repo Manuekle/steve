@@ -7,7 +7,7 @@
       "name": "Experiential Labs",
       "options": {
         "baseURL": "https://api.experientiallabs.ai/v1",
-        "apiKey": "xpl_ab46fd57c9d86b8052bdc731fafe234c2eea02f4"
+        "apiKey": "xpl_5901ca0fa001388ca1a3c6786d553fc47c8fdd57"
       },
       "models": {
         "gpt-6-astra": {

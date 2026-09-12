@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { ArrowLeft02Icon, ArrowRight02Icon, Calendar03Icon } from "@hugeicons/core-free-icons";
 import {
@@ -62,6 +62,7 @@ export function ChangeDialog({
   const [date, setDate] = useState(today);
   const [viewDate, setViewDate] = useState(() => parseDay(today));
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<UiError | null>(null);
@@ -73,6 +74,26 @@ export function ChangeDialog({
       addDays(sunday, (weekStart + index) % 7).toLocaleDateString(locale, { weekday: "short" }),
     );
   }, [locale, weekStart]);
+
+  useEffect(() => {
+    if (!calendarOpen) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setCalendarOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCalendarOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [calendarOpen]);
 
   const save = async () => {
     if (!note.trim()) return;
@@ -128,20 +149,28 @@ export function ChangeDialog({
             <label className="font-medium text-sm" htmlFor="seo-change-date">
               {t("seo.changeDate")}
             </label>
-            <div className="relative">
+            <div ref={calendarRef} className="relative">
               <button
                 id="seo-change-date"
                 type="button"
                 aria-expanded={calendarOpen}
                 aria-haspopup="dialog"
+                aria-controls="seo-change-date-calendar"
                 onClick={() => setCalendarOpen((open) => !open)}
-                className="flex h-10 w-full items-center gap-2 rounded-xl border border-border bg-background px-3 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-9 w-full items-center gap-2 rounded-lg border border-input bg-muted px-3.5 text-left text-sm shadow-[var(--shadow-inset)] transition-[background-color,border-color,box-shadow] duration-150 outline-none hover:bg-card focus-visible:border-ring focus-visible:bg-card focus-visible:ring-0 focus-visible:outline-solid focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-[color:var(--ring)]"
               >
                 <HugeiconsIcon icon={Calendar03Icon} size={16} strokeWidth={1.75} />
                 <span>{parseDay(date).toLocaleDateString(locale, { dateStyle: "medium" })}</span>
               </button>
-              {calendarOpen ? (
-                <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-full min-w-[18rem] rounded-2xl border border-border bg-card p-3 shadow-xl" role="dialog" aria-label={t("seo.changeDate")}>
+              <div
+                className="t-dropdown absolute left-0 top-[calc(100%+0.5rem)] z-30 w-full min-w-[18rem] rounded-2xl border border-border bg-popover p-3 text-popover-foreground shadow-[var(--shadow-float)]"
+                id="seo-change-date-calendar"
+                data-state={calendarOpen ? "open" : "closed"}
+                aria-hidden={!calendarOpen}
+                inert={!calendarOpen}
+                role="dialog"
+                aria-label={t("seo.changeDate")}
+              >
                   <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
@@ -194,7 +223,6 @@ export function ChangeDialog({
                     })}
                   </div>
                 </div>
-              ) : null}
             </div>
           </div>
         </div>
