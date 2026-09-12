@@ -215,18 +215,18 @@ export default function AgentsPage() {
             onDismiss={() => setError(null)}
           />
 
-          <header className="mb-8 flex items-center justify-between gap-4">
+          <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{t("agents.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("agents.subtitle")}</p>
             </div>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 self-start sm:self-auto">
               <ProviderStatusBadge data={catalog} />
               <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogTrigger asChild>
                   <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent">
                     <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
-                    <span className="hidden sm:inline">{t("agents.new")}</span>
+                    {t("agents.new")}
                   </button>
                 </DialogTrigger>
                 <AgentCreateDialog creating={creating} onCreate={(input) => void create(input)} />

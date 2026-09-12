@@ -20,6 +20,7 @@ import { PageContainer } from "../../_components/page-container";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { ChannelIcon, ChannelBadge, ChannelStatusBadge, CHANNEL_LABELS } from "../../_components/channel-badge";
 import { KpiBars, KpiCard, KpiSparkline, KpiSplit } from "../../_components/kpi-card";
 import { AnimatedNumber, DonutChart, TimeSeries } from "../../_components/chart";
@@ -207,78 +208,90 @@ function DashboardPageContent() {
             much of it never needed a person, and the curve over the fortnight
             the average is taken from. */}
         {stats ? (
-          <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <KpiCard
-              icon={MessageCircleIcon}
-              label={t("dashboard.conversations")}
-              value={stats.totalChats}
-              sub={
-                stats.activeChats === 0
-                  ? t("dashboard.activeNowNone")
-                  : stats.activeChats === 1
-                    ? t("dashboard.activeNowOne")
-                    : t("dashboard.activeNow", { count: stats.activeChats })
-              }
-              visual={
-                <KpiBars
-                  ratio={stats.totalChats > 0 ? stats.activeChats / stats.totalChats : 0}
-                  tone="positive"
-                />
-              }
-            />
-            <KpiCard
-              icon={SendIcon}
-              label={t("dashboard.messagesTotal")}
-              value={stats.totalMessages}
-              sub={
-                leadChannel
-                  ? t("dashboard.leadChannel", {
-                      channel: CHANNEL_LABELS[leadChannel.channel],
-                      percentage: leadChannel.percentage,
-                    })
-                  : t("dashboard.noMessagesYet")
-              }
-              visual={
-                <KpiSplit
-                  parts={stats.channelBreakdown.map((cb) => ({
-                    tone: "neutral" as const,
-                    value: cb.count,
-                  }))}
-                />
-              }
-            />
-            <KpiCard
-              icon={ZapIcon}
-              label={t("dashboard.autoReplies")}
-              value={stats.automatedReplies}
-              sub={
-                activeAutomations.length === 0
-                  ? t("dashboard.noAutomationsYet")
-                  : activeAutomations.length === 1
-                    ? t("dashboard.activeAutomationsOne")
-                    : t("dashboard.activeAutomations", { count: activeAutomations.length })
-              }
-              visual={
-                <KpiBars
-                  ratio={
-                    stats.totalMessages > 0
-                      ? stats.automatedReplies / stats.totalMessages
-                      : 0
-                  }
-                />
-              }
-            />
-            <KpiCard
-              icon={ChartAverageIcon}
-              label={t("dashboard.messagesPerChat")}
-              value={messagesPerChat}
-              sub={
-                stats.totalChats === 1
-                  ? t("dashboard.overChatsOne")
-                  : t("dashboard.overChats", { count: stats.totalChats })
-              }
-              visual={<KpiSparkline points={activity.map((point) => point.value)} />}
-            />
+          <div className="mb-8">
+            <CardCarousel label="Estadísticas">
+              <div className="flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={MessageCircleIcon}
+                    label={t("dashboard.conversations")}
+                    value={stats.totalChats}
+                    sub={
+                      stats.activeChats === 0
+                        ? t("dashboard.activeNowNone")
+                        : stats.activeChats === 1
+                          ? t("dashboard.activeNowOne")
+                          : t("dashboard.activeNow", { count: stats.activeChats })
+                    }
+                    visual={
+                      <KpiBars
+                        ratio={stats.totalChats > 0 ? stats.activeChats / stats.totalChats : 0}
+                        tone="positive"
+                      />
+                    }
+                  />
+                </div>
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={SendIcon}
+                    label={t("dashboard.messagesTotal")}
+                    value={stats.totalMessages}
+                    sub={
+                      leadChannel
+                        ? t("dashboard.leadChannel", {
+                            channel: CHANNEL_LABELS[leadChannel.channel],
+                            percentage: leadChannel.percentage,
+                          })
+                        : t("dashboard.noMessagesYet")
+                    }
+                    visual={
+                      <KpiSplit
+                        parts={stats.channelBreakdown.map((cb) => ({
+                          tone: "neutral" as const,
+                          value: cb.count,
+                        }))}
+                      />
+                    }
+                  />
+                </div>
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={ZapIcon}
+                    label={t("dashboard.autoReplies")}
+                    value={stats.automatedReplies}
+                    sub={
+                      activeAutomations.length === 0
+                        ? t("dashboard.noAutomationsYet")
+                        : activeAutomations.length === 1
+                          ? t("dashboard.activeAutomationsOne")
+                          : t("dashboard.activeAutomations", { count: activeAutomations.length })
+                    }
+                    visual={
+                      <KpiBars
+                        ratio={
+                          stats.totalMessages > 0
+                            ? stats.automatedReplies / stats.totalMessages
+                            : 0
+                        }
+                      />
+                    }
+                  />
+                </div>
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={ChartAverageIcon}
+                    label={t("dashboard.messagesPerChat")}
+                    value={messagesPerChat}
+                    sub={
+                      stats.totalChats === 1
+                        ? t("dashboard.overChatsOne")
+                        : t("dashboard.overChats", { count: stats.totalChats })
+                    }
+                    visual={<KpiSparkline points={activity.map((point) => point.value)} />}
+                  />
+                </div>
+              </div>
+            </CardCarousel>
           </div>
         ) : null}
 
@@ -353,27 +366,31 @@ function DashboardPageContent() {
               </a>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-3">
-              {channels.map((ch) => (
-                <Card key={ch.id} interactive>
-                  <CardHeader>
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                      <ChannelIcon channel={ch.id} />
-                    </div>
-                    <div className="flex-1">
-                      <CardTitle>{ch.label}</CardTitle>
-                      <CardDescription>
-                        {ch.messageCount} {t("dashboard.messages")} · {ch.lastEvent ? relativeTime(ch.lastEvent) : ""}
-                      </CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardSeparator />
-                  <div className="px-5 py-3">
-                    <ChannelStatusBadge status={ch.status} />
+            <CardCarousel label="Estado de canales">
+              <div className="flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                {channels.map((ch) => (
+                  <div key={ch.id} className="min-w-[240px] flex-1">
+                    <Card interactive>
+                      <CardHeader>
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                          <ChannelIcon channel={ch.id} />
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle>{ch.label}</CardTitle>
+                          <CardDescription>
+                            {ch.messageCount} {t("dashboard.messages")} · {ch.lastEvent ? relativeTime(ch.lastEvent) : ""}
+                          </CardDescription>
+                        </div>
+                      </CardHeader>
+                      <CardSeparator />
+                      <div className="px-5 py-3">
+                        <ChannelStatusBadge status={ch.status} />
+                      </div>
+                    </Card>
                   </div>
-                </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            </CardCarousel>
           )}
         </div>
 
@@ -455,24 +472,28 @@ function DashboardPageContent() {
               </Link>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {activeAutomations.slice(0, 4).map((auto) => (
-                <Card key={auto.id} interactive>
-                  <CardHeader>
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                      <HugeiconsIcon icon={ZapIcon} size={16} strokeWidth={1.75} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <CardTitle>{auto.name}</CardTitle>
-                      <CardDescription>
-                        {auto.responseCount} {t("automations.responses")} ·{" "}
-                        {auto.lastTriggeredAt ? relativeTime(auto.lastTriggeredAt) : t("dashboard.never")}
-                      </CardDescription>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
+            <CardCarousel label="Automatizaciones activas">
+              <div className="flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                {activeAutomations.slice(0, 4).map((auto) => (
+                  <div key={auto.id} className="min-w-[260px] flex-1">
+                    <Card interactive>
+                      <CardHeader>
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                          <HugeiconsIcon icon={ZapIcon} size={16} strokeWidth={1.75} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle>{auto.name}</CardTitle>
+                          <CardDescription>
+                            {auto.responseCount} {t("automations.responses")} ·{" "}
+                            {auto.lastTriggeredAt ? relativeTime(auto.lastTriggeredAt) : t("dashboard.never")}
+                          </CardDescription>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            </CardCarousel>
           )}
         </div>
         </div>

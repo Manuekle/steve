@@ -379,14 +379,12 @@ export default function InboxPage() {
             onRetry={() => void load()}
             onDismiss={() => setError(null)}
           />
-          <header className="mb-8 flex items-center justify-between gap-4">
+          <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{t("inbox.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("inbox.subtitle")}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Both labels collapse below `sm`, leaving bare icons — so the
-                  tooltip and `aria-label` are what name them on a phone. */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               {contacts.length > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -397,26 +395,21 @@ export default function InboxPage() {
                       type="button"
                     >
                       <HugeiconsIcon icon={Download01Icon} size={16} strokeWidth={1.75} />
-                      <span className="hidden sm:inline">CSV</span>
+                      CSV
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">{t("inbox.exportCsv")}</TooltipContent>
                 </Tooltip>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    aria-label={t("inbox.createContact")}
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
-                    onClick={() => setShowCreate(!showCreate)}
-                    type="button"
-                  >
-                    <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
-                    <span className="hidden sm:inline">{t("inbox.createContact")}</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">{t("inbox.createContact")}</TooltipContent>
-              </Tooltip>
+              <button
+                aria-label={t("inbox.createContact")}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
+                onClick={() => setShowCreate(!showCreate)}
+                type="button"
+              >
+                <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
+                {t("inbox.createContact")}
+              </button>
             </div>
           </header>
 
@@ -599,14 +592,14 @@ export default function InboxPage() {
                 const attrs = Object.entries(contact.attributes);
                 return (
                   <Card key={contact.id}>
-                    <div className="flex items-center gap-3 px-5 py-4">
+                    <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleSelect(contact.id)}
                         aria-label={contact.name}
                         className="shrink-0"
                       />
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)] sm:size-10">
                         <ChannelIcon channel={contact.channel} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -614,8 +607,16 @@ export default function InboxPage() {
                         <p className="truncate text-xs text-muted-foreground">
                           {contact.lastMessage || contact.email || contact.phone || contact.source}
                         </p>
+                        {/* Status badge inline on mobile below the name */}
+                        <div className="mt-1 sm:hidden">
+                          <StatusBadge
+                            status={contact.status === "followup_due" ? "pending" : "warning"}
+                            label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
+                          />
+                        </div>
                       </div>
-                      <div className="flex shrink-0 items-center justify-center sm:min-w-[110px]">
+                      {/* Status badge — only visible sm+ (shown inline on mobile above) */}
+                      <div className="hidden shrink-0 sm:flex sm:min-w-[110px] sm:items-center sm:justify-center">
                         <StatusBadge
                           status={contact.status === "followup_due" ? "pending" : "warning"}
                           label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
@@ -624,42 +625,40 @@ export default function InboxPage() {
                       <span className="hidden text-xs text-muted-foreground sm:block">
                         {relativeTime(contact.lastMessageAt)}
                       </span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            aria-expanded={isExpanded}
-                            aria-label={isExpanded ? t("inbox.collapse") : t("inbox.expand")}
-                            onClick={() => setExpandedId(isExpanded ? null : contact.id)}
-                          >
-                            <span className="t-icon-swap" data-state={isExpanded ? "b" : "a"}>
-                              <span className="t-icon" data-icon="a">
-                                <HugeiconsIcon icon={ChevronDownIcon} size={14} strokeWidth={1.75} />
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              aria-expanded={isExpanded}
+                              aria-label={isExpanded ? t("inbox.collapse") : t("inbox.expand")}
+                              onClick={() => setExpandedId(isExpanded ? null : contact.id)}
+                            >
+                              <span className="t-icon-swap" data-state={isExpanded ? "b" : "a"}>
+                                <span className="t-icon" data-icon="a">
+                                  <HugeiconsIcon icon={ChevronDownIcon} size={14} strokeWidth={1.75} />
+                                </span>
+                                <span className="t-icon" data-icon="b">
+                                  <HugeiconsIcon icon={ChevronUpIcon} size={14} strokeWidth={1.75} />
+                                </span>
                               </span>
-                              <span className="t-icon" data-icon="b">
-                                <HugeiconsIcon icon={ChevronUpIcon} size={14} strokeWidth={1.75} />
-                              </span>
-                            </span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          {isExpanded ? t("inbox.collapse") : t("inbox.expand")}
-                        </TooltipContent>
-                      </Tooltip>
-                      {/* Icon-only below `sm`, like the two header actions
-                          above. The label costs 90px of a 350px row on a
-                          phone, and the row was spending them before it got
-                          to the contact's name. */}
-                      <Button
-                        aria-label={t("inbox.resume")}
-                        onClick={() => resume(contact.id)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <HugeiconsIcon icon={CheckIcon} size={14} strokeWidth={1.75} />
-                        <span className="hidden sm:inline">{t("inbox.resume")}</span>
-                      </Button>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            {isExpanded ? t("inbox.collapse") : t("inbox.expand")}
+                          </TooltipContent>
+                        </Tooltip>
+                        <Button
+                          aria-label={t("inbox.resume")}
+                          onClick={() => resume(contact.id)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <HugeiconsIcon icon={CheckIcon} size={14} strokeWidth={1.75} />
+                          <span className="hidden sm:inline">{t("inbox.resume")}</span>
+                        </Button>
+                      </div>
                     </div>
                     <AnimatePresence initial={false}>
                       {isExpanded && (

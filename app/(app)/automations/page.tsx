@@ -24,6 +24,7 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { KpiBars, KpiCard } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton, AutomationsSkeleton } from "@/components/ai-elements/skeleton";
 import { AutomationDialog } from "@/components/ai-elements/automation-dialog";
@@ -194,7 +195,7 @@ export default function AutomationsPage() {
           onDismiss={() => setError(null)}
         />
         {/* Header */}
-        <header className="mb-8 flex items-center justify-between gap-4">
+        <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">{t("automations.title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -202,14 +203,14 @@ export default function AutomationsPage() {
             </p>
           </div>
           <button
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent"
+            className="inline-flex items-center gap-2 self-start rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent sm:self-auto"
             onClick={() => {
               setEditingAutomation(null);
               setDialogOpen(true);
             }}
           >
             <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
-            <span className="hidden sm:inline">{t("automations.new")}</span>
+            {t("automations.new")}
           </button>
           {dialogOpen ? (
             <AutomationDialog
@@ -234,29 +235,37 @@ export default function AutomationsPage() {
             set, which is the comparison the three numbers are really asking
             for — nine drafts means something different next to two
             automations than next to ninety. */}
-        <div className="mb-6 grid grid-cols-3 gap-4">
-          <KpiCard
-            icon={PlayIcon}
-            label={t("automations.active")}
-            sub={t(counts.active > 0 ? "automations.activeSub" : "automations.activeSubNone")}
-            value={counts.active}
-            visual={<KpiBars ratio={share(counts.active)} tone="positive" />}
-          />
-          <KpiCard
-            icon={PauseIcon}
-            label={t("automations.paused")}
-            sub={t(counts.paused > 0 ? "automations.pausedSub" : "automations.pausedSubNone")}
-            value={counts.paused}
-            visual={<KpiBars ratio={share(counts.paused)} tone="warning" />}
-          />
-          <KpiCard
-            icon={AlertCircleIcon}
-            label={t("automations.drafts")}
-            sub={t(counts.draft > 0 ? "automations.draftsSub" : "automations.draftsSubNone")}
-            value={counts.draft}
-            visual={<KpiBars ratio={share(counts.draft)} />}
-          />
-        </div>
+        <CardCarousel label="Estadísticas de automatizaciones">
+          <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+            <div className="min-w-[220px] flex-1">
+              <KpiCard
+                icon={PlayIcon}
+                label={t("automations.active")}
+                sub={t(counts.active > 0 ? "automations.activeSub" : "automations.activeSubNone")}
+                value={counts.active}
+                visual={<KpiBars ratio={share(counts.active)} tone="positive" />}
+              />
+            </div>
+            <div className="min-w-[220px] flex-1">
+              <KpiCard
+                icon={PauseIcon}
+                label={t("automations.paused")}
+                sub={t(counts.paused > 0 ? "automations.pausedSub" : "automations.pausedSubNone")}
+                value={counts.paused}
+                visual={<KpiBars ratio={share(counts.paused)} tone="warning" />}
+              />
+            </div>
+            <div className="min-w-[220px] flex-1">
+              <KpiCard
+                icon={AlertCircleIcon}
+                label={t("automations.drafts")}
+                sub={t(counts.draft > 0 ? "automations.draftsSub" : "automations.draftsSubNone")}
+                value={counts.draft}
+                visual={<KpiBars ratio={share(counts.draft)} />}
+              />
+            </div>
+          </div>
+        </CardCarousel>
 
         {/* Automation list */}
         <div className="space-y-3">
@@ -300,7 +309,7 @@ export default function AutomationsPage() {
                   </button>
 
                   {/* Actions */}
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                     <RowAction
                       icon={GitBranchIcon}
                       label={t("automations.openFlow")}

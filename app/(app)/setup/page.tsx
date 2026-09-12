@@ -30,6 +30,7 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import type { CheckStatus, SetupCheck } from "../../api/setup/route";
 import { PageContainer } from "../../_components/page-container";
 import { KpiBars, KpiCard } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { EnterpriseGate } from "@/components/enterprise-gate";
 import {
   Card,
@@ -225,7 +226,7 @@ export default function SetupPage() {
       <PageContainer maxWidth="max-w-6xl" pattern="grid">
       <Skeleton className="min-h-[500px]" isLoading={isLoading} skeleton={<SetupSkeleton />}>
         <div className="content-enter">
-          <header className="mb-8 flex items-center justify-between gap-4">
+          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{t("setup.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("setup.subtitle")}</p>
@@ -253,29 +254,37 @@ export default function SetupPage() {
             onDismiss={() => setError(null)}
           />
 
-          <div className="mb-6 grid grid-cols-3 gap-4">
-            <KpiCard
-              icon={CheckmarkCircle02Icon}
-              label={t("setup.countOk")}
-              value={counts.ok}
-              sub={t(counts.ok > 0 ? "setup.countOkSub" : "setup.countOkSubNone")}
-              visual={<KpiBars ratio={share(counts.ok)} tone="positive" />}
-            />
-            <KpiCard
-              icon={AlertCircleIcon}
-              label={t("setup.countWarn")}
-              value={counts.warn}
-              sub={t(counts.warn > 0 ? "setup.countWarnSub" : "setup.countWarnSubNone")}
-              visual={<KpiBars ratio={share(counts.warn)} tone="warning" />}
-            />
-            <KpiCard
-              icon={CancelCircleIcon}
-              label={t("setup.countFail")}
-              value={counts.fail}
-              sub={t(counts.fail > 0 ? "setup.countFailSub" : "setup.countFailSubNone")}
-              visual={<KpiBars ratio={share(counts.fail)} tone="critical" />}
-            />
-          </div>
+          <CardCarousel label="Estadísticas de instalación">
+            <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={CheckmarkCircle02Icon}
+                  label={t("setup.countOk")}
+                  value={counts.ok}
+                  sub={t(counts.ok > 0 ? "setup.countOkSub" : "setup.countOkSubNone")}
+                  visual={<KpiBars ratio={share(counts.ok)} tone="positive" />}
+                />
+              </div>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={AlertCircleIcon}
+                  label={t("setup.countWarn")}
+                  value={counts.warn}
+                  sub={t(counts.warn > 0 ? "setup.countWarnSub" : "setup.countWarnSubNone")}
+                  visual={<KpiBars ratio={share(counts.warn)} tone="warning" />}
+                />
+              </div>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={CancelCircleIcon}
+                  label={t("setup.countFail")}
+                  value={counts.fail}
+                  sub={t(counts.fail > 0 ? "setup.countFailSub" : "setup.countFailSubNone")}
+                  visual={<KpiBars ratio={share(counts.fail)} tone="critical" />}
+                />
+              </div>
+            </div>
+          </CardCarousel>
 
           <Card
             className={cn(
@@ -489,7 +498,7 @@ function SetupSkeleton() {
         <SkeletonBar className="h-4 w-full max-w-md" />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
             <SkeletonBar className="h-7 w-10" />

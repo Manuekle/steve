@@ -144,7 +144,6 @@ export function DealBoard({
   const dropRef = useRef<{ stage: DealStage; index: number } | null>(null);
   const droppedAt = useRef(0);
   const rafRef = useRef(0);
-  const stepRef = useRef<(() => void) | null>(null);
   const [lifted, setLifted] = useState<{ deal: Deal; width: number; height: number; left: number; top: number } | null>(null);
   const [drop, setDrop] = useState<{ stage: DealStage; index: number } | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -195,6 +194,7 @@ export function DealBoard({
     if (!nearest) return null;
     let index = nearest.rows.findIndex((row) => py < row.rect.top + row.rect.height / 2);
     if (index < 0) index = nearest.rows.length;
+    if (nearest.stage === drag.home.stage && index > drag.home.index) index--;
     return { stage: nearest.stage, index };
   }, [scrollOffset, view]);
   const setDropIfChanged = useCallback((next: { stage: DealStage; index: number } | null) => {
@@ -292,14 +292,9 @@ export function DealBoard({
     x.set(left - drag.board.left + offset.x);
     y.set(top - drag.board.top + offset.y);
     screenPosition.set(view === "list" ? top : left);
-    // Scrolling changes hit-test coordinates. Recompute destination after it.
     setDropIfChanged(slotAt(drag.pointer.x, drag.pointer.y));
-    rafRef.current = requestAnimationFrame(() => stepRef.current?.());
+    rafRef.current = requestAnimationFrame(step);
   }, [screenPosition, scrollOffset, scrollX, scrollY, setDropIfChanged, slotAt, view, x, y]);
-  useEffect(() => {
-    stepRef.current = step;
-    return () => { stepRef.current = null; };
-  }, [step]);
   const handleDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = session.current;
     if (!drag || drag.landing || event.pointerId !== drag.pointerId) return;
@@ -321,7 +316,7 @@ export function DealBoard({
     progress.jump(1);
     dropRef.current = drag.home;
     setDrop(drag.home);
-    setLifted({ deal: drag.deal, width: drag.rect.width, height: drag.rect.height, left: drag.rect.left - drag.root.left, top: drag.rect.top - drag.root.top });
+    setLifted({ deal: drag.deal, width: drag.rect.width, height: drag.rect.height, left: drag.board.left - drag.root.left, top: drag.board.top - drag.root.top });
     if (!reduce) void animate(scale, 1.04, { duration: 0.18, ease: EASE_OUT });
     rafRef.current = requestAnimationFrame(step);
   };
@@ -366,12 +361,10 @@ export function DealBoard({
     }
     if (session.current !== drag) return;
     flushSync(() => {
-      if (target.stage !== drag.home.stage || target.index !== drag.home.index) {
-        onMove(drag.deal.id, target.stage);
-        setAnnouncement(`${drag.deal.title}: ${t(`pipeline.stage.${target.stage}`)}`);
-      }
+      if (target.stage !== drag.home.stage || target.index !== drag.home.index) onMove(drag.deal.id, target.stage);
       reset();
       droppedAt.current = Date.now();
+      setAnnouncement(`${drag.deal.title}: ${t(`pipeline.stage.${target.stage}`)}`);
     });
     if (drag.focused) {
       Array.from(boardRef.current?.querySelectorAll<HTMLElement>("[data-card-id]") ?? [])
@@ -380,6 +373,8 @@ export function DealBoard({
   }, [gain, onEdit, onMove, progress, reduce, reset, ring, scale, scrollOffset, setDropIfChanged, slotAt, t, x, y]);
 
   useEffect(() => { const cancel = () => void handleDragEnd(true); const key = (e: KeyboardEvent) => { if (e.key === "Escape" && session.current) cancel(); }; window.addEventListener("keydown", key); window.addEventListener("blur", cancel); window.addEventListener("resize", reset); return () => { window.removeEventListener("keydown", key); window.removeEventListener("blur", cancel); window.removeEventListener("resize", reset); }; }, [handleDragEnd, reset]);
+
+  useEffect(() => () => reset(), [reset, view]);
 
   // ── Custom kanban slider ─────────────────────────────────────
   // A real control instead of the native pill: a floating shuttle pinned to
@@ -509,7 +504,7 @@ export function DealBoard({
   };
 
   return (
-    <div ref={rootRef} style={{ containerType: "inline-size" }} className="relative min-w-0" onPointerDownCapture={handleDragStart} onPointerMove={handleDrag} onPointerUp={(event) => { if (event.pointerId === session.current?.pointerId) void handleDragEnd(); }} onPointerCancel={(event) => { if (event.pointerId === session.current?.pointerId) void handleDragEnd(true); }} onLostPointerCapture={() => { if (session.current && !session.current.landing) void handleDragEnd(true); }} onClickCapture={(event) => { if (session.current?.active || Date.now() - droppedAt.current < 350) { event.preventDefault(); event.stopPropagation(); } }} onKeyDown={(event) => {
+    <div ref={rootRef} style={{ containerType: "inline-size" }} className="relative min-w-0" onPointerDown={handleDragStart} onPointerMove={handleDrag} onPointerUp={(event) => { if (event.pointerId === session.current?.pointerId) void handleDragEnd(); }} onPointerCancel={(event) => { if (event.pointerId === session.current?.pointerId) void handleDragEnd(true); }} onLostPointerCapture={() => { if (session.current && !session.current.landing) void handleDragEnd(true); }} onClickCapture={(event) => { if (session.current?.active || Date.now() - droppedAt.current < 350) { event.preventDefault(); event.stopPropagation(); } }} onKeyDown={(event) => {
       if (!event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
       const id = (event.target as HTMLElement).closest<HTMLElement>("[data-card-id]")?.dataset.cardId;
       if (!id) return;
@@ -532,7 +527,9 @@ export function DealBoard({
         ref={scrollerRef}
         id={`${boardId}-scroller`}
         className={
-          view === "kanban" ? "x-fade overscroll-contain overflow-x-auto scrollbar-hide" : undefined
+          view === "kanban"
+            ? "x-fade overscroll-contain overflow-x-auto scrollbar-hide"
+            : "overscroll-contain w-full"
         }
         style={{ padding: q(8), paddingBottom: view === "kanban" ? q(12) : undefined }}
       >
@@ -552,7 +549,7 @@ export function DealBoard({
                 key={stage}
                 aria-label={t(`pipeline.stage.${stage}`)}
                 ref={(el) => { if (el) zones.current.set(stage, el); else zones.current.delete(stage); }}
-                className="kpi-card min-w-0 border border-border bg-card"
+                className={cn("kpi-card min-w-0 border border-border bg-card", view === "list" && "@container")}
                 style={{
                   borderRadius: q(18),
                   padding: q(8),
@@ -832,28 +829,36 @@ const DealCard = memo(function DealCard({
       tabIndex={0}
       aria-label={deal.title}
       style={{
-        height: q(list ? 56 : 148),
-        paddingInline: q(16),
-        paddingBlock: list ? 0 : q(12),
-        gridTemplateColumns: list
-          ? `minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1fr) ${q(216)}`
-          : `minmax(0, 1fr) ${q(64)}`,
-        gridTemplateRows: list ? "minmax(0, 1fr)" : `${q(17)} ${q(17)} minmax(0, 1fr) ${q(36)}`,
-        columnGap: q(12),
-        rowGap: list ? 0 : q(6),
+        ...(list ? {
+          paddingInline: q(16),
+          paddingBlock: q(10),
+          gridTemplateColumns: `minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1fr) ${q(216)}`,
+          gridTemplateRows: "minmax(0, 1fr)",
+          columnGap: q(12),
+          rowGap: 0,
+        } : {
+          height: q(148),
+          paddingInline: q(16),
+          paddingBlock: q(12),
+          gridTemplateColumns: `minmax(0, 1fr) ${q(64)}`,
+          gridTemplateRows: `${q(17)} ${q(17)} minmax(0, 1fr) ${q(36)}`,
+          columnGap: q(12),
+          rowGap: q(6),
+        }),
         outlineWidth: q(2),
         outlineOffset: q(-2),
         borderRadius: q(14),
         marginBottom: q(8),
-      opacity: dimmed && !overlay ? 0.4 : 1,
+        opacity: dimmed && !overlay ? 0.4 : 1,
         // The card being flown carries its stage colour as a ring, so the
         // eye never loses which deal is in the air. The column stays
         // neutral — it is the cards that move, not the lanes.
         boxShadow: dimmed && !overlay ? `0 0 0 2px ${DEAL_THEME[deal.stage].tone}` : undefined,
       }}
       className={cn(
-        "group relative grid min-w-0 cursor-grab touch-none select-none items-center bg-background/75 text-left text-card-foreground active:cursor-grabbing",
+        "group relative min-w-0 cursor-grab touch-none select-none bg-background/75 text-left text-card-foreground active:cursor-grabbing",
         "focus-visible:outline-solid focus-visible:outline-[color:var(--ring)]",
+        list ? "flex flex-col gap-1 @sm:grid @sm:items-center" : "grid items-center",
       )}
     >
       <span
@@ -865,7 +870,7 @@ const DealCard = memo(function DealCard({
       </span>
       <span
         title={formatMoney(deal.value, deal.currency, locale)}
-        className="min-w-0 truncate text-right font-semibold text-foreground tabular-nums sm:text-left"
+        className="min-w-0 truncate text-right font-semibold text-foreground tabular-nums @sm:text-left"
         style={{
           fontSize: q(13),
           lineHeight: q(17),

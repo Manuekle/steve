@@ -21,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../_components/dashboard-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { KpiCard, KpiSparkline } from "../../_components/kpi-card";
 import { ChartPeriod, ChartSelector, DonutChart, RankedBars, TimeSeries, type ChartTone } from "../../_components/chart";
 import { Pagination } from "@/components/ai-elements/pagination";
@@ -568,7 +569,7 @@ export default function SeoPage() {
   return (
     <PageContainer maxWidth="max-w-6xl">
       <div className="content-enter">
-        <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div>
             <h1 className="font-semibold text-2xl">{t("seo.title")}</h1>
             <p className="mt-1 text-muted-foreground text-sm">
@@ -588,7 +589,7 @@ export default function SeoPage() {
                   setPage(1);
                   void switchSite(next);
                 }} value={site ?? undefined}>
-                  <SelectTrigger aria-label={t("seo.property")} className="w-[210px]">
+                  <SelectTrigger aria-label={t("seo.property")} className="w-full sm:w-[210px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -639,20 +640,22 @@ export default function SeoPage() {
               />
             ) : (
               <>
-                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                  <SlidingTabs
-                    onValueChange={(next) => {
-                      setPage(1);
-                      setSearch("");
-                      setTab(next as Tab);
-                    }}
-                    tabs={[
-                      { id: "overview", label: t("seo.tabOverview") },
-                      { id: "queries", label: t("seo.tabQueries") },
-                      { id: "pages", label: t("seo.tabPages") },
-                    ]}
-                    value={tab}
-                  />
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                  <div className="overflow-x-auto">
+                    <SlidingTabs
+                      onValueChange={(next) => {
+                        setPage(1);
+                        setSearch("");
+                        setTab(next as Tab);
+                      }}
+                      tabs={[
+                        { id: "overview", label: t("seo.tabOverview") },
+                        { id: "queries", label: t("seo.tabQueries") },
+                        { id: "pages", label: t("seo.tabPages") },
+                      ]}
+                      value={tab}
+                    />
+                  </div>
 
                   {tab === "overview" ? null : (
                     <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -660,7 +663,7 @@ export default function SeoPage() {
                         setPage(1);
                         setSort(next as SortKey);
                       }} value={sort}>
-                        <SelectTrigger aria-label={t("seo.sortBy")} className="w-[170px]">
+                        <SelectTrigger aria-label={t("seo.sortBy")} className="w-full sm:w-[170px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -703,51 +706,61 @@ export default function SeoPage() {
                   ) : tab === "overview" ? (
                     <div className="space-y-4">
                       {totals && deltas ? (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                          <KpiCard
-                            delta={tileDelta(deltas.clicks, t("seo.vsPrevious"))}
-                            icon={MouseLeftClick01Icon}
-                            label={t("seo.clicks")}
-                            value={formatCount(totals.current.clicks, locale)}
-                            visual={<KpiSparkline points={series.map((row) => row.clicks)} />}
-                          />
-                          <KpiCard
-                            delta={tileDelta(deltas.impressions, t("seo.vsPrevious"))}
-                            icon={ScanSearchAreaIcon}
-                            label={t("seo.impressions")}
-                            value={formatCount(totals.current.impressions, locale)}
-                            visual={<KpiSparkline points={series.map((row) => row.impressions)} />}
-                          />
-                          <KpiCard
-                            delta={tileDelta(deltas.ctr, t("seo.vsPrevious"), {
-                              // Percentage points. A CTR that went 1% → 2% did
-                              // double, but "+100%" in a column of percentages
-                              // reads as a rate of 100%.
-                              formatted: `${deltas.ctr.change >= 0 ? "+" : "−"}${Math.abs(deltas.ctr.change * 100).toFixed(2)} pp`,
-                            })}
-                            icon={ChartLineData01Icon}
-                            label={t("seo.ctr")}
-                            value={formatRate(totals.current.ctr)}
-                            visual={<KpiSparkline points={series.map((row) => row.ctr)} />}
-                          />
-                          <KpiCard
-                            delta={tileDelta(deltas.position, t("seo.vsPrevious"), {
-                              // Signed as places climbed, so the arrow and the
-                              // colour agree with each other and with the table.
-                              formatted:
-                                formatPositionChange(deltas.position.previous - deltas.position.current) ??
-                                t("seo.unchanged"),
-                              higherIsBetter: false,
-                            })}
-                            icon={Target02Icon}
-                            label={t("seo.position")}
-                            value={formatPosition(totals.current.position)}
-                            /* Negated: Search Console counts down from 1, so an
-                               improving ranking draws as a falling line unless
-                               the series is flipped first. */
-                            visual={<KpiSparkline points={series.map((row) => -row.position)} />}
-                          />
-                        </div>
+                        <CardCarousel label="Estadísticas SEO">
+                          <div className="flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                            <div className="min-w-[200px] flex-1">
+                              <KpiCard
+                                delta={tileDelta(deltas.clicks, t("seo.vsPrevious"))}
+                                icon={MouseLeftClick01Icon}
+                                label={t("seo.clicks")}
+                                value={formatCount(totals.current.clicks, locale)}
+                                visual={<KpiSparkline points={series.map((row) => row.clicks)} />}
+                              />
+                            </div>
+                            <div className="min-w-[200px] flex-1">
+                              <KpiCard
+                                delta={tileDelta(deltas.impressions, t("seo.vsPrevious"))}
+                                icon={ScanSearchAreaIcon}
+                                label={t("seo.impressions")}
+                                value={formatCount(totals.current.impressions, locale)}
+                                visual={<KpiSparkline points={series.map((row) => row.impressions)} />}
+                              />
+                            </div>
+                            <div className="min-w-[200px] flex-1">
+                              <KpiCard
+                                delta={tileDelta(deltas.ctr, t("seo.vsPrevious"), {
+                                  // Percentage points. A CTR that went 1% → 2% did
+                                  // double, but "+100%" in a column of percentages
+                                  // reads as a rate of 100%.
+                                  formatted: `${deltas.ctr.change >= 0 ? "+" : "−"}${Math.abs(deltas.ctr.change * 100).toFixed(2)} pp`,
+                                })}
+                                icon={ChartLineData01Icon}
+                                label={t("seo.ctr")}
+                                value={formatRate(totals.current.ctr)}
+                                visual={<KpiSparkline points={series.map((row) => row.ctr)} />}
+                              />
+                            </div>
+                            <div className="min-w-[200px] flex-1">
+                              <KpiCard
+                                delta={tileDelta(deltas.position, t("seo.vsPrevious"), {
+                                  // Signed as places climbed, so the arrow and the
+                                  // colour agree with each other and with the table.
+                                  formatted:
+                                    formatPositionChange(deltas.position.previous - deltas.position.current) ??
+                                    t("seo.unchanged"),
+                                  higherIsBetter: false,
+                                })}
+                                icon={Target02Icon}
+                                label={t("seo.position")}
+                                value={formatPosition(totals.current.position)}
+                                /* Negated: Search Console counts down from 1, so an
+                                   improving ranking draws as a falling line unless
+                                   the series is flipped first. */
+                                visual={<KpiSparkline points={series.map((row) => -row.position)} />}
+                              />
+                            </div>
+                          </div>
+                        </CardCarousel>
                       ) : null}
 
                       <Card>

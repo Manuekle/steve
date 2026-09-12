@@ -11,6 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
 import { KpiCard } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/confirm-dialog";
@@ -204,16 +205,16 @@ export default function RuntimePage() {
               aria-label={t("runtime.refresh")}
             >
               <HugeiconsIcon icon={RefreshIcon} size={15} strokeWidth={1.75} />
-              <span className="hidden sm:inline">{t("runtime.refresh")}</span>
+              {t("runtime.refresh")}
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="text-destructive hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+              className="flex-1 text-destructive hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive sm:flex-none"
               onClick={() => void clearLogs()}
             >
               <HugeiconsIcon icon={Delete01Icon} size={15} strokeWidth={1.75} />
-              <span className="hidden sm:inline">{t("runtime.clear")}</span>
+              {t("runtime.clear")}
             </Button>
           </div>
         </header>
@@ -223,32 +224,40 @@ export default function RuntimePage() {
         ) : null}
 
         {!isLoading ? (
-          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <KpiCard
-              icon={InformationCircleIcon}
-              label={t("runtime.tabLogs")}
-              value={logs.length}
-              sub={t(logs.length > 0 ? "runtime.kpiLogsSub" : "runtime.kpiLogsSubNone")}
-            />
-            <KpiCard
-              icon={CheckmarkCircle02Icon}
-              label={t("runtime.kpiPlans")}
-              value={plans.length}
-              sub={t(plans.length > 0 ? "runtime.kpiPlansSub" : "runtime.kpiPlansSubNone")}
-            />
-            <KpiCard
-              icon={AiScanIcon}
-              label={t("runtime.tabLoaded")}
-              value={loadedCount ?? "—"}
-              sub={t(
-                loadedCount === null
-                  ? "runtime.kpiLoadedUnavailable"
-                  : loadedCount > 0
-                    ? "runtime.kpiLoadedSub"
-                    : "runtime.kpiLoadedSubNone",
-              )}
-            />
-          </div>
+          <CardCarousel label="Estadísticas de runtime">
+            <div className="mb-8 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={InformationCircleIcon}
+                  label={t("runtime.tabLogs")}
+                  value={logs.length}
+                  sub={t(logs.length > 0 ? "runtime.kpiLogsSub" : "runtime.kpiLogsSubNone")}
+                />
+              </div>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={CheckmarkCircle02Icon}
+                  label={t("runtime.kpiPlans")}
+                  value={plans.length}
+                  sub={t(plans.length > 0 ? "runtime.kpiPlansSub" : "runtime.kpiPlansSubNone")}
+                />
+              </div>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={AiScanIcon}
+                  label={t("runtime.tabLoaded")}
+                  value={loadedCount ?? "—"}
+                  sub={t(
+                    loadedCount === null
+                      ? "runtime.kpiLoadedUnavailable"
+                      : loadedCount > 0
+                        ? "runtime.kpiLoadedSub"
+                        : "runtime.kpiLoadedSubNone",
+                  )}
+                />
+              </div>
+            </div>
+          </CardCarousel>
         ) : null}
 
         <div className="mb-8">

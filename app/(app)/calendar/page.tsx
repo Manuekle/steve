@@ -16,6 +16,7 @@ import { GoogleMark } from "@/app/landing/_components/brand-marks";
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { KpiCard } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { Button } from "@/components/ui/button";
@@ -228,30 +229,38 @@ export default function CalendarPage() {
             <>
               {/* Stat tiles — always "as of right now", whatever month the
                   grid below happens to be showing. */}
-              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <KpiCard
-                  icon={Calendar03Icon}
-                  label={t("calendar.today")}
-                  value={stats.todayCount}
-                  sub={stats.todayCount > 0 ? t("calendar.todaySub") : t("calendar.todaySubNone")}
-                />
-                <KpiCard
-                  icon={Clock01Icon}
-                  label={t("calendar.thisWeek")}
-                  value={stats.weekCount}
-                  sub={stats.weekCount > 0 ? t("calendar.thisWeekSub") : t("calendar.thisWeekSubNone")}
-                />
-                <KpiCard
-                  icon={ArrowRight02Icon}
-                  label={t("calendar.nextEvent")}
-                  value={stats.next ? timeUntil(stats.next.start, locale) : "—"}
-                  sub={stats.next ? stats.next.summary || t("calendar.untitled") : t("calendar.nextEventNone")}
-                />
-              </div>
+              <CardCarousel label="Estadísticas de calendario">
+                <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                  <div className="min-w-[220px] flex-1">
+                    <KpiCard
+                      icon={Calendar03Icon}
+                      label={t("calendar.today")}
+                      value={stats.todayCount}
+                      sub={stats.todayCount > 0 ? t("calendar.todaySub") : t("calendar.todaySubNone")}
+                    />
+                  </div>
+                  <div className="min-w-[220px] flex-1">
+                    <KpiCard
+                      icon={Clock01Icon}
+                      label={t("calendar.thisWeek")}
+                      value={stats.weekCount}
+                      sub={stats.weekCount > 0 ? t("calendar.thisWeekSub") : t("calendar.thisWeekSubNone")}
+                    />
+                  </div>
+                  <div className="min-w-[220px] flex-1">
+                    <KpiCard
+                      icon={ArrowRight02Icon}
+                      label={t("calendar.nextEvent")}
+                      value={stats.next ? timeUntil(stats.next.start, locale) : "—"}
+                      sub={stats.next ? stats.next.summary || t("calendar.untitled") : t("calendar.nextEventNone")}
+                    />
+                  </div>
+                </div>
+              </CardCarousel>
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
                 <Card>
-                  <div className="flex items-center justify-between gap-3 px-5 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                     <p className="text-sm font-medium capitalize">{monthLabel}</p>
                     <div className="flex items-center gap-1">
                       <Button
@@ -283,7 +292,8 @@ export default function CalendarPage() {
                     </div>
                   </div>
                   <CardSeparator />
-                  <div className={cn("p-3", gridLoading && "opacity-60")}>
+                  <div className={cn("overflow-x-auto p-3", gridLoading && "opacity-60")}>
+                    <div className="min-w-[280px]">
                     <div className="grid grid-cols-7 gap-1 px-2 pb-1">
                       {labels.map((label, i) => (
                         <div key={i} className="text-center text-[11px] font-medium text-muted-foreground uppercase">
@@ -325,6 +335,7 @@ export default function CalendarPage() {
                         );
                       })}
                     </div>
+                    </div>
                   </div>
                 </Card>
 
@@ -362,7 +373,7 @@ export default function CalendarPage() {
                   ) : dayList.length === 0 ? (
                     <p className="px-1 text-sm text-muted-foreground">{t("calendar.noEventsThatDay")}</p>
                   ) : (
-                    <div className="max-h-[calc(100vh-320px)] space-y-3 overflow-y-auto pr-0.5">
+                    <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-0.5 lg:max-h-[calc(100vh-320px)]">
                       {dayList.map((event) => (
                         <EventRow key={event.id || `${eventDayKey(event)}-${event.start}`} event={event} t={t} locale={locale} />
                       ))}
@@ -462,7 +473,7 @@ function CalendarSkeleton() {
       {/* Two-column: month grid + upcoming sidebar, matching the real layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         <div className="rounded-xl border border-border bg-card p-3">
-          <div className="flex items-center justify-between px-2 pb-3">
+          <div className="flex flex-wrap items-center justify-between px-2 pb-3">
             <SkeletonBar className="h-4 w-32" />
             <div className="flex gap-1">
               <SkeletonBar className="size-8 rounded-lg" />
@@ -470,10 +481,14 @@ function CalendarSkeleton() {
               <SkeletonBar className="size-8 rounded-lg" />
             </div>
           </div>
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: 35 }).map((_, i) => (
-              <SkeletonBar key={i} className="aspect-square rounded-lg" />
-            ))}
+          <div className="overflow-x-auto">
+            <div className="min-w-[280px]">
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <SkeletonBar key={i} className="aspect-square rounded-lg" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         <div className="space-y-3">

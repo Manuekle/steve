@@ -21,6 +21,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardBody, CardHeader, CardSeparator, CardTitle, CardDescription } from "../../_components/dashboard-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import {
   CampaignRow,
   LeadRow,
@@ -560,14 +561,14 @@ export default function AdsPage() {
       >
         <div className="content-enter">
           {/* Header */}
-          <header className="mb-8 flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold">{t("ads.title")}</h1>
+          <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl font-semibold">{t("ads.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("ads.subtitle")}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <Select value={datePreset} onValueChange={setDatePreset}>
                 <SelectTrigger aria-label={t("common.filterByPeriod")} className="w-[160px]">
                   <SelectValue />
@@ -670,7 +671,8 @@ export default function AdsPage() {
               second line carries the ratio that gives its number a verdict:
               frequency, CTR, cost per click. */}
           {tab === "campaigns" && campaigns.length > 0 && !error && (
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <CardCarousel label="Estadísticas de campaña">
+              <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
               {[
                 {
                   icon: ScanSearchAreaIcon,
@@ -754,16 +756,18 @@ export default function AdsPage() {
                    how much of today's budget is gone, and how much of the
                    impression count was a person seeing the ad for the first
                    time. */
-                <KpiCard
-                  icon={stat.icon}
-                  key={stat.label}
-                  label={stat.label}
-                  sub={stat.sub}
-                  value={stat.value}
-                  visual={stat.visual}
-                />
+                <div key={stat.label} className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={stat.icon}
+                    label={stat.label}
+                    sub={stat.sub}
+                    value={stat.value}
+                    visual={stat.visual}
+                  />
+                </div>
               ))}
-            </div>
+              </div>
+            </CardCarousel>
           )}
 
           {tab === "campaigns" && spendByCampaign.length > 0 && !error && (
@@ -971,7 +975,7 @@ export default function AdsPage() {
 function AdsSkeleton() {
   return (
     <div>
-      <header className="mb-8 flex items-center justify-between gap-4">
+      <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
           <SkeletonBar className="h-7 w-24" />
           <SkeletonBar className="h-4 w-56" />
@@ -995,7 +999,7 @@ function AdsPanelSkeleton({ tab }: { readonly tab: Tab }) {
       {/* Only the campaigns tab carries the totals row, so only its
           placeholder does. */}
       {tab === "campaigns" ? (
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <Card key={i}>
               {/* The tile's own shape: number, context line, picture, label. */}

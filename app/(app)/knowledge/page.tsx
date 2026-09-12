@@ -53,6 +53,7 @@ import {
   CardSeparator,
   CardTitle,
 } from "../../_components/dashboard-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { FolderArt, FolderDialog, FolderGrid, type FolderSummary } from "./_components/folder-grid";
 import { MediaLibrary } from "./_components/media-library";
 import { BusinessCard } from "./_components/business-card";
@@ -505,12 +506,12 @@ export default function KnowledgePage() {
       {confirmDialog}
       <Skeleton className="min-h-[500px]" isLoading={isLoading} skeleton={<KnowledgeSkeleton />}>
         <div className="content-enter">
-          <header className="mb-8 flex items-center justify-between gap-4">
+          <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{t("knowledge.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("knowledge.subtitle")}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               <Button variant="outline" size="sm" onClick={() => void handleDriveSync()} disabled={syncingDrive}>
                 {syncingDrive ? (
                   <Spinner size={15} />
@@ -561,50 +562,60 @@ export default function KnowledgePage() {
           <ErrorBanner className="mb-4" error={error} onDismiss={() => setError(null)} />
 
           {documents.length > 0 || totalAssets > 0 ? (
-            <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {/* The split bar is every document's share of the chunk
-                  count. Two documents and 400 chunks is one file carrying
-                  the base and one file that barely registers, and the split
-                  is the only thing on the page that says so. */}
-              <KpiCard
-                icon={LibraryIcon}
-                label={t("knowledge.kpiDocuments")}
-                value={documents.length}
-                sub={t(documents.length > 0 ? "knowledge.kpiDocumentsSub" : "knowledge.kpiDocumentsSubNone")}
-                visual={
-                  <KpiSplit
-                    parts={documents.map((doc) => ({
-                      tone: "neutral" as const,
-                      value: doc.chunks,
-                    }))}
+            <CardCarousel label="Estadísticas de conocimiento">
+              <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                {/* The split bar is every document's share of the chunk
+                    count. Two documents and 400 chunks is one file carrying
+                    the base and one file that barely registers, and the split
+                    is the only thing on the page that says so. */}
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={LibraryIcon}
+                    label={t("knowledge.kpiDocuments")}
+                    value={documents.length}
+                    sub={t(documents.length > 0 ? "knowledge.kpiDocumentsSub" : "knowledge.kpiDocumentsSubNone")}
+                    visual={
+                      <KpiSplit
+                        parts={documents.map((doc) => ({
+                          tone: "neutral" as const,
+                          value: doc.chunks,
+                        }))}
+                      />
+                    }
                   />
-                }
-              />
-              <KpiCard
-                icon={File01Icon}
-                label={t("knowledge.kpiChunks")}
-                sub={t("knowledge.kpiChunksSub", {
-                  value: String(
-                    documents.length > 0 ? Math.round(totalChunks / documents.length) : 0,
-                  ),
-                })}
-                value={totalChunks}
-              />
-              <KpiCard
-                icon={Image01Icon}
-                label={t("knowledge.kpiMedia")}
-                value={totalAssets}
-                sub={t("knowledge.kpiMediaSub", { count: String(folders.length) })}
-              />
-              <KpiCard
-                icon={AiWiperIcon}
-                label={t("knowledge.kpiEmbeddings")}
-                value={embeddings.available ? embeddings.route : "—"}
-                sub={embeddings.available
-                  ? embeddings.model || t("knowledge.kpiEmbeddingsSub")
-                  : t("knowledge.embeddingsOff")}
-              />
-            </div>
+                </div>
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={File01Icon}
+                    label={t("knowledge.kpiChunks")}
+                    sub={t("knowledge.kpiChunksSub", {
+                      value: String(
+                        documents.length > 0 ? Math.round(totalChunks / documents.length) : 0,
+                      ),
+                    })}
+                    value={totalChunks}
+                  />
+                </div>
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={Image01Icon}
+                    label={t("knowledge.kpiMedia")}
+                    value={totalAssets}
+                    sub={t("knowledge.kpiMediaSub", { count: String(folders.length) })}
+                  />
+                </div>
+                <div className="min-w-[200px] flex-1">
+                  <KpiCard
+                    icon={AiWiperIcon}
+                    label={t("knowledge.kpiEmbeddings")}
+                    value={embeddings.available ? embeddings.route : "—"}
+                    sub={embeddings.available
+                      ? embeddings.model || t("knowledge.kpiEmbeddingsSub")
+                      : t("knowledge.embeddingsOff")}
+                  />
+                </div>
+              </div>
+            </CardCarousel>
           ) : null}
 
           <BusinessCard />

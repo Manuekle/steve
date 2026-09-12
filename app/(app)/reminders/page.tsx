@@ -14,6 +14,7 @@ import {
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator } from "../../_components/dashboard-card";
 import { KpiBars, KpiCard } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { StatusBadge, type StatusVariant } from "../../_components/channel-badge";
 import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -162,7 +163,7 @@ export default function RemindersPage() {
             onDismiss={() => setError(null)}
           />
 
-          <header className="mb-8 flex items-center justify-between gap-4">
+          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{t("reminders.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -200,32 +201,40 @@ export default function RemindersPage() {
           ) : (
             <>
               {/* Stats bar */}
-              <div className="mb-6 grid grid-cols-3 gap-4">
-                {/* Each second line says what happens next to that pile,
-                    which is what someone reading a reminder count wants to
-                    know — not a repeat of the status word above it. */}
-                <KpiCard
-                  icon={Clock01Icon}
-                  label={t("reminders.pending")}
-                  sub={t(counts.pending > 0 ? "reminders.pendingSub" : "reminders.pendingSubNone")}
-                  value={counts.pending}
-                  visual={<KpiBars ratio={share(counts.pending)} tone="warning" />}
-                />
-                <KpiCard
-                  icon={CheckIcon}
-                  label={t("reminders.sentCount")}
-                  sub={t(counts.sent > 0 ? "reminders.sentSub" : "reminders.sentSubNone")}
-                  value={counts.sent}
-                  visual={<KpiBars ratio={share(counts.sent)} tone="positive" />}
-                />
-                <KpiCard
-                  icon={CancelCircleIcon}
-                  label={t("reminders.cancelledCount")}
-                  sub={t(counts.cancelled > 0 ? "reminders.cancelledSub" : "reminders.cancelledSubNone")}
-                  value={counts.cancelled}
-                  visual={<KpiBars ratio={share(counts.cancelled)} />}
-                />
-              </div>
+              <CardCarousel label="Estadísticas de recordatorios">
+                <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                  {/* Each second line says what happens next to that pile,
+                      which is what someone reading a reminder count wants to
+                      know — not a repeat of the status word above it. */}
+                  <div className="min-w-[220px] flex-1">
+                    <KpiCard
+                      icon={Clock01Icon}
+                      label={t("reminders.pending")}
+                      sub={t(counts.pending > 0 ? "reminders.pendingSub" : "reminders.pendingSubNone")}
+                      value={counts.pending}
+                      visual={<KpiBars ratio={share(counts.pending)} tone="warning" />}
+                    />
+                  </div>
+                  <div className="min-w-[220px] flex-1">
+                    <KpiCard
+                      icon={CheckIcon}
+                      label={t("reminders.sentCount")}
+                      sub={t(counts.sent > 0 ? "reminders.sentSub" : "reminders.sentSubNone")}
+                      value={counts.sent}
+                      visual={<KpiBars ratio={share(counts.sent)} tone="positive" />}
+                    />
+                  </div>
+                  <div className="min-w-[220px] flex-1">
+                    <KpiCard
+                      icon={CancelCircleIcon}
+                      label={t("reminders.cancelledCount")}
+                      sub={t(counts.cancelled > 0 ? "reminders.cancelledSub" : "reminders.cancelledSubNone")}
+                      value={counts.cancelled}
+                      visual={<KpiBars ratio={share(counts.cancelled)} />}
+                    />
+                  </div>
+                </div>
+              </CardCarousel>
 
               {/* Search */}
               <div className="relative mb-4">
@@ -348,7 +357,7 @@ function ReminderRow({
           <HugeiconsIcon icon={Timer01Icon} size={16} strokeWidth={1.75} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <CardTitle className={cn("truncate", done && "text-muted-foreground")}>
               {reminder.message}
             </CardTitle>
@@ -439,7 +448,7 @@ function ActivitySection({
                 key={entry.id}
                 initial={reduce ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-3 px-5 py-3"
+                className="flex flex-wrap items-center gap-3 px-5 py-3"
               >
                 <StatusBadge
                   status={ACTIVITY_STATUS[entry.type]}
@@ -461,7 +470,7 @@ function ActivitySection({
 function RemindersSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
           <Card key={i}>
             <div className="space-y-3 p-5">

@@ -18,6 +18,7 @@ import {
   UserGroupIcon,
   ZapIcon,
 } from "@hugeicons/core-free-icons";
+import styles from "./editorial.module.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
@@ -82,15 +83,15 @@ const OVERFLOW_PAGES = PAGES.filter((page) => !PRIMARY_PAGE_HREFS.has(page.href)
  */
 export function Wordmark({ className }: { readonly className?: string }) {
   return (
-    <span className={cn("inline-flex h-8 items-center gap-2", className)}>
+    <span className={cn("inline-flex items-center gap-2", className)}>
       {/* Fixed-size box so the mark centres on the cap height instead of
           drifting on its own optical bounds — the glyph's ink is cropped to
           the silhouette, which is not vertically symmetric, so `items-center`
           on the svg alone never quite sat it next to the word. */}
       <span className="flex size-8 shrink-0 items-center justify-center">
-        <SenkaMark metal className="block h-[22px] w-auto" />
+        <SenkaMark metal className="block h-[24px] w-auto" />
       </span>
-      <span className="font-semibold text-[17px] leading-none tracking-tight">
+      <span className="font-normal text-[22px] leading-none tracking-tighter">
         <span className="text-foreground">senka</span>
       </span>
     </span>

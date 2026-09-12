@@ -6,6 +6,7 @@ import { HugeiconsIcon } from "@/components/icons/icon";
 import { Add01Icon, Cancel01Icon, Clock01Icon, Contact01Icon, Download01Icon, DragDropIcon, Loading03Icon, SearchIcon, Target01Icon, UserAdd01Icon } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardBody, CardHeader, CardSeparator, CardTitle, CardDescription } from "../../_components/dashboard-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { KpiBars, KpiCard, KpiSparkline } from "../../_components/kpi-card";
 import { AnimatedNumber, ChartPeriod, ChartSelector, StackedBars, TimeSeries } from "../../_components/chart";
 import chartStyles from "../../_components/charts/tiles.module.css";
@@ -300,7 +301,7 @@ export default function CrmPage() {
       <Skeleton className="min-h-[500px]" isLoading={isLoading} skeleton={<CrmSkeleton />}>
         <div className="content-enter">
           <ErrorBanner className="mb-6" error={error} onDismiss={() => setError(null)} />
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{t("crm.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -440,7 +441,7 @@ export default function CrmPage() {
 
           {/* Mismo inset que el scroller del board (q(8)): los tres tabs
               arrancan en el mismo px y no hay salto al cambiar de vista. */}
-          <div style={{ containerType: "inline-size" }}>
+          <div className="w-full min-w-0" style={{ containerType: "inline-size" }}>
           {view !== "analytics" ? <CrmBoard
             view={view}
             grouped={grouped}
@@ -458,34 +459,44 @@ export default function CrmPage() {
 
           {view === "analytics" ? (
             <section aria-label={locale === "es" ? "Estadísticas" : "Analytics"} style={{ padding: crmQ(8) }}>
-              <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <KpiCard
-                  icon={Contact01Icon}
-                  label={t("leads.kpiTotal")}
-                  value={total}
-                  sub={t("leads.counter", { shown: total, total: contacts.length })}
-                />
-                <KpiCard
-                  icon={Target01Icon}
-                  label={t("leads.kpiCloseRate")}
-                  value={total > 0 ? `${Math.round((grouped.closed.length / total) * 100)}%` : "—"}
-                  sub={t("leads.kpiCloseRateSub", { closed: grouped.closed.length, total })}
-                  visual={<KpiBars ratio={total > 0 ? grouped.closed.length / total : 0} tone="positive" />}
-                />
-                <KpiCard
-                  icon={Clock01Icon}
-                  label={t("leads.kpiPending")}
-                  value={grouped.waiting_human.length + grouped.followup_due.length}
-                  sub={t("leads.kpiPendingSub", { waiting: grouped.waiting_human.length, followup: grouped.followup_due.length })}
-                />
-                <KpiCard
-                  icon={UserAdd01Icon}
-                  label={t("leads.kpiNew")}
-                  value={leadsPerDay.reduce((sum, day) => sum + day.value, 0)}
-                  sub={t("leads.kpiNewSub", { days: trendDays })}
-                  visual={<KpiSparkline points={leadsPerDay.map((day) => day.value)} />}
-                />
-              </div>
+              <CardCarousel label="Estadísticas">
+                <div className="mb-4 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                  <div className="min-w-[200px] flex-1">
+                    <KpiCard
+                      icon={Contact01Icon}
+                      label={t("leads.kpiTotal")}
+                      value={total}
+                      sub={t("leads.counter", { shown: total, total: contacts.length })}
+                    />
+                  </div>
+                  <div className="min-w-[200px] flex-1">
+                    <KpiCard
+                      icon={Target01Icon}
+                      label={t("leads.kpiCloseRate")}
+                      value={total > 0 ? `${Math.round((grouped.closed.length / total) * 100)}%` : "—"}
+                      sub={t("leads.kpiCloseRateSub", { closed: grouped.closed.length, total })}
+                      visual={<KpiBars ratio={total > 0 ? grouped.closed.length / total : 0} tone="positive" />}
+                    />
+                  </div>
+                  <div className="min-w-[200px] flex-1">
+                    <KpiCard
+                      icon={Clock01Icon}
+                      label={t("leads.kpiPending")}
+                      value={grouped.waiting_human.length + grouped.followup_due.length}
+                      sub={t("leads.kpiPendingSub", { waiting: grouped.waiting_human.length, followup: grouped.followup_due.length })}
+                    />
+                  </div>
+                  <div className="min-w-[200px] flex-1">
+                    <KpiCard
+                      icon={UserAdd01Icon}
+                      label={t("leads.kpiNew")}
+                      value={leadsPerDay.reduce((sum, day) => sum + day.value, 0)}
+                      sub={t("leads.kpiNewSub", { days: trendDays })}
+                      visual={<KpiSparkline points={leadsPerDay.map((day) => day.value)} />}
+                    />
+                  </div>
+                </div>
+              </CardCarousel>
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
                   <CardHeader>

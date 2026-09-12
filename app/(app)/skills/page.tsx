@@ -14,6 +14,7 @@ import {
 import { PageContainer } from "../../_components/page-container";
 import { Card } from "../../_components/dashboard-card";
 import { KpiCard } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { KpiCardSkeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -46,7 +47,7 @@ const SOURCE_LABEL: Record<AgentSkill["source"], string> = {
 function SkillsSkeleton() {
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-2">
           <SkeletonBar className="h-7 w-40" />
           <SkeletonBar className="h-4 w-72" />
@@ -220,14 +221,14 @@ export default function SkillsPage() {
   return (
     <PageContainer maxWidth="max-w-6xl" pattern="grid">
       <div className="content-enter">
-        <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <header className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">{t("skills.title")}</h1>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
               {t("skills.subtitle")}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <Button onClick={() => openNew()}>
               <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
               {t("skills.new")}
@@ -237,26 +238,34 @@ export default function SkillsPage() {
 
         {error ? <ErrorBanner error={error} onRetry={() => void load()} /> : null}
 
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
-          <KpiCard
-            icon={GlobalEducationIcon}
-            label={t("skills.kpiTotal")}
-            value={skills.length}
-            sub={t(skills.length > 0 ? "skills.kpiTotalSub" : "skills.kpiTotalSubNone")}
-          />
-          <KpiCard
-            icon={CheckmarkCircle02Icon}
-            label={t("skills.kpiActive")}
-            value={activeCount}
-            sub={t(activeCount > 0 ? "skills.kpiActiveSub" : "skills.kpiActiveSubNone")}
-          />
-          <KpiCard
-            icon={AlertCircleIcon}
-            label={t("skills.kpiBlanks")}
-            value={incompleteCount}
-            sub={t(incompleteCount > 0 ? "skills.kpiBlanksSub" : "skills.kpiBlanksSubNone")}
-          />
-        </div>
+        <CardCarousel label="Estadísticas de skills">
+          <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+            <div className="min-w-[220px] flex-1">
+              <KpiCard
+                icon={GlobalEducationIcon}
+                label={t("skills.kpiTotal")}
+                value={skills.length}
+                sub={t(skills.length > 0 ? "skills.kpiTotalSub" : "skills.kpiTotalSubNone")}
+              />
+            </div>
+            <div className="min-w-[220px] flex-1">
+              <KpiCard
+                icon={CheckmarkCircle02Icon}
+                label={t("skills.kpiActive")}
+                value={activeCount}
+                sub={t(activeCount > 0 ? "skills.kpiActiveSub" : "skills.kpiActiveSubNone")}
+              />
+            </div>
+            <div className="min-w-[220px] flex-1">
+              <KpiCard
+                icon={AlertCircleIcon}
+                label={t("skills.kpiBlanks")}
+                value={incompleteCount}
+                sub={t(incompleteCount > 0 ? "skills.kpiBlanksSub" : "skills.kpiBlanksSubNone")}
+              />
+            </div>
+          </div>
+        </CardCarousel>
 
         {skills.length === 0 ? (
           <Card>

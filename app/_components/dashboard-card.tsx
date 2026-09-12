@@ -19,7 +19,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]",
+        "rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] overflow-hidden",
         interactive &&
           "transition-all duration-200 hover:shadow-[var(--shadow-elevated)] hover:border-input",
         className,

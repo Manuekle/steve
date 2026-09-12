@@ -13,6 +13,7 @@ import {
 import { PageContainer } from "../../_components/page-container";
 import { Card } from "../../_components/dashboard-card";
 import { KpiCard } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { SkeletonBar } from "@/components/ai-elements/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -261,26 +262,34 @@ export default function NumbersPage() {
         {error ? <ErrorBanner error={error} onRetry={() => void load()} /> : null}
 
         {numbers.length > 0 ? (
-          <div className="mb-6 grid gap-3 sm:grid-cols-3">
-            <KpiCard
-              icon={SmartPhone01Icon}
-              label={t("numbers.kpiTotal")}
-              value={numbers.length}
-              sub={t("numbers.kpiTotalSub")}
-            />
-            <KpiCard
-              icon={CheckmarkCircle02Icon}
-              label={t("numbers.kpiAssigned")}
-              value={assignedCount}
-              sub={t(assignedCount > 0 ? "numbers.kpiAssignedSub" : "numbers.kpiAssignedSubNone")}
-            />
-            <KpiCard
-              icon={AlertCircleIcon}
-              label={t("numbers.kpiFree")}
-              value={unassignedCount}
-              sub={t(unassignedCount > 0 ? "numbers.kpiFreeSub" : "numbers.kpiFreeSubNone")}
-            />
-          </div>
+          <CardCarousel label="Estadísticas de números">
+            <div className="mb-6 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={SmartPhone01Icon}
+                  label={t("numbers.kpiTotal")}
+                  value={numbers.length}
+                  sub={t("numbers.kpiTotalSub")}
+                />
+              </div>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={CheckmarkCircle02Icon}
+                  label={t("numbers.kpiAssigned")}
+                  value={assignedCount}
+                  sub={t(assignedCount > 0 ? "numbers.kpiAssignedSub" : "numbers.kpiAssignedSubNone")}
+                />
+              </div>
+              <div className="min-w-[220px] flex-1">
+                <KpiCard
+                  icon={AlertCircleIcon}
+                  label={t("numbers.kpiFree")}
+                  value={unassignedCount}
+                  sub={t(unassignedCount > 0 ? "numbers.kpiFreeSub" : "numbers.kpiFreeSubNone")}
+                />
+              </div>
+            </div>
+          </CardCarousel>
         ) : null}
 
         {numbers.length > 0 ? (

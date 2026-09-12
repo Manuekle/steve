@@ -25,7 +25,7 @@ export const CRM_COLUMNS = ["open", "waiting_human", "followup_due", "closed"] a
 
 export type GroupedContacts = Record<ContactStatus, Contact[]>;
 
-export const q = (px: number) => `${px / 1448 * 100}cqw`;
+export const q = (px: number) => `max(${px}px, ${(px / 1448) * 100}cqw)`;
 const EASE_OUT = [0.19, 1, 0.22, 1] as const;
 const EASE_SLOT = [0.23, 1, 0.32, 1] as const;
 const EASE_LAND = [0.25, 0.7, 0.2, 1] as const;
@@ -425,21 +425,46 @@ export function CrmBoard({
           break;
         }
       }}
-      className="relative min-w-0"
+      className="relative w-full min-w-0"
     >
       <p className="sr-only" role="status">{announcement}</p>
-      <div ref={scrollerRef} className="overscroll-contain" style={{ padding: q(8) }} onScroll={(event) => {
-        const own = session.current?.scrolls.find((scroll) => scroll.el === event.currentTarget);
-        if (own) { scrollX.set(event.currentTarget.scrollLeft - own.x); scrollY.set(event.currentTarget.scrollTop - own.y); }
-      }}>
-        <div ref={boardRef} className="relative grid items-start select-none" style={{ gap: q(view === "list" ? 10 : 12), gridTemplateColumns: view === "list" ? "minmax(0, 1fr)" : `repeat(4, minmax(${q(280)}, 1fr))` }}>
+      {/* The kanban board needs horizontal scroll on small screens so columns
+          don't collapse to unusable widths. In list mode no overflow is needed —
+          sharing the wrapper would capture scroll events even when there's
+          nothing to scroll horizontally. */}
+      <div ref={scrollerRef}
+        className={view === "kanban" ? "x-fade overscroll-contain overflow-x-auto scrollbar-hide" : "overscroll-contain w-full"}
+        style={{ padding: q(8) }}
+        onScroll={(event) => {
+          const scroller = event.currentTarget;
+          const max = scroller.scrollWidth - scroller.clientWidth;
+          scroller.style.setProperty("--x-fade-start", scroller.scrollLeft > 4 ? "40px" : "0px");
+          scroller.style.setProperty("--x-fade-end", scroller.scrollLeft < max - 4 ? "40px" : "0px");
+          const own = session.current?.scrolls.find((scroll) => scroll.el === event.currentTarget);
+          if (own) { scrollX.set(event.currentTarget.scrollLeft - own.x); scrollY.set(event.currentTarget.scrollTop - own.y); }
+        }}
+      >
+        <div
+          ref={boardRef}
+          className={view === "kanban" ? "relative flex min-w-max items-start select-none" : "relative grid w-full items-start select-none"}
+          style={{ gap: q(view === "list" ? 10 : 12), gridTemplateColumns: view === "list" ? "minmax(0, 1fr)" : undefined }}
+        >
           {CRM_COLUMNS.map((status) => {
             const theme = STATUS_THEME[status];
             const cards = grouped[status].filter((contact) => contact.id !== lifted?.contact.id);
             const count = cards.length + (lifted && drop?.status === status ? 1 : 0);
             return (
               <section key={status} ref={(el) => { if (el) zones.current.set(status, el); else zones.current.delete(status); }}
-                className="kpi-card min-w-0 border border-border bg-card" style={{ borderRadius: q(18), padding: q(8), boxShadow: "var(--shadow-soft)" }}>
+                className={cn("kpi-card min-w-0 border border-border bg-card", view === "list" && "@container")}
+                style={{
+                  borderRadius: q(18),
+                  padding: q(8),
+                  boxShadow: "var(--shadow-soft)",
+                  width: view === "list" ? undefined : q(300),
+                  flex: view === "list" ? undefined : "0 0 auto",
+                  // Override height:100% from .kpi-card in list mode — sections stack vertically
+                  height: view === "list" ? "auto" : undefined,
+                }}>
                 <header className="kpi-header flex items-center" style={{ minHeight: q(44), height: q(44), gap: q(8), paddingInline: q(8), paddingBlock: 0 }}>
                   <HugeiconsIcon icon={theme.icon} size={q(14)} strokeWidth={1.75} style={{ color: theme.tone, flexShrink: 0 }} />
                   <div className="min-w-0 flex-1">
@@ -524,42 +549,145 @@ const ContactCard = memo(function ContactCard({
       aria-label={contact.name}
       aria-keyshortcuts={overlay ? undefined : "Alt+ArrowUp Alt+ArrowDown"}
       className={cn(
-        "group relative grid min-w-0 touch-none select-none items-center bg-background/75 text-left text-card-foreground",
+        "group relative min-w-0 touch-none select-none bg-background/75 text-left text-card-foreground",
         "focus-visible:outline-solid focus-visible:outline-[color:var(--ring)]",
         !overlay && "cursor-grab",
+        list ? "flex flex-col gap-1 @sm:grid @sm:items-center" : "grid items-center",
       )}
       style={{
-        height: q(list ? 56 : 148), paddingInline: q(16), paddingBlock: list ? 0 : q(12),
-        gridTemplateColumns: list ? `minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 2fr) ${q(48)} ${q(216)}` : `minmax(0, 1fr) ${q(36)}`,
-        gridTemplateRows: list ? "minmax(0, 1fr)" : `${q(17)} ${q(17)} minmax(0, 1fr) ${q(36)}`,
-        columnGap: q(12), rowGap: list ? 0 : q(8), outlineWidth: q(2), outlineOffset: q(-2),
-        borderRadius: q(14), marginBottom: overlay ? 0 : q(8),
+        // Kanban: fixed row heights via grid; list: flexible height that wraps on mobile
+        ...(list ? {
+          paddingInline: q(16),
+          paddingBlock: q(10),
+          gridTemplateColumns: `minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 2fr) ${q(48)} ${q(216)}`,
+          gridTemplateRows: "minmax(0, 1fr)",
+          columnGap: q(12),
+          outlineWidth: q(2),
+          outlineOffset: q(-2),
+          borderRadius: q(14),
+          marginBottom: overlay ? 0 : q(8),
+        } : {
+          height: q(148),
+          paddingInline: q(16),
+          paddingBlock: q(12),
+          gridTemplateColumns: `minmax(0, 1fr) ${q(36)}`,
+          gridTemplateRows: `${q(17)} ${q(17)} minmax(0, 1fr) ${q(36)}`,
+          columnGap: q(12),
+          rowGap: q(8),
+          outlineWidth: q(2),
+          outlineOffset: q(-2),
+          borderRadius: q(14),
+          marginBottom: overlay ? 0 : q(8),
+        }),
       }}
     >
-      <span title={contact.name} className="min-w-0 truncate font-medium text-foreground" style={{ fontSize: q(list ? 13 : 14), lineHeight: q(17), gridColumn: 1, gridRow: 1 }}>{contact.name}</span>
-      <span title={detail} className="flex min-w-0 items-center text-foreground/80 tabular-nums" style={{ gap: q(7), fontSize: q(12.5), lineHeight: q(17), gridColumn: list ? 2 : "1 / -1", gridRow: list ? 1 : 2 }}>
+      {/* Name */}
+      <span
+        title={contact.name}
+        className="min-w-0 truncate font-medium text-foreground"
+        style={{
+          fontSize: q(list ? 13 : 14),
+          lineHeight: q(17),
+          gridColumn: 1,
+          gridRow: 1,
+        }}
+      >
+        {contact.name}
+      </span>
+      {/* Phone/email */}
+      <span
+        title={detail}
+        className="flex min-w-0 items-center text-foreground/80 tabular-nums"
+        style={{
+          gap: q(7),
+          fontSize: q(12.5),
+          lineHeight: q(17),
+          gridColumn: list ? 2 : "1 / -1",
+          gridRow: list ? 1 : 2,
+        }}
+      >
         <HugeiconsIcon icon={contact.phone ? Call02Icon : BubbleChatIcon} size={q(12)} strokeWidth={1.5} className="shrink-0 text-muted-foreground" />
         <span className="min-w-0 truncate">{detail}</span>
       </span>
-      <span title={note} className="min-w-0 truncate font-normal text-muted-foreground" style={{ fontSize: q(12.5), lineHeight: q(17), gridColumn: list ? 3 : "1 / -1", gridRow: list ? 1 : 3 }}>{note || "\u00a0"}</span>
-      <span title={relativeTime(contact.lastMessageAt, locale)} className="min-w-0 truncate text-right text-muted-foreground tabular-nums" style={{ fontSize: q(10), lineHeight: q(17), gridColumn: list ? 4 : 2, gridRow: 1 }}>{relativeTime(contact.lastMessageAt, locale)}</span>
-      <div data-card-actions inert={overlay || moving} className={cn("flex min-w-0 items-center", !list && "border-t border-border/50")}
-        onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}
-        style={{ gridColumn: list ? 5 : "1 / -1", gridRow: list ? 1 : 4, height: q(36), gap: q(6), paddingTop: list ? 0 : q(6) }}>
+      {/* Note / last message */}
+      <span
+        title={note}
+        className="min-w-0 truncate font-normal text-muted-foreground"
+        style={{
+          fontSize: q(12.5),
+          lineHeight: q(17),
+          gridColumn: list ? 3 : "1 / -1",
+          gridRow: list ? 1 : 3,
+        }}
+      >
+        {note || "\u00a0"}
+      </span>
+      {/* Time */}
+      <span
+        title={relativeTime(contact.lastMessageAt, locale)}
+        className="min-w-0 truncate text-right text-muted-foreground tabular-nums @sm:text-right"
+        style={{
+          fontSize: q(10),
+          lineHeight: q(17),
+          gridColumn: list ? 4 : 2,
+          gridRow: 1,
+        }}
+      >
+        {relativeTime(contact.lastMessageAt, locale)}
+      </span>
+      {/* Actions row */}
+      <div
+        data-card-actions
+        inert={overlay || moving}
+        className={cn("flex min-w-0 items-center", !list && "border-t border-border/50")}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+        style={{
+          gridColumn: list ? 5 : "1 / -1",
+          gridRow: list ? 1 : 4,
+          height: q(36),
+          gap: q(6),
+          paddingTop: list ? 0 : q(6),
+        }}
+      >
         <Select disabled={overlay || moving} value={contact.status} onValueChange={(status) => onMove(contact.id, status as ContactStatus)}>
-          <SelectTrigger size="sm" aria-label={locale === "es" ? `Cambiar etapa de ${contact.name}` : `Change stage for ${contact.name}`}
-             onPointerDown={(event) => event.stopPropagation()} className="min-w-0 flex-1 rounded-[9px] bg-card/60 shadow-none hover:bg-card"
-            style={{ height: q(28), fontSize: q(11), paddingInline: q(8) }}>
+          <SelectTrigger
+            size="sm"
+            aria-label={locale === "es" ? `Cambiar etapa de ${contact.name}` : `Change stage for ${contact.name}`}
+            onPointerDown={(event) => event.stopPropagation()}
+            className="min-w-0 flex-1 rounded-[9px] bg-card/60 shadow-none hover:bg-card"
+            style={{ height: q(28), fontSize: q(11), paddingInline: q(8) }}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent position="popper">
-            {CRM_COLUMNS.map((status) => <SelectItem key={status} value={status}>{t(`contactStatus.${status}`)}</SelectItem>)}
+            {CRM_COLUMNS.map((status) => (
+              <SelectItem key={status} value={status}>{t(`contactStatus.${status}`)}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={locale === "es" ? `Abrir ${contact.name}` : `Open ${contact.name}`} onClick={() => onEdit(contact)} onPointerDown={(event) => event.stopPropagation()}
-            className="text-muted-foreground hover:bg-accent/70 hover:text-foreground" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} /></Button>
-        <Button type="button" variant="ghost" size="icon-xs" disabled={overlay || moving} aria-label={t("crm.delete")} onClick={() => onDelete(contact.id)} onPointerDown={(event) => event.stopPropagation()}
-            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" style={{ width: q(28), height: q(28) }}><HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} /></Button>
+        <Button
+          type="button" variant="ghost" size="icon-xs"
+          disabled={overlay || moving}
+          aria-label={locale === "es" ? `Abrir ${contact.name}` : `Open ${contact.name}`}
+          onClick={() => onEdit(contact)}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+          style={{ width: q(28), height: q(28) }}
+        >
+          <HugeiconsIcon icon={ArrowRight02Icon} size={q(13)} strokeWidth={1.75} />
+        </Button>
+        <Button
+          type="button" variant="ghost" size="icon-xs"
+          disabled={overlay || moving}
+          aria-label={t("crm.delete")}
+          onClick={() => onDelete(contact.id)}
+          onPointerDown={(event) => event.stopPropagation()}
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          style={{ width: q(28), height: q(28) }}
+        >
+          <HugeiconsIcon icon={Delete01Icon} size={q(13)} strokeWidth={1.75} />
+        </Button>
       </div>
     </motion.article>
   );

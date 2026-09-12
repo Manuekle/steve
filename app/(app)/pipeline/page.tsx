@@ -20,6 +20,7 @@ import {
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardBody, CardDescription, CardHeader, CardSeparator, CardTitle } from "../../_components/dashboard-card";
 import { KpiBars, KpiCard, KpiSparkline } from "../../_components/kpi-card";
+import { CardCarousel } from "../../_components/card-carousel";
 import { AnimatedNumber, ChartPeriod, ChartSelector, RankedBars, TimeSeries } from "../../_components/chart";
 import chartStyles from "../../_components/charts/tiles.module.css";
 import { DEAL_COLUMNS, DEAL_THEME, DealBoard, q as dealQ, type GroupedDeals } from "./_components/deal-board";
@@ -336,7 +337,7 @@ export default function PipelinePage() {
       <Skeleton className="min-h-[500px]" isLoading={isLoading} skeleton={<PipelineSkeleton />}>
         <div className="content-enter">
           <ErrorBanner className="mb-6" error={error} onDismiss={() => setError(null)} />
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{t("pipeline.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -510,7 +511,7 @@ export default function PipelinePage() {
 
           {/* Mismo inset que el scroller del board (dealQ(8)): los tres tabs
               arrancan en el mismo px y no hay salto al cambiar de vista. */}
-          <div style={{ containerType: "inline-size" }}>
+          <div className="w-full min-w-0" style={{ containerType: "inline-size" }}>
             {view !== "analytics" ? (
               <DealBoard
                 view={view}
@@ -554,51 +555,61 @@ export default function PipelinePage() {
               >
                 {lead ? (
                   <>
-                    <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <KpiCard
-                        icon={PiggyBankIcon}
-                        label={t("pipeline.kpi.open")}
-                        value={formatMoney(lead.open, lead.currency, locale)}
-                        sub={t("pipeline.kpi.openHint", { count: lead.openCount })}
-                      />
-                      <KpiCard
-                        icon={ChartHistogramIcon}
-                        label={t("pipeline.kpi.forecast")}
-                        value={formatMoney(lead.forecast, lead.currency, locale)}
-                        sub={t("pipeline.kpi.forecastHint")}
-                        visual={
-                          <KpiBars
-                            ratio={lead.open > 0 ? lead.forecast / lead.open : 0}
-                            tone="neutral"
+                    <CardCarousel label="Estadísticas de pipeline">
+                      <div className="mb-4 flex items-stretch gap-4" style={{ paddingInline: "2px" }}>
+                        <div className="min-w-[200px] flex-1">
+                          <KpiCard
+                            icon={PiggyBankIcon}
+                            label={t("pipeline.kpi.open")}
+                            value={formatMoney(lead.open, lead.currency, locale)}
+                            sub={t("pipeline.kpi.openHint", { count: lead.openCount })}
                           />
-                        }
-                      />
-                      <KpiCard
-                        icon={CheckmarkCircle02Icon}
-                        label={t("pipeline.kpi.won")}
-                        value={formatMoney(lead.won, lead.currency, locale)}
-                        sub={t("pipeline.kpi.wonHint", { count: lead.wonCount })}
-                        visual={
-                          <KpiBars
-                            ratio={rate ?? 0}
-                            tone="positive"
+                        </div>
+                        <div className="min-w-[200px] flex-1">
+                          <KpiCard
+                            icon={ChartHistogramIcon}
+                            label={t("pipeline.kpi.forecast")}
+                            value={formatMoney(lead.forecast, lead.currency, locale)}
+                            sub={t("pipeline.kpi.forecastHint")}
+                            visual={
+                              <KpiBars
+                                ratio={lead.open > 0 ? lead.forecast / lead.open : 0}
+                                tone="neutral"
+                              />
+                            }
                           />
-                        }
-                      />
-                      <KpiCard
-                        icon={Target01Icon}
-                        label={t("pipeline.kpi.winRate")}
-                        value={rate === undefined ? "—" : `${Math.round(rate * 100)}%`}
-                        sub={
-                          ticket === undefined
-                            ? t("pipeline.kpi.winRateHint")
-                            : t("pipeline.kpi.avgTicket", {
-                                value: formatMoney(ticket, lead.currency, locale),
-                              })
-                        }
-                        visual={<KpiSparkline points={wonTrend.map((day) => day.value)} tone="positive" />}
-                      />
-                    </div>
+                        </div>
+                        <div className="min-w-[200px] flex-1">
+                          <KpiCard
+                            icon={CheckmarkCircle02Icon}
+                            label={t("pipeline.kpi.won")}
+                            value={formatMoney(lead.won, lead.currency, locale)}
+                            sub={t("pipeline.kpi.wonHint", { count: lead.wonCount })}
+                            visual={
+                              <KpiBars
+                                ratio={rate ?? 0}
+                                tone="positive"
+                              />
+                            }
+                          />
+                        </div>
+                        <div className="min-w-[200px] flex-1">
+                          <KpiCard
+                            icon={Target01Icon}
+                            label={t("pipeline.kpi.winRate")}
+                            value={rate === undefined ? "—" : `${Math.round(rate * 100)}%`}
+                            sub={
+                              ticket === undefined
+                                ? t("pipeline.kpi.winRateHint")
+                                : t("pipeline.kpi.avgTicket", {
+                                    value: formatMoney(ticket, lead.currency, locale),
+                                  })
+                            }
+                            visual={<KpiSparkline points={wonTrend.map((day) => day.value)} tone="positive" />}
+                          />
+                        </div>
+                      </div>
+                    </CardCarousel>
                     <div className="grid gap-4 lg:grid-cols-2">
                       <Card>
                         <CardHeader>

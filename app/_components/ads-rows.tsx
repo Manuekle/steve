@@ -352,7 +352,7 @@ export function CampaignRow({
             value={view.budgetValue}
           />
         )}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <AdsDetailCell label={labels.cpc} value={view.cpc} />
           <AdsDetailCell label={labels.cpm} value={view.cpm} />
           <AdsDetailCell label={labels.conversions} value={view.conversions} />

@@ -234,9 +234,9 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
               {/* Milled, like the marketing lockup — the sidebar mark is on
                   the app ground, which is the same ground the ramp is tuned
                   for. */}
-              <SenkaMark metal />
-              <span className="text-lg font-semibold">
-                <span className="text-foreground">senka</span>
+              <SenkaMark metal className="block h-[20px] w-auto" />
+              <span className="text-[20px] font-medium leading-none tracking-tighter text-foreground">
+                senka
               </span>
             </div>
           ) : null}
@@ -334,58 +334,216 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile top bar + dropdown nav */}
+      {/* ── Mobile top bar + drawer nav ─────────────────────────────── */}
+      {/* Same mechanism as the landing's mobile menu: a frost layer covers
+          both the bar and the open drawer as one continuous surface; the
+          drawer is a clipping box whose height is CSS-animated; items stagger
+          in behind the opening edge. No separate background panel — no seam. */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="relative md:hidden">
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-            <span className="text-lg font-semibold">
-              <span className="text-foreground">senka</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((open) => !open)}
-              className="relative inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label={mobileMenuOpen ? t("nav.closeMenu") : t("nav.menu")}
-              aria-expanded={mobileMenuOpen}
+        <MobileNav
+          activePath={activePath}
+          chatBadge={chatBadge}
+          inboxBadge={inboxBadge}
+          isActivePath={isActivePath}
+          badgeFor={badgeFor}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          t={t}
+        />
+        {/* The one landmark every signed-in page lacked. Screen-reader users
+            had no "jump to main" target, and the skip link above needs
+            something to land on. `tabIndex={-1}` makes it focusable by that
+            link without adding it to the tab order; `outline-none` keeps the
+            focus ring off a region the size of the page. */}
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="relative flex flex-1 flex-col overflow-hidden outline-none"
+        >
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// ── MobileNav ──────────────────────────────────────────────────────────────
+
+/**
+ * The product's mobile top bar + drawer nav.
+ *
+ * Follows the same pattern as the landing's `LandingHeader`:
+ * - A frost layer (`.app-nav-blur`) covers both the bar and the open drawer
+ *   as one continuous surface — no hard seam.
+ * - The drawer (`.app-nav-drawer`) is a clipping box whose height is animated
+ *   by CSS from 0 to `--app-nav-h`, measured by a ResizeObserver on the inner
+ *   content element (identical to the `--lp-menu-h` mechanism).
+ * - Items stagger in behind the opening edge using the `--i` CSS variable.
+ * - `inert` when closed: no tab stop, no screen reader reach.
+ */
+function MobileNav({
+  activePath,
+  chatBadge,
+  inboxBadge,
+  isActivePath,
+  badgeFor,
+  mobileMenuOpen,
+  setMobileMenuOpen,
+  t,
+}: {
+  readonly activePath: string;
+  readonly chatBadge: number;
+  readonly inboxBadge: number;
+  readonly isActivePath: (href: string) => boolean;
+  readonly badgeFor: (href: string) => number;
+  readonly mobileMenuOpen: boolean;
+  readonly setMobileMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  readonly t: ReturnType<typeof import("@/lib/i18n/provider").useT>;
+}) {
+  const navRef = useRef<HTMLDivElement>(null);
+  const drawerInnerRef = useRef<HTMLDivElement>(null);
+
+  // Publish the drawer's natural height to `--app-nav-h` so the CSS
+  // transition knows where to animate to. Identical mechanism to the
+  // landing's `--lp-menu-h` / ResizeObserver pair.
+  const measureDrawer = useCallback(() => {
+    const nav = navRef.current;
+    const inner = drawerInnerRef.current;
+    if (!nav || !inner) return;
+    const h = inner.scrollHeight;
+    if (h > 0) nav.style.setProperty("--app-nav-h", `${h}px`);
+  }, []);
+
+  useEffect(() => {
+    measureDrawer();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measureDrawer);
+    if (drawerInnerRef.current) observer.observe(drawerInnerRef.current);
+    return () => observer.disconnect();
+  }, [measureDrawer]);
+
+  const openMenu = () => {
+    measureDrawer();
+    setMobileMenuOpen(true);
+  };
+
+  const closeMenu = () => setMobileMenuOpen(false);
+
+  // Close when viewport becomes desktop-wide (md = 768px).
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => { if (mq.matches) closeMenu(); };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  // Flatten all nav items in order: main items first.
+  const allItems = NAV_ITEMS;
+
+  // Count how many items are above the footer section for stagger index.
+  const footerOffset = allItems.length + 1; // +1 for business switcher slot
+
+  return (
+    <div
+      ref={navRef}
+      className="app-nav md:hidden"
+      data-open={mobileMenuOpen || undefined}
+    >
+      {/* Frost / tint layer — covers bar + drawer as one surface */}
+      <div aria-hidden="true" className="app-nav-blur" />
+
+      {/* Top bar */}
+      <div className="relative flex h-14 items-center justify-between px-4">
+        {/* Wordmark */}
+        <div className="flex items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center">
+            <SenkaMark metal className="block h-[20px] w-auto" />
+          </span>
+          <span className="text-[20px] font-medium leading-none tracking-tighter text-foreground">
+            senka
+          </span>
+        </div>
+
+        {/* Hamburger / close button — cross-fade, same as landing */}
+        <button
+          type="button"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="app-nav-drawer"
+          aria-label={mobileMenuOpen ? t("nav.closeMenu") : t("nav.menu")}
+          onClick={() => (mobileMenuOpen ? closeMenu() : openMenu())}
+          className="relative -mr-1 inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground"
+        >
+          {(
+            [
+              [Menu01Icon, !mobileMenuOpen],
+              [Cancel01Icon, mobileMenuOpen],
+            ] as const
+          ).map(([icon, shown], index) => (
+            <span
+              aria-hidden="true"
+              // biome-ignore lint/suspicious/noArrayIndexKey: two fixed glyphs
+              key={index}
+              className="absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+              style={{
+                opacity: shown ? 1 : 0,
+                transform: shown ? "rotate(0deg)" : "rotate(-45deg)",
+              }}
             >
-              <span className="t-icon-swap" data-state={mobileMenuOpen ? "b" : "a"}>
-                <span className="t-icon" data-icon="a">
-                  <HugeiconsIcon icon={Menu01Icon} size={20} strokeWidth={1.75} />
-                </span>
-                <span className="t-icon" data-icon="b">
-                  <HugeiconsIcon icon={Cancel01Icon} size={20} strokeWidth={1.75} />
-                </span>
-              </span>
-              {!mobileMenuOpen && chatBadge + inboxBadge > 0 ? (
-                <NotificationBadge count={chatBadge + inboxBadge} />
-              ) : null}
-            </button>
-          </div>
-
-          {mobileMenuOpen ? (
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 z-10 cursor-default"
-              aria-label={t("nav.closeMenu")}
-              tabIndex={-1}
-            />
+              <HugeiconsIcon icon={icon} size={18} strokeWidth={1.75} />
+            </span>
+          ))}
+          {/* Badge only when menu is closed so it doesn't overlap the × */}
+          {!mobileMenuOpen && chatBadge + inboxBadge > 0 ? (
+            <NotificationBadge count={chatBadge + inboxBadge} />
           ) : null}
+        </button>
+      </div>
 
-          <nav
-            // Opaque: `.t-panel-slide` transitions `filter`, which makes this a
-            // backdrop root, so its own `backdrop-blur` was sampling an empty
-            // backdrop and frosting nothing. See the note on the class.
-            className="t-panel-slide absolute inset-x-0 top-14 z-20 flex flex-col gap-1 border-b border-border bg-card p-3 shadow-lg"
-            style={{ "--panel-translate-y": "-10px" } as CSSProperties}
-            data-open={mobileMenuOpen}
-          >
-            {/* Same first position as on the desktop sidebar — the business
-                names what every row under it belongs to. */}
-            <div className="pb-1">
+      {/* Backdrop — closes menu on tap outside */}
+      {mobileMenuOpen ? (
+        <button
+          type="button"
+          onClick={closeMenu}
+          className="fixed inset-0 z-[-1] cursor-default"
+          aria-label={t("nav.closeMenu")}
+          tabIndex={-1}
+        />
+      ) : null}
+
+      {/* Drawer — height-animated clipping box */}
+      <div
+        className="app-nav-drawer"
+        id="app-nav-drawer"
+        // `inert` while closed: links are invisible to the tab order and
+        // screen readers without being unmounted (needed for measurement).
+        // biome-ignore lint/a11y/useAriaPropsForRole: inert is intentional
+        inert={!mobileMenuOpen}
+      >
+        <div className="app-nav-drawer-inner" ref={drawerInnerRef}>
+          <div className="flex flex-col gap-0.5 px-3 pb-2 pt-1">
+
+            {/* Business switcher — above the nav, same position as sidebar */}
+            <div
+              className="app-nav-item pb-2 pt-1"
+              style={{ "--i": 0 } as CSSProperties}
+            >
               <BusinessSwitcher />
             </div>
-            {NAV_ITEMS.map((item) => {
+
+            {/* New chat shortcut */}
+            <Link
+              href="/chat"
+              onClick={closeMenu}
+              data-cuelume-press
+              className="app-nav-item mb-1 flex items-center gap-2.5 rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground shadow-[var(--shadow-button)] transition-transform duration-150 active:scale-[0.98]"
+              style={{ "--i": 1 } as CSSProperties}
+            >
+              <HugeiconsIcon icon={Add01Icon} size={15} strokeWidth={1.75} className="shrink-0" />
+              {t("nav.newChat")}
+            </Link>
+
+            {/* Nav items */}
+            {allItems.map((item, index) => {
               const isActive = isActivePath(item.href);
               const badgeCount = badgeFor(item.href);
               return (
@@ -394,13 +552,14 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
                   href={item.href}
                   data-cuelume-hover="tick"
                   data-cuelume-press
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={closeMenu}
                   className={cn(
-                    "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                    "app-nav-item relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150",
                     isActive
                       ? "bg-muted text-foreground shadow-[var(--shadow-inset)]"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
+                  style={{ "--i": index + 2 } as CSSProperties}
                 >
                   <HugeiconsIcon icon={item.icon} size={16} strokeWidth={1.75} className="shrink-0" />
                   {t(item.labelKey)}
@@ -408,28 +567,31 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
                 </Link>
               );
             })}
-            <div className="mt-1 flex flex-col gap-1 border-t border-border pt-3">
+
+            {/* Footer section — notifications, support, preferences */}
+            <div
+              className="app-nav-item mt-1.5 flex flex-col gap-0.5 border-t border-border pt-2"
+              style={{ "--i": footerOffset + 1 } as CSSProperties}
+            >
               <SidebarNotifications className="w-full" />
               <SupportDialog className="w-full" />
-              <div className="flex items-center gap-0.5 pt-1">
-                <ThemeToggle className="size-8 justify-center p-0" showLabel={false} />
-                <SoundToggle className="size-8 justify-center p-0" showLabel={false} />
-                <LanguageToggle className="size-8 justify-center p-0" showLabel={false} />
-                <SignOutButton className="size-8 justify-center p-0" showLabel={false} />
-              </div>
+            </div>
+
+            {/* Preference toggles — row of icon buttons */}
+            <div
+              className="app-nav-item flex items-center gap-0.5 pb-1 pt-0.5"
+              style={{ "--i": footerOffset + 2 } as CSSProperties}
+            >
+              <ThemeToggle className="size-8 justify-center p-0" showLabel={false} />
+              <SoundToggle className="size-8 justify-center p-0" showLabel={false} />
+              <LanguageToggle className="size-8 justify-center p-0" showLabel={false} />
+              <SignOutButton className="size-8 justify-center p-0" showLabel={false} />
+              <div className="flex-1" />
               <SidebarStatus />
             </div>
-          </nav>
-        </div>
 
-        {/* The one landmark every signed-in page lacked. Screen-reader users
-            had no "jump to main" target, and the skip link above needs
-            something to land on. `tabIndex={-1}` makes it focusable by that
-            link without adding it to the tab order; `outline-none` keeps the
-            focus ring off a region the size of the page. */}
-        <main id="main-content" tabIndex={-1} className="relative flex flex-1 flex-col overflow-hidden outline-none">
-          {children}
-        </main>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -273,7 +273,7 @@ export function AutomationsSkeleton() {
       </div>
 
       {/* Stats bar — 3 KPI tiles */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <KpiCardSkeleton key={i} visual />
         ))}
