@@ -104,6 +104,12 @@ export type CredentialKey =
   | "INSTAGRAM_APP_SECRET"
   | "INSTAGRAM_VERIFY_TOKEN"
   | "INSTAGRAM_ACCOUNT_ID"
+  // Business Login for Instagram (one-click connect): the Instagram App ID and
+  // Instagram App Secret from Instagram > API setup with Instagram login >
+  // Business login settings. Distinct from the Meta App ID/Secret above —
+  // the Meta App Secret signs webhooks, these two only drive the login flow.
+  | "INSTAGRAM_APP_ID"
+  | "INSTAGRAM_LOGIN_SECRET"
   // Outbound HTTP tool
   | "HTTP_ALLOWLIST"
   // Lead webhook
@@ -117,6 +123,11 @@ export type CredentialKey =
   | "GOOGLE_CALENDAR_ID"
   // Google Drive import (Conocimiento → Sincronizar con Drive)
   | "GOOGLE_DRIVE_FOLDER_ID"
+  // Meta app identity for WhatsApp Embedded Signup (one-click connect).
+  // WHATSAPP_APP_SECRET doubles as the Meta App Secret for the code exchange.
+  | "META_APP_ID"
+  | "META_WA_CONFIG_ID"
+  | "WHATSAPP_WABA_ID"
   // OAuth app identity for the Connections page. These are the *app's*
   // credentials, not the operator's account: on a hosted install they come
   // from the environment and nobody types them. A self-hoster registers their
@@ -297,6 +308,24 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
       "Meta WhatsApp Business Cloud API. Get these from developers.facebook.com/apps > WhatsApp > API Setup.",
     fields: [
       {
+        key: "META_APP_ID",
+        label: "Meta App ID",
+        required: false,
+        placeholder: "1234567890123456",
+        help: "developers.facebook.com/apps > Settings > Basic. Required for one-click connect.",
+        pattern: "^[0-9]{10,20}$",
+        title: "Solo números, entre 10 y 20 dígitos",
+      },
+      {
+        key: "META_WA_CONFIG_ID",
+        label: "WhatsApp Configuration ID",
+        required: false,
+        placeholder: "1234567890123456",
+        help: "Meta App > WhatsApp > Embedded Signup configuration. Required for one-click connect.",
+        pattern: "^[0-9]{10,20}$",
+        title: "Solo números, entre 10 y 20 dígitos",
+      },
+      {
         key: "WHATSAPP_ACCESS_TOKEN",
         label: "Access Token",
         type: "password",
@@ -337,6 +366,15 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
         title: "Mínimo 8 caracteres",
       },
       {
+        key: "WHATSAPP_WABA_ID",
+        label: "WhatsApp Business Account ID",
+        required: false,
+        placeholder: "1234567890123456",
+        help: "Auto-filled by one-click connect. Needed only when Meta support asks for it.",
+        pattern: "^[0-9]{10,20}$",
+        title: "Solo números, entre 10 y 20 dígitos",
+      },
+      {
         key: "WHATSAPP_TEMPLATE_NAME",
         label: "Template name (24h+ outbound)",
         required: false,
@@ -362,6 +400,25 @@ export const CREDENTIAL_GROUPS: ReadonlyArray<CredentialGroup> = [
     description:
       "Instagram API with Instagram Login (native, no Facebook Page required). The Instagram account must be a professional Business or Creator account. Get these from developers.facebook.com/apps > Instagram > API Setup.",
     fields: [
+      {
+        key: "INSTAGRAM_APP_ID",
+        label: "Instagram App ID",
+        required: false,
+        placeholder: "1234567890123456",
+        help: "Instagram > API setup with Instagram login > Business login settings. Required for one-click connect — not the Meta App ID.",
+        pattern: "^[0-9]{10,20}$",
+        title: "Solo números, entre 10 y 20 dígitos",
+      },
+      {
+        key: "INSTAGRAM_LOGIN_SECRET",
+        label: "Instagram App Secret",
+        type: "password",
+        required: false,
+        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        help: "Same Business login settings screen. Only drives the login flow — webhooks keep using the App Secret below.",
+        pattern: "^[A-Za-z0-9]+$",
+        title: "Solo letras y números",
+      },
       {
         key: "INSTAGRAM_APP_SECRET",
         label: "App Secret",

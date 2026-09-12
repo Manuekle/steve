@@ -196,8 +196,9 @@ export function Principles() {
   const t = useT();
 
   return (
-    <section className="py-24 sm:py-32">
-      <Shell>
+    <section className="relative isolate overflow-hidden py-24 sm:py-32">
+      <div aria-hidden="true" className="bg-pattern bg-pattern-dots pointer-events-none absolute inset-0 -z-10 opacity-45" />
+      <Shell className="relative">
         <TextReveal
           as="h2"
           blur={6}
@@ -432,7 +433,7 @@ const CONNECTORS: readonly {
   },
   {
     detailKey: "landing.features.automation.connectorVoice",
-    glow: null,
+    glow: "#FF5C35",
     labelKey: "landing.features.automation.connectorVoiceLabel",
     label: "",
     mark: <ElevenLabsMark height={15} />,
@@ -519,12 +520,12 @@ export function AutomationSection() {
             <ol className={styles.process}>
               {(["message", "decision", "response"] as const).map((step, index) => (
                 <li className={styles.processStep} key={step}>
-                  <span aria-hidden="true" className={styles.stepNumber}>0{index + 1}</span>
+                  <span aria-hidden="true" className={styles.stepNumber} data-text={`0${index + 1}`}>0{index + 1}</span>
                   <Reveal delay={index * 60}>
                     <h3 className="text-[15px] font-medium tracking-tight">
                       {t(`landing.features.automation.process.${step}.title`)}
                     </h3>
-                    <p className="mt-2 max-w-[38ch] text-[14px] leading-relaxed text-muted-foreground">
+                    <p className="mt-2 max-w-[38ch] text-[14px] leading-relaxed text-foreground/70">
                       {t(`landing.features.automation.process.${step}.body`)}
                     </p>
                   </Reveal>

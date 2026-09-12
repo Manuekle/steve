@@ -583,6 +583,70 @@ textarea {
   }
 }
 
+/* ── Signup CTA metallic finish ─────────────────────────────────── */
+/* One-off inner lighting for the landing signup CTA (`btn-metal` in
+   `app/landing/_components/signup-dialog.tsx`) — nowhere else. The
+   button keeps its own colour, radius, type and shadows: this only adds
+   a neutral top-light wash over the existing `--btn-primary-sheen` and
+   two restrained inset edges (light above, shade below) around the
+   existing shadow token. White and black at low alpha adapt to whatever
+   the base colour is, so the same recipe reads as metal on the dark
+   primary here and would on any other fill. No animation, no glow. */
+.btn-metal {
+  background-image:
+    linear-gradient(to bottom, oklch(1 0 0 / 0.1) 0%, oklch(1 0 0 / 0) 46%),
+    var(--btn-primary-sheen);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.2),
+    inset 0 -1px 2px oklch(0 0 0 / 0.14),
+    var(--btn-primary-shadow);
+}
+.btn-metal:hover {
+  background-image:
+    linear-gradient(to bottom, oklch(1 0 0 / 0.13) 0%, oklch(1 0 0 / 0) 46%),
+    var(--btn-primary-sheen);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.22),
+    inset 0 -1px 2px oklch(0 0 0 / 0.15),
+    var(--btn-primary-shadow-hover);
+}
+.btn-metal:active {
+  background-image:
+    linear-gradient(to bottom, oklch(0 0 0 / 0.05) 0%, oklch(1 0 0 / 0.02) 100%),
+    var(--btn-primary-sheen-pressed);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.12),
+    inset 0 -1px 1px oklch(0 0 0 / 0.1),
+    var(--btn-primary-shadow-pressed);
+}
+.dark .btn-metal {
+  background-image:
+    linear-gradient(to bottom, oklch(1 0 0 / 0.28) 0%, oklch(1 0 0 / 0) 48%),
+    var(--btn-primary-sheen);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.5),
+    inset 0 -1px 2px oklch(0 0 0 / 0.12),
+    var(--btn-primary-shadow);
+}
+.dark .btn-metal:hover {
+  background-image:
+    linear-gradient(to bottom, oklch(1 0 0 / 0.32) 0%, oklch(1 0 0 / 0) 48%),
+    var(--btn-primary-sheen);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.55),
+    inset 0 -1px 2px oklch(0 0 0 / 0.13),
+    var(--btn-primary-shadow-hover);
+}
+.dark .btn-metal:active {
+  background-image:
+    linear-gradient(to bottom, oklch(0 0 0 / 0.06) 0%, oklch(1 0 0 / 0.04) 100%),
+    var(--btn-primary-sheen-pressed);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.3),
+    inset 0 -1px 1px oklch(0 0 0 / 0.1),
+    var(--btn-primary-shadow-pressed);
+}
+
 /* ── Scrollbars ─────────────────────────────────────────── */
 /* The one surface in the app that ignored the token system: a 15px grey
    trough with a chunky square thumb, drawn by the platform and out of scale
@@ -795,11 +859,13 @@ textarea {
 .bg-pattern-diagonals { background-image: url("/patterns/diagonals.svg"); }
 .bg-pattern-brackets { background-image: url("/patterns/brackets.svg"); }
 .bg-pattern-grid { background-image: url("/patterns/grid.svg"); }
+.bg-pattern-dots { background-image: url("/patterns/dots.svg"); }
 
 .dark .bg-pattern-crosses { background-image: url("/patterns/dark/crosses.svg"); }
 .dark .bg-pattern-diagonals { background-image: url("/patterns/dark/diagonals.svg"); }
 .dark .bg-pattern-brackets { background-image: url("/patterns/dark/brackets.svg"); }
 .dark .bg-pattern-grid { background-image: url("/patterns/dark/grid.svg"); }
+.dark .bg-pattern-dots { background-image: url("/patterns/dark/dots.svg"); }
 
 /* Radial fade — fade the pattern out toward the edges */
 .bg-pattern-fade {
@@ -3117,6 +3183,11 @@ html.lenis body {
   scale: 1 1;
 }
 
+/* The "Más" panel's motion lives in `landing-header.tsx` (Motion variants),
+   not here — and the split is load-bearing: the frosted frame moves but never
+   fades, because Chromium does not sample `backdrop-filter` while opacity
+   interpolates. No keyframes for this panel should come back. */
+
 /* ── Mobile menu ────────────────────────────────────────────────── */
 /* A drawer inside the header rather than a sheet hung below it.
 
@@ -3589,6 +3660,26 @@ html.lenis body {
 
 @media (prefers-reduced-motion: reduce) {
   .t-digit-group .t-digit { animation: none !important; }
+}
+
+/* ── Price sublines ──────────────────────────────────────────────── */
+/* The period label and the annual-equivalence note under a plan figure.
+/ Keyed on the billing cycle so each toggle replays the entrance instead of
+/ swapping the sentence mid-frame — the same blur-and-rise the digits use,
+/ quieter (no overshoot): a caption arriving, not a number landing. */
+@keyframes t-note-in {
+  from { opacity: 0; transform: translateY(4px); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.t-note {
+  display: block;
+  will-change: transform, opacity, filter;
+}
+.t-note.is-animating {
+  animation: t-note-in 450ms var(--lp-ease, ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-note.is-animating { animation: none !important; }
 }
 
 /* ── Capability cards ───────────────────────────────────────────── */
@@ -5097,6 +5188,7 @@ html.lenis body {
     );
 }
 
+
 .lp-brand-glow::before {
   content: "";
   position: absolute;
@@ -5108,6 +5200,25 @@ html.lenis body {
     oklch(from var(--lp-brand) l c h / calc(0.2 * var(--lp-brand-i) * var(--lp-brand-k, 1))) 0%,
     transparent 68%
   );
+}
+
+.lp-brand-glow.tiktok-glow::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -85%;
+  pointer-events: none;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    oklch(from #fe2c55 l c h / calc(0.2 * var(--lp-brand-i) * var(--lp-brand-k, 1))) 0%,
+    transparent 68%
+  );
+}
+
+/* TikTok's dark base path needs to invert with the page theme. The cyan and
+   red layers stay brand-colored; only the central black silhouette changes. */
+.dark .lp-brand-glow.tiktok-glow svg g > g:last-child path {
+  fill: #fff;
 }
 
 /* ── Cursor light, removed ───────────────────────────────────────────

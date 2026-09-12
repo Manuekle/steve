@@ -25,7 +25,7 @@ export const CRM_COLUMNS = ["open", "waiting_human", "followup_due", "closed"] a
 
 export type GroupedContacts = Record<ContactStatus, Contact[]>;
 
-const q = (px: number) => `${px / 1448 * 100}cqw`;
+export const q = (px: number) => `${px / 1448 * 100}cqw`;
 const EASE_OUT = [0.19, 1, 0.22, 1] as const;
 const EASE_SLOT = [0.23, 1, 0.32, 1] as const;
 const EASE_LAND = [0.25, 0.7, 0.2, 1] as const;
@@ -55,10 +55,10 @@ export const STATUS_THEME: Record<ContactStatus, StatusTheme> = {
     icon: NotificationBubbleIcon,
   },
   followup_due: {
-    dot: "bg-[var(--status-pending-fg)]",
-    chip: "text-[var(--status-pending-fg)]",
-    bar: "bg-[var(--status-pending-fg)]",
-    tone: "var(--status-pending-fg)",
+    dot: "bg-[var(--status-submitted-fg)]",
+    chip: "text-[var(--status-submitted-fg)]",
+    bar: "bg-[var(--status-submitted-fg)]",
+    tone: "var(--status-submitted-fg)",
     icon: Clock01Icon,
   },
   closed: {
@@ -439,7 +439,7 @@ export function CrmBoard({
             const count = cards.length + (lifted && drop?.status === status ? 1 : 0);
             return (
               <section key={status} ref={(el) => { if (el) zones.current.set(status, el); else zones.current.delete(status); }}
-                className="kpi-card min-w-0 bg-card" style={{ borderRadius: q(18), padding: q(8), boxShadow: "var(--shadow-soft)" }}>
+                className="kpi-card min-w-0 border border-border bg-card" style={{ borderRadius: q(18), padding: q(8), boxShadow: "var(--shadow-soft)" }}>
                 <header className="kpi-header flex items-center" style={{ minHeight: q(44), height: q(44), gap: q(8), paddingInline: q(8), paddingBlock: 0 }}>
                   <HugeiconsIcon icon={theme.icon} size={q(14)} strokeWidth={1.75} style={{ color: theme.tone, flexShrink: 0 }} />
                   <div className="min-w-0 flex-1">
@@ -524,9 +524,9 @@ const ContactCard = memo(function ContactCard({
       aria-label={contact.name}
       aria-keyshortcuts={overlay ? undefined : "Alt+ArrowUp Alt+ArrowDown"}
       className={cn(
-        "group relative grid min-w-0 touch-none select-none items-center bg-background/75 text-left text-card-foreground transition-[border-color] duration-200",
+        "group relative grid min-w-0 touch-none select-none items-center bg-background/75 text-left text-card-foreground",
         "focus-visible:outline-solid focus-visible:outline-[color:var(--ring)]",
-        !overlay && "cursor-grab hover:border-border",
+        !overlay && "cursor-grab",
       )}
       style={{
         height: q(list ? 56 : 148), paddingInline: q(16), paddingBlock: list ? 0 : q(12),

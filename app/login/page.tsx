@@ -44,10 +44,10 @@ function LoginForm() {
         : googleError
           ? t("auth.errorGoogleFailed")
           : null;
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>(() => (params.get("mode") === "signup" ? "signup" : "signin"));
   const [needsInvite, setNeedsInvite] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => params.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

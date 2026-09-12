@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { Halo, LightBar } from "@/app/landing/_components/lighting";
 import { DigitPop, Disclosure, Reveal, Shell } from "@/app/landing/_components/primitives";
-import { formatUSD, monthlyEquivalent, priceFor, type BillingPeriod } from "@/lib/plans";
+import { formatUSD, monthlyEquivalent, priceFor, PLAN_BY_PRICING_KEY, type BillingPeriod } from "@/lib/plans";
 import { SalesContactDialog } from "@/app/landing/_components/sales-contact-dialog";
 import { MarketingShell, PageHeader } from "@/app/landing/_components/marketing-shell";
 import styles from "@/app/landing/_components/editorial.module.css";
@@ -40,6 +40,7 @@ type Plan = {
   readonly forKey: string;
   readonly nameKey: string;
   readonly price: Price;
+  readonly segmentKey: string;
 };
 
 /**
@@ -54,6 +55,7 @@ const PLANS: readonly Plan[] = [
   {
     nameKey: "pricing.pro.name",
     forKey: "pricing.pro.for",
+    segmentKey: "pricing.segment.small",
     price: { amountKey: "", periodKey: "pricing.perMonth" },
     emphasis: true,
     cta: { href: "/login", labelKey: "pricing.cta.subscribe" },
@@ -72,6 +74,7 @@ const PLANS: readonly Plan[] = [
   {
     nameKey: "pricing.managed.name",
     forKey: "pricing.managed.for",
+    segmentKey: "pricing.segment.medium",
     price: { amountKey: "", periodKey: "pricing.perMonth" },
     cta: { href: "/login", labelKey: "pricing.cta.subscribe" },
     ctaLabelKey: "pricing.cta.subscribe",
@@ -89,6 +92,7 @@ const PLANS: readonly Plan[] = [
   {
     nameKey: "pricing.enterprise.name",
     forKey: "pricing.enterprise.for",
+    segmentKey: "pricing.segment.large",
     price: { amountKey: "", periodKey: "" },
     cta: null,
     ctaLabelKey: "pricing.cta.contactSales",
@@ -162,12 +166,20 @@ function PlanPrice({
           text={formatUSD(billed.amount)}
         />
       </p>
-      <p className="mt-1 text-[13px] text-muted-foreground">{t(billed.periodKey)}</p>
-      {perMonth !== null ? (
-        <p className="mt-1 text-[12px] text-muted-foreground">
-          {t("pricing.annualNote", { amount: formatUSD(perMonth) })}
+      {/* Altura reservada para las dos líneas (período + nota anual): en anual
+          Pro/Managed ganan la segunda línea y Enterprise no — sin el min-h las
+          listas de features arrancan a distinta altura y los CTAs se
+          descuadran entre tarjetas. */}
+      <div className="mt-1 min-h-10">
+        <p key={billed.periodKey} className="t-note is-animating text-[13px] text-muted-foreground">
+          {t(billed.periodKey)}
         </p>
-      ) : null}
+        {perMonth !== null ? (
+          <p key={billing} className="t-note is-animating mt-0.5 text-[12px] text-muted-foreground">
+            {t("pricing.annualNote", { amount: formatUSD(perMonth) })}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -233,9 +245,14 @@ export function Pricing() {
         title={t("pricing.title")}
         titleClassName="font-cooper"
         lede={t("pricing.lede")}
+        actions={
+          <Button asChild size="lg" className="btn-metal">
+            <Link href="/simulator">{t("pricing.sim.open")}</Link>
+          </Button>
+        }
       />
 
-      <section className={`${styles.surface} ${styles.publicBody} py-20 sm:py-24`}>
+      <section className={`${styles.surface} ${styles.publicBody} pt-14 pb-20 sm:pt-16 sm:pb-24`}>
         <Grain />
         <Shell className={styles.publicBodyContent}>
           {/* `mb-14`, not `mb-8`. Same reason as the landing band: the emphasised
@@ -261,12 +278,16 @@ export function Pricing() {
             />
           </Reveal>
 
-          <div className="grid gap-4 lg:grid-cols-3">
-            {PLANS.map((plan, index) => (
+          <div className="grid scroll-mt-24 gap-4 lg:grid-cols-3" id="planes">
+            {PLANS.map((plan, index) => {
+              const planId = PLAN_BY_PRICING_KEY[plan.nameKey];
+              return (
               <Reveal key={plan.nameKey} delay={index * 70} className="h-full">
+                <div id={`plan-${planId}`} className="h-full scroll-mt-24">
                 <PlanShell emphasis={plan.emphasis}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h2 className="font-medium text-lg font-cooper tracking-tight">{t(plan.nameKey)}</h2>
+                    <Badge variant="outline">{t(plan.segmentKey)}</Badge>
                     {plan.emphasis ? <Badge>{t("pricing.mostPopular")}</Badge> : null}
                   </div>
                   <p className="mt-2 min-h-[3rem] max-w-[34ch] text-[14px] leading-relaxed text-muted-foreground">
@@ -308,29 +329,32 @@ export function Pricing() {
                     )}
                   </div>
                 </PlanShell>
+                </div>
               </Reveal>
-            ))}
+              );
+            })}
           </div>
 
           {/* The cost that is not on any of the three cards, said plainly and
               before anyone has to ask. A pricing page that hides the running
               cost of the model is the one thing that would make the rest of
-              this page untrustworthy. */}
+              this page untrustworthy. Side by side with the license note: two
+              full-width bands stacked read as fine print; a pair of cards
+              reads as reference. */}
           <Reveal delay={140}>
-            <div className="lp-cap lp-cap-still mt-10 flex-col p-6 sm:p-7">
-              <h2 className="font-medium text-base tracking-tight">{t("pricing.alwaysPay.title")}</h2>
-              <p className="mt-2 max-w-[70ch] text-[15px] leading-relaxed text-muted-foreground">
-                {t("pricing.alwaysPay.body")}
-              </p>
-            </div>
-          </Reveal>
-
-          <Reveal delay={150}>
-            <div className="lp-cap lp-cap-still mt-4 flex-col p-6 sm:p-7">
-              <h2 className="font-medium text-base tracking-tight">{t("pricing.enterpriseTerms.title")}</h2>
-              <p className="mt-2 max-w-[70ch] text-[15px] leading-relaxed text-muted-foreground">
-                {t("pricing.enterpriseTerms.body")}
-              </p>
+            <div className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-2">
+              <div>
+                <h2 className="font-medium text-base tracking-tight">{t("pricing.alwaysPay.title")}</h2>
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+                  {t("pricing.alwaysPay.body")}
+                </p>
+              </div>
+              <div>
+                <h2 className="font-medium text-base tracking-tight">{t("pricing.enterpriseTerms.title")}</h2>
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+                  {t("pricing.enterpriseTerms.body")}
+                </p>
+              </div>
             </div>
           </Reveal>
 

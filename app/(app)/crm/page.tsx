@@ -1,20 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Add01Icon, Cancel01Icon, Download01Icon, DragDropIcon, RefreshIcon, SearchIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Cancel01Icon, Clock01Icon, Contact01Icon, Download01Icon, DragDropIcon, Loading03Icon, SearchIcon, Target01Icon, UserAdd01Icon } from "@hugeicons/core-free-icons";
 import { PageContainer } from "../../_components/page-container";
 import { Card, CardBody, CardHeader, CardSeparator, CardTitle, CardDescription } from "../../_components/dashboard-card";
+import { KpiBars, KpiCard, KpiSparkline } from "../../_components/kpi-card";
 import { AnimatedNumber, ChartPeriod, ChartSelector, StackedBars, TimeSeries } from "../../_components/chart";
 import chartStyles from "../../_components/charts/tiles.module.css";
 import { ContactDialog } from "../../_components/contact-dialog";
-import { CrmBoard, CRM_COLUMNS, STATUS_THEME, type GroupedContacts } from "./_components/crm-board";
+import { CrmBoard, CRM_COLUMNS, STATUS_THEME, q as crmQ, type GroupedContacts } from "./_components/crm-board";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Skeleton, SkeletonAvatar, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { SlidingTabs } from "@/components/ai-elements/sliding-tabs";
 import { Button } from "@/components/ui/button";
+import { ActionSwapText } from "@/components/motion/action-swap";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
@@ -132,7 +134,9 @@ export default function CrmPage() {
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
-    await load();
+    // El GET local resuelve en milisegundos y el spin no llegaba a verse:
+    // duración mínima para que cada clic reproduzca la animación completa.
+    await Promise.all([load(), new Promise((resolve) => setTimeout(resolve, 800))]);
     setIsRefreshing(false);
   }, [load]);
 
@@ -309,13 +313,28 @@ export default function CrmPage() {
                 {t("leads.exportCsv")}
               </Button>
               <Button variant="outline" onClick={() => void refresh()} disabled={isRefreshing || dragActive}>
-                {t("crm.contactCount", { count: total })}
-                <HugeiconsIcon
-                  icon={RefreshIcon}
-                  size={16}
-                  strokeWidth={1.75}
-                  className={cn(isRefreshing && "animate-spin")}
-                />
+                <ActionSwapText value={isRefreshing ? "refreshing" : "idle"}>
+                  {isRefreshing ? t("crm.refreshing") : t("crm.contactCount", { count: total })}
+                </ActionSwapText>
+                <AnimatePresence initial={false}>
+                  {isRefreshing ? (
+                    <motion.span
+                      key="refresh-spinner"
+                      initial={{ opacity: 0, scale: 0.5, width: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: "auto" }}
+                      exit={{ opacity: 0, scale: 0.5, width: 0 }}
+                      transition={{ duration: reduced ? 0 : 0.2, ease: "easeInOut" }}
+                      className="inline-flex overflow-hidden"
+                    >
+                      <HugeiconsIcon
+                        icon={Loading03Icon}
+                        size={16}
+                        strokeWidth={1.75}
+                        className="animate-spin"
+                      />
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
               </Button>
               <Button onClick={openCreate} disabled={dragActive}>
                 {t("crm.addContact")}
@@ -355,6 +374,19 @@ export default function CrmPage() {
           ) : null}
 
           <div className="mb-4 flex flex-wrap items-center gap-3">
+            <fieldset disabled={dragActive} aria-label={locale === "es" ? "Vista del CRM" : "CRM view"} className="min-w-0 shrink-0 disabled:opacity-50">
+              <SlidingTabs
+                tabs={[
+                  { id: "kanban", label: "Kanban" },
+                  { id: "list", label: locale === "es" ? "Lista" : "List" },
+                  { id: "analytics", label: locale === "es" ? "Estadísticas" : "Analytics" },
+                ]}
+                value={view}
+                onValueChange={(mode) => {
+                  if (!dragActive && (mode === "kanban" || mode === "list" || mode === "analytics")) setView(mode);
+                }}
+              />
+            </fieldset>
             <div className="relative min-w-[200px] flex-1">
               <HugeiconsIcon
                 icon={SearchIcon}
@@ -406,20 +438,9 @@ export default function CrmPage() {
             </p> : null}
           </div>
 
-          <fieldset disabled={dragActive} aria-label={locale === "es" ? "Vista del CRM" : "CRM view"} className="mb-4 flex min-w-0 justify-center disabled:opacity-50">
-            <SlidingTabs
-              tabs={[
-                { id: "kanban", label: "Kanban" },
-                { id: "list", label: locale === "es" ? "Lista" : "List" },
-                { id: "analytics", label: locale === "es" ? "Estadísticas" : "Analytics" },
-              ]}
-              value={view}
-              onValueChange={(mode) => {
-                if (!dragActive && (mode === "kanban" || mode === "list" || mode === "analytics")) setView(mode);
-              }}
-            />
-          </fieldset>
-
+          {/* Mismo inset que el scroller del board (q(8)): los tres tabs
+              arrancan en el mismo px y no hay salto al cambiar de vista. */}
+          <div style={{ containerType: "inline-size" }}>
           {view !== "analytics" ? <CrmBoard
             view={view}
             grouped={grouped}
@@ -436,7 +457,35 @@ export default function CrmPage() {
           ) : null}
 
           {view === "analytics" ? (
-            <section aria-label={locale === "es" ? "Estadísticas" : "Analytics"}>
+            <section aria-label={locale === "es" ? "Estadísticas" : "Analytics"} style={{ padding: crmQ(8) }}>
+              <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <KpiCard
+                  icon={Contact01Icon}
+                  label={t("leads.kpiTotal")}
+                  value={total}
+                  sub={t("leads.counter", { shown: total, total: contacts.length })}
+                />
+                <KpiCard
+                  icon={Target01Icon}
+                  label={t("leads.kpiCloseRate")}
+                  value={total > 0 ? `${Math.round((grouped.closed.length / total) * 100)}%` : "—"}
+                  sub={t("leads.kpiCloseRateSub", { closed: grouped.closed.length, total })}
+                  visual={<KpiBars ratio={total > 0 ? grouped.closed.length / total : 0} tone="positive" />}
+                />
+                <KpiCard
+                  icon={Clock01Icon}
+                  label={t("leads.kpiPending")}
+                  value={grouped.waiting_human.length + grouped.followup_due.length}
+                  sub={t("leads.kpiPendingSub", { waiting: grouped.waiting_human.length, followup: grouped.followup_due.length })}
+                />
+                <KpiCard
+                  icon={UserAdd01Icon}
+                  label={t("leads.kpiNew")}
+                  value={leadsPerDay.reduce((sum, day) => sum + day.value, 0)}
+                  sub={t("leads.kpiNewSub", { days: trendDays })}
+                  visual={<KpiSparkline points={leadsPerDay.map((day) => day.value)} />}
+                />
+              </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
@@ -492,6 +541,7 @@ export default function CrmPage() {
               </div>
             </section>
           ) : null}
+          </div>
         </div>
       </Skeleton>
 

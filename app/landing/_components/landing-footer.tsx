@@ -11,7 +11,7 @@ import { useSession } from "@/lib/auth/use-session";
 import { useI18n, useT } from "@/lib/i18n/provider";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { PrivacyPreferencesButton } from "@/components/privacy-consent";
-import { InstagramMark, MetaMark, WhatsAppMark, YCombinatorMark } from "./brand-marks";
+import { InstagramMark, LinkedInMark, MetaMark, TikTokMark, WhatsAppMark, YCombinatorMark, YouTubeMark } from "./brand-marks";
 import { LINKS, PAGES, Wordmark } from "./landing-header";
 import { BrandGlow, Halo, LightBar } from "./lighting";
 import { Shell } from "./primitives";
@@ -35,7 +35,16 @@ import { Grain } from "./grain";
  * column at the bottom cannot disagree about what this page contains.
  */
 const RESOURCES = [
-  ...PAGES,
+  ...PAGES.filter((page) => page.href !== "/team"),
+] as const;
+
+const COMPANY = PAGES.filter((page) => page.href === "/team");
+
+const SOCIAL_LINKS = [
+  { colour: "#FC01D8", className: undefined, href: "#", label: "Instagram", mark: InstagramMark },
+  { colour: "#0A66C2", className: undefined, href: "#", label: "LinkedIn", mark: LinkedInMark },
+  { colour: "#ff0000", className: undefined, href: "#", label: "YouTube", mark: YouTubeMark },
+  { colour: "#25F4EE", className: "tiktok-glow", href: "#", label: "TikTok", mark: TikTokMark },
 ] as const;
 
 /**
@@ -340,7 +349,7 @@ export function LandingFooter({ editorial = false }: { readonly editorial?: bool
           {/* Wider than a link column and deliberately so: it carries a
               paragraph, and a 24ch measure next to two lists of one-word links
               is a column of confetti. */}
-          <div className="lg:col-span-5 lg:pr-12">
+          <div className="lg:col-span-4 lg:pr-8">
             <Wordmark />
             <p className="mt-4 max-w-[30ch] text-[13px] leading-relaxed text-muted-foreground">
               {t("landing.footer.tagline")}
@@ -352,20 +361,33 @@ export function LandingFooter({ editorial = false }: { readonly editorial?: bool
             </p>
 
             <div className="mt-6 flex items-center gap-2.5 text-[12px] text-muted-foreground">
-              <YCombinatorMark size={22} />
+              <BrandGlow colour="#FB651E"><YCombinatorMark size={22} /></BrandGlow>
               <span>{t("landing.footer.ycApplication")}</span>
+            </div>
+
+            <div className="mt-8">
+              <p className="lp-eyebrow">{t("landing.footer.socialLabel")}</p>
+              <nav aria-label={t("landing.footer.socialLabel")} className="mt-3 flex items-center gap-3">
+                {SOCIAL_LINKS.map(({ colour, className, href, label, mark: Mark }) => (
+                  <a
+                    aria-label={label}
+                    className="lp-focus flex size-6 items-center justify-center transition-transform hover:-translate-y-0.5"
+                    href={href}
+                    key={label}
+                    title={label}
+                  >
+                    <BrandGlow className={className} colour={colour} intensity={className === "tiktok-glow" ? 0.42 : 1}><Mark size={16} /></BrandGlow>
+                  </a>
+                ))}
+              </nav>
             </div>
           </div>
 
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-2">
             <h3 className="font-medium text-[13px] text-foreground">
               {t("landing.footer.colSections")}
             </h3>
-            {/* Two columns of anchors rather than one long one: seven links in
-                a single stack is taller than the paragraph beside it, and a
-                footer column that outruns the brand block is a list wearing a
-                footer's clothes. */}
-            <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
+            <ul className="mt-4 space-y-2.5">
               {LINKS.map((link) => (
                 <li key={link.id}>
                   <a
@@ -379,10 +401,18 @@ export function LandingFooter({ editorial = false }: { readonly editorial?: bool
             </ul>
           </div>
 
-          <div className="lg:col-span-3">
-            <h3 className="font-medium text-[13px] text-foreground">
-              {t("landing.footer.colResources")}
-            </h3>
+          <div className="lg:col-span-2">
+            <h3 className="font-medium text-[13px] text-foreground">{t("landing.footer.colLegal")}</h3>
+            <ul className="mt-4 space-y-2.5">
+              {LEGAL_LINKS.map((link) => <li key={link.href}>
+                <Link className="lp-focus text-[13px] text-muted-foreground hover:text-foreground" href={link.href}>{link[locale]}</Link>
+              </li>)}
+              <li><PrivacyPreferencesButton className="lp-focus min-h-11 text-left text-[13px] text-muted-foreground hover:text-foreground" /></li>
+            </ul>
+          </div>
+
+          <div className="lg:col-span-2">
+            <h3 className="font-medium text-[13px] text-foreground">{t("landing.footer.colResources")}</h3>
             <ul className="mt-4 space-y-2.5">
               {RESOURCES.map((link) => (
                 <li key={link.href}>
@@ -394,10 +424,22 @@ export function LandingFooter({ editorial = false }: { readonly editorial?: bool
                   </Link>
                 </li>
               ))}
-              {LEGAL_LINKS.map((link) => <li key={link.href}>
-                <Link className="lp-focus text-[13px] text-muted-foreground hover:text-foreground" href={link.href}>{link[locale]}</Link>
-              </li>)}
-              <li><PrivacyPreferencesButton className="lp-focus min-h-11 text-left text-[13px] text-muted-foreground hover:text-foreground" /></li>
+            </ul>
+          </div>
+
+          <div className="lg:col-span-2">
+            <h3 className="font-medium text-[13px] text-foreground">{t("landing.footer.colCompany")}</h3>
+            <ul className="mt-4 space-y-2.5">
+              {COMPANY.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    className="lp-focus text-[13px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
+                    href={link.href}
+                  >
+                    {t(link.labelKey)}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

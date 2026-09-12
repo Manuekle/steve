@@ -290,8 +290,9 @@ export function CapabilitiesSection() {
   const order = useShuffledOrder(grid, held);
 
   return (
-    <section id="capacidades" className="scroll-mt-20 border-border border-t py-24 sm:py-32">
-      <Shell>
+    <section id="capacidades" className="relative isolate overflow-hidden scroll-mt-20 border-border border-t py-24 sm:py-32">
+      <div aria-hidden="true" className="bg-pattern bg-pattern-dots pointer-events-none absolute inset-0 -z-10 opacity-45" />
+      <Shell className="relative">
         <SectionIntro
           figure="Fig 04"
           title={[t("landing.capabilities.titleLine1"), t("landing.capabilities.titleLine2")]}

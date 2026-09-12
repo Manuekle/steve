@@ -77,6 +77,7 @@ const PUBLIC_PATHS = [
   "/",
   "/landing",
   "/pricing",
+  "/simulator",
   "/guide",
   "/terms",
   "/privacy",

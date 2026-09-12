@@ -14,6 +14,7 @@ import {
 import { PageContainer } from "../../../_components/page-container";
 import { Card, CardHeader, CardTitle, CardDescription, CardSeparator, CardBody } from "../../../_components/dashboard-card";
 import { Button } from "@/components/ui/button";
+import { StripeMark } from "@/app/landing/_components/brand-marks";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton, SkeletonBar } from "@/components/ai-elements/skeleton";
 import { useI18n } from "@/lib/i18n/provider";
@@ -214,23 +215,16 @@ export default function BillingPage() {
               {billing?.hasPaymentMethod ? t("billing.paymentOnFile") : t("billing.paymentEmpty")}
             </p>
             <PaymentMethodDialog>
-              {/* Same recipe as the "Cerrar sesión" button on /account —
-                  bordered surface with shadow-inset, tinted text — in the
-                  billing violet. `--billing` is a token like `--destructive`,
-                  so the colour is right in both themes without a `dark:`
-                  pair on the element. */}
-              <button
-                type="button"
-                className="mt-3 inline-flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-billing shadow-[var(--shadow-inset)] transition-all duration-150 hover:bg-billing/10 hover:text-billing"
+              {/* Same recipe as the Connect buttons on /numbers — outline
+                  surface with a soft brand tint at rest, stronger on hover.
+                  Stripe violet here, with the Stripe brand mark. */}
+              <Button
+                variant="outline"
+                className="mt-3 border-[#635BFF]/50 bg-[#635BFF]/10 text-[#4338CA] hover:border-[#635BFF]/70 hover:bg-[#635BFF]/20 hover:text-[#4338CA] dark:text-[#A5A3FF] dark:hover:text-[#A5A3FF]"
               >
-                <HugeiconsIcon
-                  className="shrink-0"
-                  icon={StripeIcon}
-                  size={14}
-                  strokeWidth={1.75}
-                />
+                <StripeMark size={16} />
                 {t("billing.paymentAdd")}
-              </button>
+              </Button>
             </PaymentMethodDialog>
           </CardBody>
         </Card>

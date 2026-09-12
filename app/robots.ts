@@ -20,7 +20,7 @@ export default function robots(): MetadataRoute.Robots {
       // `/landing` internally), and a bare `/` here would re-allow the whole
       // app the `disallow` below exists to keep out. The anchored form matches
       // the root and nothing under it.
-      allow: ["/$", "/pricing$", "/guide$", "/terms$", "/privacy$", "/legal$", "/privacy-rights$", "/cookies$",
+      allow: ["/$", "/pricing$", "/simulator$", "/guide$", "/terms$", "/privacy$", "/legal$", "/privacy-rights$", "/cookies$",
         "/_next/static/", "/_next/image", "/fonts/", "/logos/", "/patterns/", "/opengraph-image", "/icon.svg", "/apple-icon", "/favicon.ico"],
       disallow: "/",
     },

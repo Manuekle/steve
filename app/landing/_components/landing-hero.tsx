@@ -10,9 +10,11 @@ import { useSession } from "@/lib/auth/use-session";
 import { useT } from "@/lib/i18n/provider";
 import { ChatScreen } from "./app-screens";
 import { YCombinatorMark } from "./brand-marks";
+import { BrandGlow } from "./lighting";
 import styles from "./editorial.module.css";
 import { Grain } from "./grain";
 import { Reveal, ScreenFrame, Shell } from "./primitives";
+import { SignupDialog } from "./signup-dialog";
 
 /**
  * The first screen: one claim, one screenshot, two ways in.
@@ -67,7 +69,7 @@ export function LandingHero() {
 
         <Reveal delay={80}>
           <div className="mt-5 inline-flex max-w-full items-center gap-2.5 text-[12px] text-muted-foreground">
-            <YCombinatorMark size={22} />
+            <BrandGlow colour="#FB651E"><YCombinatorMark size={22} /></BrandGlow>
             <span>{t("landing.hero.ycApplication")}</span>
           </div>
         </Reveal>
@@ -98,15 +100,17 @@ export function LandingHero() {
             {/* Signed in, the pair is "open the app" and nothing else to
                 explain; signed out, the primary is the door and the secondary
                 is the pricing — the only other page a visitor can reach. */}
-            <Button asChild size="lg">
-              <Link href={session.signedIn ? "/dashboard" : "/login"} prefetch={!session.signedIn}>
-                {session.signedIn
-                  ? t("landing.cta.openApp")
-                  : session.claimed
-                    ? t("landing.cta.signIn")
-                    : t("landing.cta.start")}
-              </Link>
-            </Button>
+            {session.signedIn ? (
+              <Button asChild size="lg">
+                <Link href="/dashboard">{t("landing.cta.openApp")}</Link>
+              </Button>
+            ) : (
+              <SignupDialog autoOpenAfterMs={5000}>
+                <Button size="lg">
+                  {session.claimed ? t("landing.cta.signIn") : t("landing.cta.start")}
+                </Button>
+              </SignupDialog>
+            )}
             <Button asChild size="lg" variant="outline">
               <Link href={session.signedIn ? "/settings" : "/pricing"} prefetch={!session.signedIn}>
                 {session.signedIn ? t("landing.cta.settings") : t("landing.cta.pricing")}

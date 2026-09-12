@@ -32,6 +32,9 @@ import { formatE164 } from "@/lib/phone-format";
 import type { Agent, PhoneNumber } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { NumberDialog, type NumberDraft } from "./_components/number-dialog";
+import { WhatsAppConnect } from "./_components/whatsapp-connect";
+import { InstagramConnect } from "./_components/instagram-connect";
+import { ConnectButton } from "./_components/connect-button";
 
 // The directory of numbers, and who answers each one.
 //
@@ -91,6 +94,8 @@ export default function NumbersPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [igConnectOpen, setIgConnectOpen] = useState(false);
   const [editing, setEditing] = useState<PhoneNumber | null>(null);
   const [error, setError] = useState<UiError | null>(null);
 
@@ -223,16 +228,34 @@ export default function NumbersPage() {
               {t("numbers.subtitle")}
             </p>
           </div>
-          <Button
-            className="w-full sm:w-auto"
-            onClick={() => {
-              setEditing(null);
-              setDialogOpen(true);
-            }}
-          >
-            <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
-            {t("numbers.add")}
-          </Button>
+          {numbers.length > 0 ? (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <ConnectButton
+                tone="whatsapp"
+                className="w-full sm:w-auto"
+                onClick={() => setConnectOpen(true)}
+              >
+                {t("numbers.metaConnect")}
+              </ConnectButton>
+              <ConnectButton
+                tone="instagram"
+                className="w-full sm:w-auto"
+                onClick={() => setIgConnectOpen(true)}
+              >
+                {t("numbers.igConnect")}
+              </ConnectButton>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setEditing(null);
+                  setDialogOpen(true);
+                }}
+              >
+                <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
+                {t("numbers.add")}
+              </Button>
+            </div>
+          ) : null}
         </header>
 
         {error ? <ErrorBanner error={error} onRetry={() => void load()} /> : null}
@@ -282,16 +305,24 @@ export default function NumbersPage() {
             <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
               {t("numbers.emptyHint")}
             </p>
-            <Button
-              className="mt-4"
+            <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
+              <ConnectButton tone="whatsapp" onClick={() => setConnectOpen(true)}>
+                {t("numbers.metaConnect")}
+              </ConnectButton>
+              <ConnectButton tone="instagram" onClick={() => setIgConnectOpen(true)}>
+                {t("numbers.igConnect")}
+              </ConnectButton>
+            </div>
+            <button
+              type="button"
               onClick={() => {
                 setEditing(null);
                 setDialogOpen(true);
               }}
+              className="mx-auto mt-3 block text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.75} />
-              {t("numbers.addFirst")}
-            </Button>
+              {t("numbers.addManually")}
+            </button>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -405,6 +436,16 @@ export default function NumbersPage() {
         agents={agents}
         onSave={save}
         saving={saving}
+      />
+      <WhatsAppConnect
+        open={connectOpen}
+        onOpenChange={setConnectOpen}
+        onConnected={() => void load()}
+      />
+      <InstagramConnect
+        open={igConnectOpen}
+        onOpenChange={setIgConnectOpen}
+        onConnected={() => void load()}
       />
       {confirmDialog}
     </PageContainer>

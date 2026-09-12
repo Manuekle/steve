@@ -99,11 +99,14 @@ export function PageHeader({
   lede,
   title,
   titleClassName = "",
+  actions,
 }: {
   readonly eyebrow: string;
   readonly lede: ReactNode;
   readonly title: string;
   readonly titleClassName?: string;
+  /** Botones bajo el lede — ej. el CTA al simulador en `/pricing`. */
+  readonly actions?: ReactNode;
 }) {
   return (
     <header className={`${styles.surface} ${styles.publicHeader} relative overflow-hidden border-border border-b pt-32 pb-16 sm:pt-40 sm:pb-20`}>
@@ -126,6 +129,7 @@ export function PageHeader({
           {title}
         </h1>
         <p className="mt-6 max-w-[58ch] text-[17px] leading-relaxed tracking-[-0.03em] text-muted-foreground text-wrap-balance">{lede}</p>
+        {actions ? <div className="mt-8 flex flex-wrap items-center gap-3">{actions}</div> : null}
       </div>
     </header>
   );

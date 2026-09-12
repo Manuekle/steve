@@ -1,9 +1,26 @@
 "use client";
 
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@/components/icons/icon";
+import {
+  AiImagineIcon,
+  BookOpen01Icon,
+  Calculator01Icon,
+  Cancel01Icon,
+  ChevronDownIcon,
+  HelpCircleIcon,
+  InboxIcon,
+  Layers01Icon,
+  Menu01Icon,
+  MetaIcon,
+  ServerStack01Icon,
+  Tag01Icon,
+  UserGroupIcon,
+  ZapIcon,
+} from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SenkaMark } from "@/components/icons/senka-mark";
 import { useSmoothScroll } from "@/components/motion/smooth-scroll";
@@ -13,6 +30,7 @@ import { useActiveSection, useStuckHeader } from "@/lib/hooks/use-reveal";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import { Shell } from "./primitives";
+import { SignupDialog } from "./signup-dialog";
 
 /**
  * Every section on the landing that carries an `id`, in document order. The
@@ -22,13 +40,13 @@ import { Shell } from "./primitives";
  * of the same page.
  */
 export const LINKS = [
-  { id: "bandeja", labelKey: "nav.inbox" },
-  { id: "automatizaciones", labelKey: "nav.automations" },
-  { id: "agentes", labelKey: "landing.header.linkAgents" },
-  { id: "capacidades", labelKey: "landing.header.linkCapabilities" },
-  { id: "ads", labelKey: "nav.ads" },
-  { id: "autoalojado", labelKey: "landing.header.linkSelfHosted" },
-  { id: "preguntas", labelKey: "landing.header.linkFaq" },
+  { id: "bandeja", labelKey: "nav.inbox", icon: InboxIcon, descKey: "landing.header.descInbox" },
+  { id: "automatizaciones", labelKey: "nav.automations", icon: ZapIcon, descKey: "landing.header.descAutomations" },
+  { id: "agentes", labelKey: "landing.header.linkAgents", icon: AiImagineIcon, descKey: "landing.header.descAgents" },
+  { id: "capacidades", labelKey: "landing.header.linkCapabilities", icon: Layers01Icon, descKey: "landing.header.descCapabilities" },
+  { id: "ads", labelKey: "nav.ads", icon: MetaIcon, descKey: "landing.header.descAds" },
+  { id: "autoalojado", labelKey: "landing.header.linkSelfHosted", icon: ServerStack01Icon, descKey: "landing.header.descSelfHosted" },
+  { id: "preguntas", labelKey: "landing.header.linkFaq", icon: HelpCircleIcon, descKey: "landing.header.descFaq" },
 ] as const;
 
 /** Hoisted so the observer's dependency array is stable across renders. */
@@ -36,9 +54,26 @@ const SECTION_IDS = LINKS.map((link) => link.id);
 
 /** Marketing pages of their own, reached from anywhere. */
 export const PAGES = [
-  { href: "/pricing", labelKey: "landing.header.linkPricing" },
-  { href: "/guide", labelKey: "landing.header.linkGuide" },
+  { href: "/pricing", labelKey: "landing.header.linkPricing", icon: Tag01Icon, descKey: "landing.header.descPricing" },
+  { href: "/simulator", labelKey: "landing.header.linkSimulator", icon: Calculator01Icon, descKey: "landing.header.descSimulator" },
+  { href: "/guide", labelKey: "landing.header.linkGuide", icon: BookOpen01Icon, descKey: "landing.header.descGuide" },
+  { href: "/team", labelKey: "landing.header.linkTeam", icon: UserGroupIcon, descKey: "landing.header.descTeam" },
 ] as const;
+
+/**
+ * What the desktop bar shows flat. Eleven links never fitted the 1120px rail —
+ * the centred nav overlapped the wordmark on one side and the CTA on the other
+ * — so the bar carries the four conversion-critical links and everything else
+ * lives under "Más". Derived from `LINKS`/`PAGES` rather than restated, so a
+ * section added above cannot end up anchorable but unreachable from desktop.
+ */
+const PRIMARY_SECTION_IDS: ReadonlySet<string> = new Set(["agentes", "capacidades"]);
+const PRIMARY_PAGE_HREFS: ReadonlySet<string> = new Set(["/pricing", "/simulator"]);
+
+const PRIMARY_LINKS = LINKS.filter((link) => PRIMARY_SECTION_IDS.has(link.id));
+const OVERFLOW_LINKS = LINKS.filter((link) => !PRIMARY_SECTION_IDS.has(link.id));
+const PRIMARY_PAGES = PAGES.filter((page) => PRIMARY_PAGE_HREFS.has(page.href));
+const OVERFLOW_PAGES = PAGES.filter((page) => !PRIMARY_PAGE_HREFS.has(page.href));
 
 /**
  * The wordmark, in the same two-tone treatment the sidebar uses: `st` dropped
@@ -47,16 +82,124 @@ export const PAGES = [
  */
 export function Wordmark({ className }: { readonly className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      {/* Milled, not flat. The mark sits on the page ground here — header and
-          footer — so the `--lp-lumen-*` ramp reads: bright at the cap line,
-          falling to the baseline, under the same overhead light every other
-          object on the marketing surface is under. The word beside it stays
-          plain: a milled logotype is a chrome effect, a milled mark next to
-          plain type is a lockup. */}
-      <SenkaMark metal />
-      <span className="font-semibold text-lg leading-none tracking-tight">
+    <span className={cn("inline-flex h-8 items-center gap-2", className)}>
+      {/* Fixed-size box so the mark centres on the cap height instead of
+          drifting on its own optical bounds — the glyph's ink is cropped to
+          the silhouette, which is not vertically symmetric, so `items-center`
+          on the svg alone never quite sat it next to the word. */}
+      <span className="flex size-8 shrink-0 items-center justify-center">
+        <SenkaMark metal className="block h-[22px] w-auto" />
+      </span>
+      <span className="font-semibold text-[17px] leading-none tracking-tight">
         <span className="text-foreground">senka</span>
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The icon, at the height of its own text: the box stretches to the
+ * title-plus-description block and the 32px glyph centres on it. The dotted
+ * grid floats behind with no tile around it — no border, no ground, just the
+ * dots — softened by a radial mask so the crop never shows a hard edge.
+ * No `#fafafa` rect: an opaque ground would be the button look this replaced.
+ * `dark:invert` flips the dots for dark mode.
+ */
+function MoreTile({ icon }: { readonly icon: IconSvgElement }) {
+  return (
+    <span className="relative flex w-14 shrink-0 items-center justify-center self-stretch">
+      <svg
+        aria-hidden="true"
+        preserveAspectRatio="xMidYMid slice"
+        viewBox="0 0 48 48"
+        fill="none"
+        className="absolute inset-0 h-full w-full opacity-70 [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_78%)] dark:invert"
+      >
+        <g opacity="0.15">
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 48L1 48L1 47L4 47L4 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 48L7 48L7 47L10 47L10 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 48L13 48L13 47L16 47L16 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 48L19 48L19 47L22 47L22 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 48L25 48L25 47L28 47L28 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 48L31 48L31 47L34 47L34 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 48L37 48L37 47L40 47L40 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 48L43 48L43 47L46 47L46 48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 36L1 36L1 35L4 35L4 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 36L7 36L7 35L10 35L10 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 36L13 36L13 35L16 35L16 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 36L19 36L19 35L22 35L22 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 36L25 36L25 35L28 35L28 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 36L31 36L31 35L34 35L34 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 36L37 36L37 35L40 35L40 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 36L43 36L43 35L46 35L46 36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 24L1 24L1 23L4 23L4 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 24L7 24L7 23L10 23L10 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 24L13 24L13 23L16 23L16 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 24L19 24L19 23L22 23L22 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 24L25 24L25 23L28 23L28 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 24L31 24L31 23L34 23L34 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 24L37 24L37 23L40 23L40 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 24L43 24L43 23L46 23L46 24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 12L1 12L1 11L4 11L4 12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 12L7 12L7 11L10 11L10 12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 12L13 12L13 11L16 11L16 12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 12L19 12L19 11L22 11L22 12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 12L25 12L25 11L28 11L28 12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 12L31 12L31 11L34 11L34 12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 12L37 12L37 11L40 11L40 12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 12L43 12L43 11L46 11L46 12Z" fill="#1C1F21" />
+        </g>
+        <g opacity="0.15">
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 43V46H47V43H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 37V40H47V37H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 31V34H47V31H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 25V28H47V25H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 19V22H47V19H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 13V16H47V13H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 7V10H47V7H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 1V4H47V1H48Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 43V46H35V43H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 37V40H35V37H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 31V34H35V31H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 25V28H35V25H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 19V22H35V19H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 13V16H35V13H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 7V10H35V7H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 1V4H35V1H36Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 43V46H23V43H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 37V40H23V37H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 31V34H23V31H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 25V28H23V25H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 19V22H23V19H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 13V16H23V13H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 7V10H23V7H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 1V4H23V1H24Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 43V46H11V43H12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 37V40H11V37H12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 31V34H11V31H12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 25V28H11V25H12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 19V22H11V19H12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 13V16H11V13H12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 7V10H11V7H12Z" fill="#1C1F21" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 1V4H11V1H12Z" fill="#1C1F21" />
+        </g>
+      </svg>
+      <HugeiconsIcon icon={icon} size={32} strokeWidth={1.5} className="relative text-foreground" />
+    </span>
+  );
+}
+
+/**
+ * Title over description, each exactly one line. Both truncate, so every row
+ * is the same height no matter the locale — a two-line description anywhere
+ * would stagger the whole grid.
+ */
+function MoreTexts({ title, desc }: { readonly title: string; readonly desc: string }) {
+  return (
+    <span className="min-w-0 py-0.5">
+      <span className="block truncate text-sm font-medium text-foreground">{title}</span>
+      <span title={desc} className="mt-0.5 block truncate text-[13px] leading-snug text-muted-foreground">
+        {desc}
       </span>
     </span>
   );
@@ -81,6 +224,8 @@ export function LandingHeader() {
   const menuInnerRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const active = useActiveSection(SECTION_IDS);
   const pathname = usePathname();
 
@@ -110,6 +255,27 @@ export function LandingHeader() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
+
+  /**
+   * The "Más" dropdown closes on anything that makes it stale: Escape, a
+   * pointer landing outside it, and a route change (handled with the mobile
+   * menu below).
+   */
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [moreOpen]);
 
   /**
    * The page holds still while the sheet is open.
@@ -158,6 +324,7 @@ export function LandingHeader() {
    */
   useEffect(() => {
     setMenuOpen(false);
+    setMoreOpen(false);
   }, [pathname]);
 
   /**
@@ -222,6 +389,31 @@ export function LandingHeader() {
     return () => wide.removeEventListener("change", onChange);
   }, []);
 
+  /** The "Más" button carries the active mark when the reader is inside one of its sections. */
+  const overflowActive = OVERFLOW_LINKS.some((link) => link.id === active);
+
+  /**
+   * Open/close choreography, owned by Motion rather than stylesheets.
+   *
+   * The split is deliberate and load-bearing: the frame moves (rise + grow on
+   * open, shrink + lift on close) but never fades, because Chromium does not
+   * sample `backdrop-filter` while opacity interpolates — fading the frosted
+   * frame flashes it transparent first. The rows fade instead, on a wrapper
+   * that carries no backdrop-filter, over the same 200ms so both end together.
+   */
+  const reduceMotion = useReducedMotion();
+  const moreDur = reduceMotion ? 0 : 0.2;
+  const moreFrame: Variants = {
+    hidden: { y: -8, scale: 0.96 },
+    shown: { y: 0, scale: 1, transition: { duration: moreDur, ease: [0.16, 1, 0.3, 1] } },
+    gone: { y: -8, scale: 0.96, transition: { duration: moreDur, ease: [0.5, 0, 0.75, 0] } },
+  };
+  const moreRows: Variants = {
+    hidden: { opacity: 0 },
+    shown: { opacity: 1, transition: { duration: moreDur, ease: "easeOut" } },
+    gone: { opacity: 0, transition: { duration: moreDur, ease: "easeIn" } },
+  };
+
   return (
     <header className="lp-header" data-menu-open={menuOpen} ref={headerRef}>
       {/* The frost, as its own layer, and — since the drawer below is part of
@@ -247,9 +439,9 @@ export function LandingHeader() {
 
         <nav
           aria-label={t("landing.header.sectionsAria")}
-          className="-translate-x-1/2 absolute left-1/2 hidden items-center gap-5 text-[13px] lg:flex"
+          className="-translate-x-1/2 absolute left-1/2 hidden items-center gap-6 text-[13px] lg:flex"
         >
-          {LINKS.map((link) => (
+          {PRIMARY_LINKS.map((link) => (
             <a
               key={link.id}
               href={sectionHref(link.id)}
@@ -259,7 +451,7 @@ export function LandingHeader() {
               {t(link.labelKey)}
             </a>
           ))}
-          {PAGES.map((page) => (
+          {PRIMARY_PAGES.map((page) => (
             <Link
               key={page.href}
               href={page.href}
@@ -269,6 +461,84 @@ export function LandingHeader() {
               {t(page.labelKey)}
             </Link>
           ))}
+          {/* The rest of the map, as a wide panel: a 48px patterned tile, a
+              title and one line of description per row, sections over pages.
+              One dropdown rather than two flat groups — grouping by kind would
+              be two one-handed menus, and the reader thinks in names. */}
+          <div className="relative" ref={moreRef}>
+            <button
+              type="button"
+              aria-expanded={moreOpen}
+              aria-haspopup="true"
+              aria-current={overflowActive ? "true" : undefined}
+              onClick={() => setMoreOpen((open) => !open)}
+              className="lp-navlink lp-focus inline-flex cursor-pointer items-center gap-1"
+            >
+              {t("landing.header.more")}
+              <HugeiconsIcon
+                icon={ChevronDownIcon}
+                size={14}
+                strokeWidth={2}
+                className={`transition-transform duration-200 ${moreOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <AnimatePresence initial={false}>
+              {moreOpen ? (
+                <motion.div
+                  key="more-panel"
+                  variants={moreFrame}
+                  initial="hidden"
+                  animate="shown"
+                  exit="gone"
+                  style={{ transformOrigin: "top right" }}
+                  className="absolute top-[calc(100%+12px)] right-0 w-[min(92vw,36rem)]"
+                >
+                {/* Tooltip notch pointing at the "Más" button: a rotated square
+                    showing only its top and left borders, so it reads as the
+                    panel's own corner lifted toward the trigger. Same
+                    translucent ground as the panel, so it frosts what is behind
+                    it instead of punching a solid chip out of the blur. */}
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-[5px] right-7 z-10 block size-2.5 rotate-45 border-t border-l border-border bg-popover/80 backdrop-blur-xl"
+                />
+                <div className="relative overflow-hidden rounded-2xl border border-border bg-popover/80 shadow-xl backdrop-blur-xl">
+                  <motion.div variants={moreRows} className="relative p-2">
+                    <div className="grid gap-1 sm:grid-cols-2">
+                      {OVERFLOW_LINKS.map((link) => (
+                        <a
+                          key={link.id}
+                          href={sectionHref(link.id)}
+                          aria-current={active === link.id ? "true" : undefined}
+                          onClick={() => setMoreOpen(false)}
+                          className="lp-focus group flex items-center gap-4 rounded-xl p-3 transition-colors duration-150 hover:bg-accent/80"
+                        >
+                          <MoreTile icon={link.icon} />
+                          <MoreTexts title={t(link.labelKey)} desc={t(link.descKey)} />
+                        </a>
+                      ))}
+                    </div>
+                    <div aria-hidden="true" className="mx-2 my-1.5 h-px bg-border" />
+                    <div className="grid gap-1 sm:grid-cols-2">
+                      {OVERFLOW_PAGES.map((page) => (
+                        <Link
+                          key={page.href}
+                          href={page.href}
+                          aria-current={pathname === page.href ? "page" : undefined}
+                          onClick={() => setMoreOpen(false)}
+                          className="lp-focus group flex items-center gap-4 rounded-xl p-3 transition-colors duration-150 hover:bg-accent/80"
+                        >
+                          <MoreTile icon={page.icon} />
+                          <MoreTexts title={t(page.labelKey)} desc={t(page.descKey)} />
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         </nav>
 
         {/* The two calls to action both used to point at gated routes —
@@ -287,15 +557,17 @@ export function LandingHeader() {
             <Button asChild size="sm">
               <Link href="/dashboard" prefetch={false}>{t("landing.cta.openApp")}</Link>
             </Button>
-          ) : (
+          ) : session.claimed ? (
             /* No radius override: `size="sm"` already carries the system's
                11px, and a pill here would be the one button on the site that
                is not shaped like every button inside the product. */
             <Button asChild size="sm">
-              <Link href="/login">
-                {session.claimed ? t("landing.cta.signIn") : t("landing.cta.start")}
-              </Link>
+              <Link href="/login">{t("landing.cta.signIn")}</Link>
             </Button>
+          ) : (
+            <SignupDialog>
+              <Button size="sm">{t("landing.cta.start")}</Button>
+            </SignupDialog>
           )}
           <button
             type="button"

@@ -213,12 +213,13 @@ export default function CalendarPage() {
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
                   <GoogleMark size={20} />
                 </div>
-                <p className="text-sm font-medium">{t("calendar.notConnectedTitle")}</p>
-                <p className="max-w-xs text-xs text-muted-foreground">{t("calendar.notConnectedDescription")}</p>
-                <Button asChild size="sm" className="mt-1">
+                <div>
+                  <p className="text-sm font-medium">{t("calendar.notConnectedTitle")}</p>
+                  <p className="max-w-xs text-xs text-muted-foreground">{t("calendar.notConnectedDescription")}</p>
+                </div>
+                <Button asChild size="sm" variant="secondary">
                   <Link href="/connections">
                     {t("calendar.goToConnections")}
-                    <HugeiconsIcon icon={ArrowRight02Icon} size={14} strokeWidth={1.75} />
                   </Link>
                 </Button>
               </div>
