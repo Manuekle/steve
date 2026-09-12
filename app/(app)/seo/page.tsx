@@ -825,7 +825,7 @@ export default function SeoPage() {
                       <Movers kind={kind} locale={locale} rows={data?.rows ?? []} t={t} />
 
                       <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
-                        <div className="overflow-hidden rounded-[14px]">
+                        <div className="rounded-[14px]">
                         <CardHeader>
                           <CardTitle>
                             {t(kind === "page" ? "seo.pagesTitle" : "seo.queriesTitle")}

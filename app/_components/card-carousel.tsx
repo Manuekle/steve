@@ -160,11 +160,13 @@ export function CardCarousel({
         {children}
       </div>
 
-      {/* Inline slider — only visible when content overflows */}
+      {/* Inline slider — only visible when content overflows.
+          The track div is always mounted so ResizeObserver can measure it
+          and so the shuttle position is ready the moment overflow is detected. */}
       <div
         className={cn(
-          "mt-3 flex items-center justify-center gap-1 transition-all duration-300",
-          hasOverflow ? "opacity-100" : "pointer-events-none opacity-0 select-none",
+          "flex items-center justify-center gap-1",
+          hasOverflow ? "mt-3 mb-1" : "pointer-events-none invisible h-0 overflow-hidden select-none",
         )}
         aria-hidden={!hasOverflow}
       >

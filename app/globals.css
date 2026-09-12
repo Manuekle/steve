@@ -3382,7 +3382,9 @@ html.lenis body {
   max-height: calc(100dvh - 3.5rem); /* 56px bar */
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  /* flex column so the footer can push to the bottom with mt-auto */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Nav items stagger in exactly like .lp-menu-item. */

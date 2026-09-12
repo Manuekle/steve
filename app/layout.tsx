@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import type { ReactNode } from "react";
@@ -33,6 +33,17 @@ export const metadata: Metadata = {
   description:
     "Gestiona agentes de IA, conversaciones y automatizaciones para WhatsApp, Instagram y Meta Ads. Planes alojados y licencia Enterprise autoalojada.",
   robots: process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
+};
+
+// `maximum-scale=1` evita que iOS haga zoom automático cuando el usuario
+// toca un <input> o <textarea> — comportamiento que ocurre cuando el
+// font-size del campo es menor a 16px. `user-scalable=no` bloquea el
+// pellizco-para-zoom, que es demasiado restrictivo para accesibilidad;
+// maximum-scale=1 sólo evita el zoom involuntario al enfocar inputs.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 /**

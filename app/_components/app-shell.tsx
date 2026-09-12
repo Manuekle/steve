@@ -52,9 +52,18 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
 
   // La preferencia vive en localStorage, que el servidor no tiene: se lee
   // después de montar para que el HTML del SSR coincida con el cliente.
+  // En pantallas pequeñas (< 1024px) el sidebar arranca colapsado por defecto
+  // si el usuario nunca ha guardado una preferencia explícita.
   useEffect(() => {
     try {
-      setCollapsed(localStorage.getItem(COLLAPSED_KEY) === "1");
+      const stored = localStorage.getItem(COLLAPSED_KEY);
+      if (stored !== null) {
+        setCollapsed(stored === "1");
+      } else {
+        // Sin preferencia guardada: colapsar en pantallas menores a lg (1024px)
+        const isMobileOrTablet = window.matchMedia("(max-width: 1023px)").matches;
+        setCollapsed(isMobileOrTablet);
+      }
     } catch {
       // Best-effort.
     }
@@ -441,7 +450,8 @@ function MobileNav({
   const allItems = NAV_ITEMS;
 
   // Count how many items are above the footer section for stagger index.
-  const footerOffset = allItems.length + 1; // +1 for business switcher slot
+  // +3 for: business switcher, command palette, new chat button
+  const footerOffset = allItems.length + 3;
 
   return (
     <div
@@ -520,14 +530,23 @@ function MobileNav({
         inert={!mobileMenuOpen}
       >
         <div className="app-nav-drawer-inner" ref={drawerInnerRef}>
-          <div className="flex flex-col gap-0.5 px-3 pb-2 pt-1">
+          {/* Nav items section */}
+          <div className="flex flex-col gap-0.5 px-3 pt-1">
 
-            {/* Business switcher — above the nav, same position as sidebar */}
+            {/* Business switcher — same height as nav items */}
             <div
-              className="app-nav-item pb-2 pt-1"
+              className="app-nav-item pb-0.5 pt-1"
               style={{ "--i": 0 } as CSSProperties}
             >
-              <BusinessSwitcher />
+              <BusinessSwitcher className="py-2.5 rounded-xl" />
+            </div>
+
+            {/* Command palette / search — same height as nav items */}
+            <div
+              className="app-nav-item pb-0.5"
+              style={{ "--i": 1 } as CSSProperties}
+            >
+              <CommandPalette className="py-2.5 px-3 rounded-xl text-sm" />
             </div>
 
             {/* New chat shortcut */}
@@ -535,8 +554,8 @@ function MobileNav({
               href="/chat"
               onClick={closeMenu}
               data-cuelume-press
-              className="app-nav-item mb-1 flex items-center gap-2.5 rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground shadow-[var(--shadow-button)] transition-transform duration-150 active:scale-[0.98]"
-              style={{ "--i": 1 } as CSSProperties}
+              className="app-nav-item mb-0.5 flex items-center gap-2.5 rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground shadow-[var(--shadow-button)] transition-transform duration-150 active:scale-[0.98]"
+              style={{ "--i": 2 } as CSSProperties}
             >
               <HugeiconsIcon icon={Add01Icon} size={15} strokeWidth={1.75} className="shrink-0" />
               {t("nav.newChat")}
@@ -559,7 +578,7 @@ function MobileNav({
                       ? "bg-muted text-foreground shadow-[var(--shadow-inset)]"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
-                  style={{ "--i": index + 2 } as CSSProperties}
+                  style={{ "--i": index + 3 } as CSSProperties}
                 >
                   <HugeiconsIcon icon={item.icon} size={16} strokeWidth={1.75} className="shrink-0" />
                   {t(item.labelKey)}
@@ -568,20 +587,18 @@ function MobileNav({
               );
             })}
 
-            {/* Footer section — notifications, support, preferences */}
-            <div
-              className="app-nav-item mt-1.5 flex flex-col gap-0.5 border-t border-border pt-2"
-              style={{ "--i": footerOffset + 1 } as CSSProperties}
-            >
-              <SidebarNotifications className="w-full" />
-              <SupportDialog className="w-full" />
-            </div>
+          </div>
+
+          {/* Footer section — always at the bottom of the drawer */}
+          <div
+            className="app-nav-item flex flex-col gap-0.5 border-t border-border px-3 pb-safe-bottom pt-2"
+            style={{ "--i": footerOffset + 1, paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" } as CSSProperties}
+          >
+            <SidebarNotifications className="w-full" />
+            <SupportDialog className="w-full" />
 
             {/* Preference toggles — row of icon buttons */}
-            <div
-              className="app-nav-item flex items-center gap-0.5 pb-1 pt-0.5"
-              style={{ "--i": footerOffset + 2 } as CSSProperties}
-            >
+            <div className="mt-0.5 flex items-center gap-0.5">
               <ThemeToggle className="size-8 justify-center p-0" showLabel={false} />
               <SoundToggle className="size-8 justify-center p-0" showLabel={false} />
               <LanguageToggle className="size-8 justify-center p-0" showLabel={false} />
@@ -589,8 +606,8 @@ function MobileNav({
               <div className="flex-1" />
               <SidebarStatus />
             </div>
-
           </div>
+
         </div>
       </div>
     </div>

@@ -55,7 +55,7 @@ type Business = {
   readonly logoUpdatedAt: string | null;
 };
 
-export function BusinessSwitcher({ collapsed = false }: { readonly collapsed?: boolean }) {
+export function BusinessSwitcher({ collapsed = false, className }: { readonly collapsed?: boolean; readonly className?: string }) {
   const t = useT();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -130,7 +130,8 @@ export function BusinessSwitcher({ collapsed = false }: { readonly collapsed?: b
       className={cn(
         "flex items-center rounded-lg border border-border bg-card text-left transition-colors duration-150",
         "hover:border-input hover:bg-accent",
-        collapsed ? "size-8 justify-center p-0" : "w-full gap-2 px-2 py-1.5",
+        collapsed ? "size-8 justify-center p-0" : "w-full gap-2 px-2 py-2",
+        className,
       )}
     >
       {active?.logoUpdatedAt ? (

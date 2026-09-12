@@ -381,7 +381,7 @@ export default function AiUsagePage() {
 
           {/* ── Details ── */}
           <Card className="rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
-            <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+            <div className="rounded-[14px] border border-border/50 bg-card shadow-xs">
             <CardHeader>
               <div className="min-w-0 flex-1">
                 <CardTitle>{t("aiUsage.detailsTitle")}</CardTitle>

@@ -86,7 +86,7 @@ export function CommandPalette({
             className={cn(
               "flex items-center rounded-lg border border-border bg-card/60 text-xs text-muted-foreground",
               "transition-colors duration-150 hover:border-input hover:bg-accent hover:text-foreground",
-              collapsed ? "size-8 justify-center" : "w-full gap-2 px-2.5 py-1.5",
+              collapsed ? "size-8 justify-center" : "w-full gap-2 px-2.5 py-2",
               className,
             )}
           >
