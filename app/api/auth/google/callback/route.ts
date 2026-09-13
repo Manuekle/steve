@@ -6,6 +6,7 @@ import { getCredential } from "@/lib/credentials";
 import { GOOGLE_LOGIN_OAUTH } from "@/lib/google-login-oauth";
 import { exchangeCode, nextCookie, stateCookie, verifierCookie } from "@/lib/oauth-client";
 import { safeNextPath } from "@/lib/safe-redirect";
+import { setGooglePicture } from "@/lib/account-store";
 
 // GET /api/auth/google/callback — where Google sends the browser back.
 //
@@ -65,6 +66,24 @@ export const GET = withApiErrors(async function GET(request: NextRequest) {
     // theirs, so there is no password to check on our end either.
     const email = tokens.accountLabel;
     if (!email) throw new Error("Google returned no email for this account.");
+
+    // Best-effort: grab the profile picture from userinfo while we still have
+    // the access token. Failure is silent — no picture is better than a broken
+    // login flow.
+    try {
+      const userinfo = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+        headers: { authorization: `Bearer ${tokens.accessToken}` },
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (userinfo.ok) {
+        const data = (await userinfo.json()) as Record<string, unknown>;
+        if (typeof data.picture === "string" && data.picture.startsWith("https://")) {
+          await setGooglePicture(data.picture);
+        }
+      }
+    } catch {
+      // Non-fatal — skip.
+    }
 
     // `loginWithVerifiedEmail` creates the account when it does not exist, so
     // this button is a registration endpoint as much as a sign-in one — and it

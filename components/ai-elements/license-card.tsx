@@ -121,74 +121,77 @@ export function LicenseCard() {
   // it folded — see the note at the top.
   const formOpen = formOverride ?? (!loading && tone === "missing");
   return (
-    <div className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
-      <div className="flex items-start gap-3 px-5 pt-5 pb-4">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-          <HugeiconsIcon icon={Award05Icon} size={16} strokeWidth={1.75} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-medium">{t("settings.license.title")}</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">{t("settings.license.description")}</p>
-        </div>
-      </div>
+    <div className="mb-4 break-inside-avoid rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+      <div className="flex flex-col">
+        <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+          {/* Header */}
+          <div className="flex items-start gap-3 px-5 pt-5 pb-4">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+              <HugeiconsIcon icon={Award05Icon} size={16} strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-medium">{t("settings.license.title")}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t("settings.license.description")}</p>
+            </div>
+          </div>
 
-      {/* The wallet the card sits in: a recessed surface, so the card reads as
-          an object placed on the page rather than another panel drawn on it. */}
-      <div className="relative border-y border-border bg-muted px-5 py-6 shadow-[inset_0_1px_3px_oklch(0_0_0/0.05)] sm:px-6 sm:py-7">
-        <div className="bg-pattern bg-pattern-grid bg-pattern-fade pointer-events-none absolute inset-0 opacity-50" />
-        {loading ? (
-          <SkeletonBar className="relative mx-auto aspect-[1.586] w-full max-w-[23rem] rounded-[14px]" />
-        ) : (
-          <LicenseCreditCard info={info} installationId={installationId} className="relative" />
-        )}
-      </div>
+          {/* The wallet the card sits in: a recessed surface, so the card reads as
+              an object placed on the page rather than another panel drawn on it. */}
+          <div className="relative border-y border-border bg-muted px-5 py-6 shadow-[inset_0_1px_3px_oklch(0_0_0/0.05)] sm:px-6 sm:py-7">
+            <div className="bg-pattern bg-pattern-grid bg-pattern-fade pointer-events-none absolute inset-0 opacity-50" />
+            {loading ? (
+              <SkeletonBar className="relative mx-auto aspect-[1.586] w-full max-w-[23rem] rounded-[14px]" />
+            ) : (
+              <LicenseCreditCard info={info} installationId={installationId} className="relative" />
+            )}
+          </div>
 
-      <div className="space-y-4 px-5 py-4">
-        {/* Status, countdown and the date the face has no room for. They used
-            to sit on the card itself — a pill, a big number and a progress
-            bar — which is three dashboards' worth of chrome on an object whose
-            whole job is to look like one thing. */}
-        {!loading ? (
-          <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-            <span className={`size-1.5 shrink-0 rounded-full ${toneDot[tone]}`} />
-            <span className="font-medium text-foreground">
-              {t(`settings.license.status.${tone}`)}
-            </span>
-            {info?.payload ? (
-              <>
-                <span aria-hidden>·</span>
-                <span>
-                  {t("settings.license.maintenanceUntil")}{" "}
-                  {dateFormatter.format(new Date(info.payload.maintenanceUntil))}
+          {/* Status line + warnings */}
+          <div className="space-y-3 px-5 py-4">
+            {!loading ? (
+              <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                <span className={`size-1.5 shrink-0 rounded-full ${toneDot[tone]}`} />
+                <span className="font-medium text-foreground">
+                  {t(`settings.license.status.${tone}`)}
                 </span>
-                {days !== null && days > 0 ? (
+                {info?.payload ? (
                   <>
                     <span aria-hidden>·</span>
-                    <span>{t("license.card.daysLeft", { days: String(days) })}</span>
+                    <span>
+                      {t("settings.license.maintenanceUntil")}{" "}
+                      {dateFormatter.format(new Date(info.payload.maintenanceUntil))}
+                    </span>
+                    {days !== null && days > 0 ? (
+                      <>
+                        <span aria-hidden>·</span>
+                        <span>{t("license.card.daysLeft", { days: String(days) })}</span>
+                      </>
+                    ) : null}
                   </>
                 ) : null}
-              </>
+              </p>
             ) : null}
-          </p>
-        ) : null}
 
-        {!loading && tone === "missing" ? (
-          <p className="text-xs text-muted-foreground">{t("settings.license.none")}</p>
-        ) : null}
+            {!loading && tone === "missing" ? (
+              <p className="text-xs text-muted-foreground">{t("settings.license.none")}</p>
+            ) : null}
 
-        {info?.status === "valid" && !info.maintenanceActive ? (
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            {t("settings.license.maintenanceExpiredNote")}
-          </p>
-        ) : null}
+            {info?.status === "valid" && !info.maintenanceActive ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {t("settings.license.maintenanceExpiredNote")}
+              </p>
+            ) : null}
 
-        {info?.status === "valid" && info.installationMatches === false ? (
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            {t("settings.license.installationMismatch")}
-          </p>
-        ) : null}
+            {info?.status === "valid" && info.installationMatches === false ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {t("settings.license.installationMismatch")}
+              </p>
+            ) : null}
+          </div>
+        </div>
 
-        <div>
+        {/* Footer strip — activate/replace button + expand form, outside the inner border */}
+        <div className="px-2.5 pt-2 pb-1">
           <button
             type="button"
             aria-expanded={formOpen}
@@ -197,13 +200,12 @@ export function LicenseCard() {
               setFormOverride(!formOpen);
               if (!formOpen) setTimeout(() => textarea.current?.focus(), 220);
             }}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-1 py-1 text-left text-sm font-medium transition-colors hover:text-foreground"
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-1 py-1 text-left text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <span>{t(tone === "missing" ? "license.card.activate" : "license.card.replace")}</span>
             <motion.span
               animate={{ rotate: formOpen ? 180 : 0 }}
               transition={{ duration: reduce ? 0 : 0.22, ease: EASE_OUT }}
-              className="text-muted-foreground"
             >
               <HugeiconsIcon icon={ArrowDown01Icon} size={16} strokeWidth={1.75} />
             </motion.span>
@@ -220,12 +222,9 @@ export function LicenseCard() {
                 transition={{ duration: reduce ? 0 : 0.26, ease: EASE_OUT }}
                 className="overflow-hidden"
               >
-                <div className="pt-3">
-                  {/* The id you send to get a token, right above the box you
-                      paste that token into. It used to live on the back of the
-                      card behind a copy button, which is a fine place to read
-                      it and the wrong place to need it. */}
-                  <div className="mb-4 rounded-lg border border-border bg-muted/50 p-3">
+                <div className="pt-2 pb-1">
+                  {/* The id you send to get a token, right above the box you paste it into. */}
+                  <div className="mb-4 rounded-lg border border-border bg-card/80 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">
                         {t("settings.license.installationIdLabel")}
@@ -271,9 +270,7 @@ export function LicenseCard() {
                     disabled={saving || pasted.trim().length === 0}
                     onClick={() => void save()}
                   >
-                    {saving ? (
-                      <Spinner size={15} strokeWidth={2} />
-                    ) : null}
+                    {saving ? <Spinner size={15} strokeWidth={2} /> : null}
                     {t("settings.license.saveAction")}
                   </Button>
                   {saveError ? <p className="mt-2 text-xs text-destructive">{saveError}</p> : null}

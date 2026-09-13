@@ -99,7 +99,6 @@ export function ClientGlobe({
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pointerRef = useRef<{ x: number; y: number; phi: number; theta: number } | null>(null);
   const phiRef = useRef(0);
   const thetaRef = useRef(0.3);
   // The frame loop reads these every frame; refs rather than closing over the
@@ -115,18 +114,26 @@ export function ClientGlobe({
   useEffect(() => {
     darkRef.current = dark;
   }, [dark]);
+  // Set whenever something other than the rotation changes what a frame would
+  // look like — the theme, the size, a nudge from the keyboard — so a globe
+  // that is holding still still redraws when it has a reason to. A ref rather
+  // than a loop-local so the keyboard handler below can raise it too.
+  const dirtyRef = useRef(true);
+  // Whether a drag is in flight. Read by the frame loop (to hold the
+  // auto-rotation) and written by the window-level move/up handlers.
+  const draggingRef = useRef(false);
 
   useEffect(() => {
     const wrap = wrapRef.current;
     const canvas = canvasRef.current;
     if (!wrap || !canvas) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // A phone GPU is not a desktop GPU, and this globe is big: cap the pixel
+    // ratio lower and sample the land map more coarsely on touch devices. The
+    // difference on screen is negligible; the difference in frame cost is not.
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
     let size = wrap.clientWidth;
-    // Set whenever something other than the rotation changes what a frame
-    // would look like — the theme, the size, the map finishing its decode — so
-    // a globe that is holding still still redraws when it has a reason to.
-    let dirty = true;
 
     // CSS pixels, not buffer pixels — which is one step off the snippet in
     // cobe's docs, deliberately. That snippet pairs `width: 600 * 2` with
@@ -143,7 +150,7 @@ export function ClientGlobe({
       phi: 0,
       theta: 0.3,
       diffuse: 0.0,
-      mapSamples: 20000,
+      mapSamples: coarse ? 12000 : 20000,
       scale: 1,
       offset: [0, 0],
       markerColor: [0.95, 0.95, 0.95],
@@ -166,23 +173,41 @@ export function ClientGlobe({
     // third should still get a globe, just one that holds still. So: a frame
     // whenever the rotation moves, a frame whenever `dirty` says the picture
     // is stale, and an empty callback the rest of the time.
+    //
+    // Two perf notes for the small screen. Every `update()` re-projects every
+    // marker and rewrites a `<style>` block in `<head>` (that is how cobe
+    // drives its anchor-positioned labels), so a frame is not free even before
+    // the shaders run — on a coarse pointer the loop is throttled to ~30fps,
+    // which still reads as smooth for a sphere this slow. And `width`/`height`
+    // are deliberately *not* passed per frame: cobe resizes the canvas backing
+    // store from them, so sending them every frame risks a reallocation every
+    // frame. They go out once here at creation and again on resize, below.
     let raf = 0;
-    const draw = () => {
+    let last = performance.now();
+    let lastDrawn = 0;
+    const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
-      const moving = liveRef.current;
-      const dragging = pointerRef.current !== null;
-      if (moving && !dragging) phiRef.current += 0.0028;
-      else if (!dirty && !dragging) return;
-      dirty = false;
+      const dt = Math.min(now - last, 100);
+      last = now;
+      // A manual drag always draws — including under reduced motion, where the
+      // visitor asked the page not to move on its own, not to be unmovable.
+      const dragging = draggingRef.current;
+      if (!liveRef.current && !dragging && !dirtyRef.current) return;
+      // Seconds-based, not frames-based: 0.0028 rad at 60fps, whatever the
+      // display runs at. On a 120Hz phone the per-frame increment used to
+      // double the spin speed along with the power draw.
+      if (liveRef.current && !dragging) phiRef.current += 0.168 * (dt / 1000);
+      else if (!dirtyRef.current && !dragging) return;
+      if (coarse && !dirtyRef.current && now - lastDrawn < 33) return;
+      lastDrawn = now;
+      dirtyRef.current = false;
       globe.update({
         phi: phiRef.current,
         theta: thetaRef.current,
-        width: size,
-        height: size,
         ...palette(darkRef.current),
       });
     };
-    draw();
+    raf = requestAnimationFrame(draw);
 
     // The map arrives asynchronously and cobe raises no event for it. A globe
     // that is off screen at mount is not drawing, so it would have no finished
@@ -191,7 +216,7 @@ export function ClientGlobe({
     // nobody is looking at. It is cheap either way: the image is inlined in
     // cobe's own bundle, so nothing is fetched.
     const warm = window.setTimeout(() => {
-      dirty = true;
+      dirtyRef.current = true;
     }, 400);
 
     // `ResizeObserver` always fires once right after `observe()`, even with no
@@ -201,9 +226,8 @@ export function ClientGlobe({
       const next = wrap.clientWidth;
       if (next === 0 || next === size) return;
       size = next;
-      canvas.width = size * dpr;
-      canvas.height = size * dpr;
-      dirty = true;
+      globe.update({ width: size, height: size });
+      dirtyRef.current = true;
     });
     resizeObserver.observe(wrap);
 
@@ -211,18 +235,74 @@ export function ClientGlobe({
     // other half of a theme switch — telling a globe that is holding still
     // that its colours just changed under it.
     const themeObserver = new MutationObserver(() => {
-      dirty = true;
+      dirtyRef.current = true;
     });
     themeObserver.observe(document.documentElement, {
       attributeFilter: ["class"],
       attributes: true,
     });
 
+    // ── Drag ──────────────────────────────────────────────────────────
+    // Native window-level listeners, not React pointer props with
+    // `setPointerCapture`. Capture on the wrapper used to own the gesture, and
+    // on touch that ownership fights the browser: a vertical scroll starting
+    // on the globe either got swallowed (with `touch-action: none`) or
+    // cancelled the drag mid-flight without a `pointerup` to end it, leaving
+    // the globe stuck to the finger. Here `pointerdown` only *starts* a drag,
+    // `pointermove`/`pointerup` ride on `window` so leaving the sphere ends
+    // cleanly, and `pointercancel` — what the browser fires when it takes a
+    // gesture back for scrolling — ends it too.
+    //
+    // The hitbox is the sphere, not the square. The wrapper is a box and the
+    // globe is a circle inscribed in it; a down in the corners returns early,
+    // before any state is set, so taps and scrolls starting on empty canvas
+    // behave as if the globe were not there.
+    const insideGlobe = (x: number, y: number): boolean => {
+      const rect = wrap.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const r = Math.min(rect.width, rect.height) / 2;
+      const dx = x - cx;
+      const dy = y - cy;
+      return dx * dx + dy * dy <= r * r;
+    };
+
+    let drag: { id: number; x: number; y: number } | null = null;
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (!insideGlobe(e.clientX, e.clientY)) return;
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      draggingRef.current = true;
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      drag = { id: drag.id, x: e.clientX, y: e.clientY };
+      phiRef.current += dx / 200;
+      thetaRef.current = Math.max(-0.6, Math.min(0.9, thetaRef.current + dy / 300));
+    };
+    const onPointerEnd = (e: PointerEvent) => {
+      if (drag && e.pointerId === drag.id) {
+        drag = null;
+        draggingRef.current = false;
+      }
+    };
+    wrap.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerEnd);
+    window.addEventListener("pointercancel", onPointerEnd);
+
     return () => {
       window.clearTimeout(warm);
       cancelAnimationFrame(raf);
       themeObserver.disconnect();
       resizeObserver.disconnect();
+      wrap.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerEnd);
+      window.removeEventListener("pointercancel", onPointerEnd);
+      draggingRef.current = false;
       globe.destroy();
     };
     // `clients` is static content read from `content/proof.json` — changing it
@@ -230,56 +310,37 @@ export function ClientGlobe({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isInsideGlobe = (e: React.PointerEvent) => {
-    const el = wrapRef.current;
-    if (!el) return false;
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const r = rect.width / 2 + 1;
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
-    return dx * dx + dy * dy <= r * r;
-  };
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (!isInsideGlobe(e)) return;
-    pointerRef.current = { x: e.clientX, y: e.clientY, phi: phiRef.current, theta: thetaRef.current };
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (pointerRef.current !== null) {
-      const dx = e.clientX - pointerRef.current.x;
-      const dy = e.clientY - pointerRef.current.y;
-      phiRef.current = pointerRef.current.phi + dx / 200;
-      thetaRef.current = Math.max(-0.6, Math.min(0.9, pointerRef.current.theta + dy / 300));
-    }
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (pointerRef.current !== null) {
-      pointerRef.current = null;
-      try {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {}
-    }
+  // Keyboard drag: the sphere is focusable and the arrows turn it, a step per
+  // press, so it is movable without a pointer at all. Marks a frame dirty
+  // directly — the loop is the only thing that reads the angles.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const step = 0.15;
+    if (e.key === "ArrowLeft") phiRef.current -= step;
+    else if (e.key === "ArrowRight") phiRef.current += step;
+    else if (e.key === "ArrowUp") thetaRef.current = Math.max(-0.6, thetaRef.current - step);
+    else if (e.key === "ArrowDown") thetaRef.current = Math.min(0.9, thetaRef.current + step);
+    else return;
+    e.preventDefault();
+    dirtyRef.current = true;
   };
 
   return (
     <div
-      className={cn("pointer-events-auto relative aspect-square w-full touch-none select-none", className)}
+      // `touch-pan-y`, not `touch-none`: a vertical swipe starting on the globe
+      // is a page scroll and the browser should own it outright (it answers
+      // with a `pointercancel`, which ends any drag in flight). `none` used to
+      // claim every touch for the globe, so on a phone the page would not
+      // scroll from the sphere and every scroll attempt arrived as judder.
+      // Horizontal drags still reach us and turn the globe.
+      className={cn(
+        "pointer-events-auto relative aspect-square w-full cursor-grab touch-pan-y select-none active:cursor-grabbing",
+        className,
+      )}
       ref={wrapRef}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerLeave={onPointerUp}
-      onPointerEnter={(e) => {
-        if (isInsideGlobe(e as unknown as React.PointerEvent)) {
-          (e.currentTarget as HTMLElement).style.cursor = "grab";
-        }
-      }}
-      onPointerMoveCapture={(e) => {
-        const inside = isInsideGlobe(e as unknown as React.PointerEvent);
-        (e.currentTarget as HTMLElement).style.cursor = inside && !pointerRef.current ? "grab" : pointerRef.current ? "grabbing" : "default";
-      }}
+      tabIndex={0}
+      role="img"
+      aria-label="Globo interactivo con la ubicación de los clientes. Arrastrá o usá las flechas para girarlo."
+      onKeyDown={onKeyDown}
     >
       <canvas className="h-full w-full rounded-full" ref={canvasRef} />
       {clients.map((m) => (

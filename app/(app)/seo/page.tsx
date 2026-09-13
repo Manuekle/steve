@@ -267,16 +267,14 @@ function ChangeLog({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle>{t("seo.changesTitle")}</CardTitle>
-            <CardDescription>{t("seo.changesSubtitle")}</CardDescription>
-          </div>
-          <Button onClick={onAdd} size="sm" type="button" variant="secondary">
-            <HugeiconsIcon icon={Add01Icon} size={15} strokeWidth={1.75} />
-            {t("seo.logChange")}
-          </Button>
+        <div className="min-w-0 flex-1">
+          <CardTitle>{t("seo.changesTitle")}</CardTitle>
+          <CardDescription>{t("seo.changesSubtitle")}</CardDescription>
         </div>
+        <Button className="shrink-0" onClick={onAdd} size="sm" type="button" variant="secondary">
+          <HugeiconsIcon icon={Add01Icon} size={15} strokeWidth={1.75} />
+          {t("seo.logChange")}
+        </Button>
       </CardHeader>
       <CardBody>
         {changes.length === 0 ? (
@@ -583,7 +581,7 @@ export default function SeoPage() {
           </div>
 
           {sites.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               {sites.length > 1 ? (
                 <Select onValueChange={(next) => {
                   setPage(1);
@@ -604,7 +602,7 @@ export default function SeoPage() {
               <ChartSelector onChange={(next) => {
                 setPage(1);
                 setRange(next as RangeId);
-              }} value={range} label={t("common.filterByPeriod")} options={RANGE_IDS.map((id) => ({ value: id, label: t(`seo.range.${id}`) }))} className="mt-0 justify-start" />
+              }} value={range} label={t("common.filterByPeriod")} options={RANGE_IDS.map((id) => ({ value: id, label: t(`seo.range.${id}`) }))} className="mt-0 w-full min-w-0 justify-start sm:w-auto" />
             </div>
           ) : null}
         </header>
@@ -641,7 +639,7 @@ export default function SeoPage() {
             ) : (
               <>
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                  <div className="scroll-fade-x overflow-x-auto">
+                  <div>
                     <SlidingTabs
                       onValueChange={(next) => {
                         setPage(1);

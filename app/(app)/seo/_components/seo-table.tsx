@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   ArrowDownRight01Icon,
@@ -146,6 +147,41 @@ export function SeoTable({
   readonly rows: readonly ComparedRow[];
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  /* Edge fade, mobile only. At the start only the far edge fades; once
+     scrolled, the passed edge fades in; at the end the far fade lifts.
+     Desktop never overflows, so the mask stays off there. */
+  const updateFade = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (!window.matchMedia("(max-width: 767px)").matches) {
+      el.style.setProperty("--x-fade-start", "0px");
+      el.style.setProperty("--x-fade-end", "0px");
+      return;
+    }
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 0) {
+      el.style.setProperty("--x-fade-start", "0px");
+      el.style.setProperty("--x-fade-end", "0px");
+      return;
+    }
+    const FADE = "28px";
+    el.style.setProperty("--x-fade-start", el.scrollLeft < 4 ? "0px" : FADE);
+    el.style.setProperty("--x-fade-end", el.scrollLeft > max - 4 ? "0px" : FADE);
+  }, []);
+
+  useEffect(() => {
+    updateFade();
+    const el = scrollRef.current;
+    el?.addEventListener("scroll", updateFade, { passive: true });
+    window.addEventListener("resize", updateFade);
+    return () => {
+      el?.removeEventListener("scroll", updateFade);
+      window.removeEventListener("resize", updateFade);
+    };
+  }, [updateFade, rows]);
+
   if (rows.length === 0) {
     return <div className="px-5 py-16 text-center text-muted-foreground text-sm">{emptyLabel}</div>;
   }
@@ -154,7 +190,7 @@ export function SeoTable({
     /* Five numeric columns do not fit a phone, and squeezing them wraps every
        keyword onto four lines. The table keeps its width and scrolls inside
        its own card instead — the page itself never scrolls sideways. */
-    <div className="scroll-fade-x overflow-x-auto">
+    <div ref={scrollRef} className="x-fade overflow-x-auto scrollbar-hide">
       <table className="w-full min-w-[42rem] border-separate border-spacing-y-1.5 px-1.5 text-sm">
         <thead className="text-muted-foreground text-xs">
           <tr>

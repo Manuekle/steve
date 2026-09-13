@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { GoogleLogo } from "@/components/provider-logo";
 import { useSmoothScroll } from "@/components/motion/smooth-scroll";
+import { useT } from "@/lib/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +35,7 @@ export function SignupDialog({
 }) {
   const router = useRouter();
   const { lenis } = useSmoothScroll();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -86,11 +88,11 @@ export function SignupDialog({
     event.preventDefault();
     const address = email.trim();
     if (!address) {
-      setEmailError("Escribe tu correo para continuar.");
+      setEmailError(t("landing.signup.errorRequired"));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
-      setEmailError("Ese correo no parece válido.");
+      setEmailError(t("landing.signup.errorInvalid"));
       return;
     }
     setEmailError(null);
@@ -103,24 +105,24 @@ export function SignupDialog({
       <DialogContent className="gap-5 sm:max-w-[27rem] sm:p-7" variant="plain">
         <DialogHeader className="items-center px-4 text-center sm:px-6">
           <DialogTitle className="max-w-[20ch] text-balance font-heading font-semibold font-cooper text-[1.75rem] leading-[1.08] tracking-[-0.025em] sm:text-[2rem]">
-            Crea tu primer agente de ventas IA en 2 minutos
+            {t("landing.signup.title")}
           </DialogTitle>
           <DialogDescription className="text-balance pt-1 text-[15px] leading-relaxed">
-            Crea una cuenta y recibe 2.000 créditos gratis.
+            {t("landing.signup.subtitle")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
-          <Button asChild className="h-11 w-full text-[15px]" variant="outline">
+          <Button asChild className="h-11 w-full text-[15px]" variant="secondary">
             <Link href="/api/auth/google/start">
               <GoogleLogo size={17} />
-              Continúa con Google
+              {t("landing.signup.google")}
             </Link>
           </Button>
 
           <div className="my-1 flex items-center gap-3 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            <span>O</span>
+            <span>{t("landing.signup.or")}</span>
             <span className="h-px flex-1 bg-border" />
           </div>
 
@@ -129,7 +131,7 @@ export function SignupDialog({
               className="flex flex-col gap-1.5 text-left text-sm font-medium"
               htmlFor="signup-email"
             >
-              Tu correo electrónico
+              {t("landing.signup.emailLabel")}
               <Input
                 autoComplete="email"
                 className="h-11 rounded-[13px] text-[15px] md:text-[15px]"
@@ -139,7 +141,7 @@ export function SignupDialog({
                   setEmail(event.target.value);
                   if (emailError) setEmailError(null);
                 }}
-                placeholder="tu@empresa.com"
+                placeholder={t("landing.signup.emailPlaceholder")}
                 type="email"
                 value={email}
               />
@@ -151,20 +153,20 @@ export function SignupDialog({
             ) : null}
 
             <Button className="btn-metal h-11 w-full text-[15px]" type="submit">
-              Reclama mis 2.000 créditos
+              {t("landing.signup.submit")}
             </Button>
           </form>
-          <p className="text-center text-xs text-muted-foreground">No se necesita tarjeta de crédito</p>
+          <p className="text-center text-xs text-muted-foreground">{t("landing.signup.noCard")}</p>
         </div>
 
         <p className="mt-2 text-center text-[11px] leading-relaxed text-muted-foreground">
-          Al crear una cuenta, aceptas los{" "}
+          {t("landing.signup.termsPrefix")}{" "}
           <Link className="underline underline-offset-2 hover:text-foreground" href="/terms">
-            Términos de Servicio
+            {t("landing.signup.terms")}
           </Link>{" "}
-          y la{" "}
+          {t("landing.signup.and")}{" "}
           <Link className="underline underline-offset-2 hover:text-foreground" href="/privacy">
-            Política de Privacidad
+            {t("landing.signup.privacy")}
           </Link>
           .
         </p>

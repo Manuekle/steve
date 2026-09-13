@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type React from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
-import { Delete02Icon, Edit02Icon, AiSearch02Icon } from "@hugeicons/core-free-icons";
-import { Beam } from "@/components/ui/beam";
+import { Delete02Icon, Edit02Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,9 +65,13 @@ function toDraft(profile: BusinessProfile): Draft {
 export function BusinessProfilePanel({
   record,
   onChange,
+  onSaveRef,
+  onSaveState,
 }: {
   readonly record: BusinessProfileRecord | null;
   readonly onChange: (record: BusinessProfileRecord | null) => void;
+  readonly onSaveRef?: React.MutableRefObject<(() => void) | null>;
+  readonly onSaveState?: (state: { dirty: boolean; saving: boolean; canSave: boolean }) => void;
 }) {
   const { t, locale } = useI18n();
   const { cue } = useSound();
@@ -117,6 +121,16 @@ export function BusinessProfilePanel({
     setMapsUrl("");
     setNotes("");
   }, [canAnalyze, websiteUrl, mapsUrl, notes, t, cue, celebrate, onChange]);
+
+  // The Analyze action lives in the card footer (like Save on the other
+  // tabs), so bubble its state up and wire the footer button to it.
+  useEffect(() => {
+    onSaveState?.({ dirty: canAnalyze, saving: analyzing, canSave: canAnalyze && !analyzing });
+  }, [canAnalyze, analyzing, onSaveState]);
+
+  useEffect(() => {
+    if (onSaveRef) onSaveRef.current = () => void analyze();
+  }, [onSaveRef, analyze]);
 
   const startEditing = useCallback(() => {
     if (!record) return;
@@ -220,81 +234,91 @@ export function BusinessProfilePanel({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Beam colorVariant="mono" strength={analyzing ? 0.9 : 0.55}>
-          <Button type="button" onClick={() => void analyze()} disabled={analyzing || !canAnalyze}>
-            {analyzing ? (
-              <Spinner size={15} strokeWidth={2} />
-            ) : (
-              <HugeiconsIcon icon={AiSearch02Icon} size={15} strokeWidth={1.75} />
-            )}
-            {record ? t("businessProfile.reanalyze") : t("businessProfile.analyzeAction")}
-          </Button>
-        </Beam>
-        {!canAnalyze ? <p className="text-xs text-muted-foreground">{t("businessProfile.emptyHint")}</p> : null}
-      </div>
-
       {record ? (
-        <div className="space-y-4 rounded-xl border border-border bg-background p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">{record.profile.name}</p>
-              <p className="text-xs text-muted-foreground">{record.profile.industry}</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {!editing ? (
+        <div className="overflow-hidden rounded-xl border border-border bg-background">
+          <div className="space-y-4 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">{record.profile.name}</p>
+                <p className="text-xs text-muted-foreground">{record.profile.industry}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                {!editing ? (
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={t("businessProfile.edit")}
+                    onClick={startEditing}
+                  >
+                    <HugeiconsIcon icon={Edit02Icon} size={15} strokeWidth={1.75} />
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   size="icon-sm"
                   variant="ghost"
-                  aria-label={t("businessProfile.edit")}
-                  onClick={startEditing}
+                  aria-label={t("businessProfile.clear")}
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => void clear()}
                 >
-                  <HugeiconsIcon icon={Edit02Icon} size={15} strokeWidth={1.75} />
+                  <HugeiconsIcon icon={Delete02Icon} size={15} strokeWidth={1.75} />
                 </Button>
-              ) : null}
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                aria-label={t("businessProfile.clear")}
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => void clear()}
-              >
-                <HugeiconsIcon icon={Delete02Icon} size={15} strokeWidth={1.75} />
-              </Button>
+              </div>
             </div>
+
+            {editing && draft ? (
+              <ProfileEditor
+                draft={draft}
+                saving={saving}
+                onChange={setDraft}
+              />
+            ) : (
+              <ProfileView profile={record.profile} />
+            )}
+
+            {record.sources.websiteError || record.sources.mapsError ? (
+              <div className="space-y-1 text-xs text-amber-600 dark:text-amber-400">
+                {record.sources.websiteError ? (
+                  <p>{t("businessProfile.websiteError", { detail: record.sources.websiteError })}</p>
+                ) : null}
+                {record.sources.mapsError ? (
+                  <p>{t("businessProfile.mapsError", { detail: record.sources.mapsError })}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <p className="text-[11px] text-muted-foreground">
+              {record.editedAt
+                ? t("businessProfile.editedAt", { date: formattedDate })
+                : t("businessProfile.generatedAt", { date: formattedDate })}{" "}
+              · {t("businessProfile.usedInAgent")}
+            </p>
           </div>
 
+          {/* Footer action strip — only when editing */}
           {editing && draft ? (
-            <ProfileEditor
-              draft={draft}
-              saving={saving}
-              onChange={setDraft}
-              onCancel={() => setEditing(false)}
-              onSave={() => void saveEdits()}
-            />
-          ) : (
-            <ProfileView profile={record.profile} />
-          )}
-
-          {record.sources.websiteError || record.sources.mapsError ? (
-            <div className="space-y-1 text-xs text-amber-600 dark:text-amber-400">
-              {record.sources.websiteError ? (
-                <p>{t("businessProfile.websiteError", { detail: record.sources.websiteError })}</p>
-              ) : null}
-              {record.sources.mapsError ? (
-                <p>{t("businessProfile.mapsError", { detail: record.sources.mapsError })}</p>
-              ) : null}
+            <div className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-3">
+              <Button
+                type="button"
+                size="sm"
+                disabled={saving || !draft.name.trim()}
+                onClick={() => void saveEdits()}
+              >
+                {saving ? <Spinner size={14} strokeWidth={2} /> : null}
+                {t("common.save")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(false)}
+                disabled={saving}
+              >
+                {t("common.cancel")}
+              </Button>
             </div>
           ) : null}
-
-          <p className="text-[11px] text-muted-foreground">
-            {record.editedAt
-              ? t("businessProfile.editedAt", { date: formattedDate })
-              : t("businessProfile.generatedAt", { date: formattedDate })}{" "}
-            · {t("businessProfile.usedInAgent")}
-          </p>
         </div>
       ) : null}
     </div>
@@ -391,16 +415,12 @@ const AREA_ROWS = [
 
 function ProfileEditor({
   draft,
-  saving,
+  saving: _saving,
   onChange,
-  onCancel,
-  onSave,
 }: {
   readonly draft: Draft;
   readonly saving: boolean;
   readonly onChange: (draft: Draft) => void;
-  readonly onCancel: () => void;
-  readonly onSave: () => void;
 }) {
   const { t } = useI18n();
   const set = (key: keyof Draft, value: string) => onChange({ ...draft, [key]: value });
@@ -432,18 +452,6 @@ function ProfileEditor({
           />
         </div>
       ))}
-
-      <div className="flex items-center gap-2">
-        <Button type="button" size="sm" disabled={saving || !draft.name.trim()} onClick={onSave}>
-          {saving ? (
-            <Spinner size={14} strokeWidth={2} />
-          ) : null}
-          {t("common.save")}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onCancel} disabled={saving}>
-          {t("common.cancel")}
-        </Button>
-      </div>
     </div>
   );
 }

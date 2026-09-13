@@ -115,7 +115,7 @@ export const en: Dictionary = {
   "sound.turnOn": "Turn on interface sounds",
   "sound.turnOff": "Mute interface sounds",
   "sound.title": "Interface sounds",
-  "sound.description": "Short cues on navigation hover, on confirmation and on failure. Off by default.",
+  "sound.description": "Short cues on navigation hover.",
   "sound.volume": "Volume",
   "ads.notConfigured": "Meta Ads isn't configured. Add META_ACCESS_TOKEN and META_AD_ACCOUNT_ID in Settings.",
   "theme.dark": "Dark mode",
@@ -1948,6 +1948,22 @@ export const en: Dictionary = {
   "landing.cta.settings": "Settings",
   "landing.cta.install": "Install senka",
 
+  // ── Landing: signup dialog (credits) ──
+  "landing.signup.title": "Create your first AI sales agent in 2 minutes",
+  "landing.signup.subtitle": "Create an account and get 2,000 free credits.",
+  "landing.signup.google": "Continue with Google",
+  "landing.signup.or": "Or",
+  "landing.signup.emailLabel": "Your email address",
+  "landing.signup.emailPlaceholder": "you@company.com",
+  "landing.signup.errorRequired": "Enter your email to continue.",
+  "landing.signup.errorInvalid": "That email doesn't look valid.",
+  "landing.signup.submit": "Claim my 2,000 credits",
+  "landing.signup.noCard": "No credit card required",
+  "landing.signup.termsPrefix": "By creating an account, you agree to the",
+  "landing.signup.terms": "Terms of Service",
+  "landing.signup.and": "and the",
+  "landing.signup.privacy": "Privacy Policy",
+
   // ── Landing: header ──
   "landing.header.homeAria": "senka — home",
   "landing.header.sectionsAria": "Sections",
@@ -2700,6 +2716,21 @@ export const en: Dictionary = {
   "account.planActive": "Active",
   "account.planMaintenanceExpired": "Maintenance expired",
   "account.planManageBilling": "Manage billing",
+
+  // ── Account: profile photo crop ──
+  "account.avatarChange": "Change profile photo",
+  "account.avatarCropTitle": "Adjust profile photo",
+  "account.avatarCropDescription": "Drag to frame, zoom with scroll or the control, and rotate if needed",
+  "account.avatarCropViewport": "Crop profile photo",
+  "account.avatarCropZoomOut": "Zoom out",
+  "account.avatarCropZoomIn": "Zoom in",
+  "account.avatarCropZoomLevel": "Zoom level",
+  "account.avatarCropRotate": "Rotate 90 degrees",
+  "account.avatarCropRotateShort": "Rotate 90°",
+  "account.avatarCropReset": "Reset framing",
+  "account.avatarCropResetShort": "Reset",
+  "account.avatarCropHint": "The image is used exactly as you uploaded it — here you only choose the framing. The circle shows how your avatar will look.",
+  "account.avatarCropApply": "Apply photo",
 
   // ── Billing ──
   "billing.back": "Back to account",

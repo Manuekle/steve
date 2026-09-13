@@ -77,9 +77,9 @@ const PRIMARY_PAGES = PAGES.filter((page) => PRIMARY_PAGE_HREFS.has(page.href));
 const OVERFLOW_PAGES = PAGES.filter((page) => !PRIMARY_PAGE_HREFS.has(page.href));
 
 /**
- * The wordmark, in the same two-tone treatment the sidebar uses: `st` dropped
- * back to a quarter-opacity grey, `eve` at full contrast. It is the app's
- * signature, so the landing does not get its own version of it.
+ * The wordmark, shared with the app sidebar (desktop + mobile): 20px mark in
+ * a fixed box, 20px `font-medium` word, `tracking-tighter`. One lockup in
+ * three places, so a size change here must change there too.
  */
 export function Wordmark({ className }: { readonly className?: string }) {
   return (
@@ -89,9 +89,9 @@ export function Wordmark({ className }: { readonly className?: string }) {
           the silhouette, which is not vertically symmetric, so `items-center`
           on the svg alone never quite sat it next to the word. */}
       <span className="flex size-8 shrink-0 items-center justify-center">
-        <SenkaMark metal className="block h-[24px] w-auto" />
+        <SenkaMark metal className="block h-[20px] w-auto" />
       </span>
-      <span className="font-normal text-[22px] leading-none tracking-tighter">
+      <span className="font-medium text-[20px] leading-none tracking-tighter">
         <span className="text-foreground">senka</span>
       </span>
     </span>
@@ -104,7 +104,13 @@ export function Wordmark({ className }: { readonly className?: string }) {
  * grid floats behind with no tile around it — no border, no ground, just the
  * dots — softened by a radial mask so the crop never shows a hard edge.
  * No `#fafafa` rect: an opaque ground would be the button look this replaced.
- * `dark:invert` flips the dots for dark mode.
+ * The dots are `currentColor` over `text-foreground`, so they follow the app's
+ * `.dark` class like every other token. The previous `dark:invert` answered to
+ * the OS `prefers-color-scheme` media query instead of the app theme, so light
+ * mode on a dark OS served white dots on a white panel: invisible.
+ * The glyph is `text-muted-foreground`, one step below the title ink: at 32px
+ * it needs 3:1 and carries ≈5.5:1 on light / ≈5.0:1 on dark, so it stays calm
+ * without going ghost.
  */
 function MoreTile({ icon }: { readonly icon: IconSvgElement }) {
   return (
@@ -114,78 +120,78 @@ function MoreTile({ icon }: { readonly icon: IconSvgElement }) {
         preserveAspectRatio="xMidYMid slice"
         viewBox="0 0 48 48"
         fill="none"
-        className="absolute inset-0 h-full w-full opacity-70 [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_78%)] dark:invert"
+        className="absolute inset-0 h-full w-full text-foreground [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_78%)]"
       >
-        <g opacity="0.15">
-          <path fillRule="evenodd" clipRule="evenodd" d="M4 48L1 48L1 47L4 47L4 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M10 48L7 48L7 47L10 47L10 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M16 48L13 48L13 47L16 47L16 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M22 48L19 48L19 47L22 47L22 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M28 48L25 48L25 47L28 47L28 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M34 48L31 48L31 47L34 47L34 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M40 48L37 48L37 47L40 47L40 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M46 48L43 48L43 47L46 47L46 48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M4 36L1 36L1 35L4 35L4 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M10 36L7 36L7 35L10 35L10 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M16 36L13 36L13 35L16 35L16 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M22 36L19 36L19 35L22 35L22 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M28 36L25 36L25 35L28 35L28 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M34 36L31 36L31 35L34 35L34 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M40 36L37 36L37 35L40 35L40 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M46 36L43 36L43 35L46 35L46 36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M4 24L1 24L1 23L4 23L4 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M10 24L7 24L7 23L10 23L10 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M16 24L13 24L13 23L16 23L16 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M22 24L19 24L19 23L22 23L22 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M28 24L25 24L25 23L28 23L28 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M34 24L31 24L31 23L34 23L34 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M40 24L37 24L37 23L40 23L40 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M46 24L43 24L43 23L46 23L46 24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M4 12L1 12L1 11L4 11L4 12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M10 12L7 12L7 11L10 11L10 12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M16 12L13 12L13 11L16 11L16 12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M22 12L19 12L19 11L22 11L22 12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M28 12L25 12L25 11L28 11L28 12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M34 12L31 12L31 11L34 11L34 12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M40 12L37 12L37 11L40 11L40 12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M46 12L43 12L43 11L46 11L46 12Z" fill="#1C1F21" />
+        <g opacity="0.2" fill="currentColor">
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 48L1 48L1 47L4 47L4 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 48L7 48L7 47L10 47L10 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 48L13 48L13 47L16 47L16 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 48L19 48L19 47L22 47L22 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 48L25 48L25 47L28 47L28 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 48L31 48L31 47L34 47L34 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 48L37 48L37 47L40 47L40 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 48L43 48L43 47L46 47L46 48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 36L1 36L1 35L4 35L4 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 36L7 36L7 35L10 35L10 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 36L13 36L13 35L16 35L16 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 36L19 36L19 35L22 35L22 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 36L25 36L25 35L28 35L28 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 36L31 36L31 35L34 35L34 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 36L37 36L37 35L40 35L40 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 36L43 36L43 35L46 35L46 36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 24L1 24L1 23L4 23L4 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 24L7 24L7 23L10 23L10 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 24L13 24L13 23L16 23L16 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 24L19 24L19 23L22 23L22 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 24L25 24L25 23L28 23L28 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 24L31 24L31 23L34 23L34 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 24L37 24L37 23L40 23L40 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 24L43 24L43 23L46 23L46 24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M4 12L1 12L1 11L4 11L4 12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M10 12L7 12L7 11L10 11L10 12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M16 12L13 12L13 11L16 11L16 12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M22 12L19 12L19 11L22 11L22 12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M28 12L25 12L25 11L28 11L28 12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M34 12L31 12L31 11L34 11L34 12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M40 12L37 12L37 11L40 11L40 12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M46 12L43 12L43 11L46 11L46 12Z" />
         </g>
-        <g opacity="0.15">
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 43V46H47V43H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 37V40H47V37H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 31V34H47V31H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 25V28H47V25H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 19V22H47V19H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 13V16H47V13H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 7V10H47V7H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M48 1V4H47V1H48Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 43V46H35V43H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 37V40H35V37H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 31V34H35V31H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 25V28H35V25H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 19V22H35V19H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 13V16H35V13H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 7V10H35V7H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M36 1V4H35V1H36Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 43V46H23V43H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 37V40H23V37H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 31V34H23V31H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 25V28H23V25H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 19V22H23V19H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 13V16H23V13H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 7V10H23V7H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M24 1V4H23V1H24Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 43V46H11V43H12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 37V40H11V37H12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 31V34H11V31H12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 25V28H11V25H12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 19V22H11V19H12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 13V16H11V13H12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 7V10H11V7H12Z" fill="#1C1F21" />
-          <path fillRule="evenodd" clipRule="evenodd" d="M12 1V4H11V1H12Z" fill="#1C1F21" />
+        <g opacity="0.2" fill="currentColor">
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 43V46H47V43H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 37V40H47V37H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 31V34H47V31H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 25V28H47V25H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 19V22H47V19H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 13V16H47V13H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 7V10H47V7H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M48 1V4H47V1H48Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 43V46H35V43H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 37V40H35V37H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 31V34H35V31H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 25V28H35V25H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 19V22H35V19H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 13V16H35V13H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 7V10H35V7H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M36 1V4H35V1H36Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 43V46H23V43H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 37V40H23V37H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 31V34H23V31H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 25V28H23V25H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 19V22H23V19H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 13V16H23V13H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 7V10H23V7H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M24 1V4H23V1H24Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 43V46H11V43H12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 37V40H11V37H12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 31V34H11V31H12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 25V28H11V25H12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 19V22H11V19H12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 13V16H11V13H12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 7V10H11V7H12Z" />
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 1V4H11V1H12Z" />
         </g>
       </svg>
-      <HugeiconsIcon icon={icon} size={32} strokeWidth={1.5} className="relative text-foreground" />
+      <HugeiconsIcon icon={icon} size={32} strokeWidth={1.5} className="relative text-muted-foreground" />
     </span>
   );
 }

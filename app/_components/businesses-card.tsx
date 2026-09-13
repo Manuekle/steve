@@ -8,14 +8,7 @@ import {
   Delete02Icon,
   PencilEdit01Icon,
 } from "@hugeicons/core-free-icons";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardSeparator,
-  CardBody,
-} from "./dashboard-card";
+import { Card } from "./dashboard-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -123,123 +116,127 @@ export function BusinessesCard() {
   };
 
   return (
-    <Card className="mb-4">
-      <CardHeader>
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-          <HugeiconsIcon icon={Building06Icon} size={16} strokeWidth={1.75} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <CardTitle>{t("business.manageTitle")}</CardTitle>
-          <CardDescription>{t("business.manageDescription")}</CardDescription>
-        </div>
-      </CardHeader>
-      <CardSeparator />
-      <CardBody>
-        <ErrorBanner className="mb-3" error={error} onDismiss={() => setError(null)} />
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-          {businesses.map((business) => (
-            <li
-              key={business.id}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 transition-colors",
-                business.active ? "bg-muted/50" : "bg-card hover:bg-muted/30",
-              )}
-            >
-              {business.logoUpdatedAt ? (
-                /* eslint-disable-next-line @next/next/no-img-element -- served by API route */
-                <img
-                  src={`/api/businesses/${encodeURIComponent(business.id)}/logo?v=${encodeURIComponent(business.logoUpdatedAt)}`}
-                  alt={business.name || t("business.unnamed")}
-                  className="size-10 shrink-0 rounded-lg border border-border bg-card object-contain p-0.5"
-                />
-              ) : (
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold uppercase text-muted-foreground shadow-[var(--shadow-inset)]">
-                  {(business.name || t("business.unnamed")).slice(0, 1)}
-                </span>
-              )}
-
-              <div className="min-w-0 flex-1">
-                {editingId === business.id ? (
-                  <Input
-                    value={draftName}
-                    onChange={(event) => setDraftName(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        void rename(business.id);
-                      }
-                      if (event.key === "Escape") setEditingId(null);
-                    }}
-                    className="h-8 text-sm"
-                    autoFocus
+    <Card className="mb-4 rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+      <div className="flex flex-col">
+        <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card p-5 shadow-xs">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+              <HugeiconsIcon icon={Building06Icon} size={16} strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-medium">{t("business.manageTitle")}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t("business.manageDescription")}</p>
+            </div>
+          </div>
+          <ErrorBanner className="mb-3" error={error} onDismiss={() => setError(null)} />
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+            {businesses.map((business) => (
+              <li
+                key={business.id}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 transition-colors",
+                  business.active ? "bg-muted/50" : "bg-card hover:bg-muted/30",
+                )}
+              >
+                {business.logoUpdatedAt ? (
+                  /* eslint-disable-next-line @next/next/no-img-element -- served by API route */
+                  <img
+                    src={`/api/businesses/${encodeURIComponent(business.id)}/logo?v=${encodeURIComponent(business.logoUpdatedAt)}`}
+                    alt={business.name || t("business.unnamed")}
+                    className="size-10 shrink-0 rounded-lg border border-border bg-card object-contain p-0.5"
                   />
                 ) : (
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-medium">
-                      {business.name || t("business.unnamed")}
-                    </span>
-                    {business.active ? (
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                        <HugeiconsIcon icon={CheckIcon} size={9} strokeWidth={2.5} />
-                        {t("business.active")}
-                      </span>
-                    ) : null}
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold uppercase text-muted-foreground shadow-[var(--shadow-inset)]">
+                    {(business.name || t("business.unnamed")).slice(0, 1)}
                   </span>
                 )}
-              </div>
 
-              <span className="flex shrink-0 items-center gap-1">
-                {editingId === business.id ? (
-                  <>
-                    <Button size="sm" disabled={busy} onClick={() => void rename(business.id)}>
-                      {t("business.renameSave")}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                      {t("agents.cancel")}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    {business.active ? null : (
-                      <Button size="sm" variant="outline" disabled={busy} onClick={() => void switchTo(business.id)}>
-                        {t("business.switchAction")}
-                      </Button>
-                    )}
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={t("business.rename")}
-                      onClick={() => {
-                        setEditingId(business.id);
-                        setDraftName(business.name);
+                <div className="min-w-0 flex-1">
+                  {editingId === business.id ? (
+                    <Input
+                      value={draftName}
+                      onChange={(event) => setDraftName(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void rename(business.id);
+                        }
+                        if (event.key === "Escape") setEditingId(null);
                       }}
-                    >
-                      <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
-                    </Button>
-                    {/* The original business has no "remove" — every unsuffixed
-                        document and file on this install is its own, and a
-                        button that hid all of it would be a trap. */}
-                    {business.primary || business.active ? null : (
+                      className="h-8 text-sm"
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-medium">
+                        {business.name || t("business.unnamed")}
+                      </span>
+                      {business.active ? (
+                        <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                          <HugeiconsIcon icon={CheckIcon} size={9} strokeWidth={2.5} />
+                          {t("business.active")}
+                        </span>
+                      ) : null}
+                    </span>
+                  )}
+                </div>
+
+                <span className="flex shrink-0 items-center gap-1">
+                  {editingId === business.id ? (
+                    <>
+                      <Button size="sm" disabled={busy} onClick={() => void rename(business.id)}>
+                        {t("business.renameSave")}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                        {t("agents.cancel")}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {business.active ? null : (
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => void switchTo(business.id)}>
+                          {t("business.switchAction")}
+                        </Button>
+                      )}
                       <Button
                         size="icon-sm"
                         variant="ghost"
-                        aria-label={t("business.forget")}
-                        disabled={busy}
-                        onClick={() => void forget(business)}
+                        aria-label={t("business.rename")}
+                        onClick={() => {
+                          setEditingId(business.id);
+                          setDraftName(business.name);
+                        }}
                       >
-                        <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
+                        <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
                       </Button>
-                    )}
-                  </>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          {t("business.scopeNote")}
-        </p>
-      </CardBody>
+                      {/* The original business has no "remove" — every unsuffixed
+                          document and file on this install is its own, and a
+                          button that hid all of it would be a trap. */}
+                      {business.primary || business.active ? null : (
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          aria-label={t("business.forget")}
+                          disabled={busy}
+                          onClick={() => void forget(business)}
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={1.75} />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {/* Scope note — outside the inner border, matching the skills card footer */}
+        <div className="px-2.5 pt-2 pb-0.5">
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            {t("business.scopeNote")}
+          </p>
+        </div>
+      </div>
       {dialog}
     </Card>
   );

@@ -1,22 +1,16 @@
 "use client";
 
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
   AuthorizedIcon,
   Logout01Icon,
   Invoice04Icon,
+  Camera01Icon,
 } from "@hugeicons/core-free-icons";
 import type { LicenseInfo } from "@/lib/license/types";
 import { PageContainer } from "../../_components/page-container";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardSeparator,
-  CardBody,
-} from "../../_components/dashboard-card";
+import { Card } from "../../_components/dashboard-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -29,11 +23,21 @@ import { BusinessesCard } from "../../_components/businesses-card";
 import { useT } from "@/lib/i18n/provider";
 import { fetchJson, type UiError } from "@/lib/api-error-message";
 import { Spinner } from "@/components/ui/spinner";
+import { AvatarCropDialog } from "@/components/avatar-crop-dialog";
 
 export default function AccountPage() {
   const t = useT();
 
   const [email, setEmail] = useState<string | null>(null);
+  const [hasAvatar, setHasAvatar] = useState(false);
+  const [googlePicture, setGooglePicture] = useState<string | null>(null);
+  /** Bumped after a successful upload to bust the img cache. */
+  const [avatarTs, setAvatarTs] = useState(0);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  /** File selected but not yet cropped — opens the crop dialog. */
+  const [cropFile, setCropFile] = useState<File | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<UiError | null>(null);
   const [license, setLicense] = useState<LicenseInfo | null>(null);
@@ -47,9 +51,11 @@ export default function AccountPage() {
   const [saved, setSaved] = useState(false);
 
   const load = useCallback(async () => {
-    const result = await fetchJson<{ email: string }>("/api/account", t);
+    const result = await fetchJson<{ email: string; hasAvatar: boolean; googlePicture: string | null }>("/api/account", t);
     if (result.ok) {
       setEmail(result.data.email);
+      setHasAvatar(result.data.hasAvatar);
+      setGooglePicture(result.data.googlePicture);
       setLoadError(null);
     } else {
       setLoadError(result.error);
@@ -68,6 +74,31 @@ export default function AccountPage() {
         if (data) setLicense(data);
       })
       .catch(() => null);
+  }, []);
+
+  const handleAvatarChange = useCallback(async (file: File) => {
+    if (!file) return;
+    // Open the crop dialog instead of uploading directly.
+    setCropFile(file);
+    // Clear input so the same file can be re-selected later.
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }, []);
+
+  /** Called by AvatarCropDialog when the user confirms the crop. */
+  const handleCroppedBlob = useCallback(async (blob: Blob) => {
+    setCropFile(null);
+    setUploadingAvatar(true);
+    const form = new FormData();
+    form.append("file", blob, "avatar.jpg");
+    try {
+      const res = await fetch("/api/account/avatar", { method: "POST", body: form });
+      if (res.ok) {
+        setHasAvatar(true);
+        setAvatarTs(Date.now());
+      }
+    } finally {
+      setUploadingAvatar(false);
+    }
   }, []);
 
   const resetForm = () => {
@@ -139,6 +170,11 @@ export default function AccountPage() {
 
   return (
     <PageContainer maxWidth="max-w-4xl" pattern="grid">
+      <AvatarCropDialog
+        file={cropFile}
+        onConfirm={(blob) => void handleCroppedBlob(blob)}
+        onCancel={() => setCropFile(null)}
+      />
       <Skeleton className="min-h-[400px]" isLoading={loading} skeleton={<AccountSkeleton />}>
         <div className="content-enter">
           <header className="mb-6">
@@ -148,17 +184,56 @@ export default function AccountPage() {
 
           <ErrorBanner className="mb-4" error={loadError} onRetry={() => void load()} />
 
-          {/* Identity and plan in one block. These used to be two cards that
-              both answered "whose install is this" — the email one, and a plan
-              one that repeated the edition, the company and the status the
-              licence card below already draws. */}
+          {/* Identity and plan in one block. */}
           <Card className="mb-4">
             <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-              <div
-                aria-hidden
-                className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-gradient-to-br from-muted to-accent text-lg font-semibold text-foreground/70 shadow-[var(--shadow-inset)]"
-              >
-                {(email ?? "?").charAt(0).toUpperCase()}
+
+              {/* Avatar — uploaded photo > Google picture > initials fallback */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  aria-label={t("account.avatarChange")}
+                  disabled={uploadingAvatar}
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="group relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-muted to-accent text-lg font-semibold text-foreground/70 shadow-[var(--shadow-inset)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {hasAvatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={`/api/account/avatar?v=${avatarTs}`}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : googlePicture ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={googlePicture}
+                      referrerPolicy="no-referrer"
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    (email ?? "?").charAt(0).toUpperCase()
+                  )}
+                  {/* Camera overlay on hover */}
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                    {uploadingAvatar ? (
+                      <Spinner size={16} strokeWidth={2} className="text-white" />
+                    ) : (
+                      <HugeiconsIcon icon={Camera01Icon} size={16} strokeWidth={1.75} className="text-white" />
+                    )}
+                  </span>
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleAvatarChange(file);
+                  }}
+                />
               </div>
 
               <div className="min-w-0 flex-1">
@@ -199,106 +274,109 @@ export default function AccountPage() {
               expiry and installation id all live on its two faces. */}
           <LicenseCard />
 
-          <Card className="mb-4">
-            <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={AuthorizedIcon} size={16} strokeWidth={1.75} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle>{t("account.changePasswordTitle")}</CardTitle>
-                <CardDescription>{t("account.changePasswordDescription")}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardSeparator />
-            <CardBody>
-              <form className="space-y-4" onSubmit={onSubmit}>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label htmlFor="current-password" className="text-sm font-medium">
-                      {t("account.currentPassword")}
-                    </label>
-                    <Input
-                      id="current-password"
-                      type="password"
-                      autoComplete="current-password"
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
-                      required
-                    />
+          <Card className="mb-4 rounded-[20px] border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+            <div className="flex flex-col">
+              <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card p-5 shadow-xs">
+                <div className="mb-4 flex items-start gap-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                    <HugeiconsIcon icon={AuthorizedIcon} size={16} strokeWidth={1.75} />
                   </div>
-                  <div className="space-y-1.5">
-                    <label htmlFor="new-password" className="text-sm font-medium">
-                      {t("auth.newPassword")}
-                    </label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      autoComplete="new-password"
-                      minLength={10}
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label htmlFor="confirm-new-password" className="text-sm font-medium">
-                      {t("auth.confirmPassword")}
-                    </label>
-                    <Input
-                      id="confirm-new-password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      required
-                    />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-medium">{t("account.changePasswordTitle")}</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t("account.changePasswordDescription")}</p>
                   </div>
                 </div>
+                <form className="space-y-4" onSubmit={onSubmit}>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label htmlFor="current-password" className="text-sm font-medium">
+                        {t("account.currentPassword")}
+                      </label>
+                      <Input
+                        id="current-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={currentPassword}
+                        onChange={(event) => setCurrentPassword(event.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="new-password" className="text-sm font-medium">
+                        {t("auth.newPassword")}
+                      </label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={10}
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">{t("auth.passwordHint")}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="confirm-new-password" className="text-sm font-medium">
+                        {t("auth.confirmPassword")}
+                      </label>
+                      <Input
+                        id="confirm-new-password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
 
-                {fieldError ? <p className="text-xs text-destructive">{fieldError}</p> : null}
-                <ErrorBanner error={saveError} onDismiss={() => setSaveError(null)} />
-
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={
-                      saving || !currentPassword || !newPassword || !confirmPassword
-                    }
-                  >
-                    {saving ? (
-                      <Spinner size={15} strokeWidth={2} />
-                    ) : null}
-                    {t("account.changePasswordAction")}
-                  </Button>
-                  {saved ? (
-                    <p className="text-xs text-muted-foreground">{t("account.changePasswordSuccess")}</p>
-                  ) : null}
-                </div>
-              </form>
-            </CardBody>
+                  {fieldError ? <p className="text-xs text-destructive">{fieldError}</p> : null}
+                  <ErrorBanner error={saveError} onDismiss={() => setSaveError(null)} />
+                </form>
+              </div>
+              {/* Actions row — outside the inner border, matching the skills card footer */}
+              <div className="flex flex-wrap items-center gap-2 px-2.5 pt-2 pb-0.5">
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={saving || !currentPassword || !newPassword || !confirmPassword}
+                  onClick={onSubmit}
+                >
+                  {saving ? <Spinner size={15} strokeWidth={2} /> : null}
+                  {t("account.changePasswordAction")}
+                </Button>
+                {saved ? (
+                  <p className="text-xs text-muted-foreground">{t("account.changePasswordSuccess")}</p>
+                ) : null}
+              </div>
+            </div>
           </Card>
 
           {/* Two short cards that were each spending a full page-width row. */}
           <div className="grid gap-4 lg:grid-cols-2 [&>*]:mb-0">
             <SoundSettings />
 
-            <Card className="flex flex-col">
-              <CardHeader>
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                  <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
+            <div className="rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+              <div className="flex flex-col">
+                <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card p-5 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                      <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.75} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-medium">{t("account.signOutCardTitle")}</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{t("account.signOutCardDescription")}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <CardTitle>{t("account.signOutCardTitle")}</CardTitle>
-                  <CardDescription>{t("account.signOutCardDescription")}</CardDescription>
+                <div className="px-2.5 pt-2 pb-1">
+                  <SignOutButton
+                    className="w-full justify-center rounded-[11px] border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm shadow-[var(--shadow-inset)] hover:bg-destructive/20"
+                  />
                 </div>
-              </CardHeader>
-              <CardSeparator />
-              <CardBody className="mt-auto">
-                <SignOutButton className="border border-border shadow-[var(--shadow-inset)]" />
-              </CardBody>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </Skeleton>

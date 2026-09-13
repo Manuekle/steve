@@ -115,7 +115,7 @@ export const es: Dictionary = {
   "sound.turnOn": "Activar sonidos de interfaz",
   "sound.turnOff": "Silenciar sonidos de interfaz",
   "sound.title": "Sonidos de interfaz",
-  "sound.description": "Señales cortas al pasar por la navegación, al confirmar y al fallar. Arrancan apagados.",
+  "sound.description": "Señales cortas al pasar por la navegación.",
   "sound.volume": "Volumen",
   "ads.notConfigured": "Meta Ads sin configurar. Cargá META_ACCESS_TOKEN y META_AD_ACCOUNT_ID en Configuración.",
   "theme.dark": "Modo oscuro",
@@ -1950,6 +1950,22 @@ export const es: Dictionary = {
   "landing.cta.settings": "Configuración",
   "landing.cta.install": "Instalar senka",
 
+  // ── Landing: signup dialog (créditos) ──
+  "landing.signup.title": "Crea tu primer agente de ventas IA en 2 minutos",
+  "landing.signup.subtitle": "Crea una cuenta y recibe 2.000 créditos gratis.",
+  "landing.signup.google": "Continúa con Google",
+  "landing.signup.or": "O",
+  "landing.signup.emailLabel": "Tu correo electrónico",
+  "landing.signup.emailPlaceholder": "tu@empresa.com",
+  "landing.signup.errorRequired": "Escribe tu correo para continuar.",
+  "landing.signup.errorInvalid": "Ese correo no parece válido.",
+  "landing.signup.submit": "Reclama mis 2.000 créditos",
+  "landing.signup.noCard": "No se necesita tarjeta de crédito",
+  "landing.signup.termsPrefix": "Al crear una cuenta, aceptas los",
+  "landing.signup.terms": "Términos de Servicio",
+  "landing.signup.and": "y la",
+  "landing.signup.privacy": "Política de Privacidad",
+
   // ── Landing: header ──
   "landing.header.homeAria": "senka — inicio",
   "landing.header.sectionsAria": "Secciones",
@@ -2705,6 +2721,21 @@ export const es: Dictionary = {
   "account.planActive": "Activo",
   "account.planMaintenanceExpired": "Mantenimiento vencido",
   "account.planManageBilling": "Gestionar facturación",
+
+  // ── Cuenta: recorte de foto de perfil ──
+  "account.avatarChange": "Cambiar foto de perfil",
+  "account.avatarCropTitle": "Ajustar foto de perfil",
+  "account.avatarCropDescription": "Arrastra para encuadrar, haz zoom con scroll o el control, y rota si lo necesitas",
+  "account.avatarCropViewport": "Recortar foto de perfil",
+  "account.avatarCropZoomOut": "Reducir zoom",
+  "account.avatarCropZoomIn": "Aumentar zoom",
+  "account.avatarCropZoomLevel": "Nivel de zoom",
+  "account.avatarCropRotate": "Rotar 90 grados",
+  "account.avatarCropRotateShort": "Rotar 90°",
+  "account.avatarCropReset": "Restablecer encuadre",
+  "account.avatarCropResetShort": "Restablecer",
+  "account.avatarCropHint": "Se usa la imagen tal cual la subiste — aquí solo eliges el encuadre. El círculo es cómo se verá tu avatar.",
+  "account.avatarCropApply": "Aplicar foto",
 
   // ── Facturación ──
   "billing.back": "Volver a cuenta",

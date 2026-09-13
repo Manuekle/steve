@@ -33,7 +33,9 @@ import { AppChrome, HeaderAction } from "./screen-chrome";
  */
 
 type Contact = {
+  readonly attributes?: Readonly<Record<string, string>>;
   readonly channel: ChannelId;
+  readonly email: string;
   readonly lastMessage: string;
   readonly name: string;
   readonly notes: string;
@@ -54,7 +56,9 @@ type Contact = {
 function useContacts(t: (key: string) => string): readonly Contact[] {
   return [
     {
+      attributes: { zona: "Palermo", presupuesto: "$120.000" },
       channel: "whatsapp",
+      email: "maria.fernandez@example.com",
       lastMessage: t("landing.demo.msg.maria"),
       name: "María Fernández",
       notes: t("landing.demo.note.maria"),
@@ -65,6 +69,7 @@ function useContacts(t: (key: string) => string): readonly Contact[] {
     },
     {
       channel: "instagram",
+      email: "lucia.romero@example.com",
       lastMessage: t("landing.demo.msg.lucia"),
       name: "Lucía Romero",
       notes: t("landing.demo.note.lucia"),
@@ -75,6 +80,7 @@ function useContacts(t: (key: string) => string): readonly Contact[] {
     },
     {
       channel: "whatsapp",
+      email: "carlos.ruiz@example.com",
       lastMessage: t("landing.demo.msg.carlos"),
       name: "Carlos Ruiz",
       notes: t("landing.demo.note.carlos"),
@@ -85,6 +91,7 @@ function useContacts(t: (key: string) => string): readonly Contact[] {
     },
     {
       channel: "instagram",
+      email: "diego.salas@example.com",
       lastMessage: t("landing.demo.msg.diego"),
       name: "Diego Salas",
       notes: t("landing.demo.note.diego"),
@@ -95,6 +102,7 @@ function useContacts(t: (key: string) => string): readonly Contact[] {
     },
     {
       channel: "whatsapp",
+      email: "paula.ibanez@example.com",
       lastMessage: t("landing.demo.msg.paula"),
       name: "Paula Ibáñez",
       notes: t("landing.demo.note.paula"),
@@ -105,6 +113,7 @@ function useContacts(t: (key: string) => string): readonly Contact[] {
     },
     {
       channel: "instagram",
+      email: "tomas.aguirre@example.com",
       lastMessage: t("landing.demo.msg.tomas"),
       name: "Tomás Aguirre",
       notes: t("landing.demo.note.tomas"),
@@ -123,7 +132,7 @@ export function InboxScreen() {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>("Lucía Romero");
 
-  // The page's own filter: name, phone or note, lower-cased.
+  // The page's own filter: name, phone, email or note, lower-cased.
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return contacts;
@@ -131,6 +140,7 @@ export function InboxScreen() {
       (contact) =>
         contact.name.toLowerCase().includes(query) ||
         contact.phone.includes(query) ||
+        contact.email.toLowerCase().includes(query) ||
         contact.notes.toLowerCase().includes(query),
     );
   }, [search, contacts]);
@@ -177,35 +187,41 @@ export function InboxScreen() {
           </div>
         </Card>
       ) : (
+        // Demo scope: no checkbox / select-all / bulk bar / Pagination here.
+        // The real page has them (`app/(app)/inbox/page.tsx`), but in a
+        // 608px-tall mockup they are noise over six static rows — selection
+        // state with nowhere to send it. Deliberately omitted, not drift.
         <div className="space-y-2">
           {filtered.map((contact) => {
             const isExpanded = expanded === contact.name;
+            const attrs = Object.entries(contact.attributes ?? {});
             return (
               <Card key={contact.name}>
-                <div className="flex items-center gap-3 px-5 py-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)] sm:size-10">
                     <ChannelIcon channel={contact.channel} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    {/* `StatusBadge`, the pill the row actually prints — the
-                        hand-rolled grey chip here was the one place in these
-                        screens where a shared component had been redrawn, so
-                        the demo missed the amber/pending colour the real inbox
-                        uses to say a contact is waiting.
-
-                        `min-w-0 flex-1` on the name and `shrink-0` on the pill:
-                        a truncating <p> has `min-width: 0`, so on a 390px row
-                        the name collapsed to nothing and the contact showed as
-                        a chip with a message under it and no one's name. */}
-                    <div className="flex items-center gap-2">
-                      <p className="min-w-0 flex-1 truncate font-medium text-sm">{contact.name}</p>
+                    {/* Name alone here, like the real row: the `StatusBadge`
+                        lives in its own column on `sm+` and inline below only
+                        on mobile. The pill used to sit next to the name at
+                        every width, which the page never does. */}
+                    <p className="truncate font-medium text-sm">{contact.name}</p>
+                    <p className="truncate text-muted-foreground text-xs">{contact.lastMessage}</p>
+                    {/* Status badge inline on mobile below the name */}
+                    <div className="mt-1 sm:hidden">
                       <StatusBadge
-                        className="shrink-0"
                         label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
                         status={contact.status === "followup_due" ? "pending" : "warning"}
                       />
                     </div>
-                    <p className="truncate text-muted-foreground text-xs">{contact.lastMessage}</p>
+                  </div>
+                  {/* Status badge — only visible sm+ (shown inline on mobile above) */}
+                  <div className="hidden shrink-0 sm:flex sm:min-w-[110px] sm:items-center sm:justify-center">
+                    <StatusBadge
+                      label={contact.status === "followup_due" ? t("inbox.followup") : t("inbox.handoff")}
+                      status={contact.status === "followup_due" ? "pending" : "warning"}
+                    />
                   </div>
                   <span className="hidden text-muted-foreground text-xs sm:block">{contact.when}</span>
                   <Button
@@ -245,19 +261,46 @@ export function InboxScreen() {
                     style={{ overflow: "hidden" }}
                   >
                     <div className="space-y-2 border-border border-t px-5 py-3 text-muted-foreground text-xs">
-                      <p>
-                        {t("inbox.phone")}: {contact.phone}
-                      </p>
+                      {/* Conditional like the real detail: no empty lines when
+                          a field is missing. Edit mode stays out — demo rows
+                          are inert, Edit/Delete go nowhere. */}
+                      {/* `suppressHydrationWarning`: browsers/extensions with
+                          phone detection (Safari unless the page opts out via
+                          `format-detection`, Skype click-to-call, …) rewrite
+                          the number into `<a href="tel:…">` before hydration.
+                          The text is static mock data; keep their DOM. */}
+                      {contact.phone ? (
+                        <p suppressHydrationWarning>
+                          {t("inbox.phone")}: {contact.phone}
+                        </p>
+                      ) : null}
+                      {contact.email ? (
+                        <p>
+                          {t("inbox.email")}: {contact.email}
+                        </p>
+                      ) : null}
                       <p>
                         {t("inbox.source")}: {contact.source}
                       </p>
                       <p>
                         {t("inbox.status")}: {contact.status}
                       </p>
-                      <p>
-                        {t("inbox.notes")}: {contact.notes}
-                      </p>
-                      <div className="mt-3 flex gap-2 border-border border-t pt-2">
+                      {contact.notes ? (
+                        <p>
+                          {t("inbox.notes")}: {contact.notes}
+                        </p>
+                      ) : null}
+                      {attrs.length > 0 ? (
+                        <div className="mt-2">
+                          <p className="font-medium text-foreground">{t("inbox.attributes")}:</p>
+                          {attrs.map(([k, v]) => (
+                            <p key={k}>
+                              {k}: {v}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="mt-3 flex gap-2 border-t border-border pt-2">
                         <Button size="sm" variant="outline">
                           <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={1.75} />
                           {t("inbox.edit")}

@@ -48,10 +48,6 @@ import { PageContainer } from "../../_components/page-container";
 import { KpiCard, KpiSplit } from "../../_components/kpi-card";
 import {
   Card,
-  CardDescription,
-  CardHeader,
-  CardSeparator,
-  CardTitle,
 } from "../../_components/dashboard-card";
 import { CardCarousel } from "../../_components/card-carousel";
 import { FolderArt, FolderDialog, FolderGrid, type FolderSummary } from "./_components/folder-grid";
@@ -511,30 +507,6 @@ export default function KnowledgePage() {
               <h1 className="text-2xl font-semibold">{t("knowledge.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{t("knowledge.subtitle")}</p>
             </div>
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <Button variant="outline" size="sm" onClick={() => void handleDriveSync()} disabled={syncingDrive}>
-                {syncingDrive ? (
-                  <Spinner size={15} />
-                ) : (
-                  <GoogleDriveBrandIcon size={15} />
-                )}
-                {t("knowledge.driveSyncButton")}
-              </Button>
-              {documents.length > 0 ? (
-                <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium shadow-[var(--shadow-inset)] sm:inline-flex">
-                  <HugeiconsIcon
-                    icon={LibraryIcon}
-                    size={16}
-                    strokeWidth={1.75}
-                    className="text-muted-foreground"
-                  />
-                  <span>
-                    <span className="tabular-nums">{documents.length}</span>{" "}
-                    {t("knowledge.docsWord")}
-                  </span>
-                </div>
-              ) : null}
-            </div>
           </header>
 
           {!embeddings.available ? (
@@ -620,44 +592,61 @@ export default function KnowledgePage() {
 
           <BusinessCard />
 
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={FolderAddIcon} size={17} strokeWidth={1.75} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle>{t("knowledge.foldersTitle")}</CardTitle>
-                <CardDescription>{t("knowledge.foldersDescription")}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardSeparator />
-            <div className="px-5 py-4">
-              {activeFolder ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFolderId(null)}
-                    className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
-                  >
-                    <HugeiconsIcon icon={ArrowLeft02Icon} size={14} strokeWidth={2} />
-                    {t("knowledge.folderBack")}
-                  </button>
-                  <img
-                    src="/frames/folder_blue.svg"
-                    alt=""
-                    aria-hidden
-                    className="h-9 w-auto shrink-0"
-                  />
-                  <div className="min-w-0 flex-1 basis-40">
-                    <p className="text-sm font-medium">{activeFolder.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {activeFolder.description ||
-                        t("knowledge.folderContents", {
-                          documents: String(activeFolder.documents),
-                          assets: String(activeFolder.assets),
-                        })}
-                    </p>
+          <div className="mb-6 rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+            <div className="flex flex-col">
+              <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+                <div className="flex items-start gap-3 px-5 pt-5 pb-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                    <HugeiconsIcon icon={FolderAddIcon} size={17} strokeWidth={1.75} />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-medium">{t("knowledge.foldersTitle")}</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t("knowledge.foldersDescription")}</p>
+                  </div>
+                </div>
+                <div className="mx-5 h-px bg-border/50" />
+                <div className="px-5 py-4">
+                  {activeFolder ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFolderId(null)}
+                        className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+                      >
+                        <HugeiconsIcon icon={ArrowLeft02Icon} size={14} strokeWidth={2} />
+                        {t("knowledge.folderBack")}
+                      </button>
+                      <img
+                        src="/frames/folder_blue.svg"
+                        alt=""
+                        aria-hidden
+                        className="h-9 w-auto shrink-0"
+                      />
+                      <div className="min-w-0 flex-1 basis-40">
+                        <p className="text-sm font-medium">{activeFolder.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {activeFolder.description ||
+                            t("knowledge.folderContents", {
+                              documents: String(activeFolder.documents),
+                              assets: String(activeFolder.assets),
+                            })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <FolderGrid
+                      folders={folders}
+                      onOpen={setFolderId}
+                      onCreate={() => setFolderDialog({ open: true, folder: null })}
+                      onRename={(folder) => setFolderDialog({ open: true, folder })}
+                      onDelete={(folder) => void handleDeleteFolder(folder)}
+                    />
+                  )}
+                </div>
+              </div>
+              {/* Actions row */}
+              <div className="flex flex-wrap items-center gap-2 px-2.5 pt-2 pb-0.5">
+                {activeFolder ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -665,306 +654,342 @@ export default function KnowledgePage() {
                   >
                     {t("knowledge.folderRename")}
                   </Button>
-                </div>
-              ) : (
-                <FolderGrid
-                  folders={folders}
-                  onOpen={setFolderId}
-                  onCreate={() => setFolderDialog({ open: true, folder: null })}
-                  onRename={(folder) => setFolderDialog({ open: true, folder })}
-                  onDelete={(folder) => void handleDeleteFolder(folder)}
-                />
-              )}
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setFolderDialog({ open: true, folder: null })}
+                  >
+                    <HugeiconsIcon icon={FolderAddIcon} size={14} strokeWidth={1.75} />
+                    {t("knowledge.foldersTitle")}
+                  </Button>
+                )}
+              </div>
             </div>
-          </Card>
+          </div>
 
           {/* Two lists over the same folder: text the agent quotes, and files
               the agent sends. Same segmented bar the chat history uses for its
               channel filters, so switching a list looks the same everywhere. */}
-          <div className="mb-4">
-            <SlidingTabs
-              tabs={TABS.map((value) => ({
-                id: value,
-                label: value === "documents" ? t("knowledge.tabDocuments") : t("knowledge.tabMedia"),
-              }))}
-              value={tab}
-              onValueChange={(value) => setTab(value as Tab)}
-            />
-          </div>
-
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon
-                  icon={tab === "documents" ? LibraryIcon : Image01Icon}
-                  size={17}
-                  strokeWidth={1.75}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle>
-                  {activeFolder
-                    ? t("knowledge.inFolderTitle", { name: activeFolder.name })
-                    : tab === "documents"
-                      ? t("knowledge.libraryTitle")
-                      : t("knowledge.mediaTitle")}
-                </CardTitle>
-                <CardDescription>
-                  {tab === "documents"
-                    ? t("knowledge.libraryDescription")
-                    : t("knowledge.mediaDescription")}
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardSeparator />
-
-            <div className="px-5 py-5">
-              {tab === "documents" ? (
-                <div className="space-y-5">
-                  <FileUpload
-                    value={queue}
-                    onValueChange={setQueue}
-                    onFilesAdded={handleFilesAdded}
-                    onRetry={upload}
-                    accept={limits.accept}
-                    disabled={!embeddings.available}
-                    title={t("knowledge.uploadTitle")}
-                    description={t("knowledge.uploadDescription", {
-                      size: formatBytes(limits.maxFileBytes),
-                    })}
-                    browseLabel={t("knowledge.browse")}
-                  />
-
-                  {visibleDocuments.length === 0 ? (
-                    <div className="flex flex-col items-center gap-3 py-8 text-center">
-                      <FolderArt className="w-20" />
-                      <p className="text-sm font-medium">{t("knowledge.libraryEmpty")}</p>
-                      <p className="max-w-xs text-xs text-muted-foreground">
-                        {t("knowledge.libraryEmptyHint")}
-                      </p>
-                    </div>
-                  ) : (
-                    <ul className="space-y-2">
-                      {visibleDocuments.map((doc) => (
-                        <li
-                          key={doc.id}
-                          className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5"
-                        >
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                            <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={1.75} />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{doc.name}</p>
-                            <p className="text-xs tabular-nums text-muted-foreground">
-                              {formatBytes(doc.size)} ·{" "}
-                              {t("knowledge.chunksCount", { count: String(doc.chunks) })}
-                            </p>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                aria-label={t("knowledge.docActions")}
-                                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              >
-                                <HugeiconsIcon icon={MoreHorizontalIcon} size={15} strokeWidth={2} />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {/* A document is looked up; a skill is followed.
-                                  Promoting rewrites the document into a
-                                  procedure the agent loads whole — see
-                                  app/api/skills/from-document/route.ts. */}
-                              {skillByDoc[doc.id] ? (
-                                <DropdownMenuItem asChild>
-                                  <Link href="/skills">
-                                    <HugeiconsIcon
-                                      icon={GlobalEducationIcon}
-                                      size={15}
-                                      strokeWidth={1.75}
-                                    />
-                                    Ya es una habilidad
-                                  </Link>
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem
-                                  disabled={promoting !== null}
-                                  onSelect={(event) => {
-                                    // Keep the menu's own close from racing the
-                                    // request: the row has to keep showing its
-                                    // pending state while the model rewrites.
-                                    event.preventDefault();
-                                    void promoteToSkill(doc);
-                                  }}
-                                >
-                                  <HugeiconsIcon
-                                    icon={GlobalEducationIcon}
-                                    size={15}
-                                    strokeWidth={1.75}
-                                  />
-                                  {promoting === doc.id
-                                    ? "Convirtiendo…"
-                                    : "Convertir en habilidad"}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>
-                                  {t("knowledge.moveToFolder")}
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent>
-                                  <DropdownMenuItem
-                                    disabled={!doc.folder_id}
-                                    onSelect={() => void handleMoveDocument(doc.id, null)}
-                                  >
-                                    {t("knowledge.folderRoot")}
-                                  </DropdownMenuItem>
-                                  {folders.map((folder) => (
-                                    <DropdownMenuItem
-                                      key={folder.id}
-                                      disabled={doc.folder_id === folder.id}
-                                      onSelect={() => void handleMoveDocument(doc.id, folder.id)}
-                                    >
-                                      {folder.name}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuSubContent>
-                              </DropdownMenuSub>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onSelect={() => void handleDelete(doc.id)}
-                              >
-                                <HugeiconsIcon icon={Delete02Icon} size={15} strokeWidth={1.75} />
-                                {t("common.delete")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ) : (
-                <MediaLibrary
-                  // Remounted per folder so the upload queue and filter reset
-                  // when the scope changes.
-                  key={folderId ?? "root"}
-                  folderId={folderId}
-                  folders={folders}
-                  onChanged={() => void loadFolders()}
-                />
-              )}
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
-                <HugeiconsIcon icon={AiWiperIcon} size={17} strokeWidth={1.75} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle>{t("knowledge.searchTitle")}</CardTitle>
-                <CardDescription>{t("knowledge.searchDescription")}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardSeparator />
-            <div className="space-y-4 px-5 py-4">
-              <form
-                className="flex gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void runSearch();
-                }}
-              >
-                <div className="relative flex-1">
-                  <HugeiconsIcon
-                    icon={SearchIcon}
-                    size={16}
-                    strokeWidth={1.75}
-                    className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
-                  />
-                  <Input
-                    aria-label={t("knowledge.searchPlaceholder")}
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder={t("knowledge.searchPlaceholder")}
-                    className="pl-9"
-                  />
-                </div>
-                <Button type="submit" disabled={searching || query.trim().length === 0}>
-                  {searching ? (
-                    <Spinner strokeWidth={2} />
-                  ) : null}
-                  {t("knowledge.searchAction")}
-                </Button>
-              </form>
-
-              {mediaMatches !== null && mediaMatches.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {t("knowledge.searchMediaHeading")}
-                  </p>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                    {mediaMatches.map((match) => (
-                      <div
-                        key={match.id}
-                        title={match.description || match.name}
-                        className="overflow-hidden rounded-lg border border-border"
-                      >
-                        <div className="aspect-square bg-muted">
-                          {match.kind === "image" ? (
-                            <img
-                              src={`/api/media/${match.id}/file`}
-                              alt={match.description || match.name}
-                              loading="lazy"
-                              className="size-full object-cover"
-                            />
-                          ) : (
-                            <span className="flex size-full items-center justify-center text-muted-foreground">
-                              <HugeiconsIcon icon={Image01Icon} size={18} strokeWidth={1.75} />
-                            </span>
-                          )}
-                        </div>
-                        <p className="truncate px-1.5 py-1 text-[10px] text-muted-foreground">
-                          {match.name}
-                        </p>
-                      </div>
-                    ))}
+          <div className="mb-6 rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+            <div className="flex flex-col">
+              <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+                <div className="flex items-start gap-3 px-5 pt-5 pb-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                    <HugeiconsIcon
+                      icon={tab === "documents" ? LibraryIcon : Image01Icon}
+                      size={17}
+                      strokeWidth={1.75}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-medium">
+                      {activeFolder
+                        ? t("knowledge.inFolderTitle", { name: activeFolder.name })
+                        : tab === "documents"
+                          ? t("knowledge.libraryTitle")
+                          : t("knowledge.mediaTitle")}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {tab === "documents"
+                        ? t("knowledge.libraryDescription")
+                        : t("knowledge.mediaDescription")}
+                    </p>
                   </div>
                 </div>
-              ) : null}
+                {/* Tabs bar lives inside the card, below the header */}
+                <div className="px-5 pb-4">
+                  <SlidingTabs
+                    tabs={TABS.map((value) => ({
+                      id: value,
+                      label: value === "documents" ? t("knowledge.tabDocuments") : t("knowledge.tabMedia"),
+                    }))}
+                    value={tab}
+                    onValueChange={(value) => setTab(value as Tab)}
+                  />
+                </div>
+                <div className="mx-5 h-px bg-border/50" />
 
-              {matches !== null ? (
-                matches.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    {mediaMatches && mediaMatches.length > 0
-                      ? t("knowledge.searchOnlyMedia")
-                      : t("knowledge.searchEmpty")}
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {matches.map((match) => (
-                      <li
-                        key={`${match.doc_id}-${match.chunk_index}`}
-                        className="rounded-xl border border-border bg-background p-3"
-                      >
-                        <div className="mb-1.5 flex items-center justify-between gap-3">
-                          <span className="truncate text-xs font-medium">{match.doc_name}</span>
-                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                            {t("knowledge.searchScore", { score: match.score.toFixed(3) })}
-                          </span>
+                <div className="px-5 py-5">
+                  {tab === "documents" ? (
+                    <div className="space-y-5">
+                      <FileUpload
+                        value={queue}
+                        onValueChange={setQueue}
+                        onFilesAdded={handleFilesAdded}
+                        onRetry={upload}
+                        accept={limits.accept}
+                        disabled={!embeddings.available}
+                        title={t("knowledge.uploadTitle")}
+                        description={t("knowledge.uploadDescription", {
+                          size: formatBytes(limits.maxFileBytes),
+                        })}
+                        browseLabel={t("knowledge.browse")}
+                      />
+
+                      {visibleDocuments.length === 0 ? (
+                        <div className="flex flex-col items-center gap-3 py-8 text-center">
+                          <FolderArt className="w-20" />
+                          <p className="text-sm font-medium">{t("knowledge.libraryEmpty")}</p>
+                          <p className="max-w-xs text-xs text-muted-foreground">
+                            {t("knowledge.libraryEmptyHint")}
+                          </p>
                         </div>
-                        <p className="line-clamp-4 text-xs leading-5 text-muted-foreground">
-                          {match.text}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )
-              ) : null}
+                      ) : (
+                        <ul className="space-y-2">
+                          {visibleDocuments.map((doc) => (
+                            <li
+                              key={doc.id}
+                              className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5"
+                            >
+                              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                <HugeiconsIcon icon={File01Icon} size={15} strokeWidth={1.75} />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{doc.name}</p>
+                                <p className="text-xs tabular-nums text-muted-foreground">
+                                  {formatBytes(doc.size)} ·{" "}
+                                  {t("knowledge.chunksCount", { count: String(doc.chunks) })}
+                                </p>
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={t("knowledge.docActions")}
+                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                  >
+                                    <HugeiconsIcon icon={MoreHorizontalIcon} size={15} strokeWidth={2} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {skillByDoc[doc.id] ? (
+                                    <DropdownMenuItem asChild>
+                                      <Link href="/skills">
+                                        <HugeiconsIcon
+                                          icon={GlobalEducationIcon}
+                                          size={15}
+                                          strokeWidth={1.75}
+                                        />
+                                        Ya es una habilidad
+                                      </Link>
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      disabled={promoting !== null}
+                                      onSelect={(event) => {
+                                        event.preventDefault();
+                                        void promoteToSkill(doc);
+                                      }}
+                                    >
+                                      <HugeiconsIcon
+                                        icon={GlobalEducationIcon}
+                                        size={15}
+                                        strokeWidth={1.75}
+                                      />
+                                      {promoting === doc.id
+                                        ? "Convirtiendo…"
+                                        : "Convertir en habilidad"}
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      {t("knowledge.moveToFolder")}
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuItem
+                                        disabled={!doc.folder_id}
+                                        onSelect={() => void handleMoveDocument(doc.id, null)}
+                                      >
+                                        {t("knowledge.folderRoot")}
+                                      </DropdownMenuItem>
+                                      {folders.map((folder) => (
+                                        <DropdownMenuItem
+                                          key={folder.id}
+                                          disabled={doc.folder_id === folder.id}
+                                          onSelect={() => void handleMoveDocument(doc.id, folder.id)}
+                                        >
+                                          {folder.name}
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() => void handleDelete(doc.id)}
+                                  >
+                                    <HugeiconsIcon icon={Delete02Icon} size={15} strokeWidth={1.75} />
+                                    {t("common.delete")}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ) : (
+                    <MediaLibrary
+                      key={folderId ?? "root"}
+                      folderId={folderId}
+                      folders={folders}
+                      onChanged={() => void loadFolders()}
+                    />
+                  )}
+                </div>
+              </div>
+              {/* Bottom actions row */}
+              <div className="flex flex-wrap items-center gap-2 px-2.5 pt-2 pb-0.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleDriveSync()}
+                  disabled={syncingDrive}
+                >
+                  {syncingDrive ? (
+                    <Spinner size={15} />
+                  ) : (
+                    <GoogleDriveBrandIcon size={15} />
+                  )}
+                  {t("knowledge.driveSyncButton")}
+                </Button>
+                {documents.length > 0 ? (
+                  <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-[var(--shadow-inset)]">
+                    <HugeiconsIcon
+                      icon={LibraryIcon}
+                      size={14}
+                      strokeWidth={1.75}
+                      className="text-muted-foreground"
+                    />
+                    <span>
+                      <span className="tabular-nums">{documents.length}</span>{" "}
+                      {t("knowledge.docsWord")}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </Card>
+          </div>
+
+          <div className="rounded-[20px] border border-border/70 bg-muted/50 p-1.5 shadow-[var(--shadow-float)]">
+            <div className="flex flex-col">
+              <div className="overflow-hidden rounded-[14px] border border-border/50 bg-card shadow-xs">
+                <div className="flex items-start gap-3 px-5 pt-5 pb-4">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground shadow-[var(--shadow-inset)]">
+                    <HugeiconsIcon icon={AiWiperIcon} size={17} strokeWidth={1.75} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-medium">{t("knowledge.searchTitle")}</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t("knowledge.searchDescription")}</p>
+                  </div>
+                </div>
+                <div className="mx-5 h-px bg-border/50" />
+                <div className="space-y-4 px-5 py-4">
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void runSearch();
+                    }}
+                  >
+                    <div className="relative flex-1">
+                      <HugeiconsIcon
+                        icon={SearchIcon}
+                        size={16}
+                        strokeWidth={1.75}
+                        className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+                      />
+                      <Input
+                        aria-label={t("knowledge.searchPlaceholder")}
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder={t("knowledge.searchPlaceholder")}
+                        className="pl-9"
+                      />
+                    </div>
+                  </form>
+
+                  {mediaMatches !== null && mediaMatches.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {t("knowledge.searchMediaHeading")}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                        {mediaMatches.map((match) => (
+                          <div
+                            key={match.id}
+                            title={match.description || match.name}
+                            className="overflow-hidden rounded-lg border border-border"
+                          >
+                            <div className="aspect-square bg-muted">
+                              {match.kind === "image" ? (
+                                <img
+                                  src={`/api/media/${match.id}/file`}
+                                  alt={match.description || match.name}
+                                  loading="lazy"
+                                  className="size-full object-cover"
+                                />
+                              ) : (
+                                <span className="flex size-full items-center justify-center text-muted-foreground">
+                                  <HugeiconsIcon icon={Image01Icon} size={18} strokeWidth={1.75} />
+                                </span>
+                              )}
+                            </div>
+                            <p className="truncate px-1.5 py-1 text-[10px] text-muted-foreground">
+                              {match.name}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {matches !== null ? (
+                    matches.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        {mediaMatches && mediaMatches.length > 0
+                          ? t("knowledge.searchOnlyMedia")
+                          : t("knowledge.searchEmpty")}
+                      </p>
+                    ) : (
+                      <ul className="space-y-3">
+                        {matches.map((match) => (
+                          <li
+                            key={`${match.doc_id}-${match.chunk_index}`}
+                            className="rounded-xl border border-border bg-background p-3"
+                          >
+                            <div className="mb-1.5 flex items-center justify-between gap-3">
+                              <span className="truncate text-xs font-medium">{match.doc_name}</span>
+                              <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                                {t("knowledge.searchScore", { score: match.score.toFixed(3) })}
+                              </span>
+                            </div>
+                            <p className="line-clamp-4 text-xs leading-5 text-muted-foreground">
+                              {match.text}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  ) : null}
+                </div>
+              </div>
+              {/* Bottom actions row */}
+              <div className="flex flex-wrap items-center gap-2 px-2.5 pt-2 pb-0.5">
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={searching || query.trim().length === 0}
+                  onClick={() => void runSearch()}
+                >
+                  {searching ? <Spinner strokeWidth={2} /> : null}
+                  {t("knowledge.searchAction")}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </Skeleton>
 

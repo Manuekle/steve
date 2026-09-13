@@ -13,7 +13,7 @@ import type { OAuthConfig } from "./connections";
 export const GOOGLE_LOGIN_OAUTH: OAuthConfig = {
   authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenUrl: "https://oauth2.googleapis.com/token",
-  scopes: ["openid", "email"],
+  scopes: ["openid", "email", "profile"],
   scopeSeparator: " ",
   pkce: true,
   tokenAuth: "body",

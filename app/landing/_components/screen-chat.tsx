@@ -23,6 +23,7 @@ import { ProviderLogo } from "@/components/provider-logo";
 import { Beam } from "@/components/ui/beam";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { SuggestionChip } from "@/components/ui/suggestion-chip";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import {
@@ -299,14 +300,11 @@ export function ChatScreen() {
             line, and the rail below it stays in the layout even while it is
             invisible, because the moment it stops taking up room the composer
             drops. */}
-        {/* `max-w-2xl`, not the app's `max-w-3xl`. The app measures that
-            against a whole window; this frame gives the page 920px, and a
-            768px composer in it runs nearly wall to wall and stops reading
-            as a field you type into. */}
+        {/* `max-w-3xl`, as the app renders it in `agent-chat.tsx`. */}
         {/* Tighter on a phone. The three bands are sized for a 920px window;
             at 390px the same padding and the same 24px gutters were spending
             most of a 608px frame on air. */}
-        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6">
+        <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6">
           <div
             className={cn(
               // Masked at the top rather than scrolled: a long turn runs out of
@@ -381,7 +379,9 @@ export function ChatScreen() {
               </>
             ) : (
               <div className="flex flex-col items-center gap-6 text-center">
-                <h2 className="font-semibold text-4xl text-foreground">senka</h2>
+                <h1 className="text-4xl font-semibold sm:text-5xl">
+                  <span className="text-foreground">senka</span>
+                </h1>
                 <p className="max-w-sm text-balance text-sm leading-relaxed text-muted-foreground">
                   {t("chat.tagline")}
                 </p>
@@ -427,25 +427,33 @@ export function ChatScreen() {
               ]}
               value="chat"
             />
-            {/* One starter below `sm`, two above it.
+            {/* One starter below `sm`, two from `sm`, three from `lg` —
+                as `agent-chat.tsx` renders all three of the active tab's
+                prompts.
             
                 This rail keeps its height when the chat is talking — that is
                 what holds the composer still while the pointer types into it —
-                so whatever it measures, the conversation pays for. Two chips
-                fit on one line at 920px and take three lines at 390px, and
-                those two extra lines were 240px of empty screen under the
-                composer on a phone: nearly half the window, blank, on the one
-                figure the page opens with. */}
+                so whatever it measures, the conversation pays for. Three chips
+                fit on one line at 920px and take extra lines at 390px, and
+                those extra lines were empty screen under the composer on a
+                phone: nearly half the window, blank, on the one figure the
+                page opens with. */}
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {[t("chat.promptChat1"), t("chat.promptChat2")].map((p, index) => (
-                <span className={cn(index > 0 && "hidden sm:contents")} key={p}>
-                  <Beam active colorVariant="mono" strength={0.4}>
-                    <span className="rounded-full border border-border bg-card px-3.5 py-1.5 text-muted-foreground text-xs shadow-[var(--shadow-inset)]">
-                      {p}
-                    </span>
-                  </Beam>
-                </span>
-              ))}
+              {[t("chat.promptChat1"), t("chat.promptChat2"), t("chat.promptChat3")].map(
+                (p, index) => (
+                  <span
+                    className={cn(
+                      index === 1 && "hidden sm:contents",
+                      index === 2 && "hidden lg:contents",
+                    )}
+                    key={p}
+                  >
+                    <Beam active colorVariant="mono" strength={0.4}>
+                      <SuggestionChip>{p}</SuggestionChip>
+                    </Beam>
+                  </span>
+                ),
+              )}
             </div>
           </div>
         </div>
@@ -611,10 +619,12 @@ function ModelTrigger({
   readonly ref?: Ref<HTMLSpanElement>;
   readonly vendor: "anthropic" | null;
 }) {
+  const t = useT();
   return (
     <span
-      className="inline-flex max-w-[15rem] items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 font-medium text-xs shadow-[var(--shadow-inset)]"
+      className="inline-flex max-w-[15rem] items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 font-medium text-xs shadow-[var(--shadow-inset)] transition-colors hover:border-input hover:bg-accent"
       ref={ref}
+      title={t("models.pick")}
     >
       {vendor ? (
         <ProviderLogo size={14} vendor={vendor} />

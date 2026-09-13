@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { HugeiconsIcon, type IconSvgElement } from "@/components/icons/icon";
 import {
@@ -259,6 +260,10 @@ export default function SettingsPage() {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Portal target only exists on the client — gate the floating bar on mount
+  // so SSR never touches `document`.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [buttonPhase, setButtonPhase] = useState<ButtonPhase>("idle");
   const buttonLabelRef = useRef<HTMLSpanElement>(null);
   const buttonIconRef = useRef<HTMLSpanElement>(null);
@@ -561,6 +566,10 @@ export default function SettingsPage() {
   );
   // Button should be enabled only while there's an actual unsaved edit
   const canSubmit = dirtyKeys.size > 0;
+  // The floating bar stays visible through the save itself and its
+  // confirmation — otherwise it would vanish the instant the request
+  // succeeds and the "saved" state would never be seen.
+  const showSaveBar = canSubmit || saving || saved;
 
   // Clear all configured fields at once
   const handleClearAll = () => {
@@ -791,7 +800,7 @@ export default function SettingsPage() {
             empty blocks under the short cards came from. Columns pack by
             height instead, so each card is as tall as its own contents. */}
         {!loading ? (
-        <form onSubmit={handleSubmit}>
+        <form id="settings-form" onSubmit={handleSubmit}>
             {SECTIONS.map((section) => {
               const sectionGroups = groups.filter((group) => sectionOf(group.id) === section.id);
               if (sectionGroups.length === 0 && section.extras.length === 0) return null;
@@ -827,38 +836,57 @@ export default function SettingsPage() {
                 </section>
               );
             })}
+        </form>
+        ) : null}
 
-          {/* Save bar */}
-          <div className="mt-6 flex items-center gap-3">
+        {/* Floating save button — viewport-fixed, centered. Rendered through
+            a portal: the page content carries entrance-animation transforms,
+            and any transformed ancestor would re-anchor a `fixed` child to
+            itself instead of the viewport — which is how the bar ended up
+            glued to the end of the content instead of floating. It never
+            unmounts once on the client; hide/show is a transition on
+            translate + opacity so both directions animate. */}
+        {mounted ? createPortal(
+          <div
+            className={cn(
+              "fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transition-all duration-200 ease-out motion-reduce:transition-none",
+              showSaveBar ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
+            )}
+            aria-hidden={!showSaveBar}
+            inert={!showSaveBar}
+          >
             <Button
               type="submit"
-              disabled={saving || !canSubmit}
+              form="settings-form"
+              disabled={saving}
+              className="shadow-[var(--shadow-float)]"
+              tabIndex={showSaveBar ? undefined : -1}
             >
-              {/* Idle has no icon, and an empty span still eats the button's
-                  gap. `hidden` can't do it: `.t-text-swap` sets
-                  `display: inline-block` from the stylesheet and wins over
-                  the utility class, so the display is set inline instead. */}
-              <span
-                ref={buttonIconRef}
-                className="t-text-swap"
-                style={{ display: buttonPhase === "idle" ? "none" : "inline-block" }}
-              >
-                {buttonPhase === "saving" ? (
-                  <Spinner />
-                ) : buttonPhase === "saved" ? (
-                  <HugeiconsIcon icon={CheckIcon} size={16} strokeWidth={1.75} />
-                ) : null}
-              </span>
-              <span ref={buttonLabelRef} className="t-text-swap">
-                {buttonPhase === "saving"
-                  ? t("settings.saving")
-                  : buttonPhase === "saved"
-                    ? t("settings.saved")
-                    : t("settings.saveChanges")}
-              </span>
-            </Button>
-          </div>
-        </form>
+                {/* Idle has no icon, and an empty span still eats the button's
+                    gap. `hidden` can't do it: `.t-text-swap` sets
+                    `display: inline-block` from the stylesheet and wins over
+                    the utility class, so the display is set inline instead. */}
+                <span
+                  ref={buttonIconRef}
+                  className="t-text-swap"
+                  style={{ display: buttonPhase === "idle" ? "none" : "inline-block" }}
+                >
+                  {buttonPhase === "saving" ? (
+                    <Spinner />
+                  ) : buttonPhase === "saved" ? (
+                    <HugeiconsIcon icon={CheckIcon} size={16} strokeWidth={1.75} />
+                  ) : null}
+                </span>
+                <span ref={buttonLabelRef} className="t-text-swap">
+                  {buttonPhase === "saving"
+                    ? t("settings.saving")
+                    : buttonPhase === "saved"
+                      ? t("settings.saved")
+                      : t("settings.saveChanges")}
+                </span>
+              </Button>
+          </div>,
+          document.body,
         ) : null}
 
         {/* Footer */}

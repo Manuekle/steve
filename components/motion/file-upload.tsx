@@ -21,6 +21,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useId, useRef, useState } from "react";
 import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 export type FileUploadStatus = "queued" | "uploading" | "success" | "error";
 export type FileUploadVariant = "default" | "centered";
@@ -523,14 +524,14 @@ export function FileUpload({
           addFiles(Array.from(event.dataTransfer.files));
         }}
         className={cn(
-          "group relative flex w-full overflow-hidden rounded-2xl border border-dashed border-border bg-card shadow-[var(--shadow-soft)] outline-none",
+          "group relative flex w-full overflow-hidden rounded-xl border border-border bg-background outline-none",
           "transition-[border-color,box-shadow,transform] duration-200 active:scale-[0.99]",
           "hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          "data-[dragging=true]:border-foreground data-[dragging=true]:shadow-[var(--shadow-elevated)]",
+          "data-[dragging=true]:border-foreground data-[dragging=true]:bg-muted/40",
           "disabled:pointer-events-none disabled:opacity-55",
           centered
-            ? "min-h-56 flex-col items-center justify-center gap-3 p-7 text-center"
-            : "items-center gap-4 p-5 text-left",
+            ? "min-h-56 flex-col items-center justify-center gap-3 border-dashed bg-card p-7 text-center shadow-[var(--shadow-soft)]"
+            : "flex-wrap items-center gap-4 p-4 text-left",
           classNames?.dropzone,
         )}
       >
@@ -554,11 +555,11 @@ export function FileUpload({
           <UploadCloud className={centered ? "h-7 w-7" : "h-6 w-6"} />
         </motion.span>
 
-        <span className={cn("min-w-0", centered ? "max-w-xs" : "flex-1")}>
+        <span className={cn("min-w-0", centered ? "max-w-xs" : "flex-1 basis-48")}>
           <span
             className={cn(
-              "block font-semibold text-foreground",
-              centered ? "text-base" : "text-sm",
+              "block text-foreground",
+              centered ? "text-base font-semibold" : "text-sm font-medium",
             )}
           >
             {maxReached ? "Upload limit reached" : title}
@@ -576,9 +577,11 @@ export function FileUpload({
         </span>
 
         <span
+          aria-hidden="true"
           className={cn(
-            "shrink-0 rounded-[11px] border border-border bg-background text-xs font-medium text-foreground shadow-[var(--shadow-button)] transition-colors duration-150 group-hover:bg-muted",
-            centered ? "mt-1 px-4 py-2" : "px-3.5 py-2",
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "pointer-events-none group-hover:border-[var(--btn-outline-border-hover)] group-hover:bg-[var(--btn-outline-bg-hover)]",
+            centered ? "mt-1" : undefined,
           )}
         >
           {browseLabel}

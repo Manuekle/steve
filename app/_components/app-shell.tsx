@@ -240,10 +240,11 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
         <div className={cn("flex h-14 shrink-0 items-center", collapsed ? "justify-center px-2" : "gap-2.5 px-5")}>
           {!collapsed ? (
             <div className="flex items-center gap-2">
-              {/* Milled, like the marketing lockup — the sidebar mark is on
-                  the app ground, which is the same ground the ramp is tuned
-                  for. */}
-              <SenkaMark metal className="block h-[20px] w-auto" />
+              {/* Same lockup as the landing `Wordmark`: 20px mark in a fixed
+                  box, 20px `font-medium` word. */}
+              <span className="flex size-8 shrink-0 items-center justify-center">
+                <SenkaMark metal className="block h-[20px] w-auto" />
+              </span>
               <span className="text-[20px] font-medium leading-none tracking-tighter text-foreground">
                 senka
               </span>
@@ -464,9 +465,9 @@ function MobileNav({
 
       {/* Top bar */}
       <div className="relative flex h-14 items-center justify-between px-4">
-        {/* Wordmark */}
+        {/* Wordmark — same lockup as desktop + landing */}
         <div className="flex items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center">
+          <span className="flex size-8 shrink-0 items-center justify-center">
             <SenkaMark metal className="block h-[20px] w-auto" />
           </span>
           <span className="text-[20px] font-medium leading-none tracking-tighter text-foreground">

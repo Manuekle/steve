@@ -79,6 +79,7 @@ const PUBLIC_PATHS = [
   "/pricing",
   "/simulator",
   "/guide",
+  "/team",
   "/terms",
   "/privacy",
   "/legal",

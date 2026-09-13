@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import { Delete02Icon, ImageUpload01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -60,9 +61,13 @@ function toFields(identity: BusinessIdentity): BusinessIdentityFields {
 export function BusinessIdentityForm({
   identity,
   onChange,
+  onSaveRef,
+  onSaveState,
 }: {
   readonly identity: BusinessIdentity;
   readonly onChange: (identity: BusinessIdentity) => void;
+  readonly onSaveRef?: React.MutableRefObject<(() => void) | null>;
+  readonly onSaveState?: (state: { dirty: boolean; saving: boolean; canSave: boolean }) => void;
 }) {
   const { t } = useI18n();
   const { cue } = useSound();
@@ -72,12 +77,11 @@ export function BusinessIdentityForm({
   const [draft, setDraft] = useState<BusinessIdentityFields>(() => toFields(identity));
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [draggingLogo, setDraggingLogo] = useState(false);
   const [error, setError] = useState<UiError | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const logoDragDepth = useRef(0);
 
-  // The logo is replaced outside this form's state, and a save elsewhere on
-  // the page can land while the fields sit untouched — resync whenever the
-  // stored identity moves and the fields are still clean.
   const saved = useMemo(() => toFields(identity), [identity]);
   const dirty = useMemo(
     () => (Object.keys(saved) as (keyof BusinessIdentityFields)[]).some((key) => draft[key] !== saved[key]),
@@ -107,6 +111,15 @@ export function BusinessIdentityForm({
     onChange(result.data.identity);
     toast({ title: t("common.saved"), status: "success" });
   }, [cue, draft, onChange, t, toast]);
+
+  // Wire up the footer save ref and bubble state up.
+  useEffect(() => {
+    if (onSaveRef) onSaveRef.current = () => void save();
+  }, [onSaveRef, save]);
+
+  useEffect(() => {
+    onSaveState?.({ dirty, saving, canSave: dirty && !saving });
+  }, [dirty, saving, onSaveState]);
 
   const uploadLogo = useCallback(
     async (file: File) => {
@@ -154,7 +167,55 @@ export function BusinessIdentityForm({
       {confirmDialog}
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
-      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-background p-4">
+      <div
+        onClick={(event) => {
+          // Whole card opens the picker, like the documents dropzone.
+          // Clicks on the inner buttons keep their own behavior.
+          if (uploading) return;
+          if ((event.target as HTMLElement).closest("button, input, a, textarea")) return;
+          fileInput.current?.click();
+        }}
+        onPointerDown={(event) => {
+          // Same press knock the documents dropzone gets from the global
+          // floor binding (it only listens on button/[role="button"], and
+          // this card can't be a button: it contains real ones).
+          if (uploading) return;
+          if ((event.target as HTMLElement).closest("button, input, a, textarea")) return;
+          cue("press");
+        }}
+        onPointerUp={(event) => {
+          if (uploading) return;
+          if ((event.target as HTMLElement).closest("button, input, a, textarea")) return;
+          cue("release");
+        }}
+        onDragEnter={(event) => {
+          if (uploading) return;
+          event.preventDefault();
+          logoDragDepth.current += 1;
+          setDraggingLogo(true);
+        }}
+        onDragOver={(event) => {
+          if (uploading) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+          setDraggingLogo(true);
+        }}
+        onDragLeave={(event) => {
+          if (uploading) return;
+          event.preventDefault();
+          logoDragDepth.current = Math.max(0, logoDragDepth.current - 1);
+          if (logoDragDepth.current === 0) setDraggingLogo(false);
+        }}
+        onDrop={(event) => {
+          if (uploading) return;
+          event.preventDefault();
+          logoDragDepth.current = 0;
+          setDraggingLogo(false);
+          const file = event.dataTransfer.files?.[0];
+          if (file) void uploadLogo(file);
+        }}
+        className={`flex flex-wrap items-center gap-4 rounded-xl border bg-background p-4 transition-[background-color,border-color,transform] duration-150 active:scale-[0.99] ${draggingLogo ? "border-foreground bg-muted/40" : "border-border"} ${uploading ? "" : "cursor-pointer"}`}
+      >
         <LogoPreview identity={identity} />
         <div className="min-w-0 flex-1 basis-48">
           <p className="text-sm font-medium">{t("business.logo")}</p>
@@ -229,16 +290,6 @@ export function BusinessIdentityForm({
             />
           </div>
         ))}
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Button type="button" onClick={() => void save()} disabled={saving || !dirty}>
-          {saving ? (
-            <Spinner size={15} strokeWidth={2} />
-          ) : null}
-          {t("common.save")}
-        </Button>
-        {dirty ? <p className="text-xs text-muted-foreground">{t("business.unsaved")}</p> : null}
       </div>
     </div>
   );

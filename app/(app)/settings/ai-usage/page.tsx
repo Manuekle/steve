@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@/components/icons/icon";
 import {
@@ -127,6 +127,40 @@ export default function AiUsagePage() {
   const [billingSourceFilter, setBillingSourceFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
   const pageSize = 25;
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  /* Edge fade on the details table, mobile only. At the start only the far
+     edge fades; once scrolled, the passed edge fades in; at the end the far
+     fade lifts. Desktop fits without scrolling, so the mask stays off. */
+  const updateTableFade = useCallback(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    if (!window.matchMedia("(max-width: 767px)").matches) {
+      el.style.setProperty("--x-fade-start", "0px");
+      el.style.setProperty("--x-fade-end", "0px");
+      return;
+    }
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 0) {
+      el.style.setProperty("--x-fade-start", "0px");
+      el.style.setProperty("--x-fade-end", "0px");
+      return;
+    }
+    const FADE = "28px";
+    el.style.setProperty("--x-fade-start", el.scrollLeft < 4 ? "0px" : FADE);
+    el.style.setProperty("--x-fade-end", el.scrollLeft > max - 4 ? "0px" : FADE);
+  }, []);
+
+  useEffect(() => {
+    updateTableFade();
+    const el = tableScrollRef.current;
+    el?.addEventListener("scroll", updateTableFade, { passive: true });
+    window.addEventListener("resize", updateTableFade);
+    return () => {
+      el?.removeEventListener("scroll", updateTableFade);
+      window.removeEventListener("resize", updateTableFade);
+    };
+  }, [updateTableFade, details]);
 
   const load = useCallback(async () => {
     const [balanceResult, summaryResult] = await Promise.all([
@@ -436,7 +470,7 @@ export default function AiUsagePage() {
             ) : details.rows.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-muted-foreground">{t("aiUsage.detailsEmpty")}</p>
             ) : (
-              <div className="scroll-fade-x overflow-x-auto">
+              <div ref={tableScrollRef} className="x-fade overflow-x-auto scrollbar-hide">
                 <table className="w-full border-separate border-spacing-y-1.5 px-1.5 text-left text-xs">
                   <thead>
                     <tr className="text-muted-foreground">

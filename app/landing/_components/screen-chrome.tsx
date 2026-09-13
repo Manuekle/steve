@@ -16,6 +16,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { memo, type ReactNode } from "react";
 import { NotificationBadge } from "@/components/ai-elements/notification-badge";
+import { SenkaMark } from "@/components/icons/senka-mark";
 import { NAV_GROUPS } from "@/lib/nav-items";
 import { useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
@@ -44,9 +45,9 @@ import { Wordmark } from "./landing-header";
 // ── Sidebar ─────────────────────────────────────────────────────────
 
 /** Counts the real sidebar derives from live data. Fixed here so the demo
- *  agrees with the numbers the screens themselves show — three contacts
+ *  agrees with the numbers the screens themselves show — six contacts
  *  parked on the inbox, eighteen conversations touched in the last hour. */
-const NAV_BADGES: Record<string, number> = { "/history": 18, "/inbox": 3 };
+const NAV_BADGES: Record<string, number> = { "/history": 18, "/inbox": 6 };
 
 /**
  * The app's sidebar, down to the parts that are easy to leave out and are
@@ -333,7 +334,7 @@ export function HeaderAction({
   return (
     <span
       className={cn(
-        "items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 font-medium text-sm shadow-[var(--shadow-inset)]",
+        "items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 font-medium text-sm shadow-[var(--shadow-inset)] transition-all duration-150 hover:border-input hover:bg-accent",
         labelBelowSm ? "inline-flex" : "hidden sm:inline-flex",
       )}
     >

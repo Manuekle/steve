@@ -50,9 +50,20 @@ export function ChartSelector({ options, value, onChange, label, className }: {
   label: string;
   className?: string;
 }) {
-  return <div className={cn("mt-4 flex max-w-full justify-center overflow-x-auto", className)} role="group" aria-label={label}>
-    <SlidingTabs tabs={options.map((option) => ({ id: option.value, label: option.label }))} value={value} onValueChange={onChange} />
-  </div>;
+  return (
+    <div
+      // `justify-start` on mobile: `justify-center` + `overflow-x-auto` clips
+      // the left edge when the options overflow, leaving the first tabs
+      // unreachable by scroll. Centered again on `md` where everything fits.
+      // Deliberately no edge-fade mask: it dims the labels at the edges and
+      // hurts readability of the options.
+      className={cn("mt-4 flex w-full min-w-0 max-w-full justify-start overflow-x-auto scrollbar-hide md:justify-center", className)}
+      role="group"
+      aria-label={label}
+    >
+      <SlidingTabs tabs={options.map((option) => ({ id: option.value, label: option.label }))} value={value} onValueChange={onChange} className="shrink-0" />
+    </div>
+  );
 }
 
 export function ChartGrid({ fractions }: { fractions: readonly number[] }) {

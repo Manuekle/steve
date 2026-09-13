@@ -65,15 +65,9 @@ function FormsSkeleton() {
 /**
  * Table scroller with scroll-aware edge fades — mobile only.
  *
- * On desktop the table is wide enough to show all columns without scrolling,
- * so the mask never activates. On mobile the table overflows and the mask
- * fades each edge only when there is hidden content in that direction:
- * - At the start: right edge fades, left edge is clear.
- * - Scrolled right: left edge fades in, right edge fades out when reaching end.
- * - At the end: left edge fades, right edge is clear.
- *
- * Uses the same CSS variable pattern as `.x-fade` / `CardCarousel`.
- * The fade is a mask-image, so it never clips tappable content.
+ * At the start only the far edge fades; once scrolled, the passed edge fades
+ * in; at the end the far fade lifts. On desktop the table fits without
+ * scrolling, so the mask stays off and the page never scrolls sideways.
  */
 function FormsTableScroller({
   forms,
@@ -91,31 +85,25 @@ function FormsTableScroller({
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  /** Update `--x-fade-start` / `--x-fade-end` on the scroller based on its
-   *  scroll position. Only applied on touch/narrow screens (≤ 767px) because
-   *  wider viewports don't overflow. */
+  /* Edge fade, mobile only. At the start only the far edge fades; once
+     scrolled, the passed edge fades in; at the end the far fade lifts. */
   const updateFade = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    // Only activate on mobile — on larger screens there's no overflow.
-    const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    if (!isMobile) {
+    if (!window.matchMedia("(max-width: 767px)").matches) {
       el.style.setProperty("--x-fade-start", "0px");
       el.style.setProperty("--x-fade-end", "0px");
       return;
     }
     const max = el.scrollWidth - el.clientWidth;
-    // No overflow at all — clear both fades.
     if (max <= 0) {
       el.style.setProperty("--x-fade-start", "0px");
       el.style.setProperty("--x-fade-end", "0px");
       return;
     }
     const FADE = "28px";
-    const atStart = el.scrollLeft < 4;
-    const atEnd = el.scrollLeft > max - 4;
-    el.style.setProperty("--x-fade-start", atStart ? "0px" : FADE);
-    el.style.setProperty("--x-fade-end", atEnd ? "0px" : FADE);
+    el.style.setProperty("--x-fade-start", el.scrollLeft < 4 ? "0px" : FADE);
+    el.style.setProperty("--x-fade-end", el.scrollLeft > max - 4 ? "0px" : FADE);
   }, []);
 
   useEffect(() => {
@@ -127,13 +115,10 @@ function FormsTableScroller({
       el?.removeEventListener("scroll", updateFade);
       window.removeEventListener("resize", updateFade);
     };
-  }, [updateFade]);
+  }, [updateFade, forms]);
 
   return (
-    <div
-      ref={scrollRef}
-      className="x-fade overflow-x-auto scrollbar-hide"
-    >
+    <div ref={scrollRef} className="x-fade overflow-x-auto scrollbar-hide">
       <table className="w-full border-separate border-spacing-y-1.5 px-1.5 text-sm">
         <thead className="text-xs text-muted-foreground">
           <tr>

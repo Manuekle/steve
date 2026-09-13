@@ -361,8 +361,13 @@ export function ProofSection() {
           WebGL context and a frame loop, and the hidden one goes on drawing
           frames nobody sees. */}
       <div className="relative flex flex-col lg:block">
-        <Shell className="relative z-10">
-          <div className="lg:max-w-[44%]">
+        <Shell className="pointer-events-none relative z-10">
+          {/* `pointer-events-none` on the Shell, `auto` back on below: from `lg`
+              the globe sits absolute behind this copy, and the Shell is full
+              width even where its text only fills the left 44% — without this
+              the empty right half eats every pointerdown aimed at the sphere.
+              The text, badge and link stay clickable through the inner `auto`. */}
+          <div className="pointer-events-auto lg:max-w-[44%]">
             <Reveal>
               <FigureLabel>Fig 07</FigureLabel>
               {/* `font-cooper` last, and that ordering is load-bearing.
@@ -411,8 +416,12 @@ export function ProofSection() {
             around it — cropped by nothing, which is the same as not cropped.
 
             `pointer-events-none` for the whole layer: on `lg` it covers the
-            right side of the band top to bottom, and a canvas nobody can
-            interact with should not be intercepting anything either. */}
+            right side of the band top to bottom. The globe itself opts back in
+            with `pointer-events-auto` on its own root (see `ClientGlobe`), so
+            the layer never intercepts anything while the sphere stays
+            draggable — and the Shells above open their empty halves the same
+            way, so no transparent box stands between the pointer and the
+            sphere. */}
         <div className="pointer-events-none relative mt-14 flex justify-center px-6 lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:block lg:w-[70vw] lg:px-0">
           {/* Sized and offset in `vw`, not `rem`, and not in `%` of the
               wrapper. A fixed rem width is one globe for every screen: the one
@@ -430,9 +439,12 @@ export function ProofSection() {
 
         {/* Held to the left half from `lg`, so the quote ends where the sphere
             begins: type in the bottom-left quarter, the world in the right
-            half, which is the reference's whole arrangement. */}
-        <Shell className="relative z-10 mt-16 lg:mt-24">
-          <div className="lg:max-w-[44%]">
+            half, which is the reference's whole arrangement. Same
+            `pointer-events` split as the copy Shell above — the quote card
+            keeps its hover-hold, the empty right half lets drags through to
+            the globe behind it. */}
+        <Shell className="pointer-events-none relative z-10 mt-16 lg:mt-24">
+          <div className="pointer-events-auto lg:max-w-[44%]">
             {TESTIMONIALS.length === 0 ? (
               <Reveal delay={60}>
                 <Placeholder className="max-w-[46ch]">
@@ -450,8 +462,11 @@ export function ProofSection() {
 
       {/* ── The rail ────────────────────────────────────────────────────
           Outside the globe band, at the foot of the section, full rail width.
-          A logo wall is a footer to an argument, not a column beside one. */}
-      <Shell className="relative z-10 mt-20 sm:mt-24">
+          A logo wall is a footer to an argument, not a column beside one.
+          `pointer-events-none`: nothing in here is interactive, and on tall
+          screens the sphere reaches down this far — a transparent Shell must
+          not stand between the pointer and the globe. */}
+      <Shell className="pointer-events-none relative z-10 mt-20 sm:mt-24">
         <div className="lg:max-w-[44%]">
           <Reveal>
             <p className="lp-eyebrow">{t("landing.proof.clientsLabel")}</p>

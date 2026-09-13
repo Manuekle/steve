@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import type { ReactNode } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -33,6 +32,12 @@ export const metadata: Metadata = {
   description:
     "Gestiona agentes de IA, conversaciones y automatizaciones para WhatsApp, Instagram y Meta Ads. Planes alojados y licencia Enterprise autoalojada.",
   robots: process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
+  // Safari (iOS/macOS) rewrites anything that looks like a phone number into
+  // `<a href="tel:…">` before React hydrates, so the server HTML (plain text)
+  // never matches the client DOM. The landing demo renders mock numbers like
+  // "+54 9 341 615-2290" — that rewrite was the hydration mismatch in
+  // `screen-inbox.tsx`. Opt out page-wide.
+  formatDetection: { telephone: false },
 };
 
 // `maximum-scale=1` evita que iOS haga zoom automático cuando el usuario
@@ -91,10 +96,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <Script
+        <script
           id="theme-init"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
+          suppressHydrationWarning
         />
       </head>
 
