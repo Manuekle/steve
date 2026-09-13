@@ -13,8 +13,7 @@ import { ChromaticTextReveal } from "@/components/motion/chromatic-text-reveal";
 import { TextReveal } from "@/components/motion/text-reveal";
 import { AnthropicLogo, GeminiLogo, OpenAiLogo, VercelLogo } from "@/components/provider-logo";
 import { useT } from "@/lib/i18n/provider";
-import { AdsScreen, FlowScreen, InboxScreen } from "./app-screens";
-import { AgentsScreen } from "./screen-agents";
+import { AdsScreen, AgentsScreen, FlowScreen, InboxScreen } from "./deferred-screens";
 import {
   ElevenLabsMark,
   GoogleMark,

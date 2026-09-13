@@ -5,10 +5,9 @@ import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TextReveal } from "@/components/motion/text-reveal";
 import { useSession } from "@/lib/auth/use-session";
 import { useT } from "@/lib/i18n/provider";
-import { ChatScreen } from "./app-screens";
+import { ChatScreen } from "./deferred-screens";
 import { YCombinatorMark } from "./brand-marks";
 import { BrandGlow } from "./lighting";
 import styles from "./editorial.module.css";
@@ -74,20 +73,13 @@ export function LandingHero() {
           </div>
         </Reveal>
 
-        {/* On mount, not on view: this line is above the fold on every device,
-            so an in-view trigger fires at the same instant anyway and only
-            costs an observer. `delay` keeps it a beat behind the badge. */}
-        {/* Solid Cooper lettering stays crisp against the textured wash. */}
-        <TextReveal
-          as="h1"
-          blur={6}
+        {/* The LCP heading is visible in the server HTML, without waiting for
+            hydration, per-word blur animations or a motion preference check. */}
+        <h1
           className="mt-8 max-w-[24ch] text-balance font-heading font-semibold font-cooper text-[clamp(2.75rem,6.6vw,4.25rem)] leading-[1.25] tracking-[-0.03em] overflow-visible pb-[0.12em]"
-          delay={0.12}
-          stagger={0.04}
-          text={t("landing.hero.title")}
-          unitClassName="overflow-visible"
-          yOffset="24%"
-        />
+        >
+          {t("landing.hero.title")}
+        </h1>
 
         <Reveal delay={120}>
           <p className="mt-7 max-w-[52ch] text-[17px] leading-relaxed tracking-[-0.03em] text-muted-foreground text-wrap-balance">
@@ -112,7 +104,7 @@ export function LandingHero() {
               </SignupDialog>
             )}
             <Button asChild size="lg" variant="outline">
-              <Link href={session.signedIn ? "/settings" : "/pricing"} prefetch={!session.signedIn}>
+              <Link href={session.signedIn ? "/settings" : "/pricing"} prefetch={false}>
                 {session.signedIn ? t("landing.cta.settings") : t("landing.cta.pricing")}
               </Link>
             </Button>

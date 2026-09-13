@@ -191,21 +191,38 @@ export const MockSidebar = memo(function MockSidebar({ active }: { readonly acti
  * it — a screenshot of a document rather than of an app. The real shell has a
  * bar there, and the badge on its button is the two sidebar badges added
  * together, which is what the shell does when the nav it would show is closed.
+ *
+ * Matches the `MobileNav` bar in `app-shell.tsx` exactly: the `SenkaMark`
+ * metal + `text-[20px] font-medium` wordmark on the left, the hamburger
+ * button on the right with the same sizing and colour as the real bar.
  */
 export const MockTopBar = memo(function MockTopBar() {
   const t = useT();
   const total = Object.values(NAV_BADGES).reduce((sum, count) => sum + count, 0);
 
   return (
-    <div className="flex h-14 shrink-0 items-center justify-between border-border border-b px-4 md:hidden">
-      {/* The mark is on the desktop sidebar and not here, same as the app. */}
-      <span className="font-semibold text-foreground text-lg">senka</span>
+    <div className="relative flex h-14 shrink-0 items-center justify-between px-4 md:hidden">
+      {/* Frost layer — same as the real bar's `.app-nav-blur` */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 border-border border-b bg-card/85 backdrop-blur-md"
+      />
+      {/* Wordmark — identical lockup to MobileNav in app-shell */}
+      <div className="relative flex items-center gap-2">
+        <span className="flex size-8 shrink-0 items-center justify-center">
+          <SenkaMark metal className="block h-[20px] w-auto" />
+        </span>
+        <span className="text-[20px] font-medium leading-none tracking-tighter text-foreground">
+          senka
+        </span>
+      </div>
+      {/* Hamburger button — same sizing, colour and badge as the real bar */}
       <span
         aria-label={t("nav.menu")}
-        className="relative inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground"
+        className="relative -mr-1 inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground"
       >
-        <HugeiconsIcon icon={Menu01Icon} size={20} strokeWidth={1.75} />
-        <NotificationBadge count={total} />
+        <HugeiconsIcon icon={Menu01Icon} size={18} strokeWidth={1.75} />
+        {total > 0 ? <NotificationBadge count={total} /> : null}
       </span>
     </div>
   );

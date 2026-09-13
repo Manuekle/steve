@@ -11,6 +11,10 @@ export const metadata: Metadata = marketingMetadata({
 
 export default function LandingPage() {
   return <>
+    {/* Discover the above-the-fold fonts with the HTML, not after downloading
+        and parsing the shared application stylesheet. */}
+    <link rel="preload" href="/fonts/cooper/CooperLtBT_400-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="/fonts/inter/InterVariable-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",

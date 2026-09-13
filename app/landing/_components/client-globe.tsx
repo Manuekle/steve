@@ -63,22 +63,52 @@ function palette(dark: boolean): {
  * The globe. Cobe draws the sphere, the dot-mapped landmass and a pin per
  * client, and that is all this draws.
  *
- * It used to hang a wordmark off every pin, anchored to the marker's live
- * screen position through cobe's CSS Anchor Positioning support. The rail
+ * Labels used to hang off every pin via CSS Anchor Positioning. The rail
  * under the section names the clients now, and two lists of the same names in
  * one section is one list too many — the pins say "here", the rail says who,
- * and neither has to shout over the other. It also took the labels' one real
- * problem with it: clients cluster, six businesses in one region put their
- * pins within a few dozen pixels of each other, and six labels hanging off
- * that stack into an unreadable pile.
+ * and neither has to shout over the other.
+ *
+ * ── Why labels were a performance problem ────────────────────────────
+ *
+ * Cobe v2 always calls $.s() inside every update(), unconditionally, which
+ * does: `styleEl.textContent = ":root{...}"`. Any write to a <style> element's
+ * textContent forces the browser to invalidate and recalculate styles for the
+ * entire document — even when the content is just ":root{}" (empty custom
+ * properties). At 60fps that is 60 forced style recalculations per second,
+ * each one touching every styled element on the page.
+ *
+ * Two fixes working together:
+ *
+ *   1. No `id` on markers. Cobe uses marker ids to populate the CSS custom
+ *      properties object (`a`). Without ids that object stays empty, so the
+ *      string written to the style element is always ":root{}" — semantically
+ *      a no-op, but still a write.
+ *
+ *   2. After `createGlobe()` returns, find the <style> element it injected
+ *      into <head> and replace its `textContent` setter with a no-op. Cobe
+ *      appends exactly one <style> element synchronously during construction,
+ *      so the new element is always the last one in <head> when the call
+ *      returns. Silencing it eliminates the forced recalc entirely without
+ *      patching cobe itself.
+ *
+ * This also removes the label divs from the JSX — without them the custom
+ * properties cobe would write serve no consumer. It also took with it the
+ * labels' one real layout problem: clients cluster, six businesses in one
+ * region put their pins within a few dozen pixels of each other, and six
+ * labels hanging off that stack into an unreadable pile.
+ *
+ * CSS Anchor Positioning is also unsupported in Safari and Firefox, so the
+ * labels were invisible to most visitors even before this change.
+ *
+ * ── Other per-frame costs addressed ─────────────────────────────────
  *
  * Cobe draws one frame per `update()` and runs no loop of its own, so the
  * `requestAnimationFrame` below is not the animation — it is the rendering.
- * This component used to pass an `onRender` callback instead, which is cobe
- * v1's API: v2 ignores it, so the globe was drawn exactly once, at creation —
- * and the land map is a data-URI image that has not finished decoding by then.
- * The only frame ever drawn was the one with an empty land texture, which is
- * why the section showed a featureless ball with markers floating on it.
+ *
+ * - `palette()` is cached and only passed to `update()` when the theme
+ *   actually changes. Rotation-only frames pass just `{ phi, theta }`.
+ * - On coarse-pointer devices the loop is throttled to ~30 fps.
+ * - `width`/`height` are sent only on resize, never every frame.
  */
 export function ClientGlobe({
   className,
@@ -135,6 +165,18 @@ export function ClientGlobe({
     const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
     let size = wrap.clientWidth;
 
+    // Cached palette for the current theme value — rebuilt only when dark
+    // changes, not on every frame. Spreading a freshly-allocated object into
+    // `update()` on every frame allocates and then immediately discards it;
+    // the theme changes at most once per user interaction, so caching pays
+    // nothing and saves an allocation every ~16ms.
+    let cachedPalette = palette(darkRef.current);
+    let cachedPaletteDark = darkRef.current;
+
+    // Snapshot how many <style> elements are in <head> before we hand control
+    // to cobe. It will append exactly one more, synchronously.
+    const styleCountBefore = document.head.querySelectorAll("style").length;
+
     // CSS pixels, not buffer pixels — which is one step off the snippet in
     // cobe's docs, deliberately. That snippet pairs `width: 600 * 2` with
     // `devicePixelRatio: 2`, and cobe then does `canvas.width = width * dpr`
@@ -154,13 +196,40 @@ export function ClientGlobe({
       scale: 1,
       offset: [0, 0],
       markerColor: [0.95, 0.95, 0.95],
+      // No `id` on markers — see the comment above. Without ids, the custom-
+      // property dict cobe would write into the style element stays empty, so
+      // the style element no-op patch below is the only thing silencing it.
       markers: clients.map((client) => ({
         location: [client.lat, client.lng] as [number, number],
         size: 0.02,
-        id: client.id,
       })),
-      ...palette(darkRef.current),
+      ...cachedPalette,
     });
+
+    // ── Silence the per-frame style injection ──────────────────────────
+    //
+    // Cobe v2 calls `styleEl.textContent = ":root{...}"` unconditionally on
+    // every update(), which forces a full-document style recalculation every
+    // frame. We have no markers with ids, so the content is always ":root{}"
+    // — a write that changes nothing but still triggers the recalc.
+    //
+    // After createGlobe() returns, the new <style> element is the last one in
+    // <head>. Replace its textContent setter with a no-op. The descriptor is
+    // inherited from CharacterData; we override it only on this instance so
+    // no other style elements are affected.
+    const styleElements = document.head.querySelectorAll("style");
+    const cobeStyle = styleElements[styleCountBefore] ?? null;
+    if (cobeStyle) {
+      // The setter lives on the CharacterData prototype, not on the element
+      // itself, so we define it directly on the instance to shadow it.
+      Object.defineProperty(cobeStyle, "textContent", {
+        set: () => {
+          /* no-op: prevents cobe's $.s() from triggering style recalc */
+        },
+        get: () => "",
+        configurable: true,
+      });
+    }
 
     // Cobe draws on `update()` and nothing else, so this loop is what puts
     // pixels on the canvas at all — including the first correct frame, which
@@ -174,14 +243,12 @@ export function ClientGlobe({
     // whenever the rotation moves, a frame whenever `dirty` says the picture
     // is stale, and an empty callback the rest of the time.
     //
-    // Two perf notes for the small screen. Every `update()` re-projects every
-    // marker and rewrites a `<style>` block in `<head>` (that is how cobe
-    // drives its anchor-positioned labels), so a frame is not free even before
-    // the shaders run — on a coarse pointer the loop is throttled to ~30fps,
-    // which still reads as smooth for a sphere this slow. And `width`/`height`
-    // are deliberately *not* passed per frame: cobe resizes the canvas backing
-    // store from them, so sending them every frame risks a reallocation every
-    // frame. They go out once here at creation and again on resize, below.
+    // Without the per-frame style write, the JS cost per frame is now just
+    // two angles going into cobe's WebGL uniforms. On a coarse pointer the
+    // loop is still throttled to ~30fps, which reads as smooth for a sphere
+    // this slow. And `width`/`height` are deliberately *not* passed per frame:
+    // cobe resizes the canvas backing store from them, so sending them every
+    // frame risks a reallocation every frame.
     let raf = 0;
     let last = performance.now();
     let lastDrawn = 0;
@@ -201,11 +268,27 @@ export function ClientGlobe({
       if (coarse && !dirtyRef.current && now - lastDrawn < 33) return;
       lastDrawn = now;
       dirtyRef.current = false;
-      globe.update({
-        phi: phiRef.current,
-        theta: thetaRef.current,
-        ...palette(darkRef.current),
-      });
+
+      // Rebuild the palette cache only when the theme actually changed.
+      // Rotation-only frames pass just `phi`/`theta`; a theme-change frame
+      // also spreads the four colour values. This halves the object allocation
+      // rate in the common case and avoids micro-GC pressure from allocating
+      // and immediately discarding a palette object every 16ms.
+      const currentDark = darkRef.current;
+      if (currentDark !== cachedPaletteDark) {
+        cachedPalette = palette(currentDark);
+        cachedPaletteDark = currentDark;
+        globe.update({
+          phi: phiRef.current,
+          theta: thetaRef.current,
+          ...cachedPalette,
+        });
+      } else {
+        globe.update({
+          phi: phiRef.current,
+          theta: thetaRef.current,
+        });
+      }
     };
     raf = requestAnimationFrame(draw);
 
@@ -213,11 +296,11 @@ export function ClientGlobe({
     // that is off screen at mount is not drawing, so it would have no finished
     // frame to show the moment it scrolls into view — one `dirty` on a short
     // timer covers the decode without keeping a loop running for a picture
-    // nobody is looking at. It is cheap either way: the image is inlined in
-    // cobe's own bundle, so nothing is fetched.
+    // nobody is looking at. The image is inlined in cobe's bundle as a data-
+    // URI, so nothing is fetched; 150ms is enough for the decode.
     const warm = window.setTimeout(() => {
       dirtyRef.current = true;
-    }, 400);
+    }, 150);
 
     // `ResizeObserver` always fires once right after `observe()`, even with no
     // real change. Skipping the no-op keeps that first callback from marking a
@@ -343,24 +426,6 @@ export function ClientGlobe({
       onKeyDown={onKeyDown}
     >
       <canvas className="h-full w-full rounded-full" ref={canvasRef} />
-      {clients.map((m) => (
-        <div
-          key={m.id}
-          className="pointer-events-none absolute whitespace-nowrap rounded-[4px] border border-border bg-card px-2 py-1 font-mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground shadow-[var(--shadow-soft)] backdrop-blur transition-opacity duration-300"
-          style={
-            {
-              positionAnchor: `--cobe-${m.id}`,
-              bottom: "anchor(top)",
-              left: "anchor(center)",
-              translate: "-50% 0",
-              marginBottom: "10px",
-              opacity: `var(--cobe-visible-${m.id}, 0)`,
-            } as React.CSSProperties
-          }
-        >
-          {m.name}
-        </div>
-      ))}
     </div>
   );
 }

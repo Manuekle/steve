@@ -438,6 +438,7 @@ export function LandingHeader() {
       <Shell className="relative flex h-16 items-center justify-between gap-6">
         <Link
           href="/"
+          prefetch={false}
           aria-label={t("landing.header.homeAria")}
           className="lp-focus shrink-0 rounded-md transition-opacity duration-150 hover:opacity-80"
         >
@@ -462,6 +463,7 @@ export function LandingHeader() {
             <Link
               key={page.href}
               href={page.href}
+              prefetch={false}
               aria-current={pathname === page.href ? "page" : undefined}
               className="lp-navlink lp-focus"
             >
@@ -531,6 +533,7 @@ export function LandingHeader() {
                         <Link
                           key={page.href}
                           href={page.href}
+                          prefetch={false}
                           aria-current={pathname === page.href ? "page" : undefined}
                           onClick={() => setMoreOpen(false)}
                           className="lp-focus group flex items-center gap-4 rounded-xl p-3 transition-colors duration-150 hover:bg-accent/80"
@@ -569,7 +572,7 @@ export function LandingHeader() {
                11px, and a pill here would be the one button on the site that
                is not shaped like every button inside the product. */
             <Button asChild size="sm">
-              <Link href="/login">{t("landing.cta.signIn")}</Link>
+              <Link href="/login" prefetch={false}>{t("landing.cta.signIn")}</Link>
             </Button>
           ) : (
             <SignupDialog>
@@ -653,6 +656,7 @@ export function LandingHeader() {
               <Link
                 key={page.href}
                 href={page.href}
+                prefetch={false}
                 onClick={closeMenu}
                 className="lp-menu-item lp-focus rounded-lg px-3 py-2.5 text-muted-foreground text-sm transition-colors duration-150 hover:bg-accent hover:text-foreground aria-[current]:text-foreground"
                 aria-current={pathname === page.href ? "page" : undefined}
